@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self';
+         script-src 'self'; 
+         style-src 'self';
+         img-src 'self' data: blob:; 
+         font-src 'self' data:; 
+         connect-src 'self' https://api.github.com https://raw.githubusercontent.com; 
+         object-src 'none'; 
+         base-uri 'none'; 
+         form-action 'none'; 
+         frame-ancestors 'none'; 
+         upgrade-insecure-requests;">
+    <meta name="referrer" content="no-referrer">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./icon.svg">
+    <script src="./flash.js"></script>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="./app.js" defer></script>
+</head>
+
+<body>
+
+    <!-- SVG SPRITES -->
+    <svg xmlns="http://www.w3.org/2000/svg" class="svg-sprites">
+        <defs>
+            <symbol id="icon-rack" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                <line x1="4" y1="7" x2="20" y2="7"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="17" x2="20" y2="17"></line>
+                <circle cx="17" cy="4.5" r="0.8" fill="currentColor" stroke="none"></circle>
+                <circle cx="17" cy="9.5" r="0.8" fill="currentColor" stroke="none"></circle>
+                <circle cx="17" cy="14.5" r="0.8" fill="currentColor" stroke="none"></circle>
+            </symbol>
+            <symbol id="icon-dashboard" viewBox="0 0 24 24">
+                <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+            </symbol>
+            <symbol id="icon-pc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" />
+                <path d="M8 21h8M12 17v4" />
+            </symbol>
+            <symbol id="icon-inventory" viewBox="0 0 24 24">
+                <path d="M3 3h18v2H3zm0 4h18v2H3zm0 4h18v2H3zm0 4h18v2H3zm0 4h18v2H3z" />
+            </symbol>
+            <symbol id="icon-add" viewBox="0 0 24 24">
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+            </symbol>
+            <symbol id="icon-search" viewBox="0 0 24 24">
+                <path
+                    d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+            </symbol>
+            <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+            </symbol>
+            <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </symbol>
+            <symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14H6L5 6" />
+                <path d="M10 11v6M14 11v6" />
+                <path d="M9 6V4h6v2" />
+            </symbol>
+            <symbol id="icon-cancelar" viewBox="0 0 24 24">
+                <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" />
+                <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" />
+            </symbol>
+            <symbol id="icon-save" viewBox="0 0 24 24">
+                <path
+                    d="M17 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z" />
+            </symbol>
+            <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+            </symbol>
+            <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </symbol>
+            <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+            </symbol>
+            <symbol id="icon-cloud-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 16 12 12 8 16" />
+                <line x1="12" y1="12" x2="12" y2="21" />
+                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+            </symbol>
+            <!-- Cloud sync down -->
+            <symbol id="icon-cloud-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="8 16 12 20 16 16" />
+                <line x1="12" y1="20" x2="12" y2="11" />
+                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+            </symbol>
+            <symbol id="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+            </symbol>
+            <symbol id="icon-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l4-4m-4 4l4 4" />
+                <path d="M3 9h13a5 5 0 010 10h-4" />
+            </symbol>
+            <symbol id="icon-close" viewBox="0 0 24 24">
+                <path
+                    d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+            </symbol>
+            <symbol id="icon-undo" viewBox="0 0 24 24">
+                <path
+                    d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z" />
+            </symbol>
+            <symbol id="icon-redo" viewBox="0 0 24 24">
+                <path
+                    d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 15.7c1.05-3.19 4.06-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 15h9V6l-3.6 4.6z" />
+            </symbol>
+            <symbol id="icon-gist" viewBox="0 0 24 24">
+                <path
+                    d="M12 2C6.477 2 2 6.484 2 12.021c0 4.428 2.865 8.184 6.839 9.504.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.021C22 6.484 17.522 2 12 2z" />
+            </symbol>
+            <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+            </symbol>
+            <symbol id="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+            </symbol>
+            <symbol id="icon-external-link" viewBox="0 0 24 24">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                <polyline points="15 3 21 3 21 9" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"></line>
+            </symbol>
+            <symbol id="icon-combine" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 6h4l4 6h8" />
+                <path d="M4 18h4l4-6" />
+            </symbol>
+            <symbol id="icon-replace-swap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="17 4 21 8 17 12" />
+                <line x1="3" y1="8" x2="21" y2="8" />
+                <polyline points="7 20 3 16 7 12" />
+                <line x1="21" y1="16" x2="3" y2="16" />
+            </symbol>
+            <symbol id="icon-arrow-up" viewBox="0 0 24 24">
+                <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z" />
+            </symbol>
+            <symbol id="icon-table" viewBox="0 0 24 24">
+                <path d="M3 3h18v2H3zm0 8h18v2H3zm0 8h18v2H3z" />
+            </symbol>
+            <symbol id="icon-filter" viewBox="0 0 24 24">
+                <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
+            </symbol>
+            <symbol id="icon-building" viewBox="0 0 24 24">
+                <path d="M12 3L2 9v12h8v-7h4v7h8V9L12 3zm6 16h-4v-7H10v7H6V10l6-3.86L18 10v9z" />
+            </symbol>
+            <symbol id="icon-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+            </symbol>
+            <symbol id="icon-plus" viewBox="0 0 24 24">
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+            </symbol>
+            <symbol id="icon-baja" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+            </symbol>
+            <symbol id="icon-layout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+            </symbol>
+            <symbol id="icon-report" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+            </symbol>
+            <symbol id="icon-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+            </symbol>
+            <symbol id="icon-sliders" viewBox="0 0 24 24">
+                <line x1="4" y1="21" x2="4" y2="14" class="icon-line" stroke="currentColor"></line>
+                <line x1="4" y1="10" x2="4" y2="3" class="icon-line" stroke="currentColor"></line>
+                <line x1="12" y1="21" x2="12" y2="12" class="icon-line" stroke="currentColor"></line>
+                <line x1="12" y1="8" x2="12" y2="3" class="icon-line" stroke="currentColor"></line>
+                <line x1="20" y1="21" x2="20" y2="16" class="icon-line" stroke="currentColor"></line>
+                <line x1="20" y1="12" x2="20" y2="3" class="icon-line" stroke="currentColor"></line>
+                <line x1="1" y1="14" x2="7" y2="14" class="icon-line" stroke="currentColor"></line>
+                <line x1="9" y1="8" x2="15" y2="8" class="icon-line" stroke="currentColor"></line>
+                <line x1="17" y1="16" x2="23" y2="16" class="icon-line" stroke="currentColor"></line>
+            </symbol>
+            <symbol id="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </symbol>
+            <symbol id="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+            </symbol>
+        </defs>
+    </svg>
+
+    <!-- HEADER -->
+    <header class="header" id="main-header">
+        <div class="header-logo clickable" id="btn-inicio-logo" title="Ir a la página principal">
+            <svg class="header-logo-icon">
+                <use href="#icon-rack" />
+            </svg>
+        </div>
+        <h1 class="header-main-title clickable" id="btn-inicio-titulo" title="Ir a la página principal">Racks</h1>
+        <div class="header-tab-title" id="header-tab-title">
+            <svg class="svg-icon">
+                <use href="#icon-dashboard" />
+            </svg> Dashboard
+        </div>
+        <div class="header-actions">
+            <button class="icon-btn icon-btn-trans" id="btn-undo" title="Deshacer (Ctrl+Z)" disabled>
+                <svg class="svg-icon">
+                    <use href="#icon-undo" />
+                </svg>
+            </button>
+            <button class="icon-btn icon-btn-trans" id="btn-redo" title="Rehacer (Ctrl+Y)" disabled>
+                <svg class="svg-icon">
+                    <use href="#icon-redo" />
+                </svg>
+            </button>
+            <button class="icon-btn icon-btn-trans" id="btn-ajustes" title="Ajustes">
+                <svg class="svg-icon">
+                    <use href="#icon-settings" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- CONTAINER -->
+    <div class="container">
+
+        <!-- TABS -->
+        <div class="tabs tabs-3">
+            <button class="tab-btn activa" id="tab-dashboard">
+                <svg class="svg-icon">
+                    <use href="#icon-dashboard" />
+                </svg> Dashboard
+            </button>
+            <button class="tab-btn" id="tab-inventario">
+                <svg class="svg-icon">
+                    <use href="#icon-inventory" />
+                </svg> Inventario
+            </button>
+            <button class="tab-btn" id="tab-servicio">
+                <svg class="svg-icon">
+                    <use href="#icon-rack" />
+                </svg> Servicio
+            </button>
+        </div>
+
+        <!-- BÚSQUEDA GLOBAL -->
+        <div class="search-actions-bar">
+            <div class="search-bar">
+                <svg class="svg-icon search-icon">
+                    <use href="#icon-search" />
+                </svg>
+                <input type="text" id="busq-global" placeholder="Buscar por número, marca, patrimonio…"
+                    autocomplete="off">
+                <button id="busq-clear-btn" title="Limpiar">
+                    <svg class="svg-icon">
+                        <use href="#icon-close" />
+                    </svg>
+                </button>
+                <button id="busq-filtro-btn" title="Campos de búsqueda" class="busq-filtro-btn">
+                    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" y1="6" x2="20" y2="6" />
+                        <line x1="8" y1="12" x2="16" y2="12" />
+                        <line x1="11" y1="18" x2="13" y2="18" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ PANEL DASHBOARD ═══ -->
+        <div class="tab-panel activa" id="panel-dashboard">
+            <div class="dash-layout">
+                <!-- Tarjeta resumen por edificio -->
+                <div class="card card-no-mb dash-resumen-col" id="card-resumen-edificios">
+                    <div class="card-header">
+                        <svg class="svg-icon"><use href="#icon-rack" /></svg>
+                        <h2>Composición en servicio</h2>
+                        <span id="resumen-edificios-subtitulo" class="resumen-edificios-subtitulo" hidden></span>
+                    </div>
+                    <div id="resumen-edificios-tabla"></div>
+                </div>
+                <!-- Chips de stats -->
+                <div class="dash-chips-col">
+                    <div class="dash-stats-grid" id="stats-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ PANEL SERVICIO ═══ -->
+        <div class="tab-panel" id="panel-servicio">
+            <div class="card card-no-mb">
+                <div class="card-header">
+                    <svg class="svg-icon">
+                        <use href="#icon-rack" />
+                    </svg>
+                    <h2>Racks en Servicio</h2>
+                    <span id="servicio-count" class="badge badge-gray">0</span>
+                    <div class="card-header-actions">
+                        <button class="icon-btn card-action-btn" id="btn-vista-serv" title="Opciones de vista">
+                            <svg class="svg-icon">
+                                <use href="#icon-sliders" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="serv-vista-menu" class="inv-vista-menu"></div>
+
+                <div id="serv-tabla-wrap" class="table-wrap inv-tabla-agrupada">
+                    <table class="table-equal-cols table-eq-4">
+                        <thead class="inv-thead-sticky">
+                            <tr>
+                                <th data-sort="numero" class="th-sortable">Rack</th>
+                                <th data-sort="edificio" class="th-sortable">Edificio</th>
+                                <th data-sort="piso" class="th-sortable">Piso</th>
+                                <th data-sort="dependencia" class="th-sortable">Dependencia</th>
+                                <th>Patcheras</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-servicio"></tbody>
+                    </table>
+                </div>
+                <div id="serv-grupos-wrap" class="inv-grupos-wrap" hidden></div>
+                
+                <div id="servicio-empty" class="empty-state empty-state-hidden">
+                    <p>No hay racks en servicio.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ PANEL INVENTARIO ═══ -->
+        <div class="tab-panel" id="panel-inventario">
+            <div class="card card-no-mb">
+                <div class="card-header">
+                    <svg class="svg-icon">
+                        <use href="#icon-inventory" />
+                    </svg>
+                    <h2>Activos</h2>
+                    <span id="inventario-count" class="badge badge-gray">0</span>
+                    <div class="card-header-actions">
+                        <button class="icon-btn card-action-btn" id="btn-reporte-inv" title="Generar reporte">
+                            <svg class="svg-icon">
+                                <use href="#icon-report" />
+                            </svg>
+                        </button>
+                        <button class="icon-btn card-action-btn" id="btn-vista-inv" title="Opciones de vista">
+                            <svg class="svg-icon">
+                                <use href="#icon-sliders" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Menú de vista flotante -->
+                <div id="inv-vista-menu" class="inv-vista-menu"></div>
+
+                <div id="inv-tabla-wrap" class="table-wrap inv-tabla-agrupada">
+                    <table class="table-equal-cols">
+                        <thead class="inv-thead-sticky">
+                            <tr>
+                                <th data-sort="estado" class="th-sortable">Estado</th>
+                                <th data-sort="patrimonio" class="th-sortable">Patrimonio</th>
+                                <th data-sort="unidades" class="th-sortable">Unidades</th>
+                                <th data-sort="marca" class="th-sortable">Marca</th>
+                                <th data-sort="identificador" class="th-sortable">Identificador</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-inventario"></tbody>
+                    </table>
+                </div>
+                <div id="inv-grupos-wrap" class="inv-grupos-wrap" hidden></div>
+                <div id="inventario-empty" class="empty-state empty-state-hidden">
+                    <p>No hay racks que coincidan.</p>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /container -->
+
+    <!-- FAB con dropdown -->
+    <div class="fab-container" id="fab-container">
+        <div class="fab-menu" id="fab-menu">
+            <button class="fab-menu-item" id="fab-nuevo-rack">
+                <svg class="svg-icon">
+                    <use href="#icon-plus" />
+                </svg>
+                <span>Ingreso de rack</span>
+            </button>
+            <button class="fab-menu-item" id="fab-rack-servicio">
+                <svg class="svg-icon">
+                    <use href="#icon-rack" />
+                </svg>
+                <span>Rack en servicio</span>
+            </button>
+        </div>
+        <button id="btn-fab-main" class="fab-main-btn" title="Agregar">
+            <svg class="svg-icon">
+                <use href="#icon-add" />
+            </svg>
+        </button>
+    </div>
+
+    <button id="btn-scroll-top" class="btn-scroll-top" title="Subir">
+        <svg class="svg-icon svg-scroll-top">
+            <use href="#icon-arrow-up" />
+        </svg>
+    </button>
+
+    <!-- ════════ MODALES ════════ -->
+
+    <!-- MODAL PONER EN SERVICIO -->
+    <div class="modal" id="modal-rack-servicio">
+        <div class="modal-content modal-content-md">
+            <div class="modal-header">
+                <h3><svg class="svg-icon">
+                        <use href="#icon-rack" />
+                    </svg> Poner en servicio</h3>
+            </div>
+            <div class="modal-body modal-body-pb">
+                <div class="form-group">
+                    <label>Rack <span class="required">*</span></label>
+                    <select id="servicio-rack-select">
+                        <option value="">— Seleccioná un rack disponible —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Número de Rack <span class="required">*</span></label>
+                    <input type="text" id="servicio-numero" placeholder="ej: 0001" maxlength="20" autocomplete="off">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Edificio</label>
+                        <select id="servicio-edificio"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Piso</label>
+                        <input type="text" id="servicio-piso" placeholder="ej: PB" maxlength="30" autocomplete="off">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Dependencia</label>
+                    <input type="text" id="servicio-dependencia" placeholder="ej: Sala de servidores" maxlength="100"
+                        autocomplete="off">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary btn-flex" id="servicio-confirmar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-save" />
+                    </svg> Confirmar
+                </button>
+                <button class="btn-flex" id="servicio-cancelar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-cancelar" />
+                    </svg> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVO RACK -->
+    <div class="modal" id="modal-rack-nuevo">
+        <div class="modal-content modal-content-md">
+            <div class="modal-header">
+                <h3><svg class="svg-icon">
+                        <use href="#icon-plus" />
+                    </svg> Ingreso de rack</h3>
+            </div>
+            <div class="modal-body modal-body-pb">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Patrimonio</label>
+                        <input type="text" id="rack-patrimonio-nuevo" placeholder="ej: 48491" maxlength="30"
+                            autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>Unidades (U) <span class="required">*</span></label>
+                        <input type="number" id="rack-unidades-nuevo" placeholder="ej: 42" min="1" max="999">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Marca</label>
+                        <input type="text" id="rack-marca-nuevo" placeholder="ej: Fayser" maxlength="50"
+                            autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>Modelo</label>
+                        <input type="text" id="rack-modelo-nuevo" placeholder="ej: FR-42U" maxlength="50"
+                            autocomplete="off">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notas</label>
+                    <input type="text" id="rack-notas-nuevo" placeholder="Observaciones.." maxlength="200"
+                        autocomplete="off">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary btn-flex" id="rack-nuevo-guardar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-save" />
+                    </svg> Guardar
+                </button>
+                <button class="btn-flex" id="rack-nuevo-cancelar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-cancelar" />
+                    </svg> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-rack-editar-servicio">
+        <div class="modal-content modal-content-md">
+            <div class="modal-header">
+                <h3><svg class="svg-icon">
+                        <use href="#icon-rack" />
+                    </svg> Editar Servicio</h3>
+            </div>
+            <div class="modal-body modal-body-pb">
+                <div class="form-group servicio-info-rack">
+                    <p id="editar-servicio-info" class="td-muted td-sm"></p>
+                </div>
+                <div class="form-group">
+                    <label>Número de Rack <span class="required">*</span></label>
+                    <input type="text" id="editar-servicio-numero" placeholder="ej: 0001" maxlength="20"
+                        autocomplete="off">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Edificio</label>
+                        <select id="editar-servicio-edificio"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Piso</label>
+                        <input type="text" id="editar-servicio-piso" placeholder="ej: PB" maxlength="30"
+                            autocomplete="off">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Dependencia</label>
+                    <input type="text" id="editar-servicio-dependencia" placeholder="ej: Sala de servidores"
+                        maxlength="100" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Identificador</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="editar-servicio-identificador" readonly
+                            title="El identificador se genera automáticamente">
+                        <button class="btn-input-side" id="editar-servicio-ir-rack-btn" title="Ver activo">
+                            <svg class="svg-icon">
+                                <use href="#icon-external-link" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer modal-footer-col">
+                <div class="flex-row-gap">
+                    <button class="btn-primary btn-flex" id="editar-servicio-guardar-btn">
+                        <svg class="svg-icon">
+                            <use href="#icon-save" />
+                        </svg> Guardar
+                    </button>
+                    <button class="btn-danger btn-flex" id="editar-servicio-quitar-btn">
+                        <svg class="svg-icon">
+                            <use href="#icon-trash" />
+                        </svg> Quitar
+                    </button>
+                </div>
+                <div class="flex-row-gap">
+                    <button class="btn-flex" id="editar-servicio-cancelar-btn">
+                        <svg class="svg-icon">
+                            <use href="#icon-cancelar" />
+                        </svg> Cancelar
+                    </button>
+                    <button class="btn-input-side btn-input-side--baja btn-icon-only" id="editar-servicio-lock-btn" title="Desbloquear edición">
+                        <svg class="svg-icon">
+                            <use href="#icon-lock" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR RACK -->
+    <div class="modal" id="modal-rack-editar">
+        <div class="modal-content modal-content-md">
+            <div class="modal-header">
+                <h3><svg class="svg-icon">
+                        <use href="#icon-edit" />
+                    </svg> Editar Rack</h3>
+            </div>
+            <div class="modal-body modal-body-pb">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Patrimonio <span class="required">*</span></label>
+                        <input type="text" id="rack-patrimonio-editar" placeholder="ej: 48491" maxlength="30"
+                            autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>Unidades (U) <span class="required">*</span></label>
+                        <input type="number" id="rack-unidades-editar" placeholder="ej: 42" min="1" max="999">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Marca</label>
+                        <input type="text" id="rack-marca-editar" placeholder="ej: Fayser" maxlength="50"
+                            autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>Modelo</label>
+                        <input type="text" id="rack-modelo-editar" placeholder="ej: FR-42U" maxlength="50"
+                            autocomplete="off">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notas</label>
+                    <input type="text" id="rack-notas-editar" placeholder="Observaciones opcionales…" maxlength="200"
+                        autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Identificador</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="rack-identificador-editar" readonly
+                            title="El identificador se genera automáticamente">
+                        <button class="btn-input-side btn-input-side--baja" id="rack-editar-baja-btn" title="Dar de baja">
+                            <svg class="svg-icon">
+                                <use href="#icon-baja" />
+                            </svg>
+                        </button>
+                            <button class="btn-input-side" id="rack-editar-ir-servicio-btn" title="Ver en servicio" hidden>
+                            <svg class="svg-icon">
+                                <use href="#icon-external-link" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer modal-footer-col">
+                <div class="flex-row-gap">
+                    <button class="btn-primary btn-flex" id="rack-editar-guardar-btn">
+                        <svg class="svg-icon">
+                            <use href="#icon-save" />
+                        </svg> Guardar
+                    </button>
+                    <button class="btn-danger btn-flex" id="rack-editar-eliminar-btn">
+                        <svg class="svg-icon">
+                            <use href="#icon-trash" />
+                        </svg> Eliminar
+                    </button>
+                </div>
+                <div class="flex-row-gap">
+                    <button class="btn-flex" id="rack-editar-cancelar-btn">
+                        <svg class="svg-icon">
+                            <use href="#icon-cancelar" />
+                        </svg> Cancelar
+                    </button>
+                    <button class="btn-input-side btn-input-side--baja btn-icon-only" id="rack-editar-lock-btn" title="Desbloquear edición">
+                        <svg class="svg-icon">
+                            <use href="#icon-lock" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AJUSTES -->
+    <div class="modal" id="modal-ajustes">
+        <div class="modal-content modal-content-md">
+            <div class="modal-header">
+                <h3><svg class="svg-icon">
+                        <use href="#icon-settings" />
+                    </svg> Ajustes</h3>
+                <span class="modal-header-version">v260612</span>
+            </div>
+            <div class="modal-body modal-body-pb">
+                <p class="ajustes-section-label">Sincronización</p>
+                <div class="ajustes-gist-group">
+                    <button class="ajustes-row ajustes-gist-main" id="ajustes-gist-main-btn">
+                        <svg class="svg-icon">
+                            <use href="#icon-gist" />
+                        </svg>
+                        <span>Github Gist</span>
+                        <span class="ajustes-arrow">›</span>
+                    </button>
+                    <button class="ajustes-gist-quick-btn gist-quick-hidden" id="btn-ajustes-gist-subir" title="Subir">
+                        <svg class="svg-icon">
+                            <use href="#icon-cloud-up" />
+                        </svg>
+                    </button>
+                    <button class="ajustes-gist-quick-btn gist-quick-hidden" id="btn-ajustes-gist-bajar" title="Bajar">
+                        <svg class="svg-icon">
+                            <use href="#icon-cloud-down" />
+                        </svg>
+                    </button>
+                </div>
+                <p class="ajustes-section-label ajustes-section-label-mt">Configuración</p>
+                <button class="ajustes-row" id="ajustes-edificios-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-building" />
+                    </svg>
+                    <span>Edificios</span>
+                    <span class="ajustes-arrow">›</span>
+                </button>
+                <p class="ajustes-section-label ajustes-section-label-mt">Datos</p>
+                <button class="ajustes-row" id="ajustes-exportar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-download" />
+                    </svg>
+                    <span>Respaldar</span>
+                    <span class="ajustes-arrow">›</span>
+                </button>
+                <button class="ajustes-row" id="ajustes-importar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-upload" />
+                    </svg>
+                    <span>Restaurar</span>
+                    <span class="ajustes-arrow">›</span>
+                </button>
+                <button class="ajustes-row" id="ajustes-restablecer-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-trash" />
+                    </svg>
+                    <span>Restablecer</span>
+                    <span class="ajustes-arrow">›</span>
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-full" id="ajustes-cerrar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-cancelar" />
+                    </svg> Cerrar
+                </button>
+                <button class="btn-dark-mode-modal" id="btn-dark-mode" title="Modo oscuro">
+                    <svg class="svg-icon">
+                        <use href="#icon-moon" id="dark-icon-use" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIFICIOS -->
+    <div class="modal" id="modal-edificios">
+        <div class="modal-content modal-content-md">
+            <div class="modal-header">
+                <h3><svg class="svg-icon">
+                        <use href="#icon-building" />
+                    </svg> Edificios</h3>
+            </div>
+            <div class="modal-body modal-body-pb">
+                <p class="ajustes-section-label">Lista</p>
+                <ul class="edificios-lista" id="edificios-lista">
+                    <!-- poblado por JS -->
+                </ul>
+                <p class="edificios-empty td-muted td-sm hidden" id="edificios-empty">No hay edificios registrados.</p>
+            </div>
+            <div class="modal-footer modal-footer-col">
+                <div class="edificios-add-row">
+                    <input type="text" id="edificios-nuevo-input" placeholder="Nombre del edificio…" maxlength="80"
+                        autocomplete="off">
+                    <button class="btn-primary btn-icon-only" id="edificios-agregar-btn" title="Agregar">
+                        <svg class="svg-icon">
+                            <use href="#icon-add" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="flex-row-gap">
+                    <button class="btn-flex" id="edificios-cerrar-btn">
+                        <svg class="svg-icon">
+                            <use href="#icon-back" />
+                        </svg> Volver
+                    </button>
+                    <button class="btn-input-side btn-input-side--baja btn-icon-only" id="edificios-lock-btn" title="Desbloquear edición">
+                        <svg class="svg-icon">
+                            <use href="#icon-lock" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GIST -->
+    <div class="modal" id="modal-gist">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <svg class="svg-icon">
+                        <use href="#icon-gist" />
+                    </svg>
+                    GitHub Gist
+                </h3>
+            </div>
+            <div class="modal-body modal-body-pb">
+
+                <!-- Token -->
+                <div class="form-group">
+                    <label>Personal Access Token</label>
+                    <div class="gist-input-row">
+                        <input type="password" id="gist-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off"
+                            spellcheck="false">
+                        <button class="icon-btn gist-eye-btn" id="gist-token-eye" title="Mostrar/ocultar">
+                            <svg class="svg-icon">
+                                <use href="#icon-eye" id="gist-eye-icon" />
+                            </svg>
+                        </button>
+                        <a class="icon-btn gist-eye-btn icon-link"
+                            href="https://github.com/settings/tokens/new?description=Racks+sync&scopes=gist"
+                            target="_blank" rel="noopener" title="Crear token en GitHub">
+                            <svg class="svg-icon">
+                                <use href="#icon-add" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Gist ID -->
+                <div class="form-group">
+                    <label>Gist ID</label>
+                    <div class="gist-input-row">
+                        <input type="text" id="gist-id" placeholder="Dejar vacío para crear uno nuevo"
+                            autocomplete="off" spellcheck="false">
+                        <a id="gist-link-btn" class="icon-btn gist-eye-btn icon-link" target="_blank" rel="noopener"
+                            title="Abrir en GitHub">
+                            <svg class="svg-icon">
+                                <use href="#icon-external-link" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <p class="ajustes-section-label">Acciones</p>
+                <div class="gist-actions-row">
+                    <button class="btn-gist-action" id="btn-gist-subir">
+                        <svg class="svg-icon">
+                            <use href="#icon-cloud-up" />
+                        </svg>
+                        Subir
+                    </button>
+                    <button class="btn-gist-action" id="btn-gist-bajar">
+                        <svg class="svg-icon">
+                            <use href="#icon-cloud-down" />
+                        </svg>
+                        Bajar
+                    </button>
+                </div>
+
+                <!-- Auto-sync toggle -->
+                <label class="gist-autosync-row" id="gist-autosync-label">
+                    <span class="gist-autosync-text">
+                        <span class="gist-autosync-title">Subir automáticamente y comprobar cambios al cargar la
+                            página</span>
+                    </span>
+                    <div class="toggle-switch" id="gist-autosync-toggle">
+                        <div class="toggle-thumb"></div>
+                    </div>
+                </label>
+
+                <!-- Aviso de confidencialidad -->
+                <div class="gist-privacy-note">
+                    🔒 <strong>Datos sensibles:</strong> Configurar el gist como <strong>secreto</strong> y con el
+                    permiso de <strong>gist</strong> solamente en GitHub. No compartir el link.
+                </div>
+
+                <!-- Estado sync -->
+                <p id="gist-sync-status" class="gist-sync-status"></p>
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary btn-flex" id="gist-guardar-config-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-save" />
+                    </svg>
+                    Guardar
+                </button>
+                <button class="btn-flex" id="gist-cerrar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-back" />
+                    </svg>
+                    Volver
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPORTAR -->
+    <div class="modal" id="modal-importar">
+        <div class="modal-content modal-content-md">
+            <div class="modal-header">
+                <h3><svg class="svg-icon">
+                        <use href="#icon-upload" />
+                    </svg> Importar datos</h3>
+            </div>
+            <div class="modal-body modal-body-pb">
+                <div class="import-dropzone" id="importar-dropzone">
+                    <svg class="svg-icon dropzone-icon">
+                        <use href="#icon-upload" />
+                    </svg>
+                    <br>
+                    <span id="importar-dropzone-label">Seleccioná o arrastrá un archivo .json</span>
+                </div>
+                <input type="file" id="importar-file-input" accept=".json" class="input-hidden">
+            </div>
+            <div class="modal-footer modal-footer-col">
+                <div class="flex-row-gap">
+                    <button class="btn-primary btn-flex" id="importar-combinar-btn" disabled>
+                        <svg class="svg-icon">
+                            <use href="#icon-combine" />
+                        </svg> Combinar
+                    </button>
+                    <button class="btn-danger btn-flex" id="importar-confirmar-btn" disabled>
+                        <svg class="svg-icon">
+                            <use href="#icon-replace-swap" />
+                        </svg> Reemplazar
+                    </button>
+                </div>
+                <button class="btn-flex" id="importar-cerrar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-back" />
+                    </svg> Volver
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIRMAR -->
+    <div class="modal" id="modal-confirmar">
+        <div class="modal-content modal-content-md">
+            <div class="modal-header">
+                <h3 id="confirmar-titulo">¿Confirmar?</h3>
+            </div>
+            <div class="modal-body">
+                <p id="confirmar-texto" class="confirmar-texto"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-danger btn-flex" id="confirmar-ok">
+                    <svg class="svg-icon">
+                        <use href="#icon-trash" />
+                    </svg> Confirmar
+                </button>
+                <button id="confirmar-cancelar" class="btn-flex">
+                    <svg class="svg-icon">
+                        <use href="#icon-cancelar" />
+                    </svg> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL REPORTE -->
+    <div class="modal" id="modal-reporte">
+        <div class="modal-content modal-content-md">
+            <div class="modal-header">
+                <h3>
+                    <svg class="svg-icon">
+                        <use href="#icon-report" />
+                    </svg>
+                    Generar reporte
+                </h3>
+            </div>
+            <div class="modal-body modal-body-pb">
+                <div class="reporte-section-header">
+                    <span class="reporte-section-label" id="reporte-modal-desc">GRUPOS A INCLUIR</span>
+                    <button class="reporte-toggle-all-btn" id="reporte-toggle-all-btn">Deseleccionar todo</button>
+                </div>
+                <div id="reporte-grupos-lista" class="reporte-grupos-lista"></div>
+            </div>
+            <div class="modal-footer reporte-footer">
+                <button class="btn-primary btn-flex reporte-btn-descargar" id="reporte-confirmar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-download" />
+                    </svg>
+                    Descargar
+                </button>
+                <button class="btn-flex reporte-btn-cancelar" id="reporte-cancelar-btn">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="busq-filtro-menu" class="busq-filtro-menu">
+        <div class="busq-filtro-header">
+            <span>CAMPOS</span>
+            <button id="busq-filtro-toggle-all">Desactivar todo</button>
+        </div>
+        <div class="busq-filtro-grid">
+            <label class="busq-filtro-item"><input type="checkbox" value="patrimonio"
+                    checked><span>Patrimonio</span></label>
+            <label class="busq-filtro-item"><input type="checkbox" value="numero" checked><span>Número</span></label>
+            <label class="busq-filtro-item"><input type="checkbox" value="marca" checked><span>Marca</span></label>
+            <label class="busq-filtro-item"><input type="checkbox" value="identificador"
+                    checked><span>Identificador</span></label>
+            <label class="busq-filtro-item"><input type="checkbox" value="unidades"
+                    checked><span>Unidades</span></label>
+            <label class="busq-filtro-item"><input type="checkbox" value="edificio"
+                    checked><span>Edificio</span></label>
+            <label class="busq-filtro-item"><input type="checkbox" value="dependencia"
+                    checked><span>Dependencia</span></label>
+            <label class="busq-filtro-item"><input type="checkbox" value="estado" checked><span>Estado</span></label>
+            <label class="busq-filtro-item"><input type="checkbox" value="notas" checked><span>Notas</span></label>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <div id="td-tooltip-global"></div>
+</body>
+
+</html>
+
+<!--// ====================================================================
+    //        NOTAS SISTEMA LUSHIBOSCA RACK VERSION 260608.2040
+    // ====================================================================
+    
+     - CAMBIOS 
+     1) 
+
+     - BUGS CONOCIDOS:
+     1) 
+
+    -->

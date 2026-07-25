@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#000000" />
+  <!-- 4 rectángulos formando una grilla 2x2 -->
+  <rect x="112" y="112" width="118" height="118" rx="18" fill="white" fill-opacity="0.15" stroke="white" stroke-width="22" stroke-linejoin="round"/>
+  <rect x="282" y="112" width="118" height="118" rx="18" fill="white" fill-opacity="0.15" stroke="white" stroke-width="22" stroke-linejoin="round"/>
+  <rect x="282" y="282" width="118" height="118" rx="18" fill="white" fill-opacity="0.15" stroke="white" stroke-width="22" stroke-linejoin="round"/>
+  <rect x="112" y="282" width="118" height="118" rx="18" fill="white" fill-opacity="0.15" stroke="white" stroke-width="22" stroke-linejoin="round"/>
+</svg>

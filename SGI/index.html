@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self';
+         script-src 'self'; 
+         style-src 'self';
+         img-src 'self' data: blob:; 
+         font-src 'self' data:; 
+         connect-src 'self' https://api.github.com; 
+         object-src 'none'; 
+         base-uri 'none'; 
+         form-action 'none'; 
+         frame-ancestors 'none'; 
+         upgrade-insecure-requests;">
+    <meta name="referrer" content="no-referrer">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./icon.svg">
+    <script src="./flash.js"></script>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="./app.js" defer></script>
+    <title>Materiales</title>
+</head>
+
+<body>
+    <!-- ════════════════════════════════════════════════════════
+         SVG SPRITES
+         ════════════════════════════════════════════════════════ -->
+    <svg xmlns="http://www.w3.org/2000/svg" class="svg-sprites">
+        <defs>
+            <!-- Logo: Materiales Apilados -->
+            <symbol id="icon-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" />
+                <polyline points="3.29 7 12 12 20.71 7" />
+                <line x1="12" y1="22" x2="12" y2="12" />
+            </symbol>
+            <!-- herramienta (ajustes) -->
+            <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+                </path>
+            </symbol>
+            <!-- Grid (tab Dashboard) -->
+            <symbol id="icon-dashboard" viewBox="0 0 24 24">
+                <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+            </symbol>
+            <!-- Flechas intercambio (tab Movimientos) -->
+            <symbol id="icon-movements" viewBox="0 0 24 24">
+                <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+            </symbol>
+            <!-- Lupa (búsqueda) -->
+            <symbol id="icon-search" viewBox="0 0 24 24">
+                <path
+                    d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+            </symbol>
+            <!-- X (cerrar / limpiar) — stroke -->
+            <symbol id="icon-close" viewBox="0 0 24 24">
+                <path
+                    d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+            </symbol>
+            <!-- + (agregar) -->
+            <symbol id="icon-add" viewBox="0 0 24 24">
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+            </symbol>
+            <!-- — (restar / salida) -->
+            <symbol id="icon-minus" viewBox="0 0 24 24">
+                <path d="M19 13H5v-2h14v2z" />
+            </symbol>
+            <!-- Líneas horizontales (card header / historial) -->
+            <symbol id="icon-list" viewBox="0 0 24 24">
+                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+            </symbol>
+            <!-- Líneas tabla (card materiales) -->
+            <symbol id="icon-table" viewBox="0 0 24 24">
+                <path d="M3 3h18v2H3zm0 8h18v2H3zm0 8h18v2H3z" />
+            </symbol>
+            <!-- Embudo (filtros) -->
+            <symbol id="icon-filter" viewBox="0 0 24 24">
+                <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
+            </symbol>
+            <!-- Columnas dobles (categorías) -->
+            <symbol id="icon-categories" viewBox="0 0 24 24">
+                <path d="M3 7h7v2H3zm0 4h7v2H3zm0 4h7v2H3zm11-8h7v2h-7zm0 4h7v2h-7zm0 4h7v2h-7z" />
+            </symbol>
+            <symbol id="icon-cancelar" viewBox="0 0 24 24">
+                <line x1="18" y1="6" x2="6" y2="18" class="icon-line" stroke="currentColor"></line>
+                <line x1="6" y1="6" x2="18" y2="18" class="icon-line" stroke="currentColor"></line>
+            </symbol>
+            <!-- Floppy disk (guardar) -->
+            <symbol id="icon-save" viewBox="0 0 24 24">
+                <path
+                    d="M17 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z" />
+            </symbol>
+            <!-- Tacho de basura (eliminar) — stroke -->
+            <symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14H6L5 6" />
+                <path d="M10 11v6M14 11v6" />
+                <path d="M9 6V4h6v2" />
+            </symbol>
+            <!-- Lápiz (editar) — stroke -->
+            <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </symbol>
+            <!-- Luna (dark mode) — stroke -->
+            <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+            </symbol>
+            <!-- Sol (light mode) — stroke -->
+            <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </symbol>
+            <!-- Descargar (exportar) — stroke -->
+            <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+            </symbol>
+            <!-- Subir (importar) — stroke -->
+            <symbol id="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+            </symbol>
+            <!-- Volver (back) — stroke -->
+            <symbol id="icon-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l4-4m-4 4l4 4" />
+                <path d="M3 9h13a5 5 0 010 10h-4" />
+            </symbol>
+            <!-- Chevron derecha (year group arrow) -->
+            <symbol id="icon-chevron-right" viewBox="0 0 24 24">
+                <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
+            </symbol>
+            <!-- Chevron arriba (sort asc) -->
+            <symbol id="icon-chevron-up" viewBox="0 0 24 24">
+                <path d="M7 14l5-5 5 5z" />
+            </symbol>
+            <!-- Chevron abajo (sort desc) -->
+            <symbol id="icon-chevron-down" viewBox="0 0 24 24">
+                <path d="M7 10l5 5 5-5z" />
+            </symbol>
+            <!-- Flecha arriba (scroll top) -->
+            <symbol id="icon-arrow-up" viewBox="0 0 24 24">
+                <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z" />
+            </symbol>
+            <!-- X lineal (cerrar/quitar línea) — stroke -->
+            <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+            </symbol>
+            <!-- Keyboard / shortcuts -->
+            <symbol id="icon-keyboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="6" width="20" height="13" rx="2" />
+                <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8" />
+            </symbol>
+            <symbol id="icon-cloud-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 16 12 12 8 16" />
+                <line x1="12" y1="12" x2="12" y2="21" />
+                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+            </symbol>
+            <!-- Cloud sync down -->
+            <symbol id="icon-cloud-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="8 16 12 20 16 16" />
+                <line x1="12" y1="20" x2="12" y2="11" />
+                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+            </symbol>
+            <!-- Eye (mostrar token) -->
+            <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+            </symbol>
+            <!-- Eye-off (ocultar token) -->
+            <symbol id="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+            </symbol>
+            <!-- GitHub / Gist -->
+            <symbol id="icon-gist" viewBox="0 0 24 24">
+                <path
+                    d="M12 2C6.477 2 2 6.484 2 12.021c0 4.428 2.865 8.184 6.839 9.504.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.021C22 6.484 17.522 2 12 2z" />
+            </symbol>
+            <!-- Undo -->
+            <symbol id="icon-undo" viewBox="0 0 24 24">
+                <path
+                    d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z" />
+            </symbol>
+            <!-- Redo -->
+            <symbol id="icon-redo" viewBox="0 0 24 24">
+                <path
+                    d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 15.7c1.05-3.19 4.06-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 15h9V6l-3.6 4.6z" />
+            </symbol>
+            <symbol id="icon-combine" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 6h4l4 6h8" class="icon-line"></path>
+                <path d="M4 18h4l4-6" class="icon-line"></path>
+            </symbol>
+            <symbol id="icon-replace-swap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="17 4 21 8 17 12"></polyline>
+                <line x1="3" y1="8" x2="21" y2="8"></line>
+                <polyline points="7 20 3 16 7 12"></polyline>
+                <line x1="21" y1="16" x2="3" y2="16"></line>
+            </symbol>
+            <!-- Reporte (documento con líneas) -->
+            <symbol id="icon-report" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+            </symbol>
+            <symbol id="icon-external-link" viewBox="0 0 24 24">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                <polyline points="15 3 21 3 21 9" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"></line>
+            </symbol>
+            <symbol id="icon-umbral" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" />
+                <polyline points="3.29 7 12 12 20.71 7" />
+                <line x1="12" y1="22" x2="12" y2="12" />
+                <line x1="20" y1="13" x2="20" y2="17" />
+                <line x1="20" y1="21" x2="20.01" y2="21" />
+            </symbol>
+            <!-- Llave/Martillo (herramientas) — stroke -->
+            <symbol id="icon-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+            </symbol>
+            <!-- Instalar App (Caja de app con flecha) -->
+            <symbol id="icon-install-app" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+                <polyline points="9 10 12 13 15 10"></polyline>
+                <line x1="12" y1="6" x2="12" y2="13"></line>
+            </symbol>
+            <symbol id="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </symbol>
+            <symbol id="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+            </symbol>
+        </defs>
+    </svg>
+
+    <!-- ════════════ HEADER ════════════ -->
+    <header class="header" id="main-header">
+        <div class="header-logo clickable" id="btn-inicio-logo" title="Ir a la página principal">
+            <svg>
+                <use href="#icon-logo" />
+            </svg>
+        </div>
+        
+        <h1 class="header-main-title clickable" id="btn-inicio-titulo" title="Ir a la página principal">Materiales</h1>
+        
+        <div class="header-tab-title" id="header-tab-title">
+            <svg class="svg-icon"><use href="#icon-dashboard" /></svg> Dashboard
+        </div>
+
+        <div class="header-actions">
+            <button class="icon-btn" id="btn-install-app" title="Instalar Aplicación">
+                <svg class="svg-icon"><use href="#icon-install-app" /></svg>
+            </button>
+            <button class="icon-btn" id="btn-undo" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled>
+                <svg class="svg-icon"><use href="#icon-undo" /></svg>
+            </button>
+            <button class="icon-btn" id="btn-redo" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled>
+                <svg class="svg-icon"><use href="#icon-redo" /></svg>
+            </button>
+            <button class="icon-btn" id="btn-ajustes" title="Ajustes" aria-label="Ajustes">
+                <svg class="svg-icon"><use href="#icon-settings" /></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- ════════════ BODY ════════════ -->
+    <div class="container">
+
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn activa" id="tab-dashboard">
+                <svg class="svg-icon">
+                    <use href="#icon-dashboard" />
+                </svg>
+                Dashboard
+            </button>
+            <button class="tab-btn" id="tab-movimientos">
+                <svg class="svg-icon">
+                    <use href="#icon-movements" />
+                </svg>
+                Movimientos
+            </button>
+        </div>
+
+        <!-- BÚSQUEDA + ACCIONES -->
+        <div class="search-actions-bar">
+            <div class="search-bar">
+                <svg class="svg-icon search-icon">
+                    <use href="#icon-search" />
+                </svg>
+                <input type="text" id="busq-global"
+                    placeholder="Buscar por material, ticket, tipo, duplicados, rangos de fechas" autocomplete="off">
+                <button id="busq-clear-btn" title="Limpiar">
+                    <svg class="svg-icon">
+                        <use href="#icon-close" />
+                    </svg>
+                </button>
+            </div>            
+        </div>
+
+        <!-- ═══ PANEL DASHBOARD ═══ -->
+        <div class="tab-panel activa" id="panel-dashboard">
+            <div class="dash-layout">
+
+                <!-- COLUMNA IZQUIERDA 75% — Tabla de materiales -->
+                <div class="card card-no-mb">
+                    <div class="card-header">
+                        <svg class="svg-icon">
+                            <use href="#icon-table" />
+                        </svg>
+                        <h2>Inventario</h2>
+                        <div class="anio-filter-wrap">
+                            <div class="combobox-wrap anio-filter-combo">
+                                <input type="text" id="input-anio-filtro" class="anio-filter-input"
+                                    placeholder="Filtrar" autocomplete="off" readonly title="Filtrar por año">
+                                <div class="suggestions-list" id="anio-sugg"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th id="th-indicador" class="th-sortable" title="Ordenar por estado de umbral"></th>
+                                    <th id="th-nombre" class="th-sortable">
+                                        Material</th>
+                                    <th id="th-stock" class="th-sortable">Stock
+                                    </th>
+                                    <th id="th-relevado" class="th-sortable">
+                                        Relevado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-materiales"></tbody>
+                        </table>
+                    </div>
+                    <div id="materiales-empty" class="empty-state empty-state-hidden">
+                        <div class="empty-icon">📦</div>
+                        <p>Todavía no hay materiales registrados.</p>
+                    </div>
+                </div>
+
+                <!-- COLUMNA DERECHA 25% — Chips de resumen -->
+                <div class="dash-sidebar" id="stats-grid"></div>
+
+            </div>
+        </div>
+
+        <!-- ═══ PANEL MOVIMIENTOS ═══ -->
+        <div class="tab-panel" id="panel-movimientos">
+
+            <div class="card">
+                <div class="card-header">
+                    <svg class="svg-icon">
+                        <use href="#icon-list" />
+                    </svg>
+                    <h2>Historial</h2>
+                    <div class="flex-row">
+                        <span id="mov-count" class="badge badge-gray">0</span>
+                    </div>
+                </div>
+                <div id="lista-movimientos"></div>
+                <div id="movimientos-empty" class="empty-state empty-state-hidden">
+                    <div class="empty-icon">🔄</div>
+                    <p>No hay movimientos registrados.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL NUEVO MATERIAL ════ -->
+    <div class="modal" id="modal-material-nuevo">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><svg class="svg-icon ">
+                        <use href="#icon-add" />
+                    </svg> Agregar material</h3>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nombre del material</label>
+                    <input type="text" id="mat-nombre-nuevo" placeholder="Ej: mouse, teclado, monitor..."
+                        autocomplete="off" maxlength="500">
+                </div>
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <select id="mat-categoria-nuevo">
+                        <option value="">Sin categoría</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Unidad</label>
+                    <select id="mat-unidad-nuevo">
+                        <option value="u">Unidad (u)</option>
+                        <option value="m">Metro (m)</option>
+                        <option value="kg">Kilogramo (kg)</option>
+                        <option value="l">Litro (l)</option>
+                        <option value="caja">Caja</option>
+                        <option value="rollo">Rollo</option>
+                        <option value="par">Par</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Umbrales de stock (opcional)</label>
+                    <div class="form-row">
+                        <div>
+                            <p class="mov-readonly-note">Bajo</p>
+                            <input type="number" id="mat-umbral-bajo-nuevo" placeholder="Ej: 5" min="0" max="9999"
+                                autocomplete="off" class="input-umbral-max4">
+                        </div>
+                        <div>
+                            <p class="mov-readonly-note">Alto</p>
+                            <input type="number" id="mat-umbral-alto-nuevo" placeholder="Ej: 20" min="0" max="9999"
+                                autocomplete="off" class="input-umbral-max4">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary btn-flex" id="mat-nuevo-guardar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-save" />
+                    </svg>
+                    Guardar
+                </button>
+                <button class="btn-flex" id="mat-nuevo-cancelar-btn"><svg class="svg-icon">
+                        <use href="#icon-cancelar" />
+                    </svg>Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL EDITAR MATERIAL ════ -->
+    <div class="modal" id="modal-material-editar">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><svg class="svg-icon ">
+                        <use href="#icon-edit" />
+                    </svg> Editar material</h3>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nombre del material</label>
+                    <div class="gist-input-row">
+                        <input type="text" id="mat-nombre-editar" placeholder="Ej: mouse, teclado, monitor..."
+                            autocomplete="off" maxlength="50">
+                        <button class="icon-btn gist-eye-btn" id="mat-editar-buscar-btn"
+                            title="Buscar movimientos de este material">
+                            <svg class="svg-icon">
+                                <use href="#icon-search" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <select id="mat-categoria-editar">
+                        <option value="">Sin categoría</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Unidad</label>
+                    <select id="mat-unidad-editar">
+                        <option value="u">Unidad (u)</option>
+                        <option value="m">Metro (m)</option>
+                        <option value="kg">Kilogramo (kg)</option>
+                        <option value="l">Litro (l)</option>
+                        <option value="caja">Caja</option>
+                        <option value="rollo">Rollo</option>
+                        <option value="par">Par</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Umbrales de stock (opcional)</label>
+                    <div class="form-row">
+                        <div>
+                            <p class="mov-readonly-note">Bajo</p>
+                            <input type="number" id="mat-umbral-bajo-editar" placeholder="Ej: 5" min="0" max="9999"
+                                autocomplete="off" class="input-umbral-max4">
+                        </div>
+                        <div>
+                            <p class="mov-readonly-note">alto</p>
+                            <input type="number" id="mat-umbral-alto-editar" placeholder="Ej: 20" min="0" max="9999"
+                                autocomplete="off" class="input-umbral-max4">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer modal-footer-col">
+                <div class="flex-row-gap">
+                    <button class="btn-primary btn-flex" id="mat-editar-guardar-btn">
+                        <svg class="svg-icon">
+                            <use href="#icon-save" />
+                        </svg>
+                        Guardar
+                    </button>
+                    <button class="btn-danger btn-flex" id="mat-editar-eliminar-btn">
+                        <svg class="svg-icon">
+                            <use href="#icon-trash" />
+                        </svg>
+                        Eliminar
+                    </button>
+                </div>
+                <div class="flex-row-gap">
+                    <button class="btn-full btn-flex" id="mat-editar-cancelar-btn"><svg class="svg-icon">
+                            <use href="#icon-cancelar" />
+                        </svg>Cancelar</button>
+                    <button class="btn-input-side btn-input-side--baja btn-icon-only" id="mat-editar-lock-btn" title="Desbloquear edición">
+                        <svg class="svg-icon"><use href="#icon-lock" /></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL ENTRADA ════ -->
+    <div class="modal" id="modal-entrada">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><svg class="svg-icon">
+                        <use href="#icon-add" />
+                    </svg>
+                    Entrada de materiales
+                </h3>
+            </div>
+            <div class="modal-body">
+                <div class="mov-fields">
+                    <div>
+                        <label>Fecha</label>
+                        <input type="date" id="entrada-fecha">
+                    </div>
+                    <div>
+                        <label>Nº Ticket</label>
+                        <input type="text" id="entrada-ticket" list="sugerencias-ticket" placeholder="Ej: TKT-0042"
+                            autocomplete="off" maxlength="30">
+                    </div>
+                </div>
+                <div>
+                    <label>Materiales</label>
+                    <div id="lineas-container-entrada"></div>
+                </div>
+                <div>
+                    <label for="entrada-comentarios">Comentarios <span class="label-opcional">(opcional)</span></label>
+                    <textarea id="entrada-comentarios" class="mov-comentarios-input" rows="2" maxlength="300" placeholder="Nota adicional…" autocomplete="off"></textarea>
+                </div>
+            </div>
+            <div class="modal-add-linea">
+                <button class="btn-add-linea" id="btn-add-linea-entrada">
+                    <svg class="svg-icon">
+                        <use href="#icon-add" />
+                    </svg>
+                    Agregar material
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-success" id="entrada-guardar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-save" />
+                    </svg>
+                    Guardar
+                </button>
+                <button id="entrada-cancelar-btn"><svg class="svg-icon">
+                        <use href="#icon-cancelar" />
+                    </svg>Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL EDITAR MOVIMIENTO ════ -->
+    <div class="modal" id="modal-editar-mov">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <svg class="svg-icon">
+                        <use href="#icon-edit" />
+                    </svg> Movimiento
+                </h3>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-mov-id">
+
+                <div class="mov-fields">
+                    <div>
+                        <label>Fecha</label>
+                        <input type="date" id="edit-mov-fecha">
+                    </div>
+                    <div>
+                        <label>Nº Ticket</label>
+                        <input type="text" id="edit-mov-ticket" list="sugerencias-ticket" maxlength="30"
+                            autocomplete="off">
+                    </div>
+                    <div>
+                        <label>Materiales
+                            (Solo lectura)</label>
+                        <div id="edit-mov-lines" class="mov-lines-readonly">
+                            <!-- Se inyectan por JS -->
+                        </div>
+                        <p class="mov-readonly-note">Para modificar
+                            cantidades o ítems, eliminá el movimiento y volvé a crearlo.</p>
+                    </div>
+                    <div>
+                        <label for="edit-mov-comentarios">Comentarios <span class="label-opcional">(opcional)</span></label>
+                        <textarea id="edit-mov-comentarios" class="mov-comentarios-input" rows="2" maxlength="300" placeholder="Nota adicional…" autocomplete="off"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer modal-footer-editar-mov">
+                <div class="flex-row-full">
+                    <button class="btn-primary btn-flex" id="editar-mov-guardar-btn"><svg class="svg-icon">
+                            <use href="#icon-save" />
+                        </svg>Guardar</button>
+                    <button class="btn-danger btn-danger" id="editar-mov-eliminar-btn">
+                        <svg class="svg-icon">
+                            <use href="#icon-trash" />
+                        </svg>
+                        Eliminar
+                    </button>
+                </div>
+                <div class="flex-row-gap">
+                    <button class="btn-full btn-flex" id="editar-mov-cancelar-btn"><svg class="svg-icon">
+                            <use href="#icon-cancelar" />
+                        </svg>Cancelar</button>
+                    <button class="btn-input-side btn-input-side--baja btn-icon-only" id="editar-mov-lock-btn" title="Desbloquear edición">
+                        <svg class="svg-icon"><use href="#icon-lock" /></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL SALIDA ════ -->
+    <div class="modal" id="modal-salida">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><svg class="svg-icon">
+                        <use href="#icon-minus" />
+                    </svg>
+                    Salida de materiales
+                </h3>
+            </div>
+            <div class="modal-body">
+                <div class="mov-fields">
+                    <div>
+                        <label>Fecha</label>
+                        <input type="date" id="salida-fecha">
+                    </div>
+                    <div>
+                        <label>Nº Ticket</label>
+                        <input type="text" id="salida-ticket" list="sugerencias-ticket" placeholder="Ej: TKT-0042"
+                            autocomplete="off" maxlength="30">
+                    </div>
+                </div>
+
+                <div>
+                    <label>Materiales</label>
+                    <div id="lineas-container-salida"></div>
+                </div>
+                <div>
+                    <label for="salida-comentarios">Comentarios <span class="label-opcional">(opcional)</span></label>
+                    <textarea id="salida-comentarios" class="mov-comentarios-input" rows="2" maxlength="300" placeholder="Nota adicional…" autocomplete="off"></textarea>
+                </div>
+            </div>
+            <div class="modal-add-linea">
+                <button class="btn-add-linea" id="btn-add-linea-salida">
+                    <svg class="svg-icon">
+                        <use href="#icon-add" />
+                    </svg>
+                    Agregar material
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-danger" id="salida-guardar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-save" />
+                    </svg>
+                    Guardar
+                </button>
+                <button id="salida-cancelar-btn"><svg class="svg-icon">
+                        <use href="#icon-cancelar" />
+                    </svg>Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL AJUSTES ════ -->
+    <div class="modal" id="modal-ajustes">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <svg class="svg-icon">
+                        <use href="#icon-settings" />
+                    </svg>
+                    Ajustes
+                </h3>
+                <span class="modal-header-version">v260610</span>
+            </div>
+            <div class="modal-body modal-body-pb">
+                <!-- Sección inventario -->
+                <p class="ajustes-section-label">Inventario</p>                
+                <button class="ajustes-row" id="ajustes-btn-reporte">
+                    <svg class="svg-icon">
+                        <use href="#icon-report" />
+                    </svg>
+                    <span>Reporte de inventario</span>
+                    <span class="ajustes-arrow">›</span>
+                </button>
+                <button class="ajustes-row" id="ajustes-btn-categorias">
+                    <svg class="svg-icon">
+                        <use href="#icon-categories" />
+                    </svg>
+                    <span>Categorías de materiales</span>
+                    <span class="ajustes-arrow">›</span>
+                </button>
+                <button class="ajustes-row" id="ajustes-btn-herramientas">
+                    <svg class="svg-icon svg-icon-line">
+                        <use href="#icon-wrench" />
+                    </svg>
+                    <span>Herramientas</span>
+                    <span class="ajustes-arrow">›</span>
+                </button>
+                <!-- Sección sincronización -->
+                <p class="ajustes-section-label ajustes-section-label-mt">Sincronización</p>
+                <div class="ajustes-gist-group">
+                    <button class="ajustes-row ajustes-gist-main" id="ajustes-btn-gist">
+                        <svg class="svg-icon">
+                            <use href="#icon-gist" />
+                        </svg>
+                        <span>GitHub Gist</span>
+                        <span class="ajustes-arrow">›</span>
+                    </button>
+                    <button class="ajustes-gist-quick-btn" id="btn-ajustes-gist-subir" title="Subir a Gist">
+                        <svg class="svg-icon">
+                            <use href="#icon-cloud-up" />
+                        </svg>
+                    </button>
+                    <button class="ajustes-gist-quick-btn" id="btn-ajustes-gist-bajar" title="Bajar de Gist">
+                        <svg class="svg-icon">
+                            <use href="#icon-cloud-down" />
+                        </svg>
+                    </button>
+                </div>
+                <!-- Sección datos -->
+                <p class="ajustes-section-label ajustes-section-label-mt">General</p>
+                <button class="ajustes-row" id="ajustes-btn-shortcuts">
+                    <svg class="svg-icon svg-icon-line">
+                        <use href="#icon-keyboard" />
+                    </svg>
+                    <span>Atajos de teclado</span>
+                    <span class="ajustes-arrow">›</span>
+                </button>
+                <p class="ajustes-section-label ajustes-section-label-mt">Datos</p>
+                <button class="ajustes-row" id="ajustes-btn-exportar">
+                    <svg class="svg-icon">
+                        <use href="#icon-download" />
+                    </svg>
+                    <span>Respaldar</span>
+                    <span class="ajustes-arrow">›</span>
+                </button>
+                <button class="ajustes-row" id="ajustes-btn-importar">
+                    <svg class="svg-icon">
+                        <use href="#icon-upload" />
+                    </svg>
+                    <span>Restaurar</span>
+                    <span class="ajustes-arrow">›</span>
+                </button>
+                <button class="ajustes-row" id="ajustes-btn-restablecer">
+                    <svg class="svg-icon">
+                        <use href="#icon-trash" />
+                    </svg>
+                    <span>Restablecer</span>
+                    <span class="ajustes-arrow">›</span>
+                </button>
+            </div>
+            <div class="modal-footer">
+                <!-- Botón de Modo Oscuro limpio -->
+                <button class="btn-full" id="ajustes-btn-cerrar">
+                    <svg class="svg-icon">
+                        <use href="#icon-cancelar" />
+                    </svg>
+                    Cerrar
+                </button>
+                <button class="icon-btn btn-footer-icon" id="btn-dark-mode" title="Modo oscuro">
+                    <svg class="svg-icon">
+                        <use href="#icon-moon" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL HERRAMIENTAS ════ -->
+    <div class="modal" id="modal-herramientas">
+        <div class="modal-content modal-content-lg">
+            <div class="modal-header modal-header-sticky">
+                <svg class="svg-icon svg-icon-line">
+                    <use href="#icon-wrench" />
+                </svg>
+                <h3>Herramientas</h3>
+            </div>
+            <div class="modal-body modal-body-pb modal-body-scroll">
+                <div id="lista-herramientas"></div>
+                <div id="herramientas-empty" class="empty-state empty-state-hidden cat-empty">
+                    <div class="empty-icon">🔧</div>
+                    <p>No hay herramientas registradas.</p>
+                </div>
+            </div>
+            <div class="modal-footer modal-footer-col">
+                <button class="btn-primary btn-full" id="herr-abrir-nuevo-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-add" />
+                    </svg>
+                    Nueva herramienta
+                </button>
+                <button class="btn-full" id="herr-cerrar-btn">
+                    <svg class="svg-icon svg-icon-line">
+                        <use href="#icon-back" />
+                    </svg>
+                    Volver
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL AGREGAR HERRAMIENTAS ════ -->
+    <div class="modal" id="modal-herramienta-nuevo">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <svg class="svg-icon">
+                        <use href="#icon-add" />
+                    </svg>
+                    Agregar herramientas
+                </h3>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Fecha</label>
+                    <input type="date" id="herr-fecha-input" autocomplete="off">
+                </div>
+                <div>
+                    <label>Herramientas</label>
+                    <div id="lineas-container-herramienta"></div>
+                </div>
+            </div>
+            <div class="modal-add-linea">
+                <button class="btn-add-linea" id="btn-add-linea-herramienta">
+                    <svg class="svg-icon">
+                        <use href="#icon-add" />
+                    </svg>
+                    Agregar herramienta
+                </button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary btn-flex" id="herr-guardar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-save" />
+                    </svg>
+                    Guardar
+                </button>
+                <button class="btn-flex" id="herr-nuevo-cancelar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-cancelar" />
+                    </svg>
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL CATEGORÍAS ════ -->
+    <div class="modal" id="modal-categorias">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <svg class="svg-icon">
+                        <use href="#icon-categories" />
+                    </svg>
+                    Categorías
+                </h3>
+            </div>
+            <div class="modal-body">
+                <div class="cat-input-row">
+                    <input type="text" id="cat-nueva-input" placeholder="Nueva categoría…" autocomplete="off"
+                        class="input-flex">
+                    <button class="icon-btn" id="cat-agregar-btn">
+                        <svg class="svg-icon">
+                            <use href="#icon-add" />
+                        </svg>
+                    </button>
+                </div>
+                <div id="lista-categorias"></div>
+                <div id="categorias-empty" class="empty-state empty-state-hidden cat-empty">
+                    <div class="empty-icon">🏷️</div>
+                    <p>No hay categorías declaradas.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-full" id="cat-cerrar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-back" />
+                    </svg>
+                    Volver
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL IMPORTAR ════ -->
+    <div class="modal" id="modal-importar">
+        <div class="modal-content modal-content-lg">
+            <div class="modal-header">
+                <h3>
+                    <svg class="svg-icon">
+                        <use href="#icon-upload" />
+                    </svg>
+                    Restaurar Datos
+                </h3>
+            </div>
+            <div class="modal-body">
+
+                <!-- Drop zone -->
+                <div id="importar-dropzone" class="importar-dropzone">
+                    <svg class="svg-icon dropzone-icon">
+                        <use href="#icon-cloud-up" />
+                    </svg>
+                    <p id="importar-dropzone-label" class="dropzone-label">Seleccioná o arrastrá un archivo .json</p>
+                </div>
+                <input type="file" id="importar-file-input" accept=".json,application/json" class="hidden">
+            </div>
+
+            <div class="modal-footer modal-footer-col">
+                <div class="flex-row-gap">
+                    <button class="btn-primary btn-flex" id="importar-confirmar-btn" disabled>
+                        <svg class="svg-icon">
+                            <use href="#icon-replace-swap" />
+                        </svg>
+                        Reemplazar
+                    </button>
+                    <button class="btn-flex" id="importar-combinar-btn" disabled>
+                        <svg class="svg-icon">
+                            <use href="#icon-combine" />
+                        </svg>
+                        Combinar
+                    </button>
+                </div>
+                <button class="btn-full" id="importar-cerrar-btn"><svg class="svg-icon">
+                        <use href="#icon-back" />
+                    </svg>Volver</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL GIST SYNC ════ -->
+    <div class="modal" id="modal-gist">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <svg class="svg-icon">
+                        <use href="#icon-gist" />
+                    </svg>
+                    GitHub Gist
+                </h3>
+            </div>
+            <div class="modal-body modal-body-pb">
+
+                <!-- Token -->
+                <div class="form-group">
+                    <label>Personal Access Token</label>
+                    <div class="gist-input-row">
+                        <input type="password" id="gist-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off"
+                            spellcheck="false">
+                        <button class="icon-btn gist-eye-btn" id="gist-token-eye" title="Mostrar/ocultar">
+                            <svg class="svg-icon">
+                                <use href="#icon-eye" id="gist-eye-icon" />
+                            </svg>
+                        </button>
+                        <a class="icon-btn gist-eye-btn icon-link"
+                            href="https://github.com/settings/tokens/new?description=Horarios+sync&scopes=gist"
+                            target="_blank" title="Crear token en GitHub">
+                            <svg class="svg-icon">
+                                <use href="#icon-add" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Gist ID -->
+                <div class="form-group">
+                    <label>Gist ID</label>
+                    <div class="gist-input-row">
+                        <input type="text" id="gist-id" placeholder="Dejar vacío para crear uno nuevo"
+                            autocomplete="off" spellcheck="false">
+                        <a id="gist-link-btn" class="icon-btn gist-eye-btn icon-link" target="_blank"
+                            title="Abrir en GitHub">
+                            <svg class="svg-icon">
+                                <use href="#icon-external-link" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <p class="ajustes-section-label">Acciones</p>
+                <div class="gist-actions-row">
+                    <button class="btn-gist-action" id="btn-gist-subir">
+                        <svg class="svg-icon">
+                            <use href="#icon-cloud-up" />
+                        </svg>
+                        Subir
+                    </button>
+                    <button class="btn-gist-action" id="btn-gist-bajar">
+                        <svg class="svg-icon">
+                            <use href="#icon-cloud-down" />
+                        </svg>
+                        Bajar
+                    </button>
+                </div>
+
+                <!-- Auto-sync toggle -->
+                <label class="gist-autosync-row" id="gist-autosync-label">
+                    <span class="gist-autosync-text">
+                        <span class="gist-autosync-title">Subir automáticamente y comprobar cambios al cargar la
+                            página</span>
+                    </span>
+                    <div class="toggle-switch" id="gist-autosync-toggle">
+                        <div class="toggle-thumb"></div>
+                    </div>
+                </label>
+                <!-- Aviso de confidencialidad -->
+                <div class="gist-privacy-note">
+                    🔒 <strong>Datos sensibles:</strong> Configrar el gist como <strong>secreto</strong> y con la opcion
+                    de <strong>gist</strong> solamente
+                    en GitHub y de no compartir el link.
+                </div>
+
+                <!-- Estado sync -->
+                <p id="gist-sync-status" class="gist-sync-status"></p>
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary btn-flex" id="gist-guardar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-save" />
+                    </svg>
+                    Guardar
+                </button>
+                <button class="btn-flex" id="gist-cerrar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-back" />
+                    </svg>
+                    Volver
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL GIST NOVEDADES ════ -->
+    <div class="modal" id="modal-gist-novedades">
+        <div class="modal-content modal-content-md">
+            <div class="modal-header">
+                <h3>
+                    <svg class="svg-icon">
+                        <use href="#icon-cloud-down" />
+                    </svg>
+                    Datos nuevos en Gist
+                </h3>
+            </div>
+            <div class="modal-body">
+                <p class="gist-novedades-desc">Se encontraron registros en el Gist que no están en este dispositivo:</p>
+                <div id="gist-novedades-detalle" class="gist-novedades-detalle"></div>
+                <p class="gist-novedades-pregunta">¿Querés agregarlos a los datos locales?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary btn-flex" id="gist-novedades-ok">
+                    <svg class="svg-icon">
+                        <use href="#icon-add" />
+                    </svg>
+                    Agregar
+                </button>
+                <button class="btn-flex" id="gist-novedades-ignorar-btn">Ignorar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL SHORTCUTS ════ -->
+    <div class="modal" id="modal-shortcuts">
+        <div class="modal-content">
+            <div class="modal-header">
+                <svg class="svg-icon svg-icon-line">
+                    <use href="#icon-keyboard" />
+                </svg>
+                <h3>Atajos de teclado</h3>
+            </div>
+            <div class="modal-body modal-body-pb">
+
+                <p class="ajustes-section-label">Navegación y Gestos</p>
+                <div class="shortcut-list">
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Cambiar pestaña (Dashboard / Historial)</span>
+                        <span class="shortcut-keys"><kbd>Alt</kbd> + <kbd>←</kbd> <kbd>→</kbd></span>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Expandir/colapsar todos los meses del año</span>
+                        <span class="shortcut-keys"><kbd>Mantener</kbd> sobre el mes</span>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Cerrar ventana actual</span>
+                        <span class="shortcut-keys"><kbd>Esc</kbd></span>
+                    </div>
+                </div>
+
+                <p class="ajustes-section-label ajustes-section-label-mt">Movimientos</p>
+                <div class="shortcut-list">
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Registrar entrada</span>
+                        <span class="shortcut-keys"><kbd>+</kbd></span>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Registrar salida</span>
+                        <span class="shortcut-keys"><kbd>−</kbd></span>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Confirmar (en modales de movimiento)</span>
+                        <span class="shortcut-keys"><kbd>Enter</kbd></span>
+                    </div>
+                </div>
+
+                <p class="ajustes-section-label ajustes-section-label-mt">Búsqueda</p>
+                <div class="shortcut-list">
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Enfocar barra de búsqueda</span>
+                        <span class="shortcut-keys">Cualquier tecla</span>
+                    </div>
+                </div>
+
+                <p class="ajustes-section-label ajustes-section-label-mt">Historial</p>
+                <div class="shortcut-list">
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Deshacer</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Rehacer</span>
+                        <span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn-full" id="shortcuts-cerrar-btn">
+                    <svg class="svg-icon svg-icon-line">
+                        <use href="#icon-back" />
+                    </svg>
+                    Volver
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL REPORTE ════ -->
+    <div class="modal" id="modal-reporte">
+        <div class="modal-content modal-content-md">
+            <div class="modal-header">
+                <h3>
+                    <svg class="svg-icon">
+                        <use href="#icon-report" />
+                    </svg>
+                    Reporte de inventario
+                </h3>
+            </div>
+            <div class="modal-body modal-body-pb">
+
+                <div class="form-group">
+                    <label>Período</label>
+                    <select id="rpt-anio-select">
+                        <!-- Se pobla por JS -->
+                    </select>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary btn-flex" id="rpt-btn-generar">
+                    <svg class="svg-icon">
+                        <use href="#icon-report" />
+                    </svg>
+                    Generar
+                </button>
+                <button class="btn-flex" id="reporte-cerrar-btn">
+                    <svg class="svg-icon">
+                        <use href="#icon-back" />
+                    </svg>
+                    Volver
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ MODAL CONFIRMAR ════ -->
+    <div class="modal" id="modal-confirmar">
+        <div class="modal-content modal-content-md">
+            <div class="modal-header">
+                <h3 id="confirmar-titulo">¿Eliminar?</h3>
+            </div>
+            <div class="modal-body">
+                <p id="confirmar-texto" class="confirmar-texto"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-danger" id="confirmar-ok"><svg class="svg-icon">
+                        <use href="#icon-trash" />
+                    </svg>Confirmar</button>
+                <button id="confirmar-cancelar"><svg class="svg-icon">
+                        <use href="#icon-cancelar" />
+                    </svg>Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════ BOTÓN SUBIR ARRIBA ════ -->
+    <button id="btn-scroll-top" class="btn-scroll-top" title="Subir">
+        <svg class="svg-icon svg-scroll-top">
+            <use href="#icon-arrow-up" />
+        </svg>
+    </button>
+
+    <div class="fab-overlay" id="fab-overlay"></div>
+    <!-- ════ BOTÓN AGREGAR VARIOS════ -->
+    <div class="fab-container" id="fab-container">
+        <div class="fab-menu" id="fab-menu">
+            <button class="fab-menu-item" id="fab-btn-material">
+                <svg class="svg-icon">
+                    <use href="#icon-umbral" />
+                </svg> Nuevo material
+            </button>
+            <button class="fab-menu-item" id="fab-btn-herramienta">
+                <svg class="svg-icon">
+                    <use href="#icon-wrench" />
+                </svg> Agregar herramientas
+            </button>
+            <button class="fab-menu-item" id="fab-btn-entrada">
+                <svg class="svg-icon">
+                    <use href="#icon-add" />
+                </svg> Entrada de materiales
+            </button>
+            <button class="fab-menu-item" id="fab-btn-salida">
+                <svg class="svg-icon">
+                    <use href="#icon-minus" />
+                </svg> Salida de materiales
+            </button>
+        </div>
+        <button id="btn-fab-main" class="fab-main-btn" title="Acciones rápidas">
+            <svg class="svg-icon">
+                <use href="#icon-add" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- ════ TOAST ════ -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ════ SUGERENCIAS NATIVAS ════ -->
+    <datalist id="sugerencias-ticket">
+        <option value="Relevamiento"></option>
+    </datalist>
+
+</body>
+
+</html>
+
+<!--// ====================================================================
+    //        NOTAS SISTEMA LUSHIBOSCA MATERIALES VERSION 260608.1509
+    // ====================================================================
+    
+     - CAMBIOS 
+     1) 
+
+     - BUGS CONOCIDOS:
+     1) 
+
+    -->

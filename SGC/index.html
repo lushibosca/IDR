@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self';
+        script-src 'self';
+        style-src 'self';
+        img-src 'self' data: blob:;
+        font-src 'self' data:;
+        connect-src 'self' https://api.github.com; 
+        object-src 'none';
+        base-uri 'none';
+        form-action 'none';
+        frame-ancestors 'none';
+        upgrade-insecure-requests;">
+    <meta name="referrer" content="no-referrer">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./icon.svg">
+    <script src="./flash.js"></script>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="./app.js" defer></script>
+
+    <title>SGC</title>
+
+</head>
+
+<body>
+
+    <svg class="svg-sprite">
+        <symbol id="icon-camera" viewBox="0 0 24 24">
+            <path d="M23 7l-7 5 7 5V7z" />
+            <rect x="1" y="5" width="15" height="14" rx="2" />
+        </symbol>
+        <symbol id="icon-server" viewBox="0 0 24 24">
+            <rect x="2" y="2" width="20" height="8" rx="2" />
+            <rect x="2" y="14" width="20" height="8" rx="2" />
+            <line x1="6" y1="6" x2="6.01" y2="6" />
+            <line x1="6" y1="18" x2="6.01" y2="18" />
+        </symbol>
+        <symbol id="icon-grid" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+        </symbol>
+        <symbol id="icon-plus" viewBox="0 0 24 24">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+        </symbol>
+        <symbol id="icon-edit" viewBox="0 0 24 24">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </symbol>
+        <symbol id="icon-trash" viewBox="0 0 24 24">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+        </symbol>
+
+        <symbol id="icon-undo" viewBox="0 0 24 24">
+            <path d="M3 7v6h6" class="icon-line" stroke="currentColor"></path>
+            <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13" class="icon-line" stroke="currentColor"></path>
+        </symbol>
+        <symbol id="icon-redo" viewBox="0 0 24 24">
+            <path d="M21 7v6h-6" class="icon-line" stroke="currentColor"></path>
+            <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3L21 13" class="icon-line" stroke="currentColor"></path>
+        </symbol>
+        <symbol id="icon-sun" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+        </symbol>
+        <symbol id="icon-moon" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </symbol>
+        <symbol id="icon-download" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+        </symbol>
+        <symbol id="icon-upload" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+        </symbol>
+        <symbol id="icon-alert" viewBox="0 0 24 24">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+        </symbol>
+        <symbol id="icon-save" viewBox="0 0 24 24">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" class="icon-line"
+                stroke="currentColor"></path>
+            <polyline points="17 21 17 13 7 13 7 21" class="icon-line" stroke="currentColor"></polyline>
+            <polyline points="7 3 7 8 15 8" class="icon-line" stroke="currentColor"></polyline>
+        </symbol>
+        <symbol id="icon-link" viewBox="0 0 24 24">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </symbol>
+        <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+                d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+            </path>
+        </symbol>
+        <symbol id="icon-cancelar" viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18" class="icon-line" stroke="currentColor"></line>
+            <line x1="6" y1="6" x2="18" y2="18" class="icon-line" stroke="currentColor"></line>
+        </symbol>
+        <symbol id="icon-sliders" viewBox="0 0 24 24">
+            <line x1="4" y1="21" x2="4" y2="14" class="icon-line" stroke="currentColor"></line>
+            <line x1="4" y1="10" x2="4" y2="3" class="icon-line" stroke="currentColor"></line>
+            <line x1="12" y1="21" x2="12" y2="12" class="icon-line" stroke="currentColor"></line>
+            <line x1="12" y1="8" x2="12" y2="3" class="icon-line" stroke="currentColor"></line>
+            <line x1="20" y1="21" x2="20" y2="16" class="icon-line" stroke="currentColor"></line>
+            <line x1="20" y1="12" x2="20" y2="3" class="icon-line" stroke="currentColor"></line>
+            <line x1="1" y1="14" x2="7" y2="14" class="icon-line" stroke="currentColor"></line>
+            <line x1="9" y1="8" x2="15" y2="8" class="icon-line" stroke="currentColor"></line>
+            <line x1="17" y1="16" x2="23" y2="16" class="icon-line" stroke="currentColor"></line>
+        </symbol>
+        <symbol id="icon-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M9 3v18" />
+            <path d="M3 9h6" />
+            <path d="M3 15h6" />
+            <path d="M15 8h2" />
+            <path d="M15 12h2" />
+            <path d="M15 16h2" />
+        </symbol>
+        <symbol id="icon-external-link" viewBox="0 0 24 24">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <polyline points="15 3 21 3 21 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round"></line>
+        </symbol>
+        <symbol id="icon-search" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </symbol>
+        <symbol id="icon-filter" viewBox="0 0 24 24">
+            <line x1="4" y1="6" x2="20" y2="6" />
+            <line x1="8" y1="12" x2="16" y2="12" />
+            <line x1="11" y1="18" x2="13" y2="18" />
+        </symbol>
+        <symbol id="icon-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </symbol>
+        <symbol id="icon-chevron-up" viewBox="0 0 24 24">
+            <polyline points="18 15 12 9 6 15" />
+        </symbol>
+        <symbol id="icon-chevron-down" viewBox="0 0 24 24">
+            <polyline points="6 9 12 15 18 9" />
+        </symbol>
+        <symbol id="icon-chevron-right" viewBox="0 0 24 24">
+            <polyline points="9 18 15 12 9 6" />
+        </symbol>
+        <symbol id="icon-report" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+        </symbol>
+
+        <symbol id="icon-cloud-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 16 12 12 8 16" />
+            <line x1="12" y1="12" x2="12" y2="21" />
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+        </symbol>
+        <symbol id="icon-cloud-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="8 16 12 20 16 16" />
+            <line x1="12" y1="20" x2="12" y2="11" />
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+        </symbol>
+        <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+        </symbol>
+        <symbol id="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+            <line x1="1" y1="1" x2="23" y2="23" />
+        </symbol>
+        <symbol id="icon-gist" viewBox="0 0 24 24">
+            <path
+                d="M12 2C6.477 2 2 6.484 2 12.021c0 4.428 2.865 8.184 6.839 9.504.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.021C22 6.484 17.522 2 12 2z" />
+        </symbol>
+        <symbol id="icon-install-app" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+            <polyline points="9 10 12 13 15 10"></polyline>
+            <line x1="12" y1="6" x2="12" y2="13"></line>
+        </symbol>
+        <symbol id="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path class="icon-lock-shackle" d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </symbol>
+        <symbol id="icon-expand-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="7 4 4 4 4 7"></polyline>
+            <polyline points="17 4 20 4 20 7"></polyline>
+            <polyline points="7 20 4 20 4 17"></polyline>
+            <polyline points="17 20 20 20 20 17"></polyline>
+        </symbol>
+        <symbol id="icon-collapse-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 9 4 4 9 4"></polyline>
+            <polyline points="20 9 20 4 15 4"></polyline>
+            <polyline points="4 15 4 20 9 20"></polyline>
+            <polyline points="20 15 20 20 15 20"></polyline>
+        </symbol>
+        <symbol id="icon-collapse-floors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 9 4 4 9 4"></polyline>
+            <polyline points="20 9 20 4 15 4"></polyline>
+            <line x1="4" y1="20" x2="20" y2="20"></line>
+            <line x1="4" y1="15" x2="20" y2="15"></line>
+        </symbol>
+        <symbol id="icon-combine" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 6h4l4 6h8" class="icon-line"></path>
+            <path d="M4 18h4l4-6" class="icon-line"></path>
+        </symbol>
+        <symbol id="icon-replace-swap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="17 4 21 8 17 12"></polyline>
+            <line x1="3" y1="8" x2="21" y2="8"></line>
+            <polyline points="7 20 3 16 7 12"></polyline>
+            <line x1="21" y1="16" x2="3" y2="16"></line>
+        </symbol>
+        <symbol id="icon-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="6" height="6"></rect>
+            <rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect>
+            <line x1="9" y1="2" x2="9" y2="9"></line>
+            <line x1="15" y1="2" x2="15" y2="9"></line>
+            <line x1="9" y1="15" x2="9" y2="22"></line>
+            <line x1="15" y1="15" x2="15" y2="22"></line>
+            <line x1="2" y1="9" x2="9" y2="9"></line>
+            <line x1="2" y1="15" x2="9" y2="15"></line>
+            <line x1="15" y1="9" x2="22" y2="9"></line>
+            <line x1="15" y1="15" x2="22" y2="15"></line>
+        </symbol>
+    </svg>
+
+    <header class="header">
+        <h1 id="btn-inicio" class="clickable" title="Ir a la página principal">
+            <svg class="icon icon-line">
+                <use href="#icon-camera" />
+            </svg>
+            CCTV
+        </h1>
+        <span id="header-tab-titulo"></span>
+        <div class="header-buttons">
+            <button class="icon-btn hidden" id="btn-install-app" title="Instalar Aplicación">
+                <svg class="icon icon-line">
+                    <use href="#icon-download" />
+                </svg>
+            </button>
+
+            <button class="icon-btn icon-trans" id="btn-undo" title="Deshacer (Ctrl+Z)" disabled>
+                <svg class="icon icon-line">
+                    <use href="#icon-undo" />
+                </svg>
+            </button>
+            <button class="icon-btn icon-trans" id="btn-redo" title="Rehacer (Ctrl+Y)" disabled>
+                <svg class="icon icon-line">
+                    <use href="#icon-redo" />
+                </svg>
+            </button>
+
+            <button class="icon-btn icon-trans" title="Ajustes">
+                <svg class="icon icon-line">
+                    <use href="#icon-settings" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <div class="tabs">
+            <button class="tab-btn activa" id="tab-dashboard">
+                <svg class="icon icon-line tab-icon">
+                    <use href="#icon-grid" />
+                </svg>
+                Dashboard
+            </button>
+            <button class="tab-btn" id="tab-activos">
+                <svg class="icon icon-line tab-icon">
+                    <use href="#icon-camera" />
+                </svg>
+                Activos
+            </button>
+            <button class="tab-btn" id="tab-produccion">
+                <svg class="icon icon-line tab-icon">
+                    <use href="#icon-server" />
+                </svg>
+                Producción
+            </button>
+        </div>
+
+        <div class="search-actions-bar">
+            <div id="barra-busqueda" class="search-inner">
+                <input type="text" id="input-busqueda" placeholder="Buscar por tipo, MAC, edificio, piso…">
+                <svg class="icon icon-line icon-search-lupa">
+                    <use href="#icon-search" />
+                </svg>
+                <button id="btn-limpiar-busqueda" class="hidden">
+                    <svg class="icon icon-line">
+                        <use href="#icon-cancelar" />
+                    </svg>
+                </button>
+
+                <div id="btn-filtros-wrap" class="filtros-wrap">
+                    <button id="btn-filtros-busqueda" title="Personalizar búsqueda">
+                        <svg class="icon icon-line">
+                            <use href="#icon-filter" />
+                        </svg>
+                    </button>
+                    <div id="dropdown-filtros" class="combobox-dropdown hidden">
+                        <div class="filtro-dropdown-header">
+                            <span class="filtro-dropdown-title">Campos</span>
+                            <button id="btn-toggle-all-filtros" class="filtro-dropdown-desactivar">Desactivar
+                                todo</button>
+                        </div>
+                        <div id="filtros-busqueda-lista"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="btn-ayuda-busqueda-wrap" class="ayuda-busqueda-wrap">
+                <button id="btn-ayuda-busqueda" class="icon-btn btn-inline" title="Tags de búsqueda">
+                    <svg class="icon icon-line">
+                        <use href="#icon-help" />
+                    </svg>
+                </button>
+                <div id="dropdown-ayuda-busqueda" class="combobox-dropdown hidden">
+                    <div class="filtro-dropdown-header">
+                        <span class="filtro-dropdown-title">Tags de búsqueda</span>
+                    </div>
+                    <div id="ayuda-busqueda-lista" class="ayuda-busqueda-lista">
+                        <div class="ayuda-busqueda-item">
+                            <span class="ayuda-busqueda-tag">producción</span>
+                            <span class="ayuda-busqueda-desc">cámaras y dispositivos actualmente asignados a un
+                                canal de grabador</span>
+                        </div>
+                        <div class="ayuda-busqueda-item">
+                            <span class="ayuda-busqueda-tag">disponible</span>
+                            <span class="ayuda-busqueda-desc">dispositivos sin asignar, listos para usar</span>
+                        </div>
+                        <div class="ayuda-busqueda-item">
+                            <span class="ayuda-busqueda-tag">averiado, revisar, etc</span>
+                            <span class="ayuda-busqueda-desc">dispositivos marcados con un estado que impiden el
+                                funcionamiento normal
+                            </span>
+                        </div>
+                        <div class="ayuda-busqueda-item">
+                            <span class="ayuda-busqueda-tag">"texto exacto"</span>
+                            <span class="ayuda-busqueda-desc">usá comillas para buscar una frase exacta en vez de
+                                palabras sueltas</span>
+                        </div>
+                        <div class="ayuda-busqueda-item">
+                            <span class="ayuda-busqueda-tag">servidores, camaras</span>
+                            <span class="ayuda-busqueda-desc">El primero obtiene nvr, dvr, analitica, encoder, y el
+                                segundo
+                                todos los tipos de camaras.
+                            </span>
+                        </div>
+                        <div class="ayuda-busqueda-item">
+                            <span class="ayuda-busqueda-tag">formas de camaras</span>
+                            <span class="ayuda-busqueda-desc">podes buscar por la forma, como domo, bullet, turret, domo
+                                ptz, etc
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="panel-dashboard" class="tab-panel">
+
+            <div class="card" id="card-resumen-general">
+                <h2 class="card-header-toggle">
+                    <span class="titulo-fijo">
+                        <svg class="icon icon-line">
+                            <use href="#icon-grid" />
+                        </svg> Infraestructura
+                    </span>
+                    <div id="dash-l2-vista-toggle" class="dash-l2-vista-toggle hidden">
+                        <button class="dash-l2-vista-btn activa" data-action="l2-vista"
+                            data-vista="forma">Forma</button>
+                        <button class="dash-l2-vista-btn" data-action="l2-vista"
+                            data-vista="edificio">Edificios</button>
+                    </div>
+                </h2>
+                <div id="dash-disp-tree"></div>
+            </div>
+
+            <div class="dash-2col">
+
+                <div class="dash-col-left">
+                    <div class="card">
+                        <h2><svg class="icon icon-line">
+                                <use href="#icon-server" />
+                            </svg> Grabadores</h2>
+                        <div id="dash-grabadores"></div>
+                    </div>
+                </div>
+
+                <div class="dash-col-right">
+                    <div class="card">
+                        <h2><svg class="icon icon-line">
+                                <use href="#icon-camera" />
+                            </svg> Cámaras</h2>
+
+                        <div class="mini-tabs">
+                            <button id="mini-tab-forma" class="mini-tab-btn activa" data-target="forma">
+                                Por forma
+                            </button>
+                            <button id="mini-tab-edificio" class="mini-tab-btn" data-target="edificio">
+                                Por edificio
+                            </button>
+                            <button id="mini-tab-modelo" class="mini-tab-btn" data-target="modelo">
+                                Por modelo
+                            </button>
+                        </div>
+                        <div id="dash-camaras" class="dash-camaras-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="panel-activos" class="tab-panel">
+            <div class="card">
+                <h2 class="card-h2--toolbar">
+                    <span class="card-h2-titulo">
+                        <svg class="icon icon-line">
+                            <use href="#icon-camera" />
+                        </svg>
+                        Dispositivos
+                        <span id="contador-dispositivos" class="contador-badge"></span>
+                    </span>
+
+                    <span class="card-h2-acciones">
+                        <button id="btn-expandir-todo" class="icon-btn btn-inline" title="Expandir todo">
+                            <svg class="icon icon-line">
+                                <use href="#icon-expand-all" />
+                            </svg>
+                        </button>
+                        <div id="btn-vista-activos-wrap">
+                            <button class="icon-btn btn-inline" title="Opciones de vista">
+                                <svg class="icon icon-line">
+                                    <use href="#icon-sliders" />
+                                </svg>
+                            </button>
+                            <div id="dropdown-vista-activos" class="combobox-dropdown hidden">
+                                <div class="filtro-dropdown-header">
+                                    <span class="filtro-dropdown-title">Agrupar por</span>
+                                </div>
+                                <div class="canal-disp-item" data-orden="edificio-piso">Edificio /
+                                    Piso</div>
+                                <div class="canal-disp-item" data-orden="estado">Estado</div>
+                                <div class="canal-disp-item" data-orden="marca">Marca</div>
+                                <div class="canal-disp-item" data-orden="modelo">Modelo</div>
+                                <div class="canal-disp-item" data-orden="modelo-firmware">Firmware / Modelo</div>
+                                <div class="canal-disp-item" data-orden="patrimonio">Patrimonio</div>
+                                <div class="canal-disp-item" data-orden="forma">Tipo / Forma</div>
+                            </div>
+                        </div>
+                        <button id="btn-reporte-agrupamiento" class="icon-btn btn-inline" title="Generar reporte">
+                            <svg class="icon icon-line">
+                                <use href="#icon-report" />
+                            </svg>
+                        </button>
+
+                        <button class="icon-btn btn-edit btn-inline" title="Agregar dispositivo">
+                            <svg class="icon icon-line">
+                                <use href="#icon-plus" />
+                            </svg>
+                        </button>
+                    </span>
+                </h2>
+                <div id="lista-dispositivos"></div>
+            </div>
+        </div>
+
+        <div id="panel-produccion" class="tab-panel">
+            <div class="card">
+                <h2>
+                    <svg class="icon icon-line">
+                        <use href="#icon-server" />
+                    </svg>
+                    Grabadores (NVR / DVR)
+                    <button class="icon-btn btn-edit btn-inline" title="Agregar grabador">
+                        <svg class="icon icon-line">
+                            <use href="#icon-plus" />
+                        </svg>
+                    </button>
+                </h2>
+                <div id="lista-grabadores"></div>
+            </div>
+
+            <div class="card panel-produccion--card-mt">
+                <h2>
+                    <svg class="icon icon-line">
+                        <use href="#icon-grid" />
+                    </svg> Otros dispositivos
+                    <button class="icon-btn btn-edit btn-inline" title="Agregar dispositivo">
+                        <svg class="icon icon-line">
+                            <use href="#icon-plus" />
+                        </svg>
+                    </button>
+                </h2>
+                <div id="lista-otros-prod"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-ajustes">
+        <div class="modal-content modal-content--flex sm2">
+            <div class="modal-header modal-sticky-header">
+                <h3>
+                    <svg class="icon icon-line">
+                        <use href="#icon-settings" />
+                    </svg>
+                    Ajustes
+                </h3>
+                <span class="modal-header-version">260707</span>
+            </div>
+            <div class="modal-scroll-body">
+                <div class="ajustes-section">
+                    <div class="section-label">Infraestructura</div>
+                    <div class="btn-group">
+                        <button class="btn-ajustes">
+                            <svg class="icon icon-line">
+                                <use href="#icon-grid" />
+                            </svg>
+                            Dispositivos
+                            <svg class="icon icon-line btn-ajustes-chevron">
+                                <use href="#icon-chevron-right" />
+                            </svg>
+                        </button>
+                        <button class="btn-ajustes">
+                            <svg class="icon icon-line">
+                                <use href="#icon-building" />
+                            </svg>
+                            Edificios
+                            <svg class="icon icon-line btn-ajustes-chevron">
+                                <use href="#icon-chevron-right" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="ajustes-section">
+                    <div class="section-label">Herramientas</div>
+                    <div class="btn-group btn-group--no-mt">
+                        <button class="btn-ajustes" id="btn-ajustes-parseador">
+                            <svg class="icon icon-line">
+                                <use href="#icon-sliders" />
+                            </svg>
+                            Parseador de canales
+                            <svg class="icon icon-line btn-ajustes-chevron">
+                                <use href="#icon-chevron-right" />
+                            </svg>
+                        </button>
+                        <button class="btn-ajustes" id="btn-ajustes-parseador-datos">
+                            <svg class="icon icon-line">
+                                <use href="#icon-cpu" />
+                            </svg>
+                            Parseador de datos
+                            <svg class="icon icon-line btn-ajustes-chevron">
+                                <use href="#icon-chevron-right" />
+                            </svg>
+                        </button>
+                        <button class="btn-ajustes" id="btn-ajustes-exportar-ips">
+                            <svg class="icon icon-line">
+                                <use href="#icon-server" />
+                            </svg>
+                            Exportar IP a texto
+                            <svg class="icon icon-line btn-ajustes-chevron">
+                                <use href="#icon-chevron-right" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="ajustes-section">
+                    <div class="section-label">Interfaz</div>
+                    <div class="gist-autosync-row" id="label-recordar-grupos">
+                        <span class="gist-autosync-text">
+                            <span class="gist-autosync-title">Recordar grupos colapsados</span>
+                        </span>
+                        <div class="toggle-switch" id="toggle-recordar-grupos">
+                            <div class="toggle-thumb"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ajustes-section">
+                    <div class="section-label">Datos</div>
+                    <div class="gist-sync-row">
+                        <button class="btn-ajustes flex-1">
+                            <svg class="icon icon-line">
+                                <use href="#icon-gist" />
+                            </svg>
+                            GitHub Gist
+                            <svg class="icon icon-line btn-ajustes-chevron">
+                                <use href="#icon-chevron-right" />
+                            </svg>
+                        </button>
+                        <button id="btn-ajustes-gist-subir" class="icon-btn btn-gist-action" title="Subir a Gist"
+                            class="hidden">
+                            <svg class="icon icon-line">
+                                <use href="#icon-cloud-up" />
+                            </svg>
+                        </button>
+                        <button id="btn-ajustes-gist-bajar" class="icon-btn btn-gist-action" title="Bajar de Gist"
+                            class="hidden">
+                            <svg class="icon icon-line">
+                                <use href="#icon-cloud-down" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="btn-group btn-group--no-mt">
+                        <button class="btn-ajustes">
+                            <svg class="icon icon-line">
+                                <use href="#icon-download" />
+                            </svg>
+                            Respaldar
+                            <svg class="icon icon-line btn-ajustes-chevron">
+                                <use href="#icon-chevron-right" />
+                            </svg>
+                        </button>
+                        <button class="btn-ajustes">
+                            <svg class="icon icon-line">
+                                <use href="#icon-upload" />
+                            </svg>
+                            Restaurar
+                            <svg class="icon icon-line btn-ajustes-chevron">
+                                <use href="#icon-chevron-right" />
+                            </svg>
+                        </button>
+                        <button class="btn-ajustes">
+                            <svg class="icon icon-line">
+                                <use href="#icon-trash" />
+                            </svg>
+                            Restablecer
+                            <svg class="icon icon-line btn-ajustes-chevron">
+                                <use href="#icon-chevron-right" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-sticky-footer">
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-cancel">
+                        <svg class="icon icon-line">
+                            <use href="#icon-cancelar" />
+                        </svg>Cerrar</button>
+                    <button class="icon-btn" id="btn-alternar-tema" title="Alternar tema">
+                        <svg class="icon icon-line" id="icono-tema">
+                            <use href="#icon-moon" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-reporte-agrupamiento">
+        <div class="modal-content modal-content--flex sm2">
+            <div class="modal-header modal-sticky-header">
+                <h3>
+                    <svg class="icon icon-line">
+                        <use href="#icon-report" />
+                    </svg>
+                    Generar reporte
+                </h3>
+            </div>
+
+            <div class="modal-scroll-body">
+                <div class="d-flex-between section-label section-label--mb">
+                    <span>Grupos de la vista a incluir</span>
+                    <span id="btn-toggle-chk-reporte" class="btn-text-action">Deseleccionar todo</span>
+                </div>
+                <div id="reporte-agrupamiento-lista" class="reporte-opciones-lista">
+                </div>
+            </div>
+
+            <div class="modal-sticky-footer">
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-edit btn-flex" id="btn-generar-reporte-agrupamiento">
+                        <svg class="icon icon-line">
+                            <use href="#icon-download" />
+                        </svg>
+                        Descargar
+                    </button>
+                    <button class="btn-cancel btn-flex">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-exportar-ips">
+        <div class="modal-content modal-content--flex sm2">
+            <div class="modal-header modal-sticky-header">
+                <h3>
+                    <svg class="icon icon-line">
+                        <use href="#icon-server" />
+                    </svg>
+                    Exportar IPs
+                </h3>
+            </div>
+
+            <div class="modal-scroll-body">
+                <div class="mini-tabs mini-tabs--2">
+                    <button id="tab-export-ips-grabador" class="mini-tab-btn activa" data-export-modo="grabador">
+                        Por grabador
+                    </button>
+                    <button id="tab-export-ips-modelo" class="mini-tab-btn" data-export-modo="modelo">
+                        Por modelo
+                    </button>
+                </div>
+                <p class="parseador-hint" id="exportar-ips-hint">
+                    Descarga un .txt con una IP por línea, para usar en el XML de un grabador.
+                </p>
+                <div class="d-flex-between section-label section-label--mb">
+                    <span id="exportar-ips-titulo-lista">Grabadores a incluir</span>
+                    <span id="btn-toggle-chk-exportar-ips" class="btn-text-action">Deseleccionar todo</span>
+                </div>
+                <div id="exportar-ips-lista" class="reporte-opciones-lista">
+                </div>
+            </div>
+            <div class="modal-sticky-footer">
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-edit btn-flex" id="btn-descargar-exportar-ips">
+                        <svg class="icon icon-line">
+                            <use href="#icon-download" />
+                        </svg>
+                        Descargar
+                    </button>
+                    <button class="btn-cancel btn-flex">
+                        <svg class="icon icon-line">
+                            <use href="#icon-cancelar" />
+                        </svg>Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-tipos-dispositivo">
+        <div class="modal-content modal-content--flex sm2">
+            <h3 class="modal-sticky-header">
+                <svg class="icon icon-line">
+                    <use href="#icon-grid" />
+                </svg>
+                Dispositivos
+            </h3>
+
+            <div class="modal-scroll-body">
+                <div id="lista-tipos-custom"></div>
+            </div>
+
+            <div class="modal-sticky-footer">
+                <div class="input-flex-row">
+                    <input type="text" id="nuevo-tipo-label" placeholder="Ej: Router, PC, Joystick…" maxlength="100"
+                        class="flex-1">
+                    <button class="icon-btn btn-edit" title="Agregar tipo">
+                        <svg class="icon icon-line">
+                            <use href="#icon-plus" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-cancel">
+                        <svg class="icon icon-line">
+                            <use href="#icon-undo" />
+                        </svg> Volver
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-edificios">
+        <div class="modal-content modal-content--flex sm2">
+            <h3 class="modal-sticky-header">
+                <svg class="icon icon-line">
+                    <use href="#icon-building" />
+                </svg>
+                Edificios
+            </h3>
+
+            <div class="modal-scroll-body">
+                <div id="lista-edificios"></div>
+            </div>
+
+            <div class="modal-sticky-footer">
+                <div class="input-flex-row">
+                    <input type="text" id="nuevo-edificio-nombre" placeholder="Ej: Torre A, Edificio Central…"
+                        maxlength="100" class="flex-1">
+                    <button class="icon-btn btn-edit" title="Agregar edificio">
+                        <svg class="icon icon-line">
+                            <use href="#icon-plus" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-cancel">
+                        <svg class="icon icon-line">
+                            <use href="#icon-undo" />
+                        </svg> Volver
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-gist">
+        <div class="modal-content modal-content--flex">
+            <h3 class="modal-sticky-header">
+                <svg class="icon icon-line">
+                    <use href="#icon-gist" />
+                </svg>
+                GitHub Gist
+            </h3>
+
+            <div class="modal-scroll-body">
+
+                <div class="form-group">
+                    <label>Personal Access Token</label>
+                    <div class="gist-input-row">
+                        <input type="password" id="gist-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off"
+                            spellcheck="false">
+                        <button class="icon-btn gist-eye-btn" id="gist-token-eye" title="Mostrar/ocultar">
+                            <svg class="icon icon-line icon--md">
+                                <use href="#icon-eye" id="gist-eye-icon" />
+                            </svg>
+                        </button>
+                        <a class="icon-btn gist-eye-btn icon-link"
+                            href="https://github.com/settings/tokens/new?description=CCTV+Sync&scopes=gist"
+                            target="_blank" title="Crear token en GitHub">
+                            <svg class="icon icon-line icon--md">
+                                <use href="#icon-plus" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Gist ID</label>
+                    <div class="gist-input-row">
+                        <input type="text" id="gist-id" placeholder="Dejar vacío para crear uno nuevo"
+                            autocomplete="off" spellcheck="false">
+                        <a id="gist-link-btn" class="icon-btn gist-eye-btn icon-link hidden" target="_blank"
+                            title="Abrir en GitHub">
+                            <svg class="icon icon-line icon--md">
+                                <use href="#icon-external-link" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="section-label section-label--mt">Acciones</div>
+                <div class="btn-group btn-group--no-mt btn-group--mb">
+                    <button class="btn-cancel" id="btn-gist-subir">
+                        <svg class="icon icon-line">
+                            <use href="#icon-cloud-up" />
+                        </svg> Subir
+                    </button>
+                    <button class="btn-cancel" id="btn-gist-bajar">
+                        <svg class="icon icon-line">
+                            <use href="#icon-cloud-down" />
+                        </svg> Bajar
+                    </button>
+                </div>
+
+                <label class="gist-autosync-row" id="gist-autosync-label">
+                    <span class="gist-autosync-text">
+                        <span class="gist-autosync-title">Sincronización automática</span>
+                        <span class="dash-empty-text">Sube y comprueba cambios al iniciar</span>
+                    </span>
+                    <div class="toggle-switch" id="gist-autosync-toggle">
+                        <div class="toggle-thumb"></div>
+                    </div>
+                </label>
+
+                <div class="gist-privacy-note">
+                    🔒 <strong>Datos sensibles:</strong> El Gist contiene IPs, MACs y ubicaciones de tu infraestructura.
+                    Asegurate de que esté configurado como <strong>secreto</strong> en GitHub y de no compartir el link.
+                    El scope del token tiene que tener habilitado solamente el apartado <strong>gist.</strong>
+                </div>
+
+                <p id="gist-sync-status" class="gist-sync-status"></p>
+            </div>
+
+            <div class="modal-sticky-footer modal-sticky-footer--col">
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-edit">
+                        <svg class="icon icon-line">
+                            <use href="#icon-save" />
+                        </svg> Guardar
+                    </button>
+                    <button class="btn-cancel">
+                        <svg class="icon icon-line">
+                            <use href="#icon-undo" />
+                        </svg> Volver
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-gist-novedades">
+        <div class="modal-content">
+            <h3>
+                <svg class="icon icon-line">
+                    <use href="#icon-cloud-down" />
+                </svg>
+                Cambios Detectados
+            </h3>
+            <p class="gist-novedades-desc">Se encontraron datos en GitHub que difieren de los locales:</p>
+            <div id="gist-novedades-detalle" class="gist-novedades-detalle"></div>
+            <p class="gist-novedades-pregunta" id="gist-novedades-pregunta">¿Querés agregarlos a tus datos locales?</p>
+
+            <div class="btn-group btn-group--mt-lg">
+                <button class="btn-edit" id="gist-novedades-ok">
+                    <svg class="icon icon-line">
+                        <use href="#icon-combine" />
+                    </svg> Combinar
+                </button>
+                <button class="btn-delete hidden" id="gist-novedades-reemplazar">
+                    <svg class="icon icon-line">
+                        <use href="#icon-replace-swap" />
+                    </svg> Reemplazar
+                </button>
+                <button class="btn-cancel" id="gist-novedades-ignorar"><svg class="icon icon-line">
+                        <use href="#icon-cancelar" />
+                    </svg>Ignorar</button>
+            </div>
+            <div class="btn-group">
+                <button class="btn-cancel" id="gist-novedades-ver-detalle">
+                    <svg class="icon icon-line">
+                        <use href="#icon-report" />
+                    </svg> Ver detalles
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-gist-detalle">
+        <div class="modal-content modal-content--flex">
+            <h3 class="modal-sticky-header">
+                <svg class="icon icon-line">
+                    <use href="#icon-report" />
+                </svg>
+                Detalle del merge
+            </h3>
+            <div class="modal-scroll-body">
+                <div id="gist-detalle-lista"></div>
+            </div>
+            <div class="modal-sticky-footer">
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-cancel" id="gist-detalle-volver">
+                        <svg class="icon icon-line">
+                            <use href="#icon-undo" />
+                        </svg> Volver
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button id="btn-scroll-top" title="Ir arriba" class="hidden">
+        <svg class="icon icon-line icon--scroll-top">
+            <use href="#icon-chevron-up" />
+        </svg>
+    </button>
+
+    <div id="toast" class="toast"></div>
+
+    <div class="modal" id="modal-nuevo-otro-prod">
+        <div class="modal-content modal-content--flex">
+            <h3 class="modal-sticky-header">
+                <svg class="icon icon-line">
+                    <use href="#icon-link" />
+                </svg> Agregar a Producción
+            </h3>
+            <div class="modal-scroll-body">
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <input type="text" id="nuevo-otro-prod-descripcion" placeholder="Ej: Monitor Sala de Guardia"
+                        maxlength="80">
+                </div>
+                <div class="form-row">
+                    <div class="form-group form-group--flex-row">
+                        <div class="form-group--flex-inner">
+                            <label>Dispositivo asignado *</label>
+                            <div class="combobox-wrap">
+                                <input type="text" id="nuevo-otro-prod-disp-input" placeholder="Buscar por MAC, modelo…"
+                                    maxlength="100" autocomplete="off" spellcheck="false">
+                                <input type="hidden" id="sel-nuevo-otro-prod-dispositivo">
+                                <div id="nuevo-otro-prod-disp-dropdown" class="combobox-dropdown"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>IP</label>
+                        <input type="text" id="nuevo-otro-prod-ip" placeholder="Ej: 192.168.1.50" maxlength="46">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Edificio</label>
+                        <select id="nuevo-otro-prod-edificio"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Piso</label>
+                        <input type="text" id="nuevo-otro-prod-piso" placeholder="Ej: PB, 3" maxlength="4">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Rack</label>
+                        <input type="text" id="nuevo-otro-prod-rack" placeholder="Ej: Rack-02" maxlength="40">
+                    </div>
+                    <div class="form-group">
+                        <label>Puerto</label>
+                        <input type="text" id="nuevo-otro-prod-puerto" placeholder="Ej: 80" maxlength="10">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Comentarios</label>
+                    <textarea id="nuevo-otro-prod-comentarios" class="textarea-modal" placeholder="Notas adicionales…"
+                        rows="2" maxlength="300"></textarea>
+                </div>
+            </div>
+            <div class="modal-sticky-footer">
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-edit"><svg class="icon icon-line">
+                            <use href="#icon-save" />
+                        </svg> Guardar</button>
+                    <button class="btn-cancel">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-editar-otro-prod">
+        <div class="modal-content modal-content--flex">
+            <h3 class="modal-sticky-header">
+                <svg class="icon icon-line">
+                    <use href="#icon-edit" />
+                </svg> Editar Dispositivo
+            </h3>
+            <div class="modal-scroll-body">
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <input type="text" id="editar-otro-prod-descripcion" placeholder="Ej: Monitor Sala de Guardia"
+                        maxlength="80">
+                </div>
+                <div class="form-row">
+                    <div class="form-group form-group--flex-row">
+                        <div class="form-group--flex-inner">
+                            <label>Dispositivo asignado *</label>
+                            <div class="combobox-wrap">
+                                <input type="text" id="editar-otro-prod-disp-input"
+                                    placeholder="Buscar por MAC, modelo…" maxlength="100" autocomplete="off"
+                                    spellcheck="false">
+                                <input type="hidden" id="sel-editar-otro-prod-dispositivo">
+                                <div id="editar-otro-prod-disp-dropdown" class="combobox-dropdown"></div>
+                            </div>
+                        </div>
+                        <button id="btn-ver-activo-otro-prod" class="icon-btn btn-backup btn-ver-activo hidden"
+                            title="Ver activo">
+                            <svg class="icon icon-line">
+                                <use href="#icon-external-link" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label>IP</label>
+                        <input type="text" id="editar-otro-prod-ip" placeholder="Ej: 192.168.1.50" maxlength="46">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Edificio</label>
+                        <select id="editar-otro-prod-edificio"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Piso</label>
+                        <input type="text" id="editar-otro-prod-piso" placeholder="Ej: PB, 3" maxlength="4">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Rack</label>
+                        <input type="text" id="editar-otro-prod-rack" placeholder="Ej: Rack-02" maxlength="40">
+                    </div>
+                    <div class="form-group">
+                        <label>Puerto</label>
+                        <input type="text" id="editar-otro-prod-puerto" placeholder="Ej: 80" maxlength="10">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Comentarios</label>
+                    <textarea id="editar-otro-prod-comentarios" class="textarea-modal" placeholder="Notas adicionales…"
+                        rows="2" maxlength="300"></textarea>
+                </div>
+            </div>
+            <div class="modal-sticky-footer modal-sticky-footer--col">
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-edit"><svg class="icon icon-line">
+                            <use href="#icon-save" />
+                        </svg> Guardar</button>
+                    <button class="btn-delete"><svg class="icon icon-line">
+                            <use href="#icon-trash" />
+                        </svg> Eliminar</button>
+                </div>
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-cancel btn-flex">Cancelar</button>
+                    <button class="icon-btn btn-lock-modal" id="btn-lock-editar-otro-prod" title="Desbloquear edición">
+                        <svg class="icon icon-line">
+                            <use href="#icon-lock" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-nuevo-disp">
+        <div class="modal-content modal-content--flex">
+            <h3 class="modal-sticky-header"><svg class="icon icon-line">
+                    <use href="#icon-camera" />
+                </svg> Nuevo dispositivo</h3>
+
+            <div class="modal-scroll-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo *</label>
+                        <select id="nuevo-disp-tipo">
+                            <option value="">Seleccionar…</option>
+                        </select>
+                    </div>
+                    <div class="form-group hidden" id="nuevo-disp-forma-group">
+                        <label>Forma</label>
+                        <select id="nuevo-disp-forma">
+                            <option value="">Seleccionar…</option>
+                            <option value="domo">Domo</option>
+                            <option value="bullet">Bullet</option>
+                            <option value="turret">Turret</option>
+                            <option value="minidomo">Mini domo</option>
+                            <option value="minibullet">Mini bullet</option>
+                            <option value="domo-ptz">Domo PTZ</option>
+                        </select>
+                    </div>
+                    <div class="form-group hidden" id="nuevo-disp-canales-group">
+                        <label>Cantidad de canales *</label>
+                        <input type="number" id="nuevo-disp-canales" placeholder="Ej: 16" min="1" max="256" value="16">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Modelo</label>
+                        <input type="text" id="nuevo-disp-modelo" placeholder="Ej: DS-2CD2143G2" maxlength="60">
+                    </div>
+                    <div class="form-group">
+                        <label>Marca</label>
+                        <input type="text" id="nuevo-disp-marca" placeholder="Ej: Hikvision" maxlength="50">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>MAC</label>
+                        <input type="text" id="nuevo-disp-mac" placeholder="Ej: AA:BB:CC:DD:EE:FF, 11:22:33:44:55:66"
+                            maxlength="500">
+                    </div>
+                    <div class="form-group">
+                        <label>Serial</label>
+                        <input type="text" id="nuevo-disp-serial" placeholder="Ej: DS2CD2143-20241001" maxlength="80">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Patrimonio</label>
+                        <input type="text" id="nuevo-disp-patrimonio" placeholder="Ej: PAT-00123" maxlength="60">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Firmware</label>
+                        <input type="text" id="nuevo-disp-firmware" placeholder="Ej: V5.7.15 build 230928"
+                            maxlength="80">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Comentario</label>
+                    <textarea id="nuevo-disp-comentario" class="textarea-modal" placeholder="Notas sobre el activo…"
+                        rows="2" maxlength="300"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-sticky-footer">
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-edit">
+                        <svg class="icon icon-line">
+                            <use href="#icon-save" />
+                        </svg> Guardar
+                    </button>
+                    <button class="btn-cancel">
+                        <svg class="icon icon-line">
+                            <use href="#icon-cancelar" />
+                        </svg>Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-editar-disp">
+        <div class="modal-content modal-content--flex">
+            <h3 class="modal-sticky-header modal-sticky-header--with-select">
+                <span class="modal-header-title">
+                    <svg class="icon icon-line">
+                        <use href="#icon-edit" />
+                    </svg> Activo
+                </span>
+                <div class="estado-disp-wrap">
+                    <button id="btn-estado-disp" class="btn-estado-disp" type="button">
+                        <span class="estado-disp-dot" id="estado-disp-dot"></span>
+                        <span id="estado-disp-label">Normal</span>
+                        <svg class="icon icon-line estado-disp-chevron">
+                            <use href="#icon-chevron-down" />
+                        </svg>
+                    </button>
+                    <div id="dropdown-estado-disp" class="combobox-dropdown hidden">
+                        <div class="canal-disp-item" data-estado="">
+                            <span class="estado-disp-dot estado-disp-dot--normal"></span> Normal
+                        </div>
+                        <div class="canal-disp-item" data-estado="averiado">
+                            <span class="estado-disp-dot estado-disp-dot--averiado"></span> Averiado
+                        </div>
+                        <div class="canal-disp-item" data-estado="desafectado">
+                            <span class="estado-disp-dot estado-disp-dot--desafectado"></span> Desafectado
+                        </div>
+                        <div class="canal-disp-item" data-estado="descontinuado">
+                            <span class="estado-disp-dot estado-disp-dot--descontinuado"></span> Descontinuado
+                        </div>
+                        <div class="canal-disp-item" data-estado="revisar">
+                            <span class="estado-disp-dot estado-disp-dot--revisar"></span> En revisión
+                        </div>
+                        <div class="canal-disp-item" data-estado="perdido">
+                            <span class="estado-disp-dot estado-disp-dot--perdido"></span> Perdido
+                        </div>
+                    </div>
+                </div>
+            </h3>
+
+            <div class="modal-scroll-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo *</label>
+                        <select id="editar-disp-tipo">
+                            <option value="">Seleccionar…</option>
+                        </select>
+                    </div>
+                    <div class="form-group hidden" id="editar-disp-forma-group">
+                        <label>Forma</label>
+                        <select id="editar-disp-forma">
+                            <option value="">Seleccionar…</option>
+                            <option value="domo">Domo</option>
+                            <option value="bullet">Bullet</option>
+                            <option value="turret">Turret</option>
+                            <option value="minidomo">Mini domo</option>
+                            <option value="minibullet">Mini bullet</option>
+                            <option value="domo-ptz">Domo PTZ</option>
+                        </select>
+                    </div>
+                    <div class="form-group hidden" id="editar-disp-canales-group">
+                        <label>Cantidad de canales *</label>
+                        <input type="number" id="editar-disp-canales" placeholder="Ej: 16" min="1" max="256" value="16">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Modelo</label>
+                        <input type="text" id="editar-disp-modelo" placeholder="Ej: DS-2CD2143G2" maxlength="60">
+                    </div>
+                    <div class="form-group">
+                        <label>Marca</label>
+                        <input type="text" id="editar-disp-marca" placeholder="Ej: Hikvision" maxlength="50">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group form-group--flex-row">
+                        <div class="form-group--flex-inner">
+                            <label>MAC</label>
+                            <input type="text" id="editar-disp-mac" placeholder="Ej: AA:BB:CC:DD:EE:FF" maxlength="17">
+                        </div>
+                        <button id="btn-editar-asignacion" class="icon-btn btn-backup btn-ver-activo hidden"
+                            title="Ver asignación">
+                            <svg class="icon icon-line">
+                                <use href="#icon-external-link" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label>Serial</label>
+                        <input type="text" id="editar-disp-serial" placeholder="Ej: DS2CD2143-20241001" maxlength="80">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Patrimonio</label>
+                        <input type="text" id="editar-disp-patrimonio" placeholder="Ej: PAT-00123" maxlength="60">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Firmware</label>
+                        <input type="text" id="editar-disp-firmware" placeholder="Ej: V5.7.15 build 230928"
+                            maxlength="80">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Comentario</label>
+                    <textarea id="editar-disp-comentario" class="textarea-modal" placeholder="Notas sobre el activo…"
+                        rows="2" maxlength="300"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-sticky-footer modal-sticky-footer--col">
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-edit">
+                        <svg class="icon icon-line">
+                            <use href="#icon-save" />
+                        </svg> Guardar
+                    </button>
+                    <button class="btn-delete">
+                        <svg class="icon icon-line">
+                            <use href="#icon-trash" />
+                        </svg> Eliminar
+                    </button>
+                </div>
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-cancel btn-flex">Cancelar</button>
+                    <button class="icon-btn btn-lock-modal" id="btn-lock-editar-disp" title="Desbloquear edición">
+                        <svg class="icon icon-line">
+                            <use href="#icon-lock" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-nuevo-grab">
+        <div class="modal-content modal-content--flex">
+            <h3 class="modal-sticky-header"><svg class="icon icon-line">
+                    <use href="#icon-server" />
+                </svg> Nuevo grabador</h3>
+
+            <div class="modal-scroll-body">
+                <div class="form-group">
+                    <label>Descripción *</label>
+                    <input type="text" id="nuevo-grab-nombre" placeholder="Ej: NVR-Planta Baja" maxlength="80">
+                </div>
+
+                <div class="form-group">
+                    <label>Dispositivo (NVR / DVR) *</label>
+                    <select id="nuevo-grab-dispositivo-id">
+                        <option value="">Seleccionar…</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Rack</label>
+                        <input type="text" id="nuevo-grab-rack" placeholder="Ej: Rack Principal" maxlength="40">
+                    </div>
+                    <div class="form-group">
+                        <label>Puerto</label>
+                        <input type="text" id="nuevo-grab-puerto" placeholder="Ej: 8000" maxlength="10">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Edificio</label>
+                        <select id="nuevo-grab-edificio"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Piso</label>
+                        <input type="text" id="nuevo-grab-piso" placeholder="Ej: PB, 1, EP" maxlength="4">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>IP</label>
+                    <input type="text" id="nuevo-grab-ip" placeholder="Ej: 192.168.1.10 o 2001:db8::1" maxlength="46">
+                </div>
+
+                <div class="form-group">
+                    <label>Comentarios</label>
+                    <textarea id="nuevo-grab-comentarios" class="textarea-modal" placeholder="Notas adicionales…"
+                        rows="2" maxlength="300"></textarea>
+                </div>
+            </div>
+            <div class="modal-sticky-footer">
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-edit">
+                        <svg class="icon icon-line">
+                            <use href="#icon-save" />
+                        </svg> Guardar
+                    </button>
+                    <button class="btn-cancel">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-editar-grab">
+        <div class="modal-content modal-content--flex">
+
+            <div class="modal-header modal-sticky-header">
+                <h3>
+                    <svg class="icon icon-line">
+                        <use href="#icon-edit" />
+                    </svg> Editar grabador
+                </h3>
+                <button id="btn-limpiar-canales-grab" class="icon-btn" title="Desasignar todos los canales">
+                    <svg class="icon icon-line">
+                        <use href="#icon-trash"></use>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-scroll-body">
+                <div class="form-group">
+                    <label>Descripción *</label>
+                    <input type="text" id="editar-grab-nombre" placeholder="Ej: NVR-Planta Baja" maxlength="80">
+                </div>
+                <div class="form-group form-group--flex-row">
+                    <div class="form-group--flex-inner">
+                        <label>Dispositivo (NVR / DVR) *</label>
+                        <select id="editar-grab-dispositivo-id">
+                            <option value="">Seleccionar…</option>
+                        </select>
+                    </div>
+                    <button id="btn-ver-activo-grab" class="icon-btn btn-backup btn-ver-activo" title="Ver activo"
+                        class="hidden">
+                        <svg class="icon icon-line">
+                            <use href="#icon-external-link" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Rack</label>
+                        <input type="text" id="editar-grab-rack" placeholder="Ej: Rack Principal" maxlength="40">
+                    </div>
+                    <div class="form-group">
+                        <label>Puerto</label>
+                        <input type="text" id="editar-grab-puerto" placeholder="Ej: 8000" maxlength="10">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Edificio</label>
+                        <select id="editar-grab-edificio"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Piso</label>
+                        <input type="text" id="editar-grab-piso" placeholder="Ej: PB, 1, EP" maxlength="4">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>IP</label>
+                    <input type="text" id="editar-grab-ip" placeholder="Ej: 192.168.1.10 o 2001:db8::1" maxlength="46">
+                </div>
+
+                <div class="form-group">
+                    <label>Comentarios</label>
+                    <textarea id="editar-grab-comentarios" class="textarea-modal" placeholder="Notas adicionales…"
+                        rows="2" maxlength="300"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-sticky-footer modal-sticky-footer--col">
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-edit">
+                        <svg class="icon icon-line">
+                            <use href="#icon-save" />
+                        </svg> Guardar
+                    </button>
+                    <button class="btn-delete">
+                        <svg class="icon icon-line">
+                            <use href="#icon-trash" />
+                        </svg> Eliminar
+                    </button>
+                </div>
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-cancel btn-flex">Cancelar</button>
+                    <button class="icon-btn btn-lock-modal" id="btn-lock-editar-grab" title="Desbloquear edición">
+                        <svg class="icon icon-line">
+                            <use href="#icon-lock" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-canal">
+        <div class="modal-content modal-content--flex">
+            <h3 class="modal-sticky-header">
+                <svg class="icon icon-line">
+                    <use href="#icon-link" />
+                </svg>
+                <span id="modal-canal-titulo">Canal 1</span>
+            </h3>
+
+            <div class="modal-scroll-body">
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <input type="text" id="canal-descripcion" placeholder="Ej: Cámara entrada principal" maxlength="80">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group form-group--flex-row">
+                        <div class="form-group--flex-inner">
+                            <label>Dispositivo asignado</label>
+                            <div id="canal-disp-combobox" class="combobox-wrap">
+                                <input type="text" id="canal-disp-input" placeholder="Buscar por MAC, modelo…"
+                                    maxlength="100" autocomplete="off" spellcheck="false">
+                                <input type="hidden" id="sel-canal-dispositivo">
+                                <div id="canal-disp-dropdown" class="combobox-dropdown"></div>
+                            </div>
+                        </div>
+                        <button id="btn-ver-activo-canal" class="icon-btn btn-backup btn-ver-activo" title="Ver activo"
+                            class="hidden">
+                            <svg class="icon icon-line">
+                                <use href="#icon-external-link" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label>IP</label>
+                        <input type="text" id="canal-ip" placeholder="Ej: 192.168.1.50 o 2001:db8::1" maxlength="46">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Edificio</label>
+                        <select id="canal-edificio"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Piso</label>
+                        <input type="text" id="canal-piso" placeholder="Ej: PB, 3, -1, EP2" maxlength="4">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Rack</label>
+                        <input type="text" id="canal-rack" placeholder="Ej: Rack-02" maxlength="40">
+                    </div>
+                    <div class="form-group">
+                        <label>Puerto</label>
+                        <input type="text" id="canal-puerto" placeholder="Ej: 554" maxlength="10">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Comentarios</label>
+                    <textarea id="canal-comentarios" class="textarea-modal" placeholder="Notas adicionales…" rows="2"
+                        maxlength="300"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-sticky-footer modal-sticky-footer--col">
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-edit">
+                        <svg class="icon icon-line">
+                            <use href="#icon-save" />
+                        </svg> Guardar
+                    </button>
+                    <button class="btn-delete">
+                        <svg class="icon icon-line">
+                            <use href="#icon-trash" />
+                        </svg> Limpiar
+                    </button>
+                </div>
+                <div class="btn-group btn-group--no-mt">
+                    <button id="btn-canal-cancelar" class="btn-cancel btn-flex">Cancelar</button>
+                    <button class="icon-btn btn-lock-modal" id="btn-lock-canal" title="Desbloquear edición">
+                        <svg class="icon icon-line">
+                            <use href="#icon-lock" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-importar">
+        <div class="modal-content">
+            <h3><svg class="icon icon-line">
+                    <use href="#icon-upload" />
+                </svg> Restaurar datos</h3>
+
+            <div id="importar-dropzone" class="importar-dropzone">
+                <svg class="icon icon-line dropzone-icon">
+                    <use href="#icon-cloud-up" />
+                </svg>
+                <p id="importar-dropzone-label" class="dropzone-label">Seleccioná o arrastrá un archivo .json</p>
+            </div>
+            <input type="file" id="file-import" accept=".json,application/json" class="hidden">
+
+            <div class="importar-actions">
+                <div class="btn-group btn-group--no-mt">
+                    <button id="btn-reemplazar" class="btn-edit btn-flex" disabled>
+                        <svg class="icon icon-line">
+                            <use href="#icon-replace-swap" />
+                        </svg> Reemplazar
+                    </button>
+                    <button id="btn-combinar" class="btn-backup btn-flex" disabled>
+                        <svg class="icon icon-line">
+                            <use href="#icon-combine" />
+                        </svg> Combinar
+                    </button>
+                </div>
+                <button class="btn-cancel">
+                    <svg class="icon icon-line">
+                        <use href="#icon-undo" />
+                    </svg> Volver
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-confirmar">
+        <div class="modal-content sm">
+            <h3><svg class="icon icon-line">
+                    <use href="#icon-alert" />
+                </svg> Confirmar</h3>
+            <p id="modal-confirmar-texto" class="modal-confirmar-texto"></p>
+            <div class="btn-group">
+                <button class="btn-delete" id="modal-confirmar-ok">
+                    <svg class="icon icon-line" id="modal-confirmar-icono">
+                        <use href="#icon-trash" />
+                    </svg>
+                    <span id="modal-confirmar-label">Confirmar</span>
+                </button>
+                <button class="btn-cancel" id="modal-confirmar-cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-picker">
+        <div class="modal-content sm">
+            <h3 id="modal-picker-titulo"></h3>
+            <div id="modal-picker-opciones" class="btn-group btn-group--col"></div>
+            <div class="btn-group mt-sp3">
+                <button class="btn-cancel" id="modal-picker-cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: dispositivos sin match detectados por el parseador -->
+    <div class="modal" id="modal-parseador-nuevos-disp">
+        <div class="modal-content modal-content--flex sm2">
+            <div class="modal-header modal-sticky-header">
+                <h3>
+                    <svg class="icon icon-line">
+                        <use href="#icon-alert-triangle" />
+                    </svg>
+                    Dispositivos no encontrados en activos
+                </h3>
+            </div>
+            <div class="modal-scroll-body">
+                <p class="parseador-hint">
+                    Las siguientes c&#225;maras tienen MAC registrada en el archivo pero
+                    <strong>no existen como dispositivos en la aplicaci&#243;n</strong>.
+                    Selecci&#243;n&#225; las que quer&#233;s agregar a activos.
+                </p>
+                <div id="parseador-nuevos-disp-lista"></div>
+            </div>
+            <div class="modal-sticky-footer modal-sticky-footer--col">
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-edit btn-flex" id="btn-parseador-nuevos-agregar">
+                        <svg class="icon icon-line">
+                            <use href="#icon-plus" />
+                        </svg>
+                        Agregar seleccionados
+                    </button>
+                </div>
+                <div class="btn-group btn-group--no-mt">
+                    <button class="btn-cancel btn-flex" id="btn-parseador-nuevos-todos">Deseleccionar todos</button>
+                    <button class="btn-cancel btn-flex" id="btn-parseador-nuevos-cerrar">
+                        <svg class="icon icon-line">
+                            <use href="#icon-x" />
+                        </svg>
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-parseador-datos">
+        <div class="modal-content modal-content--flex sm2">
+
+            <div class="modal-header modal-sticky-header">
+                <h3>
+                    <svg class="icon icon-line">
+                        <use href="#icon-cpu" />
+                    </svg>
+                    Parseador de datos
+                </h3>
+                <span class="modal-header-version" id="parseador-datos-step-label">1 / 2</span>
+            </div>
+
+            <div class="modal-scroll-body">
+
+                <!-- Paso 1: Upload -->
+                <div id="parseador-datos-step-upload">
+                    <div id="parseador-datos-dropzone" class="importar-dropzone">
+                        <svg class="icon icon-line dropzone-icon">
+                            <use href="#icon-cloud-up" />
+                        </svg>
+                        <p id="parseador-datos-dropzone-label" class="dropzone-label">
+                            Seleccioná o arrastrá el archivo <strong>cctv_online.json</strong>
+                        </p>
+                    </div>
+                    <input type="file" id="file-parseador-datos" accept=".json,application/json" class="hidden">
+                </div>
+
+                <!-- Paso 2: Preview de cambios -->
+                <div id="parseador-datos-step-preview" class="hidden">
+                    <p class="parseador-hint">
+                        Se actualizarán los campos <strong>serial</strong>,
+                        <strong>firmware</strong> y <strong>modelo</strong> de los
+                        dispositivos que tengan coincidencia por MAC. Los dispositivos
+                        que no existan en activos serán agregados automáticamente.
+                    </p>
+                    <div id="parseador-datos-preview-contenido"></div>
+                </div>
+
+            </div>
+
+            <div class="modal-sticky-footer">
+                <div class="btn-group btn-group--no-mt">
+                    <button id="btn-parseador-datos-continuar" class="btn-edit btn-flex hidden">
+                        <svg class="icon icon-line">
+                            <use href="#icon-chevron-right" />
+                        </svg>
+                        Continuar
+                    </button>
+
+                    <button class="btn-edit btn-flex hidden" id="btn-parseador-datos-aplicar">
+                        <svg class="icon icon-line">
+                            <use href="#icon-save" />
+                        </svg>
+                        Aplicar
+                    </button>
+                    <button class="btn-cancel btn-flex" id="btn-parseador-datos-cancelar">
+                        <svg class="icon icon-line">
+                            <use href="#icon-undo" />
+                        </svg>
+                        Volver
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal" id="modal-parseador-canales">
+        <div class="modal-content modal-content--flex sm2">
+
+            <div class="modal-header modal-sticky-header">
+                <h3>
+                    <svg class="icon icon-line">
+                        <use href="#icon-sliders" />
+                    </svg>
+                    Parseador de canales
+                </h3>
+                <span class="modal-header-version" id="parseador-step-label">1 / 3</span>
+            </div>
+
+            <div class="modal-scroll-body">
+
+                <!-- Paso 1: Upload -->
+                <div id="parseador-step-upload">
+                    <div id="parseador-dropzone" class="importar-dropzone">
+                        <svg class="icon icon-line dropzone-icon">
+                            <use href="#icon-cloud-up" />
+                        </svg>
+                        <p id="parseador-dropzone-label" class="dropzone-label">
+                            Seleccioná o arrastrá el archivo <strong>cctv_online.json</strong>
+                        </p>
+                    </div>
+                    <input type="file" id="file-parseador" accept=".json,application/json" class="hidden">
+                </div>
+
+                <!-- Paso 2: Mapeo NVR → Grabador -->
+                <div id="parseador-step-mapping" class="hidden">
+                    <p class="parseador-hint">
+                        Asociá cada NVR del archivo con el grabador declarado en la aplicación.
+                        Los NVRs con IP coincidente se pre-seleccionan automáticamente.
+                    </p>
+                    <div id="parseador-nvr-lista"></div>
+
+                    <div class="parseador-modo-canales">
+                        <label class="parseador-modo-titulo">Canales no incluidos en el archivo</label>
+                        <p class="parseador-hint parseador-hint--sm">
+                            Para cada grabador asociado, ¿qué hacer con los canales dentro de su rango
+                            que el archivo subido no menciona (sin datos o ausentes)?
+                        </p>
+                        <div class="parseador-modo-opciones">
+                            <label class="parseador-modo-opcion">
+                                <input type="radio" name="parseador-modo-canales" id="parseador-modo-conservar"
+                                    value="conservar">
+                                <span>
+                                    <strong>Conservar</strong>
+                                    <small>Mantiene la asignación, descripción e IP actuales de esos canales.</small>
+                                </span>
+                            </label>
+                            <label class="parseador-modo-opcion">
+                                <input type="radio" name="parseador-modo-canales" id="parseador-modo-reemplazar"
+                                    value="reemplazar" checked>
+                                <span>
+                                    <strong>Limpiar</strong>
+                                    <small>Vacía dispositivo asignado, descripción e IP de esos canales (reemplazo
+                                        completo).</small>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paso 3: Preview de cambios -->
+                <div id="parseador-step-preview" class="hidden">
+                    <p class="parseador-hint" id="parseador-preview-hint">
+                        Se actualizarán los campos <strong>descripción</strong>,
+                        <strong>IP</strong> y <strong>dispositivo asignado</strong>
+                        de los canales listados. Los canales sin datos en el archivo no se tocan.
+                    </p>
+                    <div id="parseador-preview-contenido"></div>
+                </div>
+
+            </div>
+
+            <div class="modal-sticky-footer">
+                <div class="btn-group btn-group--no-mt">
+                    <button id="btn-parseador-continuar" class="btn-edit btn-flex hidden">
+                        <svg class="icon icon-line">
+                            <use href="#icon-chevron-right" />
+                        </svg>
+                        Continuar
+                    </button>
+
+                    <button class="btn-edit btn-flex hidden" id="btn-parseador-ver-cambios">
+                        <svg class="icon icon-line">
+                            <use href="#icon-eye" />
+                        </svg>
+                        Ver cambios
+                    </button>
+                    <button class="btn-edit btn-flex hidden" id="btn-parseador-aplicar">
+                        <svg class="icon icon-line">
+                            <use href="#icon-save" />
+                        </svg>
+                        Aplicar
+                    </button>
+                    <button class="btn-cancel btn-flex" id="btn-parseador-cancelar">
+                        <svg class="icon icon-line">
+                            <use href="#icon-undo" />
+                        </svg>
+                        Volver
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+<!-- lushibosca-->
+
+</html>

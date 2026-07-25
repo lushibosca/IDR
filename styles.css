@@ -1,0 +1,355 @@
+/* ════ 1. TOKENS COMPARTIDOS ════ */
+:root {
+    --bg-body: #f5f6fa;
+    --bg-card: #ffffff;
+    --bg-header: #ffffffee;
+    --text-main: #1a1d23;
+    --text-muted: #5a6070;
+    --border: #e2e6ef;
+
+    /* Colores base */
+    --accent: #3b64d2;
+    --c-blue: rgba(76, 114, 172, 1);
+    --c-green: rgba(76, 172, 140, 1);
+    --c-purple: rgba(129, 76, 172, 1);
+    --c-red: rgba(220, 53, 69, 1);
+    --c-orange: rgba(235, 119, 52, 1);
+
+    /* Fondos semánticos para los iconos */
+    --c-blue-bg: rgba(76, 114, 172, 0.12);
+    --c-green-bg: rgba(76, 172, 140, 0.12);
+    --c-purple-bg: rgba(129, 76, 172, 0.12);
+    --c-red-bg: rgba(220, 53, 69, 0.12);
+    --c-orange-bg: rgba(235, 119, 52, 0.12);
+
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.02);
+    --shadow-hover: 0 12px 24px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04);
+    --radius: 20px;
+    --radius-lg: 28px;
+    --border-w: 1.5px;
+}
+
+html.dark-mode body {
+    --bg-body: #131314;
+    --bg-card: #1e1f20;
+    --bg-header: #131314f6;
+    --text-main: #e3e3e3;
+    --text-muted: #b4b4b4;
+    --border: #313333;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    --shadow-hover: 0 12px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* ════ 2. RESET & BASE ════ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#btn-install-app {
+    display: none;
+}
+
+/* ════ 3. HEADER ════ */
+.header {
+    background: var(--bg-header);
+    backdrop-filter: blur(10px);
+    padding: 0 1.5rem;
+    height: 64px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 90;
+}
+
+.header-actions {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.header-logo {
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+}
+
+.header-logo .svg-icon {
+    width: 28px;
+    height: 28px;
+}
+
+.header-main-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    flex: 1;
+    letter-spacing: -0.01em;
+}
+
+.icon-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.icon-btn:hover {
+    background: var(--border);
+    color: var(--text-main);
+}
+
+.svg-icon {
+    width: 22px;
+    height: 22px;
+}
+
+/* ════ 4. LAYOUT DEL LAUNCHER ════ */
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+    width: 100%;
+}
+
+.welcome-section {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.welcome-section h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.welcome-section p {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+/* ════ 5. TARJETAS DE APLICACIONES ════ */
+.app-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+}
+
+.app-card {
+    background: var(--bg-card);
+    border: var(--border-w) solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    text-decoration: none;
+    color: var(--text-main);
+    box-shadow: var(--shadow);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s, border-color 0.25s;
+    outline: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    animation: fadeInUp 0.6s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+}
+
+/* Iconos grandes */
+.app-icon-wrapper {
+    width: 90px;
+    height: 90px;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.app-card:hover .app-icon-wrapper {
+    transform: scale(1.05);
+}
+
+.app-icon {
+    width: 44px;
+    height: 44px;
+}
+
+/* --- Colores dinámicos por módulo --- */
+.card-blue {
+    --theme-color: var(--c-blue);
+    --theme-bg: var(--c-blue-bg);
+}
+
+.card-orange {
+    --theme-color: var(--c-orange);
+    --theme-bg: var(--c-orange-bg);
+}
+
+.card-green {
+    --theme-color: var(--c-green);
+    --theme-bg: var(--c-green-bg);
+}
+
+.card-purple {
+    --theme-color: var(--c-purple);
+    --theme-bg: var(--c-purple-bg);
+}
+
+.card-red {
+    --theme-color: var(--c-red);
+    --theme-bg: var(--c-red-bg);
+}
+
+/* El wrapper del ícono ahora hereda esas variables directamente */
+.app-card .app-icon-wrapper {
+    background: var(--theme-bg);
+    color: var(--theme-color);
+}
+
+/* --- Modificamos el hover de la tarjeta (Modo Claro) --- */
+.app-card:hover,
+.app-card:focus-visible {
+    transform: translateY(-8px);
+    border-color: var(--theme-color);
+    box-shadow: 0 10px 20px var(--theme-bg), 0 0 4px var(--theme-color);
+}
+
+/* --- Resplandor potenciado (Modo Oscuro) --- */
+html.dark-mode .app-card:hover,
+html.dark-mode .app-card:focus-visible {
+    border-color: var(--theme-color);
+    box-shadow: 0 12px 25px var(--theme-bg), 0 0 8px var(--theme-color), 0 0 20px var(--theme-bg);
+}
+
+/* Retardos escalonados para cada tarjeta según su orden */
+.app-card:nth-child(1) {
+    animation-delay: 0.05s;
+}
+
+.app-card:nth-child(2) {
+    animation-delay: 0.10s;
+}
+
+.app-card:nth-child(3) {
+    animation-delay: 0.15s;
+}
+
+.app-card:nth-child(4) {
+    animation-delay: 0.20s;
+}
+
+.app-card:nth-child(5) {
+    animation-delay: 0.25s;
+}
+
+.app-card.exiting {
+    animation: fadeOutDown 0.4s cubic-bezier(0.25, 1, 0.5, 1) both;
+    pointer-events: none;
+}
+
+/* ════ 6. FOOTER & VERSIÓN ════ */
+.footer {
+    margin-top: auto; /* Empuja el footer al fondo absoluto del body flex */
+    width: 100%;
+    max-width: 1000px; /* Alineado con el ancho máximo de tu contenedor */
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1rem 1.5rem; /* Margen interno para que no pegue al borde */
+    display: flex;
+    justify-content: flex-end; /* Alinea el contenido a la derecha */
+}
+
+.app-version {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    user-select: none;
+}
+
+/* --- ESTADO DESHABILITADO --- */
+.app-card.disabled {
+    opacity: 0.5;
+    filter: grayscale(100%);
+    cursor: not-allowed;
+    /* Bloquea clics, hover y la animación de salida */
+    pointer-events: none;
+    /* Mantiene el borde estático anulando el color del tema */
+    border-color: var(--border) !important;
+}
+
+/* --- Animación de salida --- */
+@keyframes fadeOutDown {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        translate: 0 20px;
+    }
+
+    to {
+        opacity: 1;
+        translate: 0 0;
+    }
+}
+
+/* Ajustes para móviles */
+@media (max-width: 600px) {
+    .container {
+        padding: 2rem 1rem;
+    }
+
+    .welcome-section h2 {
+        font-size: 1.5rem;
+    }
+
+    .app-card {
+        padding: 2rem 1.25rem;
+    }
+
+    .app-icon-wrapper {
+        width: 70px;
+        height: 70px;
+        border-radius: 20px;
+    }
+
+    .app-icon {
+        width: 34px;
+        height: 34px;
+    }
+}

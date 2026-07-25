@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Patcheras</title>
+<script>(function(){try{if(localStorage.getItem('PCH_dark')==='1'){document.documentElement.classList.add('dark-mode');}}catch(e){}}());</script>
+<style>
+/* ══════════════════════════════════════════════
+   1. TOKENS
+══════════════════════════════════════════════ */
+:root {
+    --bg-body: #f0f2f8;
+    --bg-card: #ffffff;
+    --bg-header: #ffffffee;
+    --text-main: #1a1d23;
+    --text-muted: #5a6070;
+    --text-disabled: #9aa0ae;
+    --border: #e2e6ef;
+    --input-bg: #f0f2f8;
+    --accent: #1a6fd4;
+    --c-blue: rgba(26,111,212,0.85);
+    --c-green: rgba(32,168,120,0.85);
+    --c-red: rgba(210,60,60,0.85);
+    --c-orange: rgba(210,120,50,0.85);
+    --c-yellow: rgba(210,175,30,0.85);
+    --c-gray: rgba(130,140,160,0.85);
+    --c-purple: rgba(120,70,200,0.85);
+    --c-teal: rgba(20,160,160,0.85);
+    --c-blue-bg: rgba(26,111,212,0.10);
+    --c-green-bg: rgba(32,168,120,0.10);
+    --c-red-bg: rgba(210,60,60,0.10);
+    --c-orange-bg: rgba(210,120,50,0.10);
+    --c-gray-btn: #e4e8f2;
+    --bg-toast: #1a1d23;
+    --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+    --radius: 16px;
+    --radius-sm: 8px;
+    --t-fast: 0.15s ease;
+    --t-ui: 0.2s ease;
+    --t-modal: 0.25s ease;
+    --t-spring: cubic-bezier(0.34,1.56,0.64,1);
+
+    /* patchera jack colors */
+    --jack-empty-bg: #e0e4ef;
+    --jack-empty-border: #c8cedd;
+    --jack-filled-bg: #1a6fd4;
+    --jack-filled-border: #1459ae;
+    --rack-bg: #1e2028;
+    --rack-rail: #353740;
+    --panel-bg: #2a2d38;
+    --panel-border: #3d4050;
+    --label-bg: rgba(0,0,0,0.45);
+}
+
+html.dark-mode body {
+    --bg-body: #131316;
+    --bg-card: #1e1f24;
+    --bg-header: #131316f5;
+    --text-main: #e3e4e8;
+    --text-muted: #b0b4be;
+    --text-disabled: #70747e;
+    --border: #2e3040;
+    --input-bg: #252630;
+    --c-gray-btn: #252630;
+    --bg-toast: #252630;
+    --shadow: 0 4px 20px rgba(0,0,0,0.5);
+    --jack-empty-bg: #2a2d3a;
+    --jack-empty-border: #3a3f50;
+}
+
+/* ══════════════════════════════════════════════
+   2. RESET & BASE
+══════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent;}
+html{scrollbar-gutter:stable;}
+body{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-body);color:var(--text-main);transition:background 0.3s,color 0.3s;min-height:100vh;}
+body.modal-open{overflow:hidden;}
+input,select,textarea{width:100%;padding:0.6rem 0.85rem;border:1.5px solid var(--border);border-radius:var(--radius);font-size:0.95rem;background:var(--input-bg);color:var(--text-main);height:44px;transition:border-color var(--t-ui),background var(--t-ui);font-family:inherit;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);}
+input.error,select.error{border-color:var(--c-red);}
+input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;}
+input[type="number"]{-moz-appearance:textfield;}
+textarea{height:auto;resize:vertical;}
+label{display:block;font-size:0.76rem;font-weight:600;color:var(--text-muted);margin-bottom:0.25rem;text-transform:uppercase;letter-spacing:0.04em;padding-left:0.25rem;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.svg-sprites{display:none;}
+.svg-icon{width:20px;height:20px;fill:currentColor;flex-shrink:0;}
+
+/* ══════════════════════════════════════════════
+   3. HEADER
+══════════════════════════════════════════════ */
+.header{position:sticky;top:0;z-index:100;background:var(--bg-header);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1.5px solid transparent;display:flex;align-items:center;gap:0.75rem;padding:0 1rem;height:56px;transition:border-color var(--t-ui),box-shadow var(--t-ui);}
+.header.scrolled{border-color:var(--border);box-shadow:0 2px 12px rgba(0,0,0,0.07);}
+.header-logo svg{width:26px;height:26px;fill:var(--accent);flex-shrink:0;}
+.header-title{font-size:1.05rem;font-weight:700;letter-spacing:-0.01em;white-space:nowrap;}
+.header-actions{margin-left:auto;display:flex;gap:0.35rem;align-items:center;}
+.icon-btn{width:36px;height:36px;border:none;border-radius:50%;background:transparent;color:var(--text-main);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background var(--t-fast);}
+.icon-btn:hover{background:var(--c-gray-btn);}
+.icon-btn:disabled{opacity:0.35;cursor:not-allowed;}
+.icon-btn-spinning{animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ══════════════════════════════════════════════
+   4. LAYOUT
+══════════════════════════════════════════════ */
+.main{max-width:1100px;margin:0 auto;padding:1.25rem 1rem 4rem;}
+.card{background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:1rem;}
+.card-header{display:flex;align-items:center;gap:0.6rem;padding:0.9rem 1rem;border-bottom:1.5px solid var(--border);}
+.card-header h2{font-size:0.95rem;font-weight:700;flex:1;}
+.card-body{padding:1rem;}
+.form-group{margin-bottom:0.9rem;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem;}
+
+/* ══════════════════════════════════════════════
+   5. BOTONES
+══════════════════════════════════════════════ */
+.btn-primary{background:var(--accent);color:#fff;border:none;border-radius:var(--radius);padding:0.65rem 1.2rem;font-size:0.9rem;font-weight:600;cursor:pointer;transition:filter var(--t-fast);display:flex;align-items:center;gap:0.4rem;font-family:inherit;}
+.btn-primary:hover{filter:brightness(1.1);}
+.btn-primary:active{filter:brightness(0.9);}
+.btn-secondary{background:var(--c-gray-btn);color:var(--text-main);border:none;border-radius:var(--radius);padding:0.65rem 1.2rem;font-size:0.9rem;font-weight:600;cursor:pointer;transition:filter var(--t-fast);display:flex;align-items:center;gap:0.4rem;font-family:inherit;}
+.btn-secondary:hover{filter:brightness(0.95);}
+.btn-danger{background:var(--c-red-bg);color:var(--c-red);border:1.5px solid var(--c-red);border-radius:var(--radius);padding:0.65rem 1.2rem;font-size:0.9rem;font-weight:600;cursor:pointer;transition:filter var(--t-fast);display:flex;align-items:center;gap:0.4rem;font-family:inherit;}
+.btn-danger:hover{filter:brightness(1.05);}
+.btn-flex{justify-content:center;}
+
+/* ══════════════════════════════════════════════
+   6. BADGES
+══════════════════════════════════════════════ */
+.badge{display:inline-flex;align-items:center;padding:0.2rem 0.55rem;border-radius:20px;font-size:0.72rem;font-weight:700;letter-spacing:0.02em;}
+.badge-gray{background:var(--c-gray-btn);color:var(--text-muted);}
+.badge-blue{background:var(--c-blue-bg);color:var(--c-blue);}
+.badge-green{background:var(--c-green-bg);color:var(--c-green);}
+
+/* ══════════════════════════════════════════════
+   7. RACK VIEW
+══════════════════════════════════════════════ */
+.rack-container{background:var(--rack-bg);border-radius:12px;padding:1rem;overflow-x:auto;}
+.rack-header-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;}
+.rack-name{font-size:1rem;font-weight:700;color:#fff;background:var(--accent);padding:0.2rem 0.65rem;border-radius:6px;}
+.rack-meta{font-size:0.72rem;color:#888;}
+
+.rack-unit{background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:6px;margin-bottom:0.45rem;padding:0.5rem 0.65rem;min-width:680px;}
+.rack-unit-label{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#666;margin-bottom:0.35rem;display:flex;justify-content:space-between;align-items:center;}
+.rack-unit-label .rul-name{color:#ccc;}
+.rack-unit-controls{display:flex;gap:0.3rem;}
+.rack-unit-controls button{background:transparent;border:1px solid #444;color:#aaa;border-radius:4px;padding:0.1rem 0.4rem;font-size:0.68rem;cursor:pointer;transition:all var(--t-fast);}
+.rack-unit-controls button:hover{background:#444;color:#fff;}
+
+/* Patchera 24 puertos (fila única) */
+.patch-row{display:flex;gap:3px;align-items:center;flex-wrap:nowrap;}
+.jack{width:26px;height:26px;border-radius:4px;border:1.5px solid var(--jack-empty-border);background:var(--jack-empty-bg);cursor:pointer;transition:all var(--t-fast);display:flex;align-items:center;justify-content:center;font-size:0;position:relative;flex-shrink:0;}
+.jack:hover{border-color:var(--accent);transform:scale(1.12);}
+.jack.filled{background:var(--jack-filled-bg);border-color:var(--jack-filled-border);color:#fff;}
+.jack.filled:hover{filter:brightness(1.15);transform:scale(1.12);}
+
+/* colores de jack por tipo de conexión */
+.jack.col-blue{background:#1a6fd4;border-color:#1459ae;}
+.jack.col-green{background:#1aa870;border-color:#158a5a;}
+.jack.col-red{background:#d23c3c;border-color:#a83030;}
+.jack.col-orange{background:#d27830;border-color:#a86020;}
+.jack.col-yellow{background:#c8a010;border-color:#a07a08;}
+.jack.col-purple{background:#7846c8;border-color:#5e38a0;}
+.jack.col-teal{background:#14a0a0;border-color:#108080;}
+.jack.col-gray{background:#6a7280;border-color:#525a68;}
+
+.jack-num{position:absolute;bottom:1px;right:2px;font-size:6px;color:rgba(255,255,255,0.6);line-height:1;pointer-events:none;}
+.jack.empty .jack-num{color:rgba(0,0,0,0.3);}
+
+/* Patchera 48 puertos (doble fila) */
+.patch-double-row{display:flex;flex-direction:column;gap:3px;}
+.patch-double-row .patch-row{gap:3px;}
+
+/* Separador entre grupos de 6 */
+.jack-group-sep{width:6px;flex-shrink:0;}
+
+/* Etiqueta de patchera */
+.patch-panel-label{font-size:0.7rem;color:#888;text-align:right;margin-bottom:0.2rem;}
+
+/* Fila vacía (unidad sin asignar) */
+.rack-unit.empty-unit{border-style:dashed;border-color:#333;opacity:0.5;}
+.rack-unit.empty-unit:hover{opacity:0.8;}
+
+/* ══════════════════════════════════════════════
+   8. LISTA DE RACKS
+══════════════════════════════════════════════ */
+.racks-list{display:flex;flex-direction:column;gap:1rem;}
+.rack-item-card{background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:box-shadow var(--t-fast);}
+.rack-item-card:hover{box-shadow:var(--shadow-lg);}
+.rack-item-header{display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem;cursor:pointer;border-bottom:1.5px solid transparent;transition:border-color var(--t-fast);}
+.rack-item-header.open{border-color:var(--border);}
+.rack-item-name{font-size:1rem;font-weight:700;flex:1;}
+.rack-item-meta{font-size:0.75rem;color:var(--text-muted);}
+.rack-item-body{display:none;padding:1rem;}
+.rack-item-body.open{display:block;}
+
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--text-muted);}
+.empty-icon{font-size:2.5rem;margin-bottom:0.75rem;}
+
+/* ══════════════════════════════════════════════
+   9. MODAL
+══════════════════════════════════════════════ */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem;}
+.modal.show{display:flex;animation:modalIn var(--t-modal) ease;}
+@keyframes modalIn{from{opacity:0}to{opacity:1}}
+.modal-content{background:var(--bg-card);border-radius:var(--radius);width:100%;max-width:480px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:mcIn 0.25s var(--t-spring);}
+.modal-content.wide{max-width:640px;}
+@keyframes mcIn{from{transform:scale(0.94) translateY(10px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.modal-header{display:flex;align-items:center;gap:0.6rem;padding:1rem 1.25rem;border-bottom:1.5px solid var(--border);position:sticky;top:0;background:var(--bg-card);z-index:1;}
+.modal-header h3{font-size:1rem;font-weight:700;flex:1;}
+.modal-body{padding:1.25rem;}
+.modal-footer{display:flex;gap:0.5rem;padding:1rem 1.25rem;border-top:1.5px solid var(--border);justify-content:flex-end;}
+
+/* ══════════════════════════════════════════════
+   10. TOAST
+══════════════════════════════════════════════ */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(100px);background:var(--bg-toast);color:#fff;padding:0.6rem 1.2rem;border-radius:24px;font-size:0.87rem;font-weight:600;z-index:400;opacity:0;transition:all 0.3s var(--t-spring);pointer-events:none;white-space:nowrap;max-width:90vw;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{background:#1a6fd4;}
+.toast.error{background:#c83030;}
+.toast.info{background:#555;}
+
+/* ══════════════════════════════════════════════
+   11. JACK TOOLTIP
+══════════════════════════════════════════════ */
+.jack-tooltip{position:fixed;z-index:350;background:var(--bg-card);border:1.5px solid var(--border);border-radius:10px;padding:0.5rem 0.75rem;font-size:0.8rem;box-shadow:var(--shadow-lg);pointer-events:none;opacity:0;transition:opacity 0.12s;max-width:220px;}
+.jack-tooltip.show{opacity:1;}
+.jt-port{font-weight:700;font-size:0.68rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;}
+.jt-label{color:var(--text-main);margin-top:0.1rem;}
+.jt-note{color:var(--text-muted);font-size:0.74rem;margin-top:0.15rem;}
+
+/* ══════════════════════════════════════════════
+   12. GIST MODAL STYLES (adaptado de materiales)
+══════════════════════════════════════════════ */
+.gist-input-row{display:flex;gap:0.4rem;align-items:center;}
+.gist-input-row input{flex:1;}
+.toggle-switch{width:44px;height:24px;border-radius:12px;background:var(--c-gray-btn);border:none;cursor:pointer;position:relative;transition:background var(--t-fast);flex-shrink:0;}
+.toggle-switch::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform var(--t-fast);}
+.toggle-switch.on{background:var(--accent);}
+.toggle-switch.on::after{transform:translateX(20px);}
+.gist-status{font-size:0.78rem;color:var(--text-muted);min-height:1.2em;margin-top:0.4rem;}
+
+/* ══════════════════════════════════════════════
+   13. COLOR PICKER para jacks
+══════════════════════════════════════════════ */
+.color-swatches{display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.3rem;}
+.color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:transform var(--t-fast),border-color var(--t-fast);}
+.color-swatch:hover{transform:scale(1.15);}
+.color-swatch.active{border-color:var(--text-main);}
+
+/* ══════════════════════════════════════════════
+   14. IMPORTAR DROPZONE
+══════════════════════════════════════════════ */
+.importar-dropzone{border:2px dashed var(--border);border-radius:var(--radius);padding:1.5rem;text-align:center;cursor:pointer;transition:border-color var(--t-fast),background var(--t-fast);}
+.importar-dropzone:hover,.importar-dropzone.drag{border-color:var(--accent);background:var(--c-blue-bg);}
+.import-ok{color:var(--c-green);}
+.import-fail{color:var(--c-red);}
+.import-sub{font-size:0.8rem;color:var(--text-muted);display:block;margin-top:0.3rem;}
+
+/* ══════════════════════════════════════════════
+   15. SCROLL TOP BTN
+══════════════════════════════════════════════ */
+.btn-scroll-top{position:fixed;bottom:1.5rem;right:1rem;z-index:90;width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(26,111,212,0.4);opacity:0;transform:scale(0.8);transition:opacity 0.25s,transform 0.25s var(--t-spring);}
+.btn-scroll-top.show{opacity:1;transform:scale(1);}
+
+/* ══════════════════════════════════════════════
+   16. CONFIRM MODAL
+══════════════════════════════════════════════ */
+#modal-confirmar .modal-content{max-width:380px;}
+.confirmar-texto{font-size:0.9rem;color:var(--text-muted);line-height:1.5;padding:0.25rem 0;}
+
+/* ══════════════════════════════════════════════
+   17. MISC HELPERS
+══════════════════════════════════════════════ */
+.text-muted{color:var(--text-muted);font-size:0.85rem;}
+.text-red{color:var(--c-red);}
+.flex-row{display:flex;align-items:center;gap:0.4rem;}
+.spacer{flex:1;}
+.divider{height:1.5px;background:var(--border);margin:0.75rem 0;}
+.note{font-size:0.78rem;color:var(--text-muted);padding:0.5rem 0.75rem;background:var(--input-bg);border-radius:var(--radius-sm);border-left:3px solid var(--accent);}
+.section-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);margin-bottom:0.6rem;}
+
+/* Port num labels below jacks */
+.patch-nums{display:flex;gap:3px;padding-top:2px;}
+.patch-num{width:26px;text-align:center;font-size:7px;color:#666;flex-shrink:0;line-height:1;}
+.patch-num.group-sep{width:32px;}
+
+/* Port layout in jack edit modal */
+.jack-preview-row{display:flex;gap:4px;justify-content:center;margin:0.5rem 0;}
+.jack-preview{width:30px;height:30px;border-radius:5px;border:2px solid var(--border);cursor:pointer;transition:all var(--t-fast);}
+
+/* ══════════════════════════════════════════════
+   18. SHORTCUTS
+══════════════════════════════════════════════ */
+.shortcut-row{display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid var(--border);}
+.shortcut-row:last-child{border-bottom:none;}
+.kbd{background:var(--c-gray-btn);border-radius:4px;padding:0.1rem 0.4rem;font-size:0.75rem;font-family:monospace;font-weight:600;}
+</style>
+</head>
+<body>
+
+<!-- ════════════ SVG SPRITES ════════════ -->
+<svg xmlns="http://www.w3.org/2000/svg" class="svg-sprites">
+  <defs>
+    <symbol id="icon-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="3" width="20" height="4" rx="1"/><rect x="2" y="10" width="20" height="4" rx="1"/><rect x="2" y="17" width="20" height="4" rx="1"/>
+      <circle cx="6" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="icon-add" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></symbol>
+    <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+    </symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    </symbol>
+    <symbol id="icon-save" viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></symbol>
+    <symbol id="icon-undo" viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></symbol>
+    <symbol id="icon-redo" viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 15.7c1.05-3.19 4.06-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 15h9V6l-3.6 4.6z"/></symbol>
+    <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
+    <symbol id="icon-chevron-down" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></symbol>
+    <symbol id="icon-chevron-right" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></symbol>
+    <symbol id="icon-arrow-up" viewBox="0 0 24 24"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+    <symbol id="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+    <symbol id="icon-cloud-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></symbol>
+    <symbol id="icon-cloud-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 16 12 20 16 16"/><line x1="12" y1="20" x2="12" y2="11"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></symbol>
+    <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
+    <symbol id="icon-gist" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.484 2 12.021c0 4.428 2.865 8.184 6.839 9.504.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844a9.59 9.59 0 012.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0022 12.021C22 6.484 17.522 2 12 2z"/></symbol>
+    <symbol id="icon-rack" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="2" width="18" height="20" rx="2"/><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/><circle cx="7" cy="4.5" r="1" fill="currentColor" stroke="none"/><circle cx="7" cy="9.5" r="1" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="icon-patch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="8" width="20" height="8" rx="1"/><circle cx="6" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="10" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="14" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="icon-external-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></symbol>
+  </defs>
+</svg>
+
+<!-- ════════════ HEADER ════════════ -->
+<header class="header" id="main-header">
+  <div class="header-logo">
+    <svg><use href="#icon-logo"/></svg>
+  </div>
+  <h1 class="header-title">Patcheras</h1>
+  <div class="header-actions">
+    <button class="icon-btn" id="btn-undo" title="Deshacer (Ctrl+Z)" disabled>
+      <svg class="svg-icon"><use href="#icon-undo"/></svg>
+    </button>
+    <button class="icon-btn" id="btn-redo" title="Rehacer (Ctrl+Y)" disabled>
+      <svg class="svg-icon"><use href="#icon-redo"/></svg>
+    </button>
+    <button class="icon-btn" id="btn-dark-mode" title="Modo oscuro">
+      <svg class="svg-icon"><use href="#icon-moon"/></svg>
+    </button>
+    <button class="icon-btn" id="btn-ajustes" title="Ajustes">
+      <svg class="svg-icon"><use href="#icon-settings"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ════════════ MAIN ════════════ -->
+<div class="main">
+
+  <!-- Acciones principales -->
+  <div class="flex-row" style="margin-bottom:1rem;gap:0.5rem;flex-wrap:wrap;">
+    <button class="btn-primary" id="btn-nuevo-rack">
+      <svg class="svg-icon"><use href="#icon-add"/></svg> Nuevo Rack
+    </button>
+    <button class="btn-secondary" id="btn-nueva-patchera" style="display:none;" disabled>
+      <svg class="svg-icon"><use href="#icon-patch"/></svg> Agregar Patchera
+    </button>
+  </div>
+
+  <!-- Lista de racks -->
+  <div id="racks-list" class="racks-list"></div>
+
+  <div id="racks-empty" class="empty-state" style="display:none;">
+    <div class="empty-icon">🗄️</div>
+    <p>No hay racks registrados.<br>Comenzá creando tu primer rack.</p>
+  </div>
+
+</div>
+
+<!-- ════════════ TOOLTIP ════════════ -->
+<div class="jack-tooltip" id="jack-tooltip">
+  <div class="jt-port" id="jt-port"></div>
+  <div class="jt-label" id="jt-label"></div>
+  <div class="jt-note" id="jt-note"></div>
+</div>
+
+<!-- ════════════ TOAST ════════════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ════════════ SCROLL TOP ════════════ -->
+<button class="btn-scroll-top" id="btn-scroll-top" title="Ir arriba">
+  <svg class="svg-icon"><use href="#icon-arrow-up"/></svg>
+</button>
+
+<!-- ══════════════════════════════════════
+     MODALES
+══════════════════════════════════════ -->
+
+<!-- Modal: Nuevo / Editar Rack -->
+<div class="modal" id="modal-rack">
+  <div class="modal-content">
+    <div class="modal-header">
+      <svg class="svg-icon"><use href="#icon-rack"/></svg>
+      <h3 id="modal-rack-titulo">Nuevo Rack</h3>
+      <button class="icon-btn" id="modal-rack-cerrar" style="margin-left:auto;"><svg class="svg-icon"><use href="#icon-close"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nombre del Rack</label>
+        <input type="text" id="rack-nombre" placeholder="Ej: Rack 01, Rack Piso 3" maxlength="60" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Descripción / Ubicación (opcional)</label>
+        <input type="text" id="rack-desc" placeholder="Ej: Sala de servidores, piso 3" maxlength="120" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Unidades de rack (U)</label>
+        <select id="rack-us">
+          <option value="6">6U</option>
+          <option value="9">9U</option>
+          <option value="12">12U</option>
+          <option value="18">18U</option>
+          <option value="24" selected>24U</option>
+          <option value="42">42U</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary btn-flex" id="rack-guardar-btn"><svg class="svg-icon"><use href="#icon-save"/></svg> Guardar</button>
+      <button class="btn-secondary btn-flex" id="rack-cancelar-btn">Cancelar</button>
+      <button class="btn-danger btn-flex" id="rack-eliminar-btn" style="display:none;"><svg class="svg-icon" style="width:16px;height:16px;"><use href="#icon-trash"/></svg> Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nueva / Editar Patchera -->
+<div class="modal" id="modal-patchera">
+  <div class="modal-content">
+    <div class="modal-header">
+      <svg class="svg-icon"><use href="#icon-patch"/></svg>
+      <h3 id="modal-patchera-titulo">Nueva Patchera</h3>
+      <button class="icon-btn" id="modal-patchera-cerrar" style="margin-left:auto;"><svg class="svg-icon"><use href="#icon-close"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre / ID</label>
+          <input type="text" id="patchera-nombre" placeholder="Ej: P-01, Patchera A" maxlength="40" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Posición (U)</label>
+          <input type="number" id="patchera-pos" placeholder="Ej: 3" min="1" max="42" autocomplete="off">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tipo</label>
+        <select id="patchera-tipo">
+          <option value="24">24 puertos (1U)</option>
+          <option value="48">48 puertos (2U)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Descripción (opcional)</label>
+        <input type="text" id="patchera-desc" placeholder="Ej: Planta baja, Piso 2" maxlength="100" autocomplete="off">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary btn-flex" id="patchera-guardar-btn"><svg class="svg-icon"><use href="#icon-save"/></svg> Guardar</button>
+      <button class="btn-secondary btn-flex" id="patchera-cancelar-btn">Cancelar</button>
+      <button class="btn-danger btn-flex" id="patchera-eliminar-btn" style="display:none;"><svg class="svg-icon" style="width:16px;height:16px;"><use href="#icon-trash"/></svg> Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Editar Jack -->
+<div class="modal" id="modal-jack">
+  <div class="modal-content">
+    <div class="modal-header">
+      <svg class="svg-icon"><use href="#icon-patch"/></svg>
+      <h3 id="modal-jack-titulo">Puerto 1</h3>
+      <button class="icon-btn" id="modal-jack-cerrar" style="margin-left:auto;"><svg class="svg-icon"><use href="#icon-close"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Etiqueta / Destino</label>
+        <input type="text" id="jack-label" placeholder="Ej: Oficina 6 - Puesto 3" maxlength="80" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Notas (opcional)</label>
+        <input type="text" id="jack-notas" placeholder="Ej: Cat 6A, activo" maxlength="100" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Color</label>
+        <div class="color-swatches" id="jack-color-swatches">
+          <div class="color-swatch active" data-color="" style="background:#6a7280;" title="Sin color especial"></div>
+          <div class="color-swatch" data-color="blue" style="background:#1a6fd4;" title="Azul"></div>
+          <div class="color-swatch" data-color="green" style="background:#1aa870;" title="Verde"></div>
+          <div class="color-swatch" data-color="red" style="background:#d23c3c;" title="Rojo"></div>
+          <div class="color-swatch" data-color="orange" style="background:#d27830;" title="Naranja"></div>
+          <div class="color-swatch" data-color="yellow" style="background:#c8a010;" title="Amarillo"></div>
+          <div class="color-swatch" data-color="purple" style="background:#7846c8;" title="Violeta"></div>
+          <div class="color-swatch" data-color="teal" style="background:#14a0a0;" title="Verde azulado"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary btn-flex" id="jack-guardar-btn"><svg class="svg-icon"><use href="#icon-save"/></svg> Guardar</button>
+      <button class="btn-secondary btn-flex" id="jack-limpiar-btn">Limpiar puerto</button>
+      <button class="btn-secondary btn-flex" id="jack-cancelar-btn">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ajustes -->
+<div class="modal" id="modal-ajustes">
+  <div class="modal-content">
+    <div class="modal-header">
+      <svg class="svg-icon"><use href="#icon-settings"/></svg>
+      <h3>Ajustes</h3>
+      <button class="icon-btn" id="ajustes-cerrar-btn" style="margin-left:auto;"><svg class="svg-icon"><use href="#icon-close"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="section-title">Sincronización</div>
+      <div class="flex-row" style="gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+        <button class="btn-secondary" id="btn-abrir-gist"><svg class="svg-icon"><use href="#icon-gist"/></svg> GitHub Gist</button>
+        <button class="icon-btn" id="btn-ajustes-gist-subir" style="display:none;" title="Subir a Gist"><svg class="svg-icon"><use href="#icon-cloud-up"/></svg></button>
+        <button class="icon-btn" id="btn-ajustes-gist-bajar" style="display:none;" title="Bajar desde Gist"><svg class="svg-icon"><use href="#icon-cloud-down"/></svg></button>
+      </div>
+      <div class="divider"></div>
+      <div class="section-title">Datos</div>
+      <div class="flex-row" style="gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+        <button class="btn-secondary" id="ajustes-exportar-btn"><svg class="svg-icon"><use href="#icon-download"/></svg> Exportar</button>
+        <button class="btn-secondary" id="ajustes-importar-btn"><svg class="svg-icon"><use href="#icon-upload"/></svg> Importar</button>
+      </div>
+      <div class="divider"></div>
+      <button class="btn-danger btn-flex" id="ajustes-restablecer-btn" style="width:100%;"><svg class="svg-icon" style="width:16px;height:16px;"><use href="#icon-trash"/></svg> Restablecer todos los datos</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Gist -->
+<div class="modal" id="modal-gist">
+  <div class="modal-content">
+    <div class="modal-header">
+      <svg class="svg-icon"><use href="#icon-gist"/></svg>
+      <h3>GitHub Gist</h3>
+      <button class="icon-btn" id="gist-cerrar-btn" style="margin-left:auto;"><svg class="svg-icon"><use href="#icon-close"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Token de acceso personal</label>
+        <div class="gist-input-row">
+          <input type="password" id="gist-token" placeholder="ghp_..." autocomplete="off" maxlength="200">
+          <button class="icon-btn" id="gist-token-eye" title="Mostrar/ocultar"><svg class="svg-icon" id="gist-eye-icon"><use href="#icon-eye"/></svg></button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Gist ID</label>
+        <div class="gist-input-row">
+          <input type="text" id="gist-id" placeholder="ej: a1b2c3d4e5f6..." autocomplete="off" maxlength="50">
+          <a class="icon-btn" id="gist-link-btn" href="#" target="_blank" rel="noopener noreferrer" title="Abrir Gist" style="display:none;text-decoration:none;"><svg class="svg-icon"><use href="#icon-external-link"/></svg></a>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Auto-sync al guardar</label>
+        <button class="toggle-switch" id="gist-autosync-toggle"></button>
+      </div>
+      <div class="gist-status" id="gist-sync-status"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary btn-flex" id="btn-gist-subir"><svg class="svg-icon"><use href="#icon-cloud-up"/></svg> Subir</button>
+      <button class="btn-secondary btn-flex" id="btn-gist-bajar"><svg class="svg-icon"><use href="#icon-cloud-down"/></svg> Bajar</button>
+      <button class="btn-secondary btn-flex" id="gist-guardar-btn"><svg class="svg-icon"><use href="#icon-save"/></svg> Guardar config</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Gist novedades -->
+<div class="modal" id="modal-gist-novedades">
+  <div class="modal-content" style="max-width:360px;">
+    <div class="modal-header">
+      <svg class="svg-icon"><use href="#icon-cloud-down"/></svg>
+      <h3>Novedades en Gist</h3>
+    </div>
+    <div class="modal-body">
+      <p class="text-muted gist-novedades-desc" style="margin-bottom:0.75rem;">Se encontraron datos nuevos en el Gist.</p>
+      <div id="gist-novedades-detalle" style="display:flex;gap:0.5rem;flex-wrap:wrap;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary btn-flex" id="gist-novedades-ok">Agregar</button>
+      <button class="btn-secondary btn-flex" id="gist-novedades-ignorar-btn">Ignorar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Importar -->
+<div class="modal" id="modal-importar">
+  <div class="modal-content">
+    <div class="modal-header">
+      <svg class="svg-icon"><use href="#icon-upload"/></svg>
+      <h3>Importar datos</h3>
+      <button class="icon-btn" id="importar-cerrar-btn" style="margin-left:auto;"><svg class="svg-icon"><use href="#icon-close"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="importar-dropzone" id="importar-dropzone">
+        <input type="file" id="importar-file-input" accept=".json" style="display:none;">
+        <label id="importar-dropzone-label" style="cursor:pointer;color:var(--text-muted);padding:0;">Seleccioná o arrastrá un archivo .json</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary btn-flex" id="importar-confirmar-btn" disabled>Reemplazar</button>
+      <button class="btn-secondary btn-flex" id="importar-combinar-btn" disabled>Combinar</button>
+      <button class="btn-secondary btn-flex" id="importar-cerrar2-btn">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Confirmar -->
+<div class="modal" id="modal-confirmar">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="confirmar-titulo">¿Confirmar?</h3>
+    </div>
+    <div class="modal-body">
+      <p class="confirmar-texto" id="confirmar-texto"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger btn-flex" id="confirmar-ok-btn">Confirmar</button>
+      <button class="btn-secondary btn-flex" id="confirmar-cancelar-btn">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  HELPERS BÁSICOS
+// ══════════════════════════════════════════════════════════════
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+function parseSeguro(jsonString) {
+    if (!jsonString) return null;
+    return JSON.parse(jsonString, (key, value) => {
+        if (['__proto__','constructor','prototype'].includes(key)) { console.warn('Prototype pollution bloqueado'); return undefined; }
+        return value;
+    });
+}
+
+const RE_ID = /^[a-z0-9]+$/i;
+const RE_COLOR = /^(|blue|green|red|orange|yellow|purple|teal|gray)$/;
+const MAX_STR = 200;
+const MAX_IMPORT_MB = 5;
+
+function _strSeg(v, max = MAX_STR) {
+    if (typeof v !== 'string') return null;
+    const s = v.trim().slice(0, max);
+    return s.length ? s : null;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  FIRMA SHA-256
+// ══════════════════════════════════════════════════════════════
+async function generarFirma(obj) {
+    if (!obj) return '0';
+    const core = {
+        racks: (obj.racks||[]).map(r=>[r.id,r.nombre,r.us,
+            (r.unidades||[]).map(u=>[u.id,u.tipo,u.nombre,u.pos,
+                (u.puertos||[]).map(p=>[p.num,p.label||'',p.notas||'',p.color||''])])
+        ])
+    };
+    const str = JSON.stringify(core);
+    const enc = new TextEncoder();
+    const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function verificarFirma(raw) {
+    if (!raw || typeof raw !== 'object' || !raw._firma) return false;
+    const calc = await generarFirma(raw);
+    return raw._firma === calc;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SANITIZACIÓN
+// ══════════════════════════════════════════════════════════════
+function _sanitizarPuerto(p) {
+    if (!p || typeof p !== 'object') return null;
+    const num = Number(p.num);
+    if (!Number.isFinite(num) || num < 1 || num > 48) return null;
+    const color = _strSeg(p.color||'', 10) ?? '';
+    if (!RE_COLOR.test(color)) return null;
+    return {
+        num: Math.floor(num),
+        label: _strSeg(p.label||'', 80) ?? '',
+        notas: _strSeg(p.notas||'', 100) ?? '',
+        color,
+    };
+}
+
+function _sanitizarUnidad(u) {
+    if (!u || typeof u !== 'object') return null;
+    const id = _strSeg(u.id, 32);
+    if (!id || !RE_ID.test(id)) return null;
+    const tipo = Number(u.tipo);
+    if (tipo !== 24 && tipo !== 48) return null;
+    const nombre = _strSeg(u.nombre||'', 40) ?? '';
+    const pos = Number(u.pos);
+    const puertos = Array.isArray(u.puertos)
+        ? u.puertos.map(_sanitizarPuerto).filter(Boolean)
+        : [];
+    return {
+        id,
+        tipo,
+        nombre,
+        pos: (Number.isFinite(pos) && pos >= 1 && pos <= 42) ? Math.floor(pos) : 1,
+        desc: _strSeg(u.desc||'', 100) ?? '',
+        puertos,
+    };
+}
+
+function _sanitizarRack(r) {
+    if (!r || typeof r !== 'object') return null;
+    const id = _strSeg(r.id, 32);
+    if (!id || !RE_ID.test(id)) return null;
+    const nombre = _strSeg(r.nombre, 60);
+    if (!nombre) return null;
+    const us = Number(r.us);
+    return {
+        id,
+        nombre,
+        us: (Number.isFinite(us) && us > 0) ? Math.floor(us) : 24,
+        desc: _strSeg(r.desc||'', 120) ?? '',
+        unidades: Array.isArray(r.unidades)
+            ? r.unidades.map(_sanitizarUnidad).filter(Boolean)
+            : [],
+        abierto: !!r.abierto,
+    };
+}
+
+function sanitizarEstado(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    if (!Array.isArray(raw.racks)) return null;
+    return { racks: raw.racks.map(_sanitizarRack).filter(Boolean) };
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ESTADO
+// ══════════════════════════════════════════════════════════════
+let state = { racks: [] };
+
+function guardar() {
+    try { localStorage.setItem('PCH_state', JSON.stringify(state)); } catch(_) {}
+    GistSync.subirAuto();
+}
+
+function cargar() {
+    try {
+        const raw = parseSeguro(localStorage.getItem('PCH_state')||'null');
+        if (raw) {
+            const limpio = sanitizarEstado(raw);
+            if (limpio) state = limpio;
+        }
+    } catch(_) {}
+}
+
+// ══════════════════════════════════════════════════════════════
+//  HISTORIAL (UNDO/REDO)
+// ══════════════════════════════════════════════════════════════
+const historial = (() => {
+    const MAX = 30;
+    let _pasado = [], _futuro = [];
+    function _clonar(s) { return parseSeguro(JSON.stringify(s)); }
+    function _actualizarBotones() {
+        const bU = document.getElementById('btn-undo');
+        const bR = document.getElementById('btn-redo');
+        if (bU) bU.disabled = !_pasado.length;
+        if (bR) bR.disabled = !_futuro.length;
+    }
+    function empujar(label) {
+        _pasado.push({ state: _clonar(state), label });
+        if (_pasado.length > MAX) _pasado.shift();
+        _futuro = [];
+        _actualizarBotones();
+    }
+    function undo() {
+        if (!_pasado.length) return;
+        const e = _pasado.pop();
+        _futuro.push({ state: _clonar(state), label: e.label });
+        if (_futuro.length > MAX) _futuro.shift();
+        state = e.state;
+        guardar(); renderRacks(); _actualizarBotones();
+        toast(`Deshecho: ${e.label}`, 'info');
+    }
+    function redo() {
+        if (!_futuro.length) return;
+        const e = _futuro.pop();
+        _pasado.push({ state: _clonar(state), label: e.label });
+        if (_pasado.length > MAX) _pasado.shift();
+        state = e.state;
+        guardar(); renderRacks(); _actualizarBotones();
+        toast(`Rehecho: ${e.label}`, 'info');
+    }
+    return { empujar, undo, redo };
+})();
+
+// ══════════════════════════════════════════════════════════════
+//  MODAL MANAGER
+// ══════════════════════════════════════════════════════════════
+const MM = (() => {
+    let _mdDown = false;
+    const _onCerrar = {};
+    function _onMD(e) { _mdDown = e.target === e.currentTarget; }
+    function _onClick(e) { if (!_mdDown) return; if (e.target === e.currentTarget) _cerrarConPadre(e.target.id); }
+    function _cerrarConPadre(id) { const fn = _onCerrar[id]; if (fn) fn(); else cerrar(id); }
+    function abrir(id, opts) {
+        const m = document.getElementById(id); if (!m) return;
+        let cb, onEscape;
+        if (typeof opts === 'function') { cb = opts; }
+        else if (opts && typeof opts === 'object') { cb = opts.cb; onEscape = opts.onEscape; }
+        if (onEscape) _onCerrar[id] = onEscape; else delete _onCerrar[id];
+        m.classList.add('show');
+        document.body.classList.add('modal-open');
+        setTimeout(() => { m.addEventListener('mousedown', _onMD); m.addEventListener('click', _onClick); }, 100);
+        cb?.();
+    }
+    function cerrar(id, cb) {
+        const m = document.getElementById(id); if (!m) return;
+        delete _onCerrar[id];
+        m.classList.remove('show');
+        if (!document.querySelector('.modal.show')) document.body.classList.remove('modal-open');
+        m.removeEventListener('mousedown', _onMD);
+        m.removeEventListener('click', _onClick);
+        cb?.();
+    }
+    function cerrarTop() {
+        const abiertos = [...document.querySelectorAll('.modal.show')];
+        if (!abiertos.length) return;
+        const conHandler = abiertos.filter(m => _onCerrar[m.id]);
+        const target = conHandler.length ? conHandler[conHandler.length-1] : abiertos[abiertos.length-1];
+        _cerrarConPadre(target.id);
+    }
+    return { abrir, cerrar, cerrarTop };
+})();
+
+// ══════════════════════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════════════════════
+const _tQ = [];
+let _tBusy = false, _tCurrent = null;
+function toast(msg, tipo = 'success') {
+    if (_tCurrent && _tCurrent.msg === msg && _tCurrent.tipo === tipo) return;
+    if (_tQ.some(t => t.msg === msg && t.tipo === tipo)) return;
+    _tQ.push({ msg, tipo });
+    _flushToast();
+}
+function _flushToast() {
+    if (_tBusy || !_tQ.length) return;
+    _tCurrent = _tQ.shift(); _tBusy = true;
+    const el = document.getElementById('toast');
+    el.textContent = _tCurrent.msg;
+    el.className = `toast show ${_tCurrent.tipo}`;
+    setTimeout(() => {
+        el.classList.remove('show');
+        setTimeout(() => { el.className='toast'; _tBusy=false; _tCurrent=null; _flushToast(); }, 300);
+    }, 2500);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CONFIRMAR
+// ══════════════════════════════════════════════════════════════
+let _confirmarCb = null, _confirmarPadreId = null;
+function confirmar(titulo, texto, cb) {
+    document.getElementById('confirmar-titulo').textContent = titulo;
+    document.getElementById('confirmar-texto').textContent = texto;
+    _confirmarCb = cb;
+    const abiertos = [...document.querySelectorAll('.modal.show')];
+    _confirmarPadreId = abiertos.length ? abiertos[abiertos.length-1].id : null;
+    MM.abrir('modal-confirmar', { onEscape: _volverAlPadreConf });
+}
+function _volverAlPadreConf() {
+    MM.cerrar('modal-confirmar');
+    _confirmarCb = null;
+    if (_confirmarPadreId) { const id = _confirmarPadreId; _confirmarPadreId=null; setTimeout(() => MM.abrir(id), 50); }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  DARK MODE
+// ══════════════════════════════════════════════════════════════
+function toggleDarkMode() {
+    const dark = document.documentElement.classList.toggle('dark-mode');
+    const btn = document.getElementById('btn-dark-mode');
+    if (btn) {
+        btn.title = dark ? 'Modo claro' : 'Modo oscuro';
+        const use = btn.querySelector('use');
+        if (use) use.setAttribute('href', dark ? '#icon-sun' : '#icon-moon');
+    }
+    try { localStorage.setItem('PCH_dark', dark ? '1' : '0'); } catch(_) {}
+}
+
+// ══════════════════════════════════════════════════════════════
+//  TOOLTIP de jack
+// ══════════════════════════════════════════════════════════════
+const Tooltip = (() => {
+    const el = document.getElementById('jack-tooltip');
+    let _hideTimer = null;
+    function show(port, label, notas, rect) {
+        clearTimeout(_hideTimer);
+        document.getElementById('jt-port').textContent = port;
+        document.getElementById('jt-label').textContent = label || '(sin etiqueta)';
+        const notasEl = document.getElementById('jt-note');
+        notasEl.textContent = notas || '';
+        notasEl.style.display = notas ? '' : 'none';
+        el.classList.add('show');
+        // Posicionar
+        const tW = 220, tH = 80;
+        let x = rect.left + rect.width/2 - tW/2;
+        let y = rect.top - tH - 8;
+        if (y < 8) y = rect.bottom + 8;
+        if (x < 8) x = 8;
+        if (x + tW > window.innerWidth - 8) x = window.innerWidth - tW - 8;
+        el.style.left = x+'px';
+        el.style.top = y+'px';
+    }
+    function hide() {
+        _hideTimer = setTimeout(() => el.classList.remove('show'), 80);
+    }
+    return { show, hide };
+})();
+
+// ══════════════════════════════════════════════════════════════
+//  RENDER RACKS
+// ══════════════════════════════════════════════════════════════
+function renderRacks() {
+    const container = document.getElementById('racks-list');
+    const empty = document.getElementById('racks-empty');
+    if (!state.racks.length) {
+        container.innerHTML = '';
+        empty.style.display = '';
+        return;
+    }
+    empty.style.display = 'none';
+    container.innerHTML = state.racks.map(r => renderRackCard(r)).join('');
+
+    // bind events para cada rack
+    state.racks.forEach(r => {
+        bindRackEvents(r.id);
+    });
+}
+
+function renderRackCard(rack) {
+    const totalPuertos = rack.unidades.reduce((s, u) => s + u.tipo, 0);
+    const usados = rack.unidades.reduce((s, u) => s + u.puertos.filter(p => p.label).length, 0);
+    const pct = totalPuertos ? Math.round(usados / totalPuertos * 100) : 0;
+    const isOpen = rack.abierto;
+
+    return `<div class="rack-item-card" id="rcard-${esc(rack.id)}">
+        <div class="rack-item-header ${isOpen?'open':''}" id="rheader-${esc(rack.id)}">
+            <svg class="svg-icon" style="color:var(--accent);"><use href="#icon-rack"/></svg>
+            <span class="rack-item-name">${esc(rack.nombre)}</span>
+            ${rack.desc ? `<span class="rack-item-meta">${esc(rack.desc)}</span>` : ''}
+            <span class="badge badge-gray">${rack.unidades.length} patchera${rack.unidades.length!==1?'s':''}</span>
+            <span class="badge badge-blue">${pct}% ocupado</span>
+            <span class="badge badge-gray">${rack.us}U</span>
+            <button class="icon-btn" data-action="editar-rack" data-id="${esc(rack.id)}" title="Editar rack">
+                <svg class="svg-icon" style="width:18px;height:18px;"><use href="#icon-edit"/></svg>
+            </button>
+            <button class="icon-btn" data-action="toggle-rack" data-id="${esc(rack.id)}" title="${isOpen?'Colapsar':'Expandir'}">
+                <svg class="svg-icon" style="transform:rotate(${isOpen?0:-90}deg);transition:transform 0.2s;"><use href="#icon-chevron-down"/></svg>
+            </button>
+        </div>
+        <div class="rack-item-body ${isOpen?'open':''}" id="rbody-${esc(rack.id)}">
+            <div style="margin-bottom:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+                <button class="btn-primary" data-action="nueva-patchera" data-rack="${esc(rack.id)}" style="font-size:0.82rem;padding:0.45rem 0.85rem;">
+                    <svg class="svg-icon" style="width:16px;height:16px;"><use href="#icon-add"/></svg> Agregar patchera
+                </button>
+            </div>
+            ${rack.unidades.length ? renderRackView(rack) : `<div class="empty-state" style="padding:1.5rem;"><div class="empty-icon" style="font-size:1.8rem;">🔌</div><p style="font-size:0.85rem;">Sin patcheras. Agregá la primera.</p></div>`}
+        </div>
+    </div>`;
+}
+
+function renderRackView(rack) {
+    return `<div class="rack-container">
+        <div class="rack-header-row">
+            <span class="rack-name">${esc(rack.nombre)}</span>
+            <span class="rack-meta">actualizado ${new Date().toLocaleDateString('es-AR')}</span>
+        </div>
+        ${rack.unidades.map(u => renderPatchera(u, rack.id)).join('')}
+    </div>`;
+}
+
+function renderPatchera(u, rackId) {
+    const total = u.tipo;
+    // Construir mapa de puertos
+    const portMap = {};
+    u.puertos.forEach(p => portMap[p.num] = p);
+
+    if (u.tipo === 24) {
+        return renderPatchera24(u, rackId, portMap);
+    } else {
+        return renderPatchera48(u, rackId, portMap);
+    }
+}
+
+function _jackHTML(num, portMap, unidadId, rackId) {
+    const p = portMap[num];
+    const filled = p && p.label;
+    const colorClass = (p && p.color) ? `col-${p.color}` : '';
+    const labelAttr = p ? ` data-label="${esc(p.label||'')}" data-notas="${esc(p.notas||'')}"` : '';
+    return `<div class="jack ${filled?'filled':colorClass?'filled':''} ${colorClass} ${!filled&&!colorClass?'empty':''}"
+        data-action="editar-jack" data-rack="${esc(rackId)}" data-unidad="${esc(unidadId)}" data-num="${num}"${labelAttr}
+        title="${p&&p.label?esc(p.label):`Puerto ${num}`}">
+        <span class="jack-num">${num}</span>
+    </div>`;
+}
+
+function _jacksGrupo(nums, portMap, unidadId, rackId) {
+    // Grupos de 6, separados por un gap visual
+    let html = '';
+    let grupo = 0;
+    for (let i = 0; i < nums.length; i++) {
+        if (i > 0 && i % 6 === 0) html += `<div class="jack-group-sep"></div>`;
+        html += _jackHTML(nums[i], portMap, unidadId, rackId);
+    }
+    return html;
+}
+
+function renderPatchera24(u, rackId, portMap) {
+    const nums = Array.from({length:24}, (_,i)=>i+1);
+    return `<div class="rack-unit" id="unit-${esc(u.id)}">
+        <div class="rack-unit-label">
+            <span class="rul-name">${esc(u.nombre||`Patchera ${u.pos}U`)}</span>
+            <div class="rack-unit-controls">
+                <span style="color:#888;font-size:0.65rem;">24p · ${u.pos}U</span>
+                <button data-action="editar-patchera" data-rack="${esc(rackId)}" data-unidad="${esc(u.id)}" style="background:transparent;border:1px solid #444;color:#aaa;border-radius:4px;padding:0.1rem 0.4rem;font-size:0.68rem;cursor:pointer;">Editar</button>
+            </div>
+        </div>
+        ${u.desc ? `<div class="patch-panel-label">${esc(u.desc)}</div>` : ''}
+        <div class="patch-row">${_jacksGrupo(nums, portMap, u.id, rackId)}</div>
+    </div>`;
+}
+
+function renderPatchera48(u, rackId, portMap) {
+    const fila1 = Array.from({length:24}, (_,i)=>i+1);
+    const fila2 = Array.from({length:24}, (_,i)=>i+25);
+    return `<div class="rack-unit" id="unit-${esc(u.id)}">
+        <div class="rack-unit-label">
+            <span class="rul-name">${esc(u.nombre||`Patchera ${u.pos}U`)}</span>
+            <div class="rack-unit-controls">
+                <span style="color:#888;font-size:0.65rem;">48p · ${u.pos}U</span>
+                <button data-action="editar-patchera" data-rack="${esc(rackId)}" data-unidad="${esc(u.id)}" style="background:transparent;border:1px solid #444;color:#aaa;border-radius:4px;padding:0.1rem 0.4rem;font-size:0.68rem;cursor:pointer;">Editar</button>
+            </div>
+        </div>
+        ${u.desc ? `<div class="patch-panel-label">${esc(u.desc)}</div>` : ''}
+        <div class="patch-double-row">
+            <div class="patch-row">${_jacksGrupo(fila1, portMap, u.id, rackId)}</div>
+            <div class="patch-row">${_jacksGrupo(fila2, portMap, u.id, rackId)}</div>
+        </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  BIND EVENTS para rack card (delegación)
+// ══════════════════════════════════════════════════════════════
+function bindRackEvents(rackId) {
+    const card = document.getElementById(`rcard-${rackId}`);
+    if (!card) return;
+
+    card.addEventListener('click', e => {
+        const el = e.target.closest('[data-action]');
+        if (!el) return;
+        const action = el.dataset.action;
+
+        if (action === 'toggle-rack') {
+            toggleRack(el.dataset.id);
+        } else if (action === 'editar-rack') {
+            abrirEditarRack(el.dataset.id);
+        } else if (action === 'nueva-patchera') {
+            abrirNuevaPatchera(el.dataset.rack);
+        } else if (action === 'editar-patchera') {
+            abrirEditarPatchera(el.dataset.rack, el.dataset.unidad);
+        } else if (action === 'editar-jack') {
+            abrirEditarJack(el.dataset.rack, el.dataset.unidad, Number(el.dataset.num));
+        }
+    });
+
+    // Tooltip en jacks
+    card.addEventListener('mouseover', e => {
+        const jack = e.target.closest('.jack');
+        if (!jack || !jack.dataset.action) return;
+        const num = jack.dataset.num;
+        const label = jack.dataset.label || '';
+        const notas = jack.dataset.notas || '';
+        const pNum = `Puerto ${num}`;
+        Tooltip.show(pNum, label, notas, jack.getBoundingClientRect());
+    });
+    card.addEventListener('mouseout', e => {
+        if (e.target.closest('.jack')) Tooltip.hide();
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  FUNCIONES DE RACK
+// ══════════════════════════════════════════════════════════════
+function toggleRack(rackId) {
+    const rack = state.racks.find(r => r.id === rackId);
+    if (!rack) return;
+    rack.abierto = !rack.abierto;
+    guardar();
+    renderRacks();
+}
+
+let _editandoRackId = null;
+function abrirNuevoRack() {
+    _editandoRackId = null;
+    document.getElementById('modal-rack-titulo').textContent = 'Nuevo Rack';
+    document.getElementById('rack-nombre').value = '';
+    document.getElementById('rack-desc').value = '';
+    document.getElementById('rack-us').value = '24';
+    document.getElementById('rack-eliminar-btn').style.display = 'none';
+    MM.abrir('modal-rack', { onEscape: () => MM.cerrar('modal-rack') });
+    setTimeout(() => document.getElementById('rack-nombre').focus(), 200);
+}
+
+function abrirEditarRack(rackId) {
+    const rack = state.racks.find(r => r.id === rackId);
+    if (!rack) return;
+    _editandoRackId = rackId;
+    document.getElementById('modal-rack-titulo').textContent = 'Editar Rack';
+    document.getElementById('rack-nombre').value = rack.nombre;
+    document.getElementById('rack-desc').value = rack.desc || '';
+    document.getElementById('rack-us').value = String(rack.us);
+    document.getElementById('rack-eliminar-btn').style.display = 'flex';
+    MM.abrir('modal-rack', { onEscape: () => MM.cerrar('modal-rack') });
+}
+
+function guardarRack() {
+    const nombre = document.getElementById('rack-nombre').value.trim();
+    const desc = document.getElementById('rack-desc').value.trim();
+    const us = Number(document.getElementById('rack-us').value);
+
+    if (!nombre) {
+        document.getElementById('rack-nombre').classList.add('error');
+        toast('Ingresá un nombre para el rack', 'error');
+        return;
+    }
+
+    if (_editandoRackId) {
+        historial.empujar(`Editar rack "${nombre}"`);
+        const rack = state.racks.find(r => r.id === _editandoRackId);
+        if (rack) { rack.nombre = nombre; rack.desc = desc; rack.us = us; }
+    } else {
+        historial.empujar(`Agregar rack "${nombre}"`);
+        state.racks.push({ id: uid(), nombre, desc, us, unidades: [], abierto: true });
+    }
+    guardar();
+    MM.cerrar('modal-rack');
+    renderRacks();
+    toast(_editandoRackId ? 'Rack actualizado' : 'Rack creado');
+}
+
+function eliminarRack() {
+    if (!_editandoRackId) return;
+    const rack = state.racks.find(r => r.id === _editandoRackId);
+    if (!rack) return;
+    confirmar(`¿Eliminar rack "${rack.nombre}"?`,
+        'Se eliminarán también todas sus patcheras y datos de puertos. Esta acción se puede deshacer.',
+        () => {
+            historial.empujar(`Eliminar rack "${rack.nombre}"`);
+            state.racks = state.racks.filter(r => r.id !== _editandoRackId);
+            _editandoRackId = null;
+            guardar();
+            MM.cerrar('modal-rack');
+            renderRacks();
+            toast('Rack eliminado', 'info');
+        }
+    );
+}
+
+// ══════════════════════════════════════════════════════════════
+//  FUNCIONES DE PATCHERA
+// ══════════════════════════════════════════════════════════════
+let _editandoPatcheraRackId = null, _editandoPatcheraId = null;
+
+function abrirNuevaPatchera(rackId) {
+    _editandoPatcheraRackId = rackId;
+    _editandoPatcheraId = null;
+    document.getElementById('modal-patchera-titulo').textContent = 'Nueva Patchera';
+    document.getElementById('patchera-nombre').value = '';
+    document.getElementById('patchera-pos').value = '';
+    document.getElementById('patchera-tipo').value = '24';
+    document.getElementById('patchera-desc').value = '';
+    document.getElementById('patchera-eliminar-btn').style.display = 'none';
+    MM.abrir('modal-patchera', { onEscape: () => MM.cerrar('modal-patchera') });
+    setTimeout(() => document.getElementById('patchera-nombre').focus(), 200);
+}
+
+function abrirEditarPatchera(rackId, unidadId) {
+    const rack = state.racks.find(r => r.id === rackId);
+    if (!rack) return;
+    const u = rack.unidades.find(x => x.id === unidadId);
+    if (!u) return;
+    _editandoPatcheraRackId = rackId;
+    _editandoPatcheraId = unidadId;
+    document.getElementById('modal-patchera-titulo').textContent = 'Editar Patchera';
+    document.getElementById('patchera-nombre').value = u.nombre || '';
+    document.getElementById('patchera-pos').value = u.pos;
+    document.getElementById('patchera-tipo').value = String(u.tipo);
+    document.getElementById('patchera-desc').value = u.desc || '';
+    document.getElementById('patchera-eliminar-btn').style.display = 'flex';
+    MM.abrir('modal-patchera', { onEscape: () => MM.cerrar('modal-patchera') });
+}
+
+function guardarPatchera() {
+    const nombre = document.getElementById('patchera-nombre').value.trim();
+    const pos = Number(document.getElementById('patchera-pos').value);
+    const tipo = Number(document.getElementById('patchera-tipo').value);
+    const desc = document.getElementById('patchera-desc').value.trim();
+
+    if (!nombre) {
+        document.getElementById('patchera-nombre').classList.add('error');
+        toast('Ingresá un nombre para la patchera', 'error');
+        return;
+    }
+
+    const rack = state.racks.find(r => r.id === _editandoPatcheraRackId);
+    if (!rack) return;
+
+    if (_editandoPatcheraId) {
+        historial.empujar(`Editar patchera "${nombre}"`);
+        const u = rack.unidades.find(x => x.id === _editandoPatcheraId);
+        if (u) { u.nombre = nombre; u.pos = pos||1; u.tipo = tipo; u.desc = desc; }
+    } else {
+        historial.empujar(`Agregar patchera "${nombre}" en rack "${rack.nombre}"`);
+        rack.unidades.push({ id: uid(), nombre, tipo, pos: pos||1, desc, puertos: [] });
+        rack.abierto = true;
+    }
+    guardar();
+    MM.cerrar('modal-patchera');
+    renderRacks();
+    toast(_editandoPatcheraId ? 'Patchera actualizada' : 'Patchera agregada');
+}
+
+function eliminarPatchera() {
+    if (!_editandoPatcheraId || !_editandoPatcheraRackId) return;
+    const rack = state.racks.find(r => r.id === _editandoPatcheraRackId);
+    const u = rack?.unidades.find(x => x.id === _editandoPatcheraId);
+    if (!u) return;
+    confirmar(`¿Eliminar patchera "${u.nombre||'sin nombre'}"?`,
+        'Se eliminarán todos sus datos de puertos. Esta acción se puede deshacer.',
+        () => {
+            historial.empujar(`Eliminar patchera "${u.nombre||'sin nombre'}"`);
+            rack.unidades = rack.unidades.filter(x => x.id !== _editandoPatcheraId);
+            guardar();
+            MM.cerrar('modal-patchera');
+            renderRacks();
+            toast('Patchera eliminada', 'info');
+        }
+    );
+}
+
+// ══════════════════════════════════════════════════════════════
+//  FUNCIONES DE JACK
+// ══════════════════════════════════════════════════════════════
+let _editandoJackRackId = null, _editandoJackUnidadId = null, _editandoJackNum = null;
+
+function abrirEditarJack(rackId, unidadId, num) {
+    const rack = state.racks.find(r => r.id === rackId);
+    const u = rack?.unidades.find(x => x.id === unidadId);
+    if (!u) return;
+
+    _editandoJackRackId = rackId;
+    _editandoJackUnidadId = unidadId;
+    _editandoJackNum = num;
+
+    const puerto = u.puertos.find(p => p.num === num);
+    const nombreUnidad = u.nombre || `Patchera ${u.pos}U`;
+
+    document.getElementById('modal-jack-titulo').textContent = `${nombreUnidad} — Puerto ${num}`;
+    document.getElementById('jack-label').value = puerto?.label || '';
+    document.getElementById('jack-notas').value = puerto?.notas || '';
+
+    // Color swatches
+    const color = puerto?.color || '';
+    document.querySelectorAll('.color-swatch').forEach(sw => {
+        sw.classList.toggle('active', sw.dataset.color === color);
+    });
+
+    MM.abrir('modal-jack', { onEscape: () => MM.cerrar('modal-jack') });
+    setTimeout(() => document.getElementById('jack-label').focus(), 200);
+}
+
+function guardarJack() {
+    const rack = state.racks.find(r => r.id === _editandoJackRackId);
+    const u = rack?.unidades.find(x => x.id === _editandoJackUnidadId);
+    if (!u) return;
+
+    const label = document.getElementById('jack-label').value.trim().slice(0, 80);
+    const notas = document.getElementById('jack-notas').value.trim().slice(0, 100);
+    const color = document.querySelector('.color-swatch.active')?.dataset.color || '';
+
+    historial.empujar(`Editar puerto ${_editandoJackNum}`);
+
+    // Quitar existente si hay
+    u.puertos = u.puertos.filter(p => p.num !== _editandoJackNum);
+
+    // Solo guardar si hay algo que guardar
+    if (label || notas || color) {
+        u.puertos.push({ num: _editandoJackNum, label, notas, color });
+    }
+
+    guardar();
+    MM.cerrar('modal-jack');
+    renderRacks();
+    toast(label ? 'Puerto actualizado' : 'Puerto limpiado', label ? 'success' : 'info');
+}
+
+function limpiarJack() {
+    const rack = state.racks.find(r => r.id === _editandoJackRackId);
+    const u = rack?.unidades.find(x => x.id === _editandoJackUnidadId);
+    if (!u) return;
+    historial.empujar(`Limpiar puerto ${_editandoJackNum}`);
+    u.puertos = u.puertos.filter(p => p.num !== _editandoJackNum);
+    guardar();
+    MM.cerrar('modal-jack');
+    renderRacks();
+    toast('Puerto limpiado', 'info');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  EXPORTAR / IMPORTAR
+// ══════════════════════════════════════════════════════════════
+async function exportarDatos() {
+    const firma = await generarFirma(state);
+    const data = { ...state, _firma: firma };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const hoy = new Date();
+    const fecha = `${hoy.getFullYear()}${String(hoy.getMonth()+1).padStart(2,'0')}${String(hoy.getDate()).padStart(2,'0')}`;
+    a.download = `patcheras_${fecha}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Datos exportados');
+}
+
+let _importarParsed = null;
+
+function _setImportLabel(label, { tipo, titulo, sub, warn }) {
+    label.textContent = '';
+    const strong = document.createElement('strong');
+    strong.className = tipo === 'ok' ? 'import-ok' : 'import-fail';
+    strong.textContent = titulo;
+    label.appendChild(strong);
+    label.appendChild(document.createElement('br'));
+    if (sub) {
+        const span = document.createElement('span');
+        span.className = 'import-sub';
+        span.textContent = sub;
+        label.appendChild(span);
+    }
+    if (warn) {
+        const spanW = document.createElement('span');
+        spanW.className = 'import-sub';
+        spanW.style.color = 'var(--c-orange)';
+        spanW.textContent = warn;
+        label.appendChild(document.createElement('br'));
+        label.appendChild(spanW);
+    }
+}
+
+function onImportarFileChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const label = document.getElementById('importar-dropzone-label');
+    const zone = document.getElementById('importar-dropzone');
+    const btn = document.getElementById('importar-confirmar-btn');
+    const btnC = document.getElementById('importar-combinar-btn');
+
+    if (file.size > MAX_IMPORT_MB * 1024 * 1024) {
+        _importarParsed = null;
+        _setImportLabel(label, { tipo:'fail', titulo:'✗ Archivo demasiado grande', sub:`Máximo: ${MAX_IMPORT_MB} MB` });
+        zone.style.borderColor = 'var(--c-red)';
+        btn.disabled = true; btnC.disabled = true;
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async ev => {
+        try {
+            const raw = parseSeguro(ev.target.result);
+            const esValida = await verificarFirma(raw);
+            const parsed = sanitizarEstado(raw);
+            if (!parsed) throw new Error('Esquema inválido');
+            _importarParsed = { ...parsed, _firmaValida: esValida };
+            const sub = `${parsed.racks.length} rack(s)`;
+            if (esValida) {
+                _setImportLabel(label, { tipo:'ok', titulo:`✓ ${file.name}`, sub });
+                zone.style.borderColor = 'var(--c-green)';
+            } else {
+                _setImportLabel(label, { tipo:'warn', titulo:'⚠️ Archivo modificado externamente', sub });
+                zone.style.borderColor = 'var(--c-orange)';
+            }
+            btn.disabled = false; btnC.disabled = false;
+        } catch(_) {
+            _importarParsed = null;
+            _setImportLabel(label, { tipo:'fail', titulo:'✗ Archivo inválido', sub:'El archivo no tiene el formato correcto.' });
+            zone.style.borderColor = 'var(--c-red)';
+            btn.disabled = true; btnC.disabled = true;
+        }
+    };
+    reader.readAsText(file);
+}
+
+function importarDatos(modo) {
+    if (!_importarParsed) { toast('Seleccioná un archivo válido', 'error'); return; }
+    const parsed = _importarParsed;
+    const alerta = parsed._firmaValida ? '' : '⚠️ ATENCIÓN: El archivo fue alterado o puede estar corrupto.\n\n';
+
+    if (modo === 'reemplazar') {
+        confirmar('¿Importar y reemplazar?', alerta + 'Todos los datos actuales serán reemplazados.', () => {
+            historial.empujar('Importar y reemplazar datos');
+            state.racks = parsed.racks || [];
+            guardar(); MM.cerrar('modal-importar'); renderRacks();
+            toast(`Datos reemplazados (${parsed.racks.length} racks)`);
+        });
+    } else {
+        confirmar('¿Combinar datos?', alerta + 'Se agregarán los racks del archivo que no existan actualmente.', () => {
+            historial.empujar('Combinar datos importados');
+            const ids = new Set(state.racks.map(r => r.id));
+            let nuevos = 0;
+            (parsed.racks || []).forEach(r => {
+                if (!ids.has(r.id)) { state.racks.push(r); nuevos++; }
+            });
+            guardar(); MM.cerrar('modal-importar'); renderRacks();
+            toast(nuevos > 0 ? `Combinados (+${nuevos} racks)` : 'Sin cambios nuevos', nuevos>0?'success':'info');
+        });
+    }
+}
+
+function restablecerDatos() {
+    confirmar('¿Restablecer todos los datos?',
+        'Se eliminarán todos los racks y patcheras. Esta acción se puede deshacer antes de cerrar la página.',
+        () => {
+            MM.cerrar('modal-ajustes');
+            historial.empujar('Restablecer todos los datos');
+            state.racks = [];
+            guardar(); renderRacks();
+            toast('Datos restablecidos');
+        }
+    );
+}
+
+// ══════════════════════════════════════════════════════════════
+//  GIST SYNC
+// ══════════════════════════════════════════════════════════════
+const GistSync = (() => {
+    const CFG_KEY = 'PCH_gist_cfg';
+    const FILENAME = 'patcheras_data.json';
+    const DEBOUNCE_MS = 3000;
+    const RE_GIST_ID = /^[a-f0-9]{20,40}$/i;
+
+    let _cfg = { token: '', gistId: '', lastSync: null, auto: false };
+    let _debounceTimer = null, _subiendo = false;
+
+    function _cargarCfg() {
+        try { const c = parseSeguro(localStorage.getItem(CFG_KEY)||'null'); if (c) _cfg = { ..._cfg, ...c }; } catch(_) {}
+        _actualizarBotonesAjustes();
+    }
+    function _guardarCfg() {
+        try { localStorage.setItem(CFG_KEY, JSON.stringify(_cfg)); } catch(_) {}
+    }
+    function _spinStart() { document.getElementById('btn-ajustes')?.classList.add('icon-btn-spinning'); }
+    function _spinStop() { document.getElementById('btn-ajustes')?.classList.remove('icon-btn-spinning'); }
+    function _setBusy(busy) {
+        _subiendo = busy;
+        ['btn-gist-subir','btn-gist-bajar'].forEach(id => { const b=document.getElementById(id); if(b) b.disabled=busy; });
+        if (busy) _spinStart(); else _spinStop();
+    }
+    function _setStatus(msg) { const el=document.getElementById('gist-sync-status'); if(el) el.textContent=msg; }
+    function _setStatusSync() {
+        const d=new Date(_cfg.lastSync);
+        _setStatus(`Sincronizado: ${d.toLocaleDateString('es-AR')}, ${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`);
+    }
+    function _actualizarLinkBtn() {
+        const id=document.getElementById('gist-id')?.value.trim();
+        const btn=document.getElementById('gist-link-btn');
+        if (!btn) return;
+        if (id) { btn.href=`https://gist.github.com/${id}`; btn.style.display='flex'; } else { btn.style.display='none'; }
+    }
+    function _actualizarToggleUI() {
+        const t=document.getElementById('gist-autosync-toggle');
+        if (t) t.classList.toggle('on', !!_cfg.auto);
+    }
+    function _actualizarBotonesAjustes() {
+        const tieneToken = !!(_cfg.token||'').trim();
+        const tieneId = !!(_cfg.gistId||'').trim();
+        const bU=document.getElementById('btn-ajustes-gist-subir');
+        const bD=document.getElementById('btn-ajustes-gist-bajar');
+        if (bU) bU.style.display=(tieneToken&&tieneId)?'flex':'none';
+        if (bD) bD.style.display=tieneId?'flex':'none';
+    }
+    function toggleToken() {
+        const inp=document.getElementById('gist-token');
+        const icon=document.getElementById('gist-eye-icon');
+        if (!inp) return;
+        const show = inp.type==='password';
+        inp.type=show?'text':'password';
+        if (icon) icon.setAttribute('href', show?'#icon-eye-off':'#icon-eye');
+    }
+    function toggleAuto() {
+        const t=document.getElementById('gist-autosync-toggle');
+        if (t) t.classList.toggle('on');
+    }
+    function guardarConfig() {
+        const tokenEl=document.getElementById('gist-token');
+        const idEl=document.getElementById('gist-id');
+        const toggleEl=document.getElementById('gist-autosync-toggle');
+        const nuevoToken=tokenEl?.value.trim()||'';
+        const nuevoId=idEl?.value.trim()||'';
+        const nuevoAuto=toggleEl?toggleEl.classList.contains('on'):false;
+        if (nuevoId && !RE_GIST_ID.test(nuevoId)) { toast('Gist ID inválido','error'); return; }
+        _cfg.token=nuevoToken; _cfg.gistId=nuevoId; _cfg.auto=nuevoAuto;
+        _guardarCfg(); _actualizarBotonesAjustes();
+        toast('Configuración guardada');
+    }
+
+    async function _ejecutarSubida(silencioso=false) {
+        const token=_cfg.token, gistId=_cfg.gistId;
+        if (!token || !gistId) {
+            if (!silencioso) toast('Configurá el Token y el Gist ID primero','error');
+            return;
+        }
+        _setBusy(true); if(!silencioso) _setStatus('Subiendo…');
+        try {
+            const firma = await generarFirma(state);
+            const exportData = { ...state, _firma: firma };
+            const body = { files: { [FILENAME]: { content: JSON.stringify(exportData, null, 2) } } };
+            const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            _cfg.lastSync=new Date().toISOString(); _guardarCfg(); _setStatusSync();
+            if (!silencioso) toast('Datos subidos a Gist');
+        } catch(err) {
+            _setStatus(`Error: ${err.message}`);
+            if (!silencioso) toast(`Error al subir: ${err.message}`,'error');
+        } finally { _setBusy(false); }
+    }
+    function subir() { _ejecutarSubida(false); }
+    function subirAuto() {
+        if (!_cfg.auto || !_cfg.token) return;
+        clearTimeout(_debounceTimer);
+        _debounceTimer=setTimeout(() => { if(!_subiendo) _ejecutarSubida(true); }, DEBOUNCE_MS);
+    }
+
+    async function bajar() {
+        const token=document.getElementById('gist-token')?.value.trim()||_cfg.token;
+        const gistId=document.getElementById('gist-id')?.value.trim()||_cfg.gistId;
+        if (!gistId) { toast('Ingresá el Gist ID primero','error'); return; }
+        if (!RE_GIST_ID.test(gistId)) { toast('Gist ID inválido','error'); return; }
+        _setBusy(true); _setStatus('Bajando…');
+        try {
+            const headers={}; if (token) headers['Authorization']=`token ${token}`;
+            const res = await fetch(`https://api.github.com/gists/${gistId}`, { headers });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const file = data.files?.[FILENAME];
+            if (!file) throw new Error(`No se encontró "${FILENAME}" en el Gist`);
+            let contenido = file.content;
+            if (file.truncated) {
+                const rawOrigin = new URL(file.raw_url).hostname;
+                if (!rawOrigin.endsWith('.githubusercontent.com')) throw new Error('raw_url inválida');
+                const r2 = await fetch(file.raw_url);
+                contenido = await r2.text();
+            }
+            const rawRemoto = parseSeguro(contenido);
+            const esValida = await verificarFirma(rawRemoto);
+            const remoto = sanitizarEstado(rawRemoto);
+            if (!remoto) throw new Error('Formato inválido');
+
+            const procesarBajada = () => {
+                _setBusy(true);
+                historial.empujar(esValida?'Bajar desde Gist':'Bajar desde Gist (Forzado)');
+                // Combinar
+                const ids=new Set(state.racks.map(r=>r.id));
+                let nuevos=0;
+                (remoto.racks||[]).forEach(r => {
+                    if (!ids.has(r.id)) { state.racks.push(r); nuevos++; }
+                });
+                guardar(); renderRacks();
+                _cfg.token=token; _cfg.gistId=gistId; _cfg.lastSync=new Date().toISOString(); _guardarCfg();
+                _setStatusSync();
+                toast(esValida ? `Datos combinados (+${nuevos} racks)` : `Datos alterados combinados (+${nuevos} racks)`, esValida?'success':'info');
+                _setBusy(false);
+            };
+
+            if (!esValida) {
+                _setBusy(false);
+                confirmar('Datos de Gist alterados', 'Los datos en GitHub fueron modificados manualmente. ¿Querés combinarlos de todos modos?', procesarBajada);
+            } else {
+                procesarBajada();
+            }
+        } catch(err) {
+            _setStatus(`Error: ${err.message}`);
+            toast(`Error al bajar: ${err.message}`,'error');
+            _setBusy(false);
+        }
+    }
+
+    function poblarModal() {
+        _cargarCfg();
+        const tokenEl=document.getElementById('gist-token');
+        const idEl=document.getElementById('gist-id');
+        const eyeIcon=document.getElementById('gist-eye-icon');
+        if (tokenEl) { tokenEl.value=_cfg.token||''; tokenEl.type='password'; }
+        if (idEl) idEl.value=_cfg.gistId||'';
+        if (eyeIcon) eyeIcon.setAttribute('href','#icon-eye');
+        _actualizarLinkBtn(); _actualizarToggleUI();
+        if (_cfg.lastSync) _setStatusSync(); else _setStatus('');
+    }
+
+    function init() {
+        _cargarCfg();
+        const idEl=document.getElementById('gist-id');
+        if (idEl) idEl.addEventListener('input', _actualizarLinkBtn);
+        _actualizarBotonesAjustes();
+    }
+
+    async function verificarAlAbrir() {
+        if (!_cfg.auto || !_cfg.gistId) return;
+        _spinStart();
+        try {
+            const headers={}; if (_cfg.token) headers['Authorization']=`token ${_cfg.token}`;
+            const res = await fetch(`https://api.github.com/gists/${_cfg.gistId}`, { headers });
+            if (!res.ok) return;
+            const data = await res.json();
+            const file = data.files?.[FILENAME]; if (!file) return;
+            let contenido = file.content;
+            if (file.truncated) {
+                const rawOrigin = new URL(file.raw_url).hostname;
+                if (!rawOrigin.endsWith('.githubusercontent.com')) return;
+                const r2 = await fetch(file.raw_url); contenido = await r2.text();
+            }
+            const rawRemoto = parseSeguro(contenido);
+            const esValida = await verificarFirma(rawRemoto);
+            const remoto = sanitizarEstado(rawRemoto);
+            if (!remoto) return;
+            const ids=new Set(state.racks.map(r=>r.id));
+            const nuevos = (remoto.racks||[]).filter(r=>!ids.has(r.id)).length;
+            if (!nuevos) return;
+
+            const desc = document.querySelector('.gist-novedades-desc');
+            if (desc) desc.innerHTML = esValida
+                ? 'Se encontraron datos nuevos en el Gist que no están en este dispositivo:'
+                : 'Se encontraron datos en el Gist.<br><strong style="color:var(--c-orange)">⚠️ Los datos fueron alterados manualmente en GitHub.</strong>';
+
+            const detalle = document.getElementById('gist-novedades-detalle');
+            if (detalle) detalle.innerHTML = `<div style="background:var(--c-blue-bg);color:var(--c-blue);padding:0.3rem 0.7rem;border-radius:16px;font-size:0.8rem;font-weight:700;">+${nuevos} racks</div>`;
+
+            const btnOk = document.getElementById('gist-novedades-ok');
+            if (btnOk) {
+                btnOk.onclick = () => {
+                    historial.empujar(esValida?'Bajar novedades desde Gist':'Bajar novedades (Forzado)');
+                    const ids2=new Set(state.racks.map(r=>r.id));
+                    (remoto.racks||[]).forEach(r=>{ if(!ids2.has(r.id)) state.racks.push(r); });
+                    guardar(); renderRacks(); MM.cerrar('modal-gist-novedades');
+                    toast(esValida?`Datos combinados (+${nuevos} racks)`:`Datos alterados combinados (+${nuevos} racks)`, esValida?'success':'info');
+                };
+            }
+            setTimeout(() => MM.abrir('modal-gist-novedades'), 600);
+        } catch(_) {}
+        finally { _spinStop(); }
+    }
+
+    return { subir, bajar, subirAuto, verificarAlAbrir, toggleToken, toggleAuto, guardarConfig, poblarModal, init, actualizarBotonesAjustes: _actualizarBotonesAjustes };
+})();
+
+// ══════════════════════════════════════════════════════════════
+//  INICIALIZACIÓN
+// ══════════════════════════════════════════════════════════════
+(function init() {
+    cargar();
+
+    // Dark mode init
+    try {
+        if (localStorage.getItem('PCH_dark') === '1') {
+            document.documentElement.classList.add('dark-mode');
+            const btn = document.getElementById('btn-dark-mode');
+            if (btn) { btn.title = 'Modo claro'; btn.querySelector('use')?.setAttribute('href','#icon-sun'); }
+        }
+    } catch(_) {}
+
+    // ── Botones header ──
+    document.getElementById('btn-dark-mode').addEventListener('click', toggleDarkMode);
+    document.getElementById('btn-ajustes').addEventListener('click', () => MM.abrir('modal-ajustes'));
+    document.getElementById('btn-undo').addEventListener('click', () => historial.undo());
+    document.getElementById('btn-redo').addEventListener('click', () => historial.redo());
+    document.getElementById('btn-scroll-top').addEventListener('click', () => window.scrollTo({top:0,behavior:'smooth'}));
+
+    // ── Nuevo Rack ──
+    document.getElementById('btn-nuevo-rack').addEventListener('click', abrirNuevoRack);
+
+    // ── Modal Rack ──
+    document.getElementById('modal-rack-cerrar').addEventListener('click', () => MM.cerrar('modal-rack'));
+    document.getElementById('rack-guardar-btn').addEventListener('click', guardarRack);
+    document.getElementById('rack-cancelar-btn').addEventListener('click', () => MM.cerrar('modal-rack'));
+    document.getElementById('rack-eliminar-btn').addEventListener('click', eliminarRack);
+    document.getElementById('rack-nombre').addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); guardarRack(); }});
+
+    // ── Modal Patchera ──
+    document.getElementById('modal-patchera-cerrar').addEventListener('click', () => MM.cerrar('modal-patchera'));
+    document.getElementById('patchera-guardar-btn').addEventListener('click', guardarPatchera);
+    document.getElementById('patchera-cancelar-btn').addEventListener('click', () => MM.cerrar('modal-patchera'));
+    document.getElementById('patchera-eliminar-btn').addEventListener('click', eliminarPatchera);
+    document.getElementById('patchera-nombre').addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); guardarPatchera(); }});
+
+    // ── Modal Jack ──
+    document.getElementById('modal-jack-cerrar').addEventListener('click', () => MM.cerrar('modal-jack'));
+    document.getElementById('jack-guardar-btn').addEventListener('click', guardarJack);
+    document.getElementById('jack-limpiar-btn').addEventListener('click', limpiarJack);
+    document.getElementById('jack-cancelar-btn').addEventListener('click', () => MM.cerrar('modal-jack'));
+    document.getElementById('jack-label').addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); guardarJack(); }});
+
+    // Color swatches
+    document.getElementById('jack-color-swatches').addEventListener('click', e => {
+        const sw = e.target.closest('.color-swatch');
+        if (!sw) return;
+        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+        sw.classList.add('active');
+    });
+
+    // ── Ajustes ──
+    document.getElementById('ajustes-cerrar-btn').addEventListener('click', () => MM.cerrar('modal-ajustes'));
+    document.getElementById('btn-abrir-gist').addEventListener('click', () => {
+        MM.cerrar('modal-ajustes');
+        setTimeout(() => { GistSync.poblarModal(); MM.abrir('modal-gist', { onEscape: () => { MM.cerrar('modal-gist'); setTimeout(()=>MM.abrir('modal-ajustes'),50); } }); }, 150);
+    });
+    document.getElementById('btn-ajustes-gist-subir').addEventListener('click', () => GistSync.subir());
+    document.getElementById('btn-ajustes-gist-bajar').addEventListener('click', () => GistSync.bajar());
+    document.getElementById('ajustes-exportar-btn').addEventListener('click', () => { MM.cerrar('modal-ajustes'); exportarDatos(); });
+    document.getElementById('ajustes-importar-btn').addEventListener('click', () => {
+        MM.cerrar('modal-ajustes');
+        setTimeout(() => {
+            document.getElementById('importar-file-input').value = '';
+            document.getElementById('importar-dropzone-label').textContent = 'Seleccioná o arrastrá un archivo .json';
+            document.getElementById('importar-dropzone').style.borderColor = '';
+            document.getElementById('importar-confirmar-btn').disabled = true;
+            document.getElementById('importar-combinar-btn').disabled = true;
+            _importarParsed = null;
+            MM.abrir('modal-importar', { onEscape: () => { MM.cerrar('modal-importar'); setTimeout(()=>MM.abrir('modal-ajustes'),50); },
+                cb: () => setTimeout(() => document.getElementById('importar-file-input').click(), 400) });
+        }, 150);
+    });
+    document.getElementById('ajustes-restablecer-btn').addEventListener('click', restablecerDatos);
+
+    // ── Gist modal ──
+    document.getElementById('gist-cerrar-btn').addEventListener('click', () => { MM.cerrar('modal-gist'); setTimeout(()=>MM.abrir('modal-ajustes'),50); });
+    document.getElementById('gist-token-eye').addEventListener('click', () => GistSync.toggleToken());
+    document.getElementById('btn-gist-subir').addEventListener('click', () => GistSync.subir());
+    document.getElementById('btn-gist-bajar').addEventListener('click', () => GistSync.bajar());
+    document.getElementById('gist-autosync-toggle').addEventListener('click', () => GistSync.toggleAuto());
+    document.getElementById('gist-guardar-btn').addEventListener('click', () => GistSync.guardarConfig());
+
+    // ── Gist novedades ──
+    document.getElementById('gist-novedades-ignorar-btn').addEventListener('click', () => MM.cerrar('modal-gist-novedades'));
+
+    // ── Importar ──
+    document.getElementById('importar-dropzone').addEventListener('click', () => document.getElementById('importar-file-input').click());
+    document.getElementById('importar-file-input').addEventListener('change', e => onImportarFileChange(e));
+    document.getElementById('importar-confirmar-btn').addEventListener('click', () => importarDatos('reemplazar'));
+    document.getElementById('importar-combinar-btn').addEventListener('click', () => importarDatos('combinar'));
+    document.getElementById('importar-cerrar-btn').addEventListener('click', () => { MM.cerrar('modal-importar'); setTimeout(()=>MM.abrir('modal-ajustes'),50); });
+    document.getElementById('importar-cerrar2-btn').addEventListener('click', () => { MM.cerrar('modal-importar'); setTimeout(()=>MM.abrir('modal-ajustes'),50); });
+
+    // Drag-drop importar
+    const dz = document.getElementById('importar-dropzone');
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+    dz.addEventListener('drop', e => {
+        e.preventDefault(); dz.classList.remove('drag');
+        const file = e.dataTransfer.files[0];
+        if (file) { const dt=new DataTransfer(); dt.items.add(file); document.getElementById('importar-file-input').files=dt.files; onImportarFileChange({target:{files:[file]}}); }
+    });
+
+    // ── Confirmar ──
+    document.getElementById('confirmar-ok-btn').addEventListener('click', () => { const cb=_confirmarCb; _confirmarCb=null; MM.cerrar('modal-confirmar'); if(cb) cb(); });
+    document.getElementById('confirmar-cancelar-btn').addEventListener('click', _volverAlPadreConf);
+
+    // ── Keyboard shortcuts ──
+    document.addEventListener('keydown', e => {
+        if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='z' && !e.shiftKey) { e.preventDefault(); historial.undo(); return; }
+        if ((e.ctrlKey||e.metaKey) && (e.key.toLowerCase()==='y' || (e.shiftKey && e.key.toLowerCase()==='z'))) { e.preventDefault(); historial.redo(); return; }
+        if (e.key==='Escape') { e.preventDefault(); MM.cerrarTop(); return; }
+    });
+
+    // ── Scroll top btn ──
+    window.addEventListener('scroll', () => {
+        const btn = document.getElementById('btn-scroll-top');
+        if (btn) btn.classList.toggle('show', window.scrollY > window.innerHeight);
+        const header = document.getElementById('main-header');
+        if (header) header.classList.toggle('scrolled', window.scrollY > 50);
+    }, { passive: true });
+
+    // ── Limpiar clase error al escribir ──
+    document.addEventListener('input', e => {
+        if (e.target.tagName==='INPUT'||e.target.tagName==='SELECT') e.target.classList.remove('error');
+    });
+
+    renderRacks();
+    GistSync.init();
+    GistSync.verificarAlAbrir();
+})();
+</script>
+</body>
+</html>
