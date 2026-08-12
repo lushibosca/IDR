@@ -1879,6 +1879,7 @@ function restablecerDatos() {
         historial.empujar('Restablecer todos los datos');
         state.racks = [];
         state.edificios = [];
+        GistSync.desactivarAuto();
         MM.cerrar('modal-ajustes');
         guardar(); renderTodo(); toast('Datos restablecidos');
     });
@@ -2114,8 +2115,16 @@ const GistSync = (() => {
         if (_cfg.lastSync) _setStatusSync(); else _setStatus('Sin sincronizar');
         _linkBtn();
     }
+    function desactivarAuto() {
+        if (!_cfg.auto) return;
+        _cfg.auto = false;
+        _guardarCfg();
+        clearTimeout(_bajarAutoTimer); _bajarAutoTimer = null;
+        clearTimeout(_debounceTimer); _debounceTimer = null;
+        document.getElementById('gist-autosync-toggle')?.classList.remove('on');
+    }
     function init() { _cargarCfg(); _maxRacksVistos = state.racks.length; bajarAuto(); }
-    return { init, subir, subirAuto, bajar, bajarAuto, poblarModal, guardarConfig, toggleToken, toggleAuto, _linkBtn };
+    return { init, subir, subirAuto, bajar, bajarAuto, poblarModal, guardarConfig, toggleToken, toggleAuto, desactivarAuto, _linkBtn };
 })();
 
 // ═══════════════════════════════════════════════════════
