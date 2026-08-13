@@ -944,6 +944,44 @@
             return d ? ESTADOS_INACTIVOS.includes(d.estado) : false;
         }
 
+        // ── Ubicaciones de un dispositivo en uso ────────────────────────────────
+        // Un mismo dispositivo puede estar asignado a más de un canal/otro_prod a la vez
+        // (por ejemplo tras un merge de Gist o un parseo de canales). Esta función
+        // busca TODAS las asignaciones existentes de ese dispositivo (excluyendo,
+        // opcionalmente, la asignación actual que se está editando) para poder
+        // sugerir/sincronizar edificio, piso, rack y puerto entre ellas.
+        // excluir: { grabId, canal } para excluir un canal puntual, o { otroProdId } para excluir un otro_prod.
+        function buscarUbicacionesDispositivo(dispositivoId, excluir = {}) {
+            const resultados = [];
+            if (!dispositivoId) return resultados;
+
+            Store.data.grabadores.forEach(g => {
+                (g.canales_data || []).forEach(c => {
+                    if (c.dispositivoId !== dispositivoId) return;
+                    if (excluir.grabId === g.id && excluir.canal === c.canal) return;
+                    resultados.push({
+                        tipo: 'canal',
+                        origen: `${g.descripcion || g.id} · Canal ${c.canal}`,
+                        edificio: c.edificio || '', piso: c.piso || '', rack: c.rack || '', puerto: c.puerto || '',
+                        ref: c, grabRef: g,
+                    });
+                });
+            });
+
+            (Store.data.otros_prod || []).forEach(o => {
+                if (o.dispositivoId !== dispositivoId) return;
+                if (excluir.otroProdId === o.id) return;
+                resultados.push({
+                    tipo: 'otro_prod',
+                    origen: o.descripcion || 'Otro dispositivo en producción',
+                    edificio: o.edificio || '', piso: o.piso || '', rack: o.rack || '', puerto: o.puerto || '',
+                    ref: o,
+                });
+            });
+
+            return resultados;
+        }
+
         // ── Poblar selects ────────────────────────────────────────────────────
         function poblarSelectTipo(prefijo, seleccionado) {
             const sel = document.getElementById(`${prefijo}-tipo`);
@@ -1087,7 +1125,7 @@
             validarCampoIP, validarCampoMAC, validarMacSerialUnico,
             leerUbicacion, leerFormDispositivo,
             snapUbicacion, snapDisp, snapGrab,
-            labelDisp, esDispInactivo,
+            labelDisp, esDispInactivo, buscarUbicacionesDispositivo,
             poblarSelectTipo, poblarSelectEdificio, poblarSelectorGrabador,
             limpiarFormDisp, limpiarFormGrab,
         };
@@ -1381,7 +1419,12 @@
             let cDispsAdd = 0, cDispsUpd = 0;
             let cGrabsAdd = 0, cGrabsUpd = 0;
             let cOtrosAdd = 0, cOtrosUpd = 0;
+            let cUbicSugeridas = 0, cUbicConflictos = 0;
             const cambios = [];
+            // IDs de dispositivos tocados por este merge (asignados/actualizados en algún
+            // canal u otro_prod), para después revisar si quedaron ubicaciones (edificio/
+            // piso/rack/puerto) desincronizadas entre las distintas asignaciones de cada uno.
+            const idsTocados = new Set();
 
             function _getDispLabelForMerge(id) {
                 if (!id) return '';
@@ -1451,6 +1494,7 @@
                 if (!mapG.has(san.id)) {
                     Store.data.grabadores.push(san); mapG.set(san.id, san); cGrabsAdd++;
                     cambios.push({ cat: 'grab', op: 'add', label: san.descripcion || san.id, tipo: san.tipo });
+                    (san.canales_data || []).forEach(c => { if (c.dispositivoId) idsTocados.add(c.dispositivoId); });
                 } else {
                     const loc = mapG.get(san.id);
                     let updated = false;
@@ -1480,6 +1524,7 @@
                                     cLoc[k] = cRem[k]; updated = true;
                                 }
                             });
+                            if (cLoc.dispositivoId) idsTocados.add(cLoc.dispositivoId);
                         });
                     } else {
                         // Fallback aditivo
@@ -1507,6 +1552,7 @@
                                         cLoc[k] = cRem[k]; updated = true;
                                     }
                                 });
+                                if (cLoc.dispositivoId) idsTocados.add(cLoc.dispositivoId);
                             }
                         });
                     }
@@ -1524,6 +1570,7 @@
                     if (san.dispositivoId && FormHelpers.esDispInactivo(san.dispositivoId)) return;
                     Store.data.otros_prod.push(san); mapO.set(san.id, san); cOtrosAdd++;
                     cambios.push({ cat: 'otro', op: 'add', label: san.descripcion || san.id });
+                    if (san.dispositivoId) idsTocados.add(san.dispositivoId);
                 } else {
                     const loc = mapO.get(san.id);
                     let updated = false;
@@ -1551,11 +1598,64 @@
                             }
                         });
                     }
+                    if (loc.dispositivoId) idsTocados.add(loc.dispositivoId);
                     if (updated) cOtrosUpd++;
                 }
             });
 
-            return { cDispsAdd, cDispsUpd, cGrabsAdd, cGrabsUpd, cOtrosAdd, cOtrosUpd, cambios };
+            // ── Reconciliación de ubicaciones ────────────────────────────────
+            // Un mismo dispositivo puede haber quedado asignado en más de un lugar
+            // (canal u otro_prod) con datos de ubicación distintos. Si sólo uno de esos
+            // lugares tiene edificio/piso/rack/puerto cargados, ese tiene prioridad y se
+            // usa para completar los demás. Si hay más de uno con datos y no coinciden,
+            // se deja como conflicto para revisión manual (no se sobreescribe nada).
+            idsTocados.forEach(dispId => {
+                if (!dispId) return;
+                const holders = [];
+                Store.data.grabadores.forEach(g => {
+                    (g.canales_data || []).forEach(c => {
+                        if (c.dispositivoId === dispId) holders.push({ ref: c, origen: `${g.descripcion || g.id} · Canal ${c.canal}` });
+                    });
+                });
+                (Store.data.otros_prod || []).forEach(o => {
+                    if (o.dispositivoId === dispId) holders.push({ ref: o, origen: o.descripcion || o.id });
+                });
+                if (holders.length < 2) return;
+
+                const tieneDatos = h => !!(h.ref.edificio || h.ref.piso || h.ref.rack || h.ref.puerto);
+                const conDatos = holders.filter(tieneDatos);
+                const vacios = holders.filter(h => !tieneDatos(h));
+                const labelDispositivo = _getDispLabelForMerge(dispId);
+                const fmtUbic = r => [r.edificio, r.piso, r.rack, r.puerto].filter(Boolean).join(' / ') || '(sin ubicación)';
+
+                if (conDatos.length === 1 && vacios.length) {
+                    const fuente = conDatos[0].ref;
+                    vacios.forEach(h => {
+                        cambios.push({
+                            cat: 'ubicacion', op: 'upd', label: `${labelDispositivo} · ${h.origen}`,
+                            campo: 'edificio/piso/rack/puerto',
+                            antes: '(sin ubicación)',
+                            despues: `${fmtUbic(fuente)} — copiado de "${conDatos[0].origen}"`,
+                        });
+                        h.ref.edificio = fuente.edificio; h.ref.piso = fuente.piso; h.ref.rack = fuente.rack; h.ref.puerto = fuente.puerto;
+                        cUbicSugeridas++;
+                    });
+                } else if (conDatos.length >= 2) {
+                    const distintos = conDatos.some(h => h.ref.edificio !== conDatos[0].ref.edificio || h.ref.piso !== conDatos[0].ref.piso ||
+                        h.ref.rack !== conDatos[0].ref.rack || h.ref.puerto !== conDatos[0].ref.puerto);
+                    if (distintos) {
+                        cambios.push({
+                            cat: 'ubicacion-conflicto', op: 'conflicto', label: labelDispositivo,
+                            campo: 'edificio/piso/rack/puerto',
+                            antes: conDatos.map(h => `${h.origen}: ${fmtUbic(h.ref)}`).join('  |  '),
+                            despues: 'Revisar manualmente',
+                        });
+                        cUbicConflictos++;
+                    }
+                }
+            });
+
+            return { cDispsAdd, cDispsUpd, cGrabsAdd, cGrabsUpd, cOtrosAdd, cOtrosUpd, cUbicSugeridas, cUbicConflictos, cambios };
         }
 
         function _combinarDatosRemotos(remoto) {
@@ -1630,7 +1730,8 @@
             const totalCambios = (resMerge.cDispsAdd || 0) + (resMerge.cDispsUpd || 0) + 
                                  (resMerge.cGrabsAdd || 0) + (resMerge.cGrabsUpd || 0) + 
                                  (resMerge.cOtrosAdd || 0) + (resMerge.cOtrosUpd || 0) + 
-                                 (resMerge.cTipos || 0) + (resMerge.cEdif || 0);
+                                 (resMerge.cTipos || 0) + (resMerge.cEdif || 0) +
+                                 (resMerge.cUbicSugeridas || 0) + (resMerge.cUbicConflictos || 0);
             const hayCambiosEntrantes = totalCambios > 0;
 
             // 2. Cambiamos el título dinámicamente según el escenario real
@@ -1658,6 +1759,9 @@
                 } else {
                     desc.innerHTML = 'No hay novedades entrantes en GitHub, pero detectamos que <strong>tenés cambios locales más nuevos</strong> (marca, patrimonio, etc.) pendientes de subir.';
                 }
+                if (resMerge.cUbicConflictos) {
+                    desc.innerHTML += `<br><strong class="gist-warn-altered">⚠️ ${resMerge.cUbicConflictos} dispositivo${resMerge.cUbicConflictos !== 1 ? 's tienen' : ' tiene'} ubicaciones distintas cargadas en más de un lugar. Revisá el detalle y corregilas a mano.</strong>`;
+                }
             }
             
             // 4. Adaptamos los chips de detalles (sólo se muestran si hay cambios entrantes)
@@ -1672,6 +1776,8 @@
                 if (resMerge.cOtrosUpd) chips.push(`<div class="gist-novedades-chip"><span class="gist-novedades-chip-label">Otros a actualizar</span><span class="gist-novedades-chip-count gist-novedades-chip-count--purple">~${resMerge.cOtrosUpd}</span></div>`);
                 if (resMerge.cTipos) chips.push(`<div class="gist-novedades-chip"><span class="gist-novedades-chip-label">Tipos Custom</span><span class="gist-novedades-chip-count">+${resMerge.cTipos}</span></div>`);
                 if (resMerge.cEdif) chips.push(`<div class="gist-novedades-chip"><span class="gist-novedades-chip-label">Edificios</span><span class="gist-novedades-chip-count">+${resMerge.cEdif}</span></div>`);
+                if (resMerge.cUbicSugeridas) chips.push(`<div class="gist-novedades-chip"><span class="gist-novedades-chip-label">Ubicaciones completadas</span><span class="gist-novedades-chip-count gist-novedades-chip-count--purple">~${resMerge.cUbicSugeridas}</span></div>`);
+                if (resMerge.cUbicConflictos) chips.push(`<div class="gist-novedades-chip"><span class="gist-novedades-chip-label">Conflictos de ubicación a revisar</span><span class="gist-novedades-chip-count gist-novedades-chip-count--orange">⚠ ${resMerge.cUbicConflictos}</span></div>`);
                 detalle.innerHTML = hayCambiosEntrantes ? chips.join('') : '';
             }
             
@@ -1712,6 +1818,8 @@
                     if (resMerge.cOtrosUpd) msgs.push(`~${resMerge.cOtrosUpd} otros`);
                     if (resMerge.cTipos) msgs.push(`+${resMerge.cTipos} tipos`);
                     if (resMerge.cEdif) msgs.push(`+${resMerge.cEdif} edif`);
+                    if (resMerge.cUbicSugeridas) msgs.push(`~${resMerge.cUbicSugeridas} ubic`);
+                    if (resMerge.cUbicConflictos) msgs.push(`⚠ ${resMerge.cUbicConflictos} conflicto${resMerge.cUbicConflictos !== 1 ? 's' : ''} ubic`);
                     Notif.toast(esValida ? `Datos combinados (${msgs.join(', ')})` : `Datos alterados combinados (${msgs.join(', ')})`, esValida ? 'success' : 'info');
                 }
                 _setBusy(false);
@@ -1934,12 +2042,15 @@
                 grab: 'Grabador',
                 canal: 'Canal',
                 otro: 'Otro disp.',
+                ubicacion: 'Ubicación sincronizada',
+                'ubicacion-conflicto': 'Conflicto de ubicación',
             };
             const CAMPO_LABEL = {
                 marca: 'Marca', modelo: 'Modelo', serial: 'Serial', mac: 'MAC',
                 patrimonio: 'Patrimonio', firmware: 'Firmware', forma: 'Forma', estado: 'Estado',
                 ip: 'IP', edificio: 'Edificio', piso: 'Piso', rack: 'Rack', puerto: 'Puerto',
                 comentarios: 'Comentarios', descripcion: 'Descripción', dispositivoId: 'Disp. asignado',
+                'edificio/piso/rack/puerto': 'Ubicación',
             };
 
             const grupos = new Map();
@@ -5378,6 +5489,23 @@
             EdicionState.edicion.canalDispHighlight = -1;
             const btn = document.getElementById('btn-ver-activo-canal');
             if (btn) btn.classList.toggle('hidden', !id);
+            if (id) UI._autocompletarUbicacion('canal', id, { grabId: EdicionState.edicion.canalGrabId, canal: EdicionState.edicion.canalN });
+        },
+
+        // Si el dispositivo elegido ya está asignado en otro lado con edificio/piso/rack/puerto
+        // cargados, completa esos campos automáticamente (el usuario los puede editar después).
+        _autocompletarUbicacion(prefijo, dispositivoId, excluir) {
+            const resultados = FormHelpers.buscarUbicacionesDispositivo(dispositivoId, excluir);
+            const conDatos = resultados.find(r => r.edificio || r.piso || r.rack || r.puerto);
+            if (!conDatos) return;
+            const elPuerto = document.getElementById(`${prefijo}-puerto`);
+            const elPiso = document.getElementById(`${prefijo}-piso`);
+            const elRack = document.getElementById(`${prefijo}-rack`);
+            if (elPuerto) elPuerto.value = conDatos.puerto;
+            FormHelpers.poblarSelectEdificio(`${prefijo}-edificio`, conDatos.edificio);
+            if (elPiso) elPiso.value = conDatos.piso;
+            if (elRack) elRack.value = conDatos.rack;
+            Notif.toast(`Ubicación completada automáticamente desde "${conDatos.origen}"`, 'info');
         },
 
         _canalDispKeydown(e) {
@@ -5447,7 +5575,7 @@
             document.getElementById('btn-ver-activo-canal').classList.add('hidden');
         },
 
-        guardarAsignacionCanal() {
+        async guardarAsignacionCanal() {
             const g = Store.data.grabadores.find(x => x.id === EdicionState.edicion.canalGrabId); if (!g) return;
             const slot = g.canales_data.find(c => c.canal === EdicionState.edicion.canalN); if (!slot) return;
 
@@ -5509,15 +5637,45 @@
             const fueDesasignado = EdicionState.edicion.snapshotCanal.dispositivoId && !nuevoSnapCanal.dispositivoId;
             const msg = fueAsignado ? 'Dispositivo asignado' : fueDesasignado ? 'Canal liberado' : 'Canal actualizado';
 
+            // Si cambió la ubicación (edificio/piso/rack/puerto) y este dispositivo está
+            // asignado en otro(s) lado(s), ofrecemos sincronizar la ubicación también ahí.
+            let propagar = [];
+            if (nuevoSnapCanal.dispositivoId) {
+                const antes = EdicionState.edicion.snapshotCanal || {};
+                const ubicCambio = ['edificio', 'piso', 'rack', 'puerto'].some(k => (nuevoSnapCanal[k] || '') !== (antes[k] || ''));
+                if (ubicCambio) {
+                    const otras = FormHelpers.buscarUbicacionesDispositivo(nuevoSnapCanal.dispositivoId, { grabId: g.id, canal: slot.canal });
+                    propagar = otras.filter(o => o.edificio !== nuevoSnapCanal.edificio || o.piso !== nuevoSnapCanal.piso ||
+                        o.rack !== nuevoSnapCanal.rack || o.puerto !== nuevoSnapCanal.puerto);
+                    if (propagar.length) {
+                        const lista = propagar.map(o => `• ${o.origen}`).join('\n');
+                        const ok = await Notif.confirmarModal(
+                            `Este dispositivo también está asignado en:\n${lista}\n\n¿Actualizar la ubicación (edificio, piso, rack, puerto) ahí también?`,
+                            'Actualizar también', { claseOk: 'btn-edit' }
+                        );
+                        if (!ok) propagar = [];
+                    }
+                }
+            }
+
             historial.empujar(msg);
 
             Object.assign(slot, nuevoSnapCanal, {
                 dispositivoId: nuevoSnapCanal.dispositivoId || null,
             });
             g.updatedAt = new Date().toISOString();
+
+            propagar.forEach(o => {
+                o.ref.edificio = nuevoSnapCanal.edificio;
+                o.ref.piso = nuevoSnapCanal.piso;
+                o.ref.rack = nuevoSnapCanal.rack;
+                o.ref.puerto = nuevoSnapCanal.puerto;
+                if (o.grabRef) o.grabRef.updatedAt = new Date().toISOString();
+            });
+
             Store.guardar(); render(); MM.cerrar('modal-canal');
 
-            Notif.toast(msg, 'success');
+            Notif.toast(propagar.length ? `${msg} · ubicación sincronizada en ${propagar.length} lugar${propagar.length !== 1 ? 'es' : ''} más` : msg, 'success');
             EdicionState.edicion.canalGrabId = null; EdicionState.edicion.canalN = null; EdicionState.edicion.snapshotCanal = null;
         },
 
@@ -5620,7 +5778,7 @@
             if (dispId) setTimeout(() => UI.abrirEditarDispositivo(dispId), 180);
         },
 
-        guardarOtroProd(prefijo) {
+        async guardarOtroProd(prefijo) {
             const dispId = document.getElementById(`sel-${prefijo}-dispositivo`).value;
             const dispInput = document.getElementById(`${prefijo}-disp-input`);
 
@@ -5639,24 +5797,57 @@
                 ...FormHelpers.leerUbicacion(prefijo),
             };
 
-            historial.empujar(EdicionState.edicion.otroProdId ? 'Editar dispositivo en producción' : 'Agregar dispositivo a producción');
+            const esEdicion = !!EdicionState.edicion.otroProdId;
 
-            if (!Store.data.otros_prod) Store.data.otros_prod = [];
-
-            if (EdicionState.edicion.otroProdId) {
+            if (esEdicion) {
                 const nuevoSnapOtro = FormHelpers.snapUbicacion(datos);
                 if (JSON.stringify(nuevoSnapOtro) === JSON.stringify(EdicionState.edicion.snapshotOtroProd)) {
                     Notif.toast('Sin cambios', 'info'); MM.cerrar('modal-editar-otro-prod'); EdicionState.edicion.otroProdId = null; EdicionState.edicion.snapshotOtroProd = null; return;
                 }
+            }
+
+            // Si cambió la ubicación (edificio/piso/rack/puerto) y este dispositivo está
+            // asignado en otro(s) lado(s), ofrecemos sincronizar la ubicación también ahí.
+            let propagar = [];
+            const antes = EdicionState.edicion.snapshotOtroProd || {};
+            const ubicCambio = !esEdicion || ['edificio', 'piso', 'rack', 'puerto'].some(k => (datos[k] || '') !== (antes[k] || ''));
+            if (ubicCambio) {
+                const excluir = esEdicion ? { otroProdId: EdicionState.edicion.otroProdId } : {};
+                const otras = FormHelpers.buscarUbicacionesDispositivo(dispId, excluir);
+                propagar = otras.filter(o => o.edificio !== (datos.edificio || '') || o.piso !== (datos.piso || '') ||
+                    o.rack !== (datos.rack || '') || o.puerto !== (datos.puerto || ''));
+                if (propagar.length) {
+                    const lista = propagar.map(o => `• ${o.origen}`).join('\n');
+                    const ok = await Notif.confirmarModal(
+                        `Este dispositivo también está asignado en:\n${lista}\n\n¿Actualizar la ubicación (edificio, piso, rack, puerto) ahí también?`,
+                        'Actualizar también', { claseOk: 'btn-edit' }
+                    );
+                    if (!ok) propagar = [];
+                }
+            }
+
+            historial.empujar(esEdicion ? 'Editar dispositivo en producción' : 'Agregar dispositivo a producción');
+
+            if (!Store.data.otros_prod) Store.data.otros_prod = [];
+
+            if (esEdicion) {
                 const idx = Store.data.otros_prod.findIndex(x => x.id === EdicionState.edicion.otroProdId);
                 if (idx !== -1) Store.data.otros_prod[idx] = { ...S.sanitizarOtroProd(datos), updatedAt: new Date().toISOString() };
-                Notif.toast('Actualizado', 'success');
+                Notif.toast(propagar.length ? `Actualizado · ubicación sincronizada en ${propagar.length} lugar${propagar.length !== 1 ? 'es' : ''} más` : 'Actualizado', 'success');
                 MM.cerrar('modal-editar-otro-prod');
             } else {
                 Store.data.otros_prod.push({ ...S.sanitizarOtroProd(datos), updatedAt: new Date().toISOString() });
-                Notif.toast('Agregado a producción', 'success');
+                Notif.toast(propagar.length ? `Agregado a producción · ubicación sincronizada en ${propagar.length} lugar${propagar.length !== 1 ? 'es' : ''} más` : 'Agregado a producción', 'success');
                 MM.cerrar('modal-nuevo-otro-prod');
             }
+
+            propagar.forEach(o => {
+                o.ref.edificio = datos.edificio;
+                o.ref.piso = datos.piso;
+                o.ref.rack = datos.rack;
+                o.ref.puerto = datos.puerto;
+                if (o.grabRef) o.grabRef.updatedAt = new Date().toISOString();
+            });
 
             Store.guardar(); render();
         },
@@ -5712,12 +5903,17 @@
             dd.querySelectorAll('.canal-disp-item:not(.ocupado)').forEach(el => {
                 el.addEventListener('mousedown', e => {
                     e.preventDefault();
-                    hidden.value = el.dataset.id;
-                    input.value = el.dataset.mac || el.dataset.id;
-                    dd.classList.add('hidden');
-                    if (prefijo === 'editar-otro-prod') document.getElementById('btn-ver-activo-otro-prod').classList.remove('hidden');
+                    UI._otroProdDispSeleccionar(el.dataset.id, el.dataset.mac, prefijo);
                 });
             });
+        },
+
+        _otroProdDispSeleccionar(id, mac, prefijo) {
+            document.getElementById(`sel-${prefijo}-dispositivo`).value = id || '';
+            document.getElementById(`${prefijo}-disp-input`).value = id ? (mac || id) : '';
+            document.getElementById(`${prefijo}-disp-dropdown`).classList.add('hidden');
+            if (prefijo === 'editar-otro-prod') document.getElementById('btn-ver-activo-otro-prod').classList.remove('hidden');
+            if (id) UI._autocompletarUbicacion(prefijo, id, { otroProdId: EdicionState.edicion.otroProdId });
         },
 
         _otroProdDispKeydown(e, prefijo) {
@@ -5734,10 +5930,7 @@
                 e.preventDefault();
                 if (EdicionState.edicion.canalDispHighlight >= 0) {
                     const el = items[EdicionState.edicion.canalDispHighlight];
-                    document.getElementById(`sel-${prefijo}-dispositivo`).value = el.dataset.id;
-                    document.getElementById(`${prefijo}-disp-input`).value = el.dataset.mac || el.dataset.id;
-                    dd.classList.add('hidden');
-                    if (prefijo === 'editar-otro-prod') document.getElementById('btn-ver-activo-otro-prod').classList.remove('hidden');
+                    UI._otroProdDispSeleccionar(el.dataset.id, el.dataset.mac, prefijo);
                 }
                 return;
             } else if (e.key === 'Escape') {
@@ -7135,6 +7328,7 @@
             let totalCambios = 0;
             let totalLimpiados = 0;
             let totalCreados = 0;
+            let totalUbicCompletadas = 0;
             const sinMatch = [];
 
             Object.entries(_mapeo).forEach(([nvrName, grabId]) => {
@@ -7180,6 +7374,18 @@
                     const macKey = (cam.mac_address || '').trim().toLowerCase();
                     if (macKey && dispPorMAC[macKey]) {
                         slot.dispositivoId = dispPorMAC[macKey].id;
+                        // El parseador no trae edificio/piso/rack/puerto (el script de escaneo no
+                        // los conoce). Si este dispositivo ya está asignado en otro lado con esos
+                        // datos cargados, los copiamos automáticamente para no tener que cargarlos
+                        // a mano de nuevo.
+                        if (!slot.edificio && !slot.piso && !slot.rack && !slot.puerto) {
+                            const otras = FormHelpers.buscarUbicacionesDispositivo(slot.dispositivoId, { grabId: grab.id, canal: slot.canal });
+                            const fuente = otras.find(o => o.edificio || o.piso || o.rack || o.puerto);
+                            if (fuente) {
+                                slot.edificio = fuente.edificio; slot.piso = fuente.piso; slot.rack = fuente.rack; slot.puerto = fuente.puerto;
+                                totalUbicCompletadas++;
+                            }
+                        }
                     } else if (macKey) {
                         if (!sinMatch.some(x => x._macKey === macKey))
                             sinMatch.push({ ...cam, _macKey: macKey, _nvrName: nvrName });
@@ -7214,6 +7420,7 @@
             if (totalCreados > 0) partes.push(`${totalCreados} grabador${totalCreados !== 1 ? 'es' : ''} creado${totalCreados !== 1 ? 's' : ''}`);
             if (totalCambios > 0) partes.push(`${totalCambios} canal${totalCambios !== 1 ? 'es' : ''} actualizado${totalCambios !== 1 ? 's' : ''}`);
             if (totalLimpiados > 0) partes.push(`${totalLimpiados} canal${totalLimpiados !== 1 ? 'es' : ''} limpiado${totalLimpiados !== 1 ? 's' : ''}`);
+            if (totalUbicCompletadas > 0) partes.push(`${totalUbicCompletadas} ubicación${totalUbicCompletadas !== 1 ? 'es' : ''} completada${totalUbicCompletadas !== 1 ? 's' : ''} automáticamente`);
             Notif.toast(`${partes.join(' · ')} correctamente`, 'success');
 
             if (sinMatch.length > 0)

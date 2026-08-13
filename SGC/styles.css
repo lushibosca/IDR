@@ -2615,6 +2615,10 @@ button:disabled {
     color: var(--c-purple);
 }
 
+.gist-novedades-chip-count--orange {
+    color: var(--c-orange);
+}
+
 .gist-warn-altered {
     color: var(--c-orange);
     margin-top: var(--sp-2);
