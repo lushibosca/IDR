@@ -152,7 +152,7 @@
                 t: obj.tiposCustom || {},
                 e: obj.edificios || []
             };
-            const buf = new TextDecoder().encode(JSON.stringify(core));
+            const buf = new TextEncoder().encode(JSON.stringify(core));
             const hash = await crypto.subtle.digest('SHA-256', buf);
             return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
