@@ -2119,8 +2119,53 @@ kbd {
     color: var(--text-muted);
 }
 
+/* ── Animación de apertura/cierre (CSS Grid 0fr → 1fr) ──
+   La fila de detalle envuelve una tabla anidada con las filas del grupo.
+   Se anima grid-template-rows para lograr el efecto "altura auto" suave. */
+.inv-grupo-tr-detalle td {
+    padding: 0 !important;
+    border-bottom: none;
+}
+
+.inv-grupo-detalle-grid {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows var(--t-collapse), opacity var(--t-collapse);
+}
+
+.inv-grupo-detalle-grid.expanded {
+    grid-template-rows: 1fr;
+    opacity: 1;
+}
+
+.inv-grupo-detalle-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.inv-grupo-detalle-grid.expanded > .inv-grupo-detalle-inner {
+    overflow: visible;
+}
+
+.inv-grupo-detalle-inner table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* La fila que envuelve el detalle (contenedor animado) no debe pintar su
+   propio fondo de hover: al ser antepasada de las filas internas, el
+   :hover de estas se propaga a ella y, como son transparentes, se ve
+   como si todo el grupo se iluminara junto. Solo debe resaltar la fila
+   interna realmente sobrevolada. */
+.inv-grupo-tr-detalle:hover,
+.inv-grupo-tr-header:hover {
+    background: transparent !important;
+}
+
 /* ════════════════════════════════════════════════════════
-   RESUMEN EDIFICIOS — DRILL-DOWN PISOS
+   RESUMEN EDIFICIOS — ACORDEÓN POR EDIFICIO (PISOS)
    ════════════════════════════════════════════════════════ */
 
 .resumen-fila-clickable {
@@ -2151,10 +2196,53 @@ kbd {
     width: .85em;
     height: .85em;
     opacity: .4;
+    transition: transform 0.2s ease, opacity var(--t-fast);
+}
+
+.resumen-fila-header.open .resumen-chevron-icon {
+    transform: rotate(90deg);
+    opacity: 0.8;
 }
 
 .resumen-th-chevron-col {
     width: 28px;
+}
+
+/* Fila y celda que contienen el detalle animado (pisos del edificio) */
+.resumen-fila-detalle td {
+    padding: 0 !important;
+    border-bottom: none;
+}
+
+.resumen-detalle-grid {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows var(--t-collapse), opacity var(--t-collapse);
+}
+
+.resumen-detalle-grid.expanded {
+    grid-template-rows: 1fr;
+    opacity: 1;
+}
+
+.resumen-detalle-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.resumen-detalle-grid.expanded > .resumen-detalle-inner {
+    overflow: visible;
+}
+
+.resumen-detalle-inner .resumen-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.resumen-fila-detalle:hover {
+    background: transparent !important;
 }
 
 .resumen-edificios-subtitulo {

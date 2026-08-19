@@ -398,10 +398,8 @@ function switchTab(tab) {
     cerrarFab();
     if (_tabActual === tab) {
         if (document.getElementById('busq-global').value) { limpiarBusqueda(); return; }
-        if (tab === 'dashboard' && _resumenEdificioActual) { _resumenEdificioActual = null; renderResumenEdificios(); return; }
         return;
     }
-    if (_tabActual === 'dashboard') _resumenEdificioActual = null;
     ['dashboard', 'servicio', 'inventario'].forEach(t =>
         document.getElementById(`tab-${t}`).classList.toggle('activa', t === tab)
     );
@@ -1210,7 +1208,15 @@ function renderResumenRacks() {
 //  RESUMEN POR EDIFICIO (segunda card dashboard)
 // ═══════════════════════════════════════════════════════
 
-let _resumenEdificioActual = null;
+// Edificios expandidos en el acordeón (se recuerdan entre renders)
+let _resumenAbiertos = (() => {
+    try { return new Set(JSON.parse(localStorage.getItem(APP_KEY + 'resumen_edificios_abiertos') || '[]')); }
+    catch (_) { return new Set(); }
+})();
+
+function _guardarResumenAbiertos() {
+    try { localStorage.setItem(APP_KEY + 'resumen_edificios_abiertos', JSON.stringify([..._resumenAbiertos])); } catch (_) { }
+}
 
 function renderResumenEdificios() {
     const contenedor = document.getElementById('resumen-edificios-tabla');
@@ -1227,28 +1233,19 @@ function renderResumenEdificios() {
     const edificios = Object.entries(mapa).sort((a, b) => b[1] - a[1]);
 
     if (!edificios.length) {
-        _resumenEdificioActual = null;
         contenedor.innerHTML = '<p class="td-muted td-sm" style="padding:1rem 0.85rem">Sin racks en servicio</p>';
         return;
     }
 
-    if (_resumenEdificioActual && !mapa[_resumenEdificioActual]) {
-        _resumenEdificioActual = null;
-    }
-
-    if (_resumenEdificioActual) {
-        _renderResumenPisos(contenedor, enServicio, _resumenEdificioActual);
-    } else {
-        _renderResumenListaEdificios(contenedor, edificios, enServicio.length);
-    }
+    _renderResumenListaEdificios(contenedor, edificios, enServicio, enServicio.length);
 }
 
 let _sortEdificios = (() => { try { const s = JSON.parse(localStorage.getItem(APP_KEY + 'sort_edificios')); if (s?.col) return s; } catch (_) { } return { col: 'total', dir: -1 }; })();
 
-function _renderResumenListaEdificios(contenedor, edificios, totalServicio) {
-    const sub = document.getElementById('resumen-edificios-subtitulo');
-    if (sub) { sub.textContent = ''; sub.hidden = true; }
-
+// Renderiza el listado de edificios como un acordeón: cada fila se expande
+// in-place para mostrar el desglose por piso (misma técnica de animación
+// grid-template-rows 0fr → 1fr usada en Activos y Racks en Servicio).
+function _renderResumenListaEdificios(contenedor, edificios, enServicio, totalServicio) {
     const sorted = [...edificios].sort((a, b) => {
         if (_sortEdificios.col === 'nombre') {
             return a[0].localeCompare(b[0], 'es') * _sortEdificios.dir;
@@ -1258,12 +1255,44 @@ function _renderResumenListaEdificios(contenedor, edificios, totalServicio) {
 
     const filas = sorted.map(([ed, total]) => {
         const pct = totalServicio > 0 ? ` <span class="resumen-pct">(${Math.round((total / totalServicio) * 100)}%)</span>` : '';
+        const isOpen = _resumenAbiertos.has(ed);
+
+        const racksEdificio = enServicio.filter(r => (r.edificio || '(Sin edificio)') === ed);
+        const totalEdificio = racksEdificio.length;
+        const mapaPisos = {};
+        racksEdificio.forEach(r => {
+            const piso = r.piso?.trim() || '(Sin piso)';
+            mapaPisos[piso] = (mapaPisos[piso] || 0) + 1;
+        });
+        const pisos = Object.keys(mapaPisos).sort(_ordenarPisos);
+
+        const filasPiso = pisos.map(piso => {
+            const t = mapaPisos[piso];
+            const p = totalEdificio > 0 ? Math.round((t / totalEdificio) * 100) : 0;
+            return `
+            <tr class="resumen-fila resumen-fila-sub">
+                <td class="resumen-td-label">${esc(piso)}</td>
+                <td class="resumen-td-num resumen-td-total">${t} <span class="resumen-pct">(${p}%)</span></td>
+            </tr>`;
+        }).join('');
+
         return `
-        <tr class="resumen-fila resumen-fila-clickable" data-edificio="${esc(ed)}">
+        <tr class="resumen-fila resumen-fila-clickable resumen-fila-header${isOpen ? ' open' : ''}" data-edificio="${esc(ed)}">
             <td class="resumen-td-label">${esc(ed)}</td>
             <td class="resumen-td-num resumen-td-total">${total}${pct}</td>
             <td class="resumen-td-num resumen-td-chevron">
                 <svg class="svg-icon resumen-chevron-icon"><use href="#icon-chevron-right"/></svg>
+            </td>
+        </tr>
+        <tr class="resumen-fila-detalle" data-edificio="${esc(ed)}">
+            <td colspan="3">
+                <div class="resumen-detalle-grid${isOpen ? ' expanded' : ''}">
+                    <div class="resumen-detalle-inner">
+                        <table class="resumen-table">
+                            <tbody>${filasPiso}</tbody>
+                        </table>
+                    </div>
+                </div>
             </td>
         </tr>`;
     }).join('');
@@ -1295,78 +1324,103 @@ function _renderResumenListaEdificios(contenedor, edificios, totalServicio) {
                 _sortEdificios.dir = col === 'nombre' ? 1 : -1;
             }
             try { localStorage.setItem(APP_KEY + 'sort_edificios', JSON.stringify(_sortEdificios)); } catch (_) { }
-            const c = document.getElementById('resumen-edificios-tabla');
-            const enServicio = state.racks.filter(r => r.estado === 'servicio');
-            const mapa = {};
-            enServicio.forEach(r => { const ed = r.edificio || '(Sin edificio)'; mapa[ed] = (mapa[ed] || 0) + 1; });
-            const eds = Object.entries(mapa);
-            if (c) _renderResumenListaEdificios(c, eds, enServicio.length);
+            renderResumenEdificios();
         });
     });
 
-    contenedor.querySelectorAll('.resumen-fila-clickable').forEach(tr => {
+    contenedor.querySelectorAll('.resumen-fila-header').forEach(tr => {
         tr.addEventListener('click', e => {
             e.stopPropagation();
-            _resumenEdificioActual = tr.dataset.edificio;
-            const c = document.getElementById('resumen-edificios-tabla');
-            if (c) _renderResumenPisos(c, state.racks.filter(r => r.estado === 'servicio'), _resumenEdificioActual);
+            const ed = tr.dataset.edificio;
+            const open = !tr.classList.contains('open');
+
+            tr.classList.toggle('open', open);
+            if (open) _resumenAbiertos.add(ed); else _resumenAbiertos.delete(ed);
+            _guardarResumenAbiertos();
+
+            const detalle = tr.nextElementSibling;
+            const grid = detalle?.querySelector(':scope > td > .resumen-detalle-grid');
+            grid?.classList.toggle('expanded', open);
         });
     });
 }
 
-function _renderResumenPisos(contenedor, enServicio, edificio) {
-    const sub = document.getElementById('resumen-edificios-subtitulo');
-    if (sub) {
-        sub.textContent = '';
-        const ico = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        ico.classList.add('svg-icon', 'resumen-back-icon');
-        const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-        use.setAttribute('href', '#icon-back');
-        ico.appendChild(use);
-        sub.appendChild(ico);
-        sub.appendChild(document.createTextNode(' ' + edificio));
-        sub.hidden = false;
-    }
+// ═══════════════════════════════════════════════════════
+//  ACORDEÓN DE GRUPOS (animación grid-template-rows 0fr → 1fr)
+// ═══════════════════════════════════════════════════════
+// Construye pares de filas <tr> (encabezado + detalle) para una tabla
+// agrupada. El detalle envuelve una tabla anidada con las filas del grupo
+// dentro de un contenedor con animación de expansión/colapso.
+function _buildGrupoAccordionRows(grupos, { colspan, tablaClass, filaBuilder, abiertos, busq, subtitulo = 'PISO' }) {
+    return grupos.map((g, i) => {
+        const key = g.titulo;
+        const isOpen = busq ? true : (abiertos !== null ? abiertos.has(key) : i === 0);
 
-    const racksEdificio = enServicio.filter(r => (r.edificio || '(Sin edificio)') === edificio);
-    const totalEdificio = racksEdificio.length;
+        if (g.subgrupos) {
+            const subHtml = g.subgrupos.map(sg => {
+                const subKey = `${key}__${sg.titulo}`;
+                const subOpen = busq ? true : (abiertos !== null ? abiertos.has(subKey) : isOpen);
+                const filas = sg.racks.map(filaBuilder).join('');
+                return `<tr class="inv-grupo-tr-header inv-grupo-tr-sub${subOpen ? ' open' : ''}" data-grupo-key="${esc(subKey)}">
+                    <td colspan="${colspan}">
+                        <div class="inv-grupo-header inv-grupo-header-sub">
+                            <span class="inv-grupo-titulo">${subtitulo}: ${esc(sg.titulo)}</span>
+                            <span class="inv-grupo-badge">${sg.racks.length}</span>
+                            <svg class="svg-icon inv-grupo-chevron"><use href="#icon-chevron-right"/></svg>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="inv-grupo-tr-detalle inv-grupo-tr-detalle-sub" data-grupo-key="${esc(subKey)}">
+                    <td colspan="${colspan}">
+                        <div class="inv-grupo-detalle-grid${subOpen ? ' expanded' : ''}">
+                            <div class="inv-grupo-detalle-inner">
+                                <table class="${tablaClass}"><tbody>${filas}</tbody></table>
+                            </div>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
 
-    const mapaPisos = {};
-    racksEdificio.forEach(r => {
-        const piso = r.piso?.trim() || '(Sin piso)';
-        mapaPisos[piso] = (mapaPisos[piso] || 0) + 1;
-    });
-
-    const pisos = Object.keys(mapaPisos).sort(_ordenarPisos);
-
-    const filas = pisos.map(piso => {
-        const total = mapaPisos[piso];
-        const pct = totalEdificio > 0 ? Math.round((total / totalEdificio) * 100) : 0;
-        return `
-        <tr class="resumen-fila">
-            <td class="resumen-td-label">${esc(piso)}</td>
-            <td class="resumen-td-num resumen-td-total">${total} <span class="resumen-pct">(${pct}%)</span></td>
-        </tr>`;
+            return `<tr class="inv-grupo-tr-header${isOpen ? ' open' : ''}" data-grupo-key="${esc(key)}">
+                <td colspan="${colspan}">
+                    <div class="inv-grupo-header">
+                        <span class="inv-grupo-titulo">${esc(g.titulo)}</span>
+                        <span class="inv-grupo-badge">${g.totalCount}</span>
+                        <svg class="svg-icon inv-grupo-chevron"><use href="#icon-chevron-right"/></svg>
+                    </div>
+                </td>
+            </tr>
+            <tr class="inv-grupo-tr-detalle" data-grupo-key="${esc(key)}">
+                <td colspan="${colspan}">
+                    <div class="inv-grupo-detalle-grid${isOpen ? ' expanded' : ''}">
+                        <div class="inv-grupo-detalle-inner">
+                            <table class="${tablaClass}"><tbody>${subHtml}</tbody></table>
+                        </div>
+                    </div>
+                </td>
+            </tr>`;
+        } else {
+            const filas = g.racks.map(filaBuilder).join('');
+            return `<tr class="inv-grupo-tr-header${isOpen ? ' open' : ''}" data-grupo-key="${esc(key)}">
+                <td colspan="${colspan}">
+                    <div class="inv-grupo-header">
+                        <span class="inv-grupo-titulo">${esc(g.titulo)}</span>
+                        <span class="inv-grupo-badge">${g.racks.length}</span>
+                        <svg class="svg-icon inv-grupo-chevron"><use href="#icon-chevron-right"/></svg>
+                    </div>
+                </td>
+            </tr>
+            <tr class="inv-grupo-tr-detalle" data-grupo-key="${esc(key)}">
+                <td colspan="${colspan}">
+                    <div class="inv-grupo-detalle-grid${isOpen ? ' expanded' : ''}">
+                        <div class="inv-grupo-detalle-inner">
+                            <table class="${tablaClass}"><tbody>${filas}</tbody></table>
+                        </div>
+                    </div>
+                </td>
+            </tr>`;
+        }
     }).join('');
-
-    contenedor.innerHTML = `
-        <div class="table-wrap">
-            <table class="resumen-table">
-                <thead>
-                    <tr>
-                        <th class="resumen-th-activo">PISO</th>
-                        <th class="resumen-th-num resumen-th-total">RACKS</th>
-                    </tr>
-                </thead>
-                <tbody>${filas}</tbody>
-            </table>
-        </div>`;
-
-    // volver al tocar el subtítulo del header
-    sub?.addEventListener('click', () => {
-        _resumenEdificioActual = null;
-        renderResumenEdificios();
-    }, { once: true });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1428,9 +1482,8 @@ function renderServicio() {
                 </tr>
             </thead>`;
 
-            // Construir fila pero con posibilidad de 'hidden'
-            const _buildFilaServicio = (r, visible) =>
-                `<tr class="tr-clickable rack-estado-${r.estado}" data-rack-id="${esc(r.id)}"${visible ? '' : ' hidden'}>
+            const _filaServicio = r =>
+                `<tr class="tr-clickable rack-estado-${r.estado}" data-rack-id="${esc(r.id)}">
                     <td class="td-rack-num">${esc(r.numero)}</td>
                     <td>${esc(r.edificio || '—')}</td>
                     <td class="td-muted">${esc(r.piso || '—')}</td>
@@ -1438,47 +1491,13 @@ function renderServicio() {
                     <td class="td-muted">—</td>
                 </tr>`;
 
-            const tbodyRows = grupos.map((g, i) => {
-                const key = g.titulo;
-                const isOpen = busq ? true : (abiertos !== null ? abiertos.has(key) : i === 0);
-
-                if (g.subgrupos) {
-                    const subRows = g.subgrupos.map(sg => {
-                        const subKey = `${key}__${sg.titulo}`;
-                        const subOpen = busq ? true : (abiertos !== null ? abiertos.has(subKey) : isOpen);
-                        const filasSub = sg.racks.map(r => _buildFilaServicio(r, isOpen && subOpen)).join('');
-                        return `<tr class="inv-grupo-tr-header inv-grupo-tr-sub${subOpen ? ' open' : ''}" data-grupo-key="${esc(subKey)}"${isOpen ? '' : ' hidden'}>
-                            <td colspan="5">
-                                <div class="inv-grupo-header inv-grupo-header-sub">
-                                    <span class="inv-grupo-titulo">PISO: ${esc(sg.titulo)}</span>
-                                    <span class="inv-grupo-badge">${sg.racks.length}</span>
-                                    <svg class="svg-icon inv-grupo-chevron"><use href="#icon-chevron-right"/></svg>
-                                </div>
-                            </td>
-                        </tr>${filasSub}`;
-                    }).join('');
-                    return `<tr class="inv-grupo-tr-header${isOpen ? ' open' : ''}" data-grupo-key="${esc(key)}">
-                        <td colspan="5">
-                            <div class="inv-grupo-header">
-                                <span class="inv-grupo-titulo">${esc(g.titulo)}</span>
-                                <span class="inv-grupo-badge">${g.totalCount}</span>
-                                <svg class="svg-icon inv-grupo-chevron"><use href="#icon-chevron-right"/></svg>
-                            </div>
-                        </td>
-                    </tr>${subRows}`;
-                } else {
-                    const filas = g.racks.map(r => _buildFilaServicio(r, isOpen)).join('');
-                    return `<tr class="inv-grupo-tr-header${isOpen ? ' open' : ''}" data-grupo-key="${esc(key)}">
-                        <td colspan="5">
-                            <div class="inv-grupo-header">
-                                <span class="inv-grupo-titulo">${esc(g.titulo)}</span>
-                                <span class="inv-grupo-badge">${g.racks.length}</span>
-                                <svg class="svg-icon inv-grupo-chevron"><use href="#icon-chevron-right"/></svg>
-                            </div>
-                        </td>
-                    </tr>${filas}`;
-                }
-            }).join('');
+            const tbodyRows = _buildGrupoAccordionRows(grupos, {
+                colspan: 5,
+                tablaClass: 'table-equal-cols table-eq-4',
+                filaBuilder: _filaServicio,
+                abiertos,
+                busq
+            });
 
             gruposWrap.innerHTML = `<div class="table-wrap inv-tabla-agrupada">
                 <table class="table-equal-cols table-eq-4">
@@ -1695,8 +1714,8 @@ function renderInventario() {
                 </tr>
             </thead>`;
 
-            const _filaRack = (r, visible) =>
-                `<tr class="tr-clickable rack-estado-${r.estado}" data-rack-id="${esc(r.id)}"${visible ? '' : ' hidden'}>
+            const _filaRack = r =>
+                `<tr class="tr-clickable rack-estado-${r.estado}" data-rack-id="${esc(r.id)}">
                     <td>${_badgeEstado(r)}</td>
                     <td class="td-muted">${esc(r.patrimonio || '—')}</td>
                     <td class="td-muted td-center">${r.unidades != null ? esc(String(r.unidades)) + 'U' : '—'}</td>
@@ -1704,51 +1723,13 @@ function renderInventario() {
                     <td class="td-muted">${esc(r.identificador || '—')}</td>
                 </tr>`;
 
-            const tbodyRows = grupos.map((g, i) => {
-                const key = g.titulo;
-                // Si hay búsqueda se fuerza 'true', de lo contrario se lee del LocalStorage o por defecto el primero
-                const isOpen = busq ? true : (abiertos !== null ? abiertos.has(key) : i === 0);
-
-                if (g.subgrupos) {
-                    // Grupo padre (edificio) con subgrupos de pisos
-                    const subRows = g.subgrupos.map(sg => {
-                        const subKey = `${key}__${sg.titulo}`;
-                        // Si hay búsqueda se fuerza 'true', si no, LocalStorage o hereda del padre
-                        const subOpen = busq ? true : (abiertos !== null ? abiertos.has(subKey) : isOpen);
-                        const filasSub = sg.racks.map(r => _filaRack(r, isOpen && subOpen)).join('');
-                        return `<tr class="inv-grupo-tr-header inv-grupo-tr-sub${subOpen ? ' open' : ''}" data-grupo-key="${esc(subKey)}"${isOpen ? '' : ' hidden'}>
-                            <td colspan="5">
-                                <div class="inv-grupo-header inv-grupo-header-sub">
-                                    <span class="inv-grupo-titulo">PISO: ${esc(sg.titulo)}</span>
-                                    <span class="inv-grupo-badge">${sg.racks.length}</span>
-                                    <svg class="svg-icon inv-grupo-chevron"><use href="#icon-chevron-right"/></svg>
-                                </div>
-                            </td>
-                        </tr>${filasSub}`;
-                    }).join('');
-                    return `<tr class="inv-grupo-tr-header${isOpen ? ' open' : ''}" data-grupo-key="${esc(key)}">
-                        <td colspan="5">
-                            <div class="inv-grupo-header">
-                                <span class="inv-grupo-titulo">${esc(g.titulo)}</span>
-                                <span class="inv-grupo-badge">${g.totalCount}</span>
-                                <svg class="svg-icon inv-grupo-chevron"><use href="#icon-chevron-right"/></svg>
-                            </div>
-                        </td>
-                    </tr>${subRows}`;
-                } else {
-                    // Grupo simple (sin subgrupos de pisos)
-                    const filas = g.racks.map(r => _filaRack(r, isOpen)).join('');
-                    return `<tr class="inv-grupo-tr-header${isOpen ? ' open' : ''}" data-grupo-key="${esc(key)}">
-                        <td colspan="5">
-                            <div class="inv-grupo-header">
-                                <span class="inv-grupo-titulo">${esc(g.titulo)}</span>
-                                <span class="inv-grupo-badge">${g.racks.length}</span>
-                                <svg class="svg-icon inv-grupo-chevron"><use href="#icon-chevron-right"/></svg>
-                            </div>
-                        </td>
-                    </tr>${filas}`;
-                }
-            }).join('');
+            const tbodyRows = _buildGrupoAccordionRows(grupos, {
+                colspan: 5,
+                tablaClass: 'table-equal-cols',
+                filaBuilder: _filaRack,
+                abiertos,
+                busq
+            });
 
             gruposWrap.innerHTML = `<div class="table-wrap inv-tabla-agrupada">
                 <table class="table-equal-cols">
@@ -2136,8 +2117,6 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         if (modalOpen) { MM.cerrarTop(); return; }
         if (_fabOpen) { cerrarFab(); return; }
-
-        if (_tabActual === 'dashboard' && _resumenEdificioActual) { _resumenEdificioActual = null; renderResumenEdificios(); return; }
 
         const b = document.getElementById('busq-global');
         if (b) {
@@ -2821,6 +2800,9 @@ function _initBindings() {
     });
 
     // ── Colapso de grupos (delegado en todos los wrappers: Inventario y Servicio) ──
+    // Cada encabezado (.inv-grupo-tr-header) es seguido siempre por su fila de
+    // detalle (.inv-grupo-tr-detalle), que envuelve el contenedor animado
+    // (.inv-grupo-detalle-grid, técnica grid-template-rows 0fr → 1fr).
     document.querySelectorAll('.inv-grupos-wrap').forEach(wrap => {
         let pressTimer = null;
         let isLongPress = false;
@@ -2840,23 +2822,12 @@ function _initBindings() {
             localStorage.setItem(APP_KEY + localStorageKey, JSON.stringify(arr));
         };
 
-        const syncGlobal = () => {
-            const allMains = wrap.querySelectorAll('.inv-grupo-tr-header:not(.inv-grupo-tr-sub)');
-            allMains.forEach(main => {
-                const isOpen = main.classList.contains('open');
-                let next = main.nextElementSibling;
-                let isSubOpen = true;
-
-                while (next && !(next.classList.contains('inv-grupo-tr-header') && !next.classList.contains('inv-grupo-tr-sub'))) {
-                    if (next.classList.contains('inv-grupo-tr-sub')) {
-                        next.hidden = !isOpen;
-                        isSubOpen = next.classList.contains('open');
-                    } else {
-                        next.hidden = !isOpen || !isSubOpen;
-                    }
-                    next = next.nextElementSibling;
-                }
-            });
+        // Aplica/quita el estado abierto sobre un encabezado y anima su detalle asociado
+        const setGroupState = (header, open) => {
+            header.classList.toggle('open', open);
+            const detalle = header.nextElementSibling;
+            const grid = detalle?.querySelector(':scope > td > .inv-grupo-detalle-grid');
+            grid?.classList.toggle('expanded', open);
         };
 
         const cancelPress = () => clearTimeout(pressTimer);
@@ -2877,18 +2848,13 @@ function _initBindings() {
                 if (navigator.vibrate) navigator.vibrate(40);
 
                 if (isSub) {
-                    const allSubs = wrap.querySelectorAll('.inv-grupo-tr-sub');
-                    allSubs.forEach(sub => sub.classList.toggle('open', targetState));
+                    wrap.querySelectorAll('.inv-grupo-tr-sub').forEach(sub => setGroupState(sub, targetState));
                 } else {
-                    const allMains = wrap.querySelectorAll('.inv-grupo-tr-header:not(.inv-grupo-tr-sub)');
-                    allMains.forEach(main => main.classList.toggle('open', targetState));
-
+                    wrap.querySelectorAll('.inv-grupo-tr-header:not(.inv-grupo-tr-sub)').forEach(main => setGroupState(main, targetState));
                     if (!targetState) {
-                        const allSubs = wrap.querySelectorAll('.inv-grupo-tr-sub');
-                        allSubs.forEach(sub => sub.classList.remove('open'));
+                        wrap.querySelectorAll('.inv-grupo-tr-sub').forEach(sub => setGroupState(sub, false));
                     }
                 }
-                syncGlobal();
                 guardarGruposAbiertos(); 
             }, 500);
         });
@@ -2918,37 +2884,9 @@ function _initBindings() {
                 return;
             }
 
-            const isSub = header.classList.contains('inv-grupo-tr-sub');
-            const isOpen = header.classList.toggle('open');
-
-            if (isSub) {
-                let next = header.nextElementSibling;
-                while (next && !next.classList.contains('inv-grupo-tr-header')) {
-                    next.hidden = !isOpen;
-                    next = next.nextElementSibling;
-                }
-            } else {
-                let next = header.nextElementSibling;
-                let isSubOpen = true;
-                while (next && !(next.classList.contains('inv-grupo-tr-header') && !next.classList.contains('inv-grupo-tr-sub'))) {
-                    if (next.classList.contains('inv-grupo-tr-sub')) {
-                        next.hidden = !isOpen;
-                        isSubOpen = next.classList.contains('open');
-                    } else {
-                        next.hidden = !isOpen || !isSubOpen;
-                    }
-                    next = next.nextElementSibling;
-                }
-            }
+            setGroupState(header, !header.classList.contains('open'));
             guardarGruposAbiertos(); 
         });
-    });
-    // ── Card edificios: tocar fuera de la tabla vuelve al listado ──
-    document.getElementById('card-resumen-edificios')?.addEventListener('click', e => {
-        if (!_resumenEdificioActual) return;
-        if (e.target.closest('#resumen-edificios-tabla')) return;
-        _resumenEdificioActual = null;
-        renderResumenEdificios();
     });
 
     // ── Tooltip para columna estado (muestra texto completo al hacer hover) ──
