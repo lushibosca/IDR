@@ -760,6 +760,7 @@ tbody td {
     font-weight: 800;
     color: var(--text-main);
     font-variant-numeric: tabular-nums;
+    font-size: var(--fs-sm);
 }
 
 .td-muted {
@@ -2122,7 +2123,7 @@ kbd {
 /* ── Animación de apertura/cierre (CSS Grid 0fr → 1fr) ──
    La fila de detalle envuelve una tabla anidada con las filas del grupo.
    Se anima grid-template-rows para lograr el efecto "altura auto" suave. */
-.inv-grupo-tr-detalle td {
+.inv-grupo-tr-detalle > td {
     padding: 0 !important;
     border-bottom: none;
 }
@@ -2209,7 +2210,7 @@ kbd {
 }
 
 /* Fila y celda que contienen el detalle animado (pisos del edificio) */
-.resumen-fila-detalle td {
+.resumen-fila-detalle > td {
     padding: 0 !important;
     border-bottom: none;
 }
