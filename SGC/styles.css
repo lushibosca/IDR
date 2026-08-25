@@ -2947,18 +2947,13 @@ button:disabled {
 @media (hover: hover) and (pointer: fine) {
 
     :is(.btn-edit, .btn-delete, .btn-backup, .btn-cancel, .icon-btn):hover:not(:disabled),
-    :is(.dispositivo-item, .canal-slot-lista, .reporte-opcion, .gist-autosync-row):hover {
+    :is(.dispositivo-item, .canal-slot-lista, .stat-chip-tipo, .reporte-opcion, .gist-autosync-row):hover {
         filter: var(--hover);
     }
 
     .btn-estado-disp:hover:not(:disabled) {
         filter: var(--hover);
         opacity: 1;
-    }
-
-    .stat-chip-tipo:hover {
-        filter: var(--hover);
-        box-shadow: 0 0 8px rgba(0, 0, 0, .12);
     }
 
     .dash-chip-main.clickable:hover {

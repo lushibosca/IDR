@@ -2363,7 +2363,7 @@
             .btn-gist-action:not(:disabled):hover,
             .year-summary:hover,
             .btn-scroll-top:hover,
-            .stat-chip-clickable:hover {
+            .stat-chip:hover {
                 filter: var(--hover);
             }
 
