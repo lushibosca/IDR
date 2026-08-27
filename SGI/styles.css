@@ -475,8 +475,7 @@
             flex: 1;
         }
 
-        #btn-inicio-logo,
-        #btn-inicio-titulo {
+        #btn-inicio-logo {
             cursor: pointer;
         }
 

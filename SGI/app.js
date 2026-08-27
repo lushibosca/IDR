@@ -3704,7 +3704,6 @@ function _ejecutarReporte() {
 
     // Header
     _on('btn-inicio-logo', 'click', () => window.location.href = '../index.html');
-    _on('btn-inicio-titulo', 'click', () => window.location.href = '../index.html');
     _on('btn-undo', 'click', () => historial.undo());
     _on('btn-redo', 'click', () => historial.redo());
     _on('btn-ajustes', 'click', () => MM.abrir('modal-ajustes'));
