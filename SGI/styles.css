@@ -259,7 +259,7 @@
             display: flex;
             align-items: center;
             gap: 0.4rem;
-            transition: opacity var(--t-modal), transform 0.25s var(--t-spring);
+            transition: opacity var(--t-modal), transform 0.25s var(--t-spring), filter var(--t-fast);
             white-space: nowrap;
             z-index: 0;
         }
@@ -278,6 +278,15 @@
             opacity: 1;
             transform: translate(-50%, 0);
             /* Sube y se centra perfectamente */
+            /* Con el header "achicado" el título pasa a ser un acceso directo
+               para alternar entre pestañas (ver toggleHeaderTab en app.js) */
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .header.scrolled .header-tab-title:active {
+            transform: translate(-50%, 0) scale(0.95);
+            filter: brightness(0.85);
         }
 
         .header-actions {

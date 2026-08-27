@@ -1404,6 +1404,15 @@ const UI = {
 // ═══════════════════════════════════════════════════════
 //  TABS  (con animación fade-out → fade-in, igual que CCTV)
 // ═══════════════════════════════════════════════════════
+// Configuración centralizada de pestañas: para agregar una pestaña nueva a
+// futuro alcanza con sumar un objeto acá (el id debe coincidir con
+// "tab-<id>" y "panel-<id>" en el HTML). switchTab(), el título dinámico
+// del header y el toggle por tap (toggleHeaderTab) se adaptan solos.
+const TABS_CONFIG = [
+    { id: 'dashboard', icon: '#icon-dashboard', label: 'Dashboard' },
+    { id: 'movimientos', icon: '#icon-movements', label: 'Movimientos' },
+];
+
 let _tabActual = 'dashboard';
 
 function switchTab(tab) {
@@ -1429,8 +1438,8 @@ function switchTab(tab) {
 
     // Aplicamos la mutación a ambos paneles en simultáneo
     _animarMutacion([saliente, entrante], () => {
-        ['dashboard', 'movimientos'].forEach(t =>
-            document.getElementById(`tab-${t}`).classList.toggle('activa', t === tab)
+        TABS_CONFIG.forEach(t =>
+            document.getElementById(`tab-${t.id}`)?.classList.toggle('activa', t.id === tab)
         );
         try {
             localStorage.setItem('SGI_tab', tab);
@@ -1441,9 +1450,8 @@ function switchTab(tab) {
 
         const headerTabTitle = document.getElementById('header-tab-title');
         if (headerTabTitle) {
-            const icono = tab === 'dashboard' ? '#icon-dashboard' : '#icon-movements';
-            const texto = tab === 'dashboard' ? 'Dashboard' : 'Movimientos';
-            headerTabTitle.innerHTML = `<svg class="svg-icon"><use href="${icono}"/></svg> ${texto}`;
+            const cfg = TABS_CONFIG.find(t => t.id === tab);
+            if (cfg) headerTabTitle.innerHTML = `<svg class="svg-icon"><use href="${cfg.icon}"/></svg> ${cfg.label}`;
         }
 
         saliente.classList.remove('activa');
@@ -1456,6 +1464,21 @@ function switchTab(tab) {
         // Volver a llamar renderMovimientos() en cada cambio de pestaña era un trabajo
         // 100% redundante con ~1200 movimientos y era la causa principal del lag.
     });
+}
+
+// Se dispara al tocar el título de pestaña que aparece en el header al
+// hacer scroll (ver CSS ".header.scrolled .header-tab-title"). Avanza a la
+// siguiente pestaña en TABS_CONFIG de forma circular, así que con 2
+// pestañas funciona como un toggle simple y si a futuro se suman más se
+// van recorriendo una por una sin tocar este código.
+function toggleHeaderTab() {
+    if (TABS_CONFIG.length < 2) return;
+    const idx = TABS_CONFIG.findIndex(t => t.id === _tabActual);
+    const siguiente = TABS_CONFIG[(idx + 1) % TABS_CONFIG.length];
+    switchTab(siguiente.id);
+    // Volvemos arriba: quedarse a mitad de scroll de la pestaña anterior
+    // desorienta, y además así el header vuelve a su estado normal.
+    subirArriba();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3821,6 +3844,8 @@ function _ejecutarReporte() {
     _on('btn-undo', 'click', () => historial.undo());
     _on('btn-redo', 'click', () => historial.redo());
     _on('btn-ajustes', 'click', () => MM.abrir('modal-ajustes'));
+    // Título de pestaña flotante (visible al scrollear): tocarlo alterna de pestaña
+    _on('header-tab-title', 'click', () => toggleHeaderTab());
 
     // Modal confirmar
     _on('confirmar-ok', 'click', () => {
