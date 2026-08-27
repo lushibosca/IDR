@@ -835,7 +835,7 @@ function importarDatos(modo) {
             state.movimientos = parsed.movimientos || [];
             state.categorias = parsed.categorias || [];
             state.herramientas = parsed.herramientas || [];
-
+            
             const resumen = _resumenCambios({ matsNuevos: state.materiales.length, movsNuevos: state.movimientos.length, cats: state.categorias.length, herr: state.herramientas.length });
             _finalizarImport(`Datos reemplazados (${resumen})`);
         });
@@ -868,7 +868,7 @@ function _contarNovedades(remoto, sanitizar = true) {
     (remoto.materiales || []).forEach(m => {
         const item = sanitizar ? _sanitizarMaterial(m) : m;
         if (!item) return;
-        if (!matIds.has(item.id)) { matsNuevos++; }
+        if (!matIds.has(item.id)) { matsNuevos++; } 
         else {
             const ex = state.materiales.find(x => x.id === item.id);
             if (ex && (ex.nombre !== item.nombre || ex.categoria !== item.categoria || ex.unidad !== item.unidad || ex.umbralBajo !== item.umbralBajo || ex.umbralAlto !== item.umbralAlto)) { matsEditados++; }
@@ -877,7 +877,7 @@ function _contarNovedades(remoto, sanitizar = true) {
     (remoto.movimientos || []).forEach(m => {
         const item = sanitizar ? _sanitizarMovimiento(m) : m;
         if (!item) return;
-        if (!movIds.has(item.id)) { movsNuevos++; }
+        if (!movIds.has(item.id)) { movsNuevos++; } 
         else {
             const ex = state.movimientos.find(x => x.id === item.id);
             if (ex) {
@@ -932,10 +932,10 @@ function _combinarDatosRemotos(remoto, sanitizar = true) {
     (remoto.movimientos || []).forEach(m => {
         const limpio = sanitizar ? _sanitizarMovimiento(m) : m;
         if (!limpio) return;
-        if (!movIds.has(limpio.id)) {
-            state.movimientos.push(limpio);
-            movIds.add(limpio.id);
-            movsNuevos++;
+        if (!movIds.has(limpio.id)) { 
+            state.movimientos.push(limpio); 
+            movIds.add(limpio.id); 
+            movsNuevos++; 
         } else {
             const ex = state.movimientos.find(x => x.id === limpio.id);
             if (ex) {
@@ -1349,6 +1349,7 @@ const UI = {
                     g.classList.remove('open');
                 } else {
                     g.classList.add('open');
+                    _cargarMesLazy(g);
                 }
                 // Persistimos el nuevo estado de cada mes
                 if (anioTxt) {
@@ -1378,6 +1379,8 @@ const UI = {
         if (!UI._mesLongPressed) {
             const mg = el.parentElement;
             mg.classList.toggle('open');
+            const abrioAhora = mg.classList.contains('open');
+            if (abrioAhora) _cargarMesLazy(mg);
             // Persistimos el estado: el texto del span es "Enero 2024" etc.
             const txt = el.querySelector('span')?.textContent?.trim() || '';
             const partes = txt.split(' ');
@@ -1386,7 +1389,7 @@ const UI = {
                 const anioTxt = partes[1];
                 if (mesIdx >= 0 && anioTxt) {
                     const mesKey = String(mesIdx + 1).padStart(2, '0');
-                    _histSetColapso(`mes-${anioTxt}-${mesKey}`, mg.classList.contains('open'));
+                    _histSetColapso(`mes-${anioTxt}-${mesKey}`, abrioAhora);
                 }
             }
         }
@@ -1447,7 +1450,11 @@ function switchTab(tab) {
         entrante.classList.add('activa');
 
         if (tab === 'dashboard') { renderStats(); renderMateriales(); }
-        else { renderMovimientos(); }
+        // 'movimientos' ya se mantiene actualizado en tiempo real por cada mutación
+        // de datos/búsqueda/filtro (ver historial.refrescarTodo, onBusqGlobal, setAnioFiltro,
+        // eliminarMovimiento, etc.), así que NO hace falta re-renderizarlo acá.
+        // Volver a llamar renderMovimientos() en cada cambio de pestaña era un trabajo
+        // 100% redundante con ~1200 movimientos y era la causa principal del lag.
     });
 }
 
@@ -2042,18 +2049,18 @@ function renderStats() {
         let idx = 0;
 
         function _mostrarTop5(i) {
-            const lbl = document.getElementById('top5-label');
-            const nom = document.getElementById('top5-nombre');
-            const sub = document.getElementById('top5-sub');
-            if (!lbl || !nom || !sub) { clearInterval(_intervaloTop5); return; }
-
-            _animarMutacion([lbl, nom, sub], () => {
-                lbl.textContent = `Más consumidos #${i + 1}`;
-                nom.textContent = top5[i].nombre;
-                nom.title = top5[i].nombre;
-                sub.textContent = `${top5[i].cantidad} unidades`;
-            });
-        }
+    const lbl = document.getElementById('top5-label');
+    const nom = document.getElementById('top5-nombre');
+    const sub = document.getElementById('top5-sub');
+    if (!lbl || !nom || !sub) { clearInterval(_intervaloTop5); return; }
+    
+    _animarMutacion([lbl, nom, sub], () => {
+        lbl.textContent = `Más consumidos #${i + 1}`;
+        nom.textContent = top5[i].nombre;
+        nom.title = top5[i].nombre;
+        sub.textContent = `${top5[i].cantidad} unidades`;
+    });
+}
 
         function _arrancarTimer() {
             if (_intervaloTop5) clearInterval(_intervaloTop5);
@@ -2085,19 +2092,19 @@ function renderStats() {
         let sbIdx = 0;
 
         function _mostrarStockBajo(i) {
-            const lbl = document.getElementById('stock-bajo-label');
-            const nom = document.getElementById('stock-bajo-nombre');
-            const sub = document.getElementById('stock-bajo-sub');
-            if (!lbl || !nom || !sub) { clearInterval(_intervaloStockBajo); return; }
-
-            _animarMutacion([lbl, nom, sub], () => {
-                const item = stockBajoList[i];
-                lbl.textContent = `Stock bajo #${i + 1} de ${stockBajoList.length}`;
-                nom.textContent = item.nombre;
-                nom.title = item.nombre;
-                sub.textContent = `${item.stockActual} / umbral ${item.umbralBajo}`;
-            });
-        }
+    const lbl = document.getElementById('stock-bajo-label');
+    const nom = document.getElementById('stock-bajo-nombre');
+    const sub = document.getElementById('stock-bajo-sub');
+    if (!lbl || !nom || !sub) { clearInterval(_intervaloStockBajo); return; }
+    
+    _animarMutacion([lbl, nom, sub], () => {
+        const item = stockBajoList[i];
+        lbl.textContent = `Stock bajo #${i + 1} de ${stockBajoList.length}`;
+        nom.textContent = item.nombre;
+        nom.title = item.nombre;    
+        sub.textContent = `${item.stockActual} / umbral ${item.umbralBajo}`;
+    });
+}
 
         function _arrancarTimerSB() {
             if (_intervaloStockBajo) clearInterval(_intervaloStockBajo);
@@ -2726,6 +2733,67 @@ function _histIsOpen(key, defaultOpen) {
     return key in data ? data[key] : defaultOpen;
 }
 
+// ── Render perezoso de meses colapsados ────────────────────────────────
+// Con ~1200 movimientos, generar el HTML de TODOS los items (incluso los
+// de meses cerrados) en cada render era el principal cuello de botella.
+// Ahora solo se genera el HTML de los mov-item para meses que arrancan
+// abiertos; el resto queda vacío y se completa recién al abrirlos por
+// primera vez (y queda cacheado en el DOM para no repetir el trabajo).
+let _movLazyCache = null; // { porMes: { 'anio-mes': movs[] }, dictMateriales, conteoTickets }
+
+function _renderMovItemsHtml(movsMes, dictMateriales, conteoTickets) {
+    return movsMes.map(m => {
+        const esEntrada = m.tipo === 'entrada';
+        const tipoBadge = esEntrada
+            ? `<span class="badge badge-green">▲ Entrada</span>`
+            : `<span class="badge badge-red">▼ Salida</span>`;
+
+        const tags = m.lineas.map(l => {
+            const mat = dictMateriales[l.materialId];
+            const nombre = mat ? mat.nombre : '(eliminado)';
+            return `<span class="mov-mat-tag"><span class="mov-mat-qty">${l.cantidad}</span> <span>${esc(nombre)}</span></span>`;
+        }).join('');
+
+        const tLimpio = m.ticket.trim();
+        const esDuplicado = /^\d+$/.test(tLimpio) && conteoTickets[tLimpio] > 1;
+        const htmlAlerta = esDuplicado ? `<span class="ticket-warning" title="Este número de ticket aparece duplicado en el historial">!</span>` : '';
+        const htmlComentarios = m.comentarios ? `<div class="mov-comentarios">${esc(m.comentarios)}</div>` : '';
+
+        return `
+            <div class="mov-item mov-item-grid" data-mov-id="${m.id}" title="Tocar para editar">
+                <div class="mov-col-left">
+                    <div class="mov-line-1">                                
+                        <span class="mov-fecha">${formatFecha(m.fecha)}</span>
+                        <span class="mov-sep">|</span>
+                        ${tipoBadge}
+                    </div>
+                    <div class="mov-ticket">
+                        ${esc(m.ticket)}${htmlAlerta}
+                    </div>
+                    ${htmlComentarios}
+                </div>
+                <div class="mov-col-right">
+                    <div class="mov-materiales">${tags}</div>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+// Completa el contenido de un mes en cuanto se abre por primera vez.
+function _cargarMesLazy(monthGroupEl) {
+    if (!monthGroupEl || monthGroupEl.dataset.loaded === '1') return;
+    const key = monthGroupEl.dataset.mesKey;
+    if (!key || !_movLazyCache || !_movLazyCache.porMes[key]) {
+        if (monthGroupEl) monthGroupEl.dataset.loaded = '1';
+        return;
+    }
+    const content = monthGroupEl.querySelector('.month-content');
+    if (content) {
+        content.innerHTML = _renderMovItemsHtml(_movLazyCache.porMes[key], _movLazyCache.dictMateriales, _movLazyCache.conteoTickets);
+    }
+    monthGroupEl.dataset.loaded = '1';
+}
+
 function renderMovimientos() {
     const busqOriginal = document.getElementById('busq-global')?.value || '';
     const busqText = busqOriginal.toLowerCase().trim();
@@ -2804,6 +2872,9 @@ function renderMovimientos() {
         agrupadosPorAnio[anio].push(m);
     });
 
+    // Reiniciamos la caché de lazy-load para este render
+    _movLazyCache = { porMes: {}, dictMateriales, conteoTickets };
+
     const htmlFinal = Object.keys(agrupadosPorAnio).sort((a, b) => b - a).map(anio => {
         const movimientosDelAnio = agrupadosPorAnio[anio];
 
@@ -2828,47 +2899,21 @@ function renderMovimientos() {
 
             const defaultOpenMes = (anio === anioActual && mes === mesActualStr) || hayFiltroActivo;
             // Con búsqueda activa ignoramos sessionStorage y abrimos todo
-            const isOpenMes = (hayFiltroActivo ? defaultOpenMes : _histIsOpen(`mes-${anio}-${mes}`, defaultOpenMes)) ? 'open' : '';
+            const abiertoMes = hayFiltroActivo ? defaultOpenMes : _histIsOpen(`mes-${anio}-${mes}`, defaultOpenMes);
+            const isOpenMes = abiertoMes ? 'open' : '';
 
-            const itemsHtml = movsMes.map(m => {
-                const esEntrada = m.tipo === 'entrada';
-                const tipoBadge = esEntrada
-                    ? `<span class="badge badge-green">▲ Entrada</span>`
-                    : `<span class="badge badge-red">▼ Salida</span>`;
+            // Guardamos los movimientos del mes en la caché para poder
+            // generarlos bajo demanda si el mes arranca cerrado.
+            const mesKey = `${anio}-${mes}`;
+            _movLazyCache.porMes[mesKey] = movsMes;
 
-                const tags = m.lineas.map(l => {
-                    const mat = dictMateriales[l.materialId];
-                    const nombre = mat ? mat.nombre : '(eliminado)';
-                    return `<span class="mov-mat-tag"><span class="mov-mat-qty">${l.cantidad}</span> <span>${esc(nombre)}</span></span>`;
-                }).join('');
-
-                const tLimpio = m.ticket.trim();
-                const esDuplicado = /^\d+$/.test(tLimpio) && conteoTickets[tLimpio] > 1;
-                const htmlAlerta = esDuplicado ? `<span class="ticket-warning" title="Este número de ticket aparece duplicado en el historial">!</span>` : '';
-                const htmlComentarios = m.comentarios ? `<div class="mov-comentarios">${esc(m.comentarios)}</div>` : '';
-
-                return `
-            <div class="mov-item mov-item-grid" data-mov-id="${m.id}" title="Tocar para editar">
-                <div class="mov-col-left">
-                    <div class="mov-line-1">                                
-                        <span class="mov-fecha">${formatFecha(m.fecha)}</span>
-                        <span class="mov-sep">|</span>
-                        ${tipoBadge}
-                    </div>
-                    <div class="mov-ticket">
-                        ${esc(m.ticket)}${htmlAlerta}
-                    </div>
-                    ${htmlComentarios}
-                </div>
-                <div class="mov-col-right">
-                    <div class="mov-materiales">${tags}</div>
-                </div>
-            </div>`;
-            }).join('');
+            // Solo generamos el HTML pesado de los items si el mes arranca
+            // abierto. Si arranca cerrado, queda vacío hasta que se despliegue.
+            const itemsHtml = abiertoMes ? _renderMovItemsHtml(movsMes, dictMateriales, conteoTickets) : '';
 
             // El texto del mes a la izquierda, y el chevron a la derecha
             return `
-        <div class="month-group ${isOpenMes}">
+        <div class="month-group ${isOpenMes}" data-mes-key="${mesKey}" data-loaded="${abiertoMes ? '1' : '0'}">
             <div class="mes-separador">
                 <span>${NOMBRES_MESES[mesIdx]} ${anio}</span>
                 <svg class="svg-icon month-arrow"><use href="#icon-chevron-down"/></svg>
@@ -3482,7 +3527,7 @@ function _ejecutarReporte() {
     const sel = document.getElementById('rpt-anio-select');
     _reporteAnio = sel ? (sel.value || null) : null;
     const anioSeleccionado = _reporteAnio;
-
+    
     let labelPeriodo = 'Historial completo';
     if (anioSeleccionado) {
         labelPeriodo = `Año ${anioSeleccionado}`;
@@ -3490,7 +3535,7 @@ function _ejecutarReporte() {
         // Buscamos la fecha más antigua y la más reciente
         const minFecha = state.movimientos.reduce((min, m) => m.fecha < min ? m.fecha : min, state.movimientos[0].fecha);
         const maxFecha = state.movimientos.reduce((max, m) => m.fecha > max ? m.fecha : max, state.movimientos[0].fecha);
-
+        
         // Si todo pasó el mismo día mostramos solo una fecha, sino el rango
         if (minFecha === maxFecha) {
             labelPeriodo = `Historial completo (${formatFecha(minFecha)})`;
