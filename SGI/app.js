@@ -123,6 +123,90 @@ function analizarBuscadorInteligente(queryOriginal) {
     };
 }
 
+const _mutacionAnimEstado = new WeakMap();
+
+function _fantasmaDe(el) {
+    const rect = el.getBoundingClientRect();
+    const clon = el.cloneNode(true);
+    clon.classList.add('mutacion-saliente');
+
+    Object.assign(clon.style, {
+        position: 'fixed',
+        top: rect.top + 'px',
+        left: rect.left + 'px',
+        width: rect.width + 'px',
+        height: rect.height + 'px',
+        margin: '0',
+        pointerEvents: 'none',
+        zIndex: '80'
+    });
+
+    const primerHijo = el.firstElementChild;
+    if (primerHijo) {
+        const childRect = primerHijo.getBoundingClientRect();
+        if (Math.abs(rect.top - childRect.top) < 1) {
+            clon.firstElementChild.style.marginTop = '0';
+        }
+    }
+
+    document.body.appendChild(clon);
+    return clon;
+}
+
+function _finalizarMutacionPendiente(el) {
+    const estado = _mutacionAnimEstado.get(el);
+    if (!estado) return;
+    clearTimeout(estado.timeout);
+    if (estado.fantasma && estado.fantasma.parentNode) {
+        estado.fantasma.remove();
+    }
+    el.classList.remove('mutacion-entrante');
+    _mutacionAnimEstado.delete(el);
+}
+
+function _animarMutacion(elementos, fn, duracion = 220) {
+    const els = (Array.isArray(elementos) ? elementos : [elementos]).filter(Boolean);
+
+    els.forEach(_finalizarMutacionPendiente);
+    if (els.length === 0) { return Promise.resolve(fn()); }
+
+    const fantasmasMap = [];
+    els.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+            const f = _fantasmaDe(el);
+            fantasmasMap.push({ el, fantasma: f });
+        }
+    });
+
+    els.forEach(el => el.classList.remove('mutacion-entrante'));
+
+    return Promise.resolve(fn()).then((resultado) => {
+        els.forEach(el => {
+            void el.offsetWidth;
+            el.classList.add('mutacion-entrante');
+        });
+
+        const timeout = setTimeout(() => {
+            fantasmasMap.forEach(({ fantasma }) => fantasma.remove());
+            els.forEach(el => {
+                el.classList.remove('mutacion-entrante');
+                _mutacionAnimEstado.delete(el);
+            });
+        }, duracion);
+
+        els.forEach(el => {
+            const item = fantasmasMap.find(m => m.el === el);
+            _mutacionAnimEstado.set(el, {
+                timeout,
+                fantasma: item ? item.fantasma : null
+            });
+        });
+
+        return resultado;
+    });
+}
+
 // ═══════════════════════════════════════════════════════
 //  FIRMA DIGITAL (SHA-256)
 // ═══════════════════════════════════════════════════════
@@ -751,7 +835,7 @@ function importarDatos(modo) {
             state.movimientos = parsed.movimientos || [];
             state.categorias = parsed.categorias || [];
             state.herramientas = parsed.herramientas || [];
-            
+
             const resumen = _resumenCambios({ matsNuevos: state.materiales.length, movsNuevos: state.movimientos.length, cats: state.categorias.length, herr: state.herramientas.length });
             _finalizarImport(`Datos reemplazados (${resumen})`);
         });
@@ -784,7 +868,7 @@ function _contarNovedades(remoto, sanitizar = true) {
     (remoto.materiales || []).forEach(m => {
         const item = sanitizar ? _sanitizarMaterial(m) : m;
         if (!item) return;
-        if (!matIds.has(item.id)) { matsNuevos++; } 
+        if (!matIds.has(item.id)) { matsNuevos++; }
         else {
             const ex = state.materiales.find(x => x.id === item.id);
             if (ex && (ex.nombre !== item.nombre || ex.categoria !== item.categoria || ex.unidad !== item.unidad || ex.umbralBajo !== item.umbralBajo || ex.umbralAlto !== item.umbralAlto)) { matsEditados++; }
@@ -793,7 +877,7 @@ function _contarNovedades(remoto, sanitizar = true) {
     (remoto.movimientos || []).forEach(m => {
         const item = sanitizar ? _sanitizarMovimiento(m) : m;
         if (!item) return;
-        if (!movIds.has(item.id)) { movsNuevos++; } 
+        if (!movIds.has(item.id)) { movsNuevos++; }
         else {
             const ex = state.movimientos.find(x => x.id === item.id);
             if (ex) {
@@ -848,10 +932,10 @@ function _combinarDatosRemotos(remoto, sanitizar = true) {
     (remoto.movimientos || []).forEach(m => {
         const limpio = sanitizar ? _sanitizarMovimiento(m) : m;
         if (!limpio) return;
-        if (!movIds.has(limpio.id)) { 
-            state.movimientos.push(limpio); 
-            movIds.add(limpio.id); 
-            movsNuevos++; 
+        if (!movIds.has(limpio.id)) {
+            state.movimientos.push(limpio);
+            movIds.add(limpio.id);
+            movsNuevos++;
         } else {
             const ex = state.movimientos.find(x => x.id === limpio.id);
             if (ex) {
@@ -1320,64 +1404,51 @@ const UI = {
 let _tabActual = 'dashboard';
 
 function switchTab(tab) {
-    // Si el usuario toca la pestaña en la que ya está parado...
     if (_tabActual === tab) {
         let limpioAlgo = false;
-
-        // 1. Limpiamos la barra de búsqueda si tiene texto
         if (document.getElementById('busq-global').value) {
             limpiarBusqueda();
             limpioAlgo = true;
         }
-
-        // 2. Limpiamos el filtro de año si hay alguno seleccionado
         if (_anioFiltro) {
             setAnioFiltro(null);
             limpioAlgo = true;
         }
-
-        // Si no limpió nada, no hace nada extra
         return;
     }
 
-    // Si hay filtro de año activo y el usuario cambia a movimientos sin búsqueda, lo quitamos
     if (tab === 'movimientos' && _anioFiltro && !document.getElementById('busq-global').value) {
         setAnioFiltro(null);
     }
 
-    ['dashboard', 'movimientos'].forEach(t =>
-        document.getElementById(`tab-${t}`).classList.toggle('activa', t === tab)
-    );
-    try {
-        localStorage.setItem('SGI_tab', tab);
-        localStorage.setItem('SGI_tab_time', Date.now().toString()); // <--- Guardamos la hora exacta
-    } catch (_) { }
-
     const saliente = document.getElementById(`panel-${_tabActual}`);
     const entrante = document.getElementById(`panel-${tab}`);
-    _tabActual = tab;
 
-    const headerTabTitle = document.getElementById('header-tab-title');
-    if (headerTabTitle) {
-        const icono = tab === 'dashboard' ? '#icon-dashboard' : '#icon-movements';
-        const texto = tab === 'dashboard' ? 'Dashboard' : 'Movimientos';
-        headerTabTitle.innerHTML = `<svg class="svg-icon"><use href="${icono}"/></svg> ${texto}`;
-    }
+    // Aplicamos la mutación a ambos paneles en simultáneo
+    _animarMutacion([saliente, entrante], () => {
+        ['dashboard', 'movimientos'].forEach(t =>
+            document.getElementById(`tab-${t}`).classList.toggle('activa', t === tab)
+        );
+        try {
+            localStorage.setItem('SGI_tab', tab);
+            localStorage.setItem('SGI_tab_time', Date.now().toString());
+        } catch (_) { }
 
-    // animación: saliente hace fade-out, entrante hace fade-in
-    saliente.classList.remove('activa');
-    saliente.classList.add('tab-saliendo');
+        _tabActual = tab;
 
-    setTimeout(() => {
-        saliente.classList.remove('tab-saliendo');
-        entrante.classList.add('activa', 'tab-entrando');
-        entrante.addEventListener('animationend', () => {
-            entrante.classList.remove('tab-entrando');
-        }, { once: true });
-    }, 180);
+        const headerTabTitle = document.getElementById('header-tab-title');
+        if (headerTabTitle) {
+            const icono = tab === 'dashboard' ? '#icon-dashboard' : '#icon-movements';
+            const texto = tab === 'dashboard' ? 'Dashboard' : 'Movimientos';
+            headerTabTitle.innerHTML = `<svg class="svg-icon"><use href="${icono}"/></svg> ${texto}`;
+        }
 
-    if (tab === 'dashboard') { renderStats(); renderMateriales(); }
-    else { renderMovimientos(); }
+        saliente.classList.remove('activa');
+        entrante.classList.add('activa');
+
+        if (tab === 'dashboard') { renderStats(); renderMateriales(); }
+        else { renderMovimientos(); }
+    });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1975,14 +2046,13 @@ function renderStats() {
             const nom = document.getElementById('top5-nombre');
             const sub = document.getElementById('top5-sub');
             if (!lbl || !nom || !sub) { clearInterval(_intervaloTop5); return; }
-            lbl.style.opacity = 0; nom.style.opacity = 0; sub.style.opacity = 0;
-            setTimeout(() => {
+
+            _animarMutacion([lbl, nom, sub], () => {
                 lbl.textContent = `Más consumidos #${i + 1}`;
                 nom.textContent = top5[i].nombre;
                 nom.title = top5[i].nombre;
                 sub.textContent = `${top5[i].cantidad} unidades`;
-                lbl.style.opacity = 1; nom.style.opacity = 1; sub.style.opacity = 1;
-            }, 250);
+            });
         }
 
         function _arrancarTimer() {
@@ -2019,15 +2089,14 @@ function renderStats() {
             const nom = document.getElementById('stock-bajo-nombre');
             const sub = document.getElementById('stock-bajo-sub');
             if (!lbl || !nom || !sub) { clearInterval(_intervaloStockBajo); return; }
-            lbl.style.opacity = 0; nom.style.opacity = 0; sub.style.opacity = 0;
-            setTimeout(() => {
+
+            _animarMutacion([lbl, nom, sub], () => {
                 const item = stockBajoList[i];
                 lbl.textContent = `Stock bajo #${i + 1} de ${stockBajoList.length}`;
                 nom.textContent = item.nombre;
                 nom.title = item.nombre;
                 sub.textContent = `${item.stockActual} / umbral ${item.umbralBajo}`;
-                lbl.style.opacity = 1; nom.style.opacity = 1; sub.style.opacity = 1;
-            }, 250);
+            });
         }
 
         function _arrancarTimerSB() {
@@ -3413,7 +3482,7 @@ function _ejecutarReporte() {
     const sel = document.getElementById('rpt-anio-select');
     _reporteAnio = sel ? (sel.value || null) : null;
     const anioSeleccionado = _reporteAnio;
-    
+
     let labelPeriodo = 'Historial completo';
     if (anioSeleccionado) {
         labelPeriodo = `Año ${anioSeleccionado}`;
@@ -3421,7 +3490,7 @@ function _ejecutarReporte() {
         // Buscamos la fecha más antigua y la más reciente
         const minFecha = state.movimientos.reduce((min, m) => m.fecha < min ? m.fecha : min, state.movimientos[0].fecha);
         const maxFecha = state.movimientos.reduce((max, m) => m.fecha > max ? m.fecha : max, state.movimientos[0].fecha);
-        
+
         // Si todo pasó el mismo día mostramos solo una fecha, sino el rango
         if (minFecha === maxFecha) {
             labelPeriodo = `Historial completo (${formatFecha(minFecha)})`;
