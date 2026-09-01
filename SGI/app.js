@@ -465,8 +465,36 @@ const historial = (() => {
 
 
 // ═══════════════════════════════════════════════════════
-//  MODAL MANAGER 
+//  GESTOR DE MODALES Y BOTÓN ATRÁS (ANDROID/BROWSER)
 // ═══════════════════════════════════════════════════════
+const HistoryLock = {
+    isPopping: false,
+    ignoreNextPop: false,
+    executePopped: function(callback) {
+        this.isPopping = true;
+        callback();
+        // Liberamos el bloqueo permitiendo que termine la pila de ejecución actual
+        setTimeout(() => { this.isPopping = false; }, 100);
+    }
+};
+
+// Escucha del botón Atrás nativo
+window.addEventListener('popstate', (e) => {
+    // Si la acción de volver atrás fue programática (botón "X" de la UI), ignoramos el evento
+    if (HistoryLock.ignoreNextPop) {
+        HistoryLock.ignoreNextPop = false;
+        return;
+    }
+    
+    // Si el usuario tocó "Atrás" físicamente en su celular
+    const abiertos = [...document.querySelectorAll('.modal.show')];
+    if (abiertos.length > 0) {
+        HistoryLock.executePopped(() => {
+            MM.cerrarTop();
+        });
+    }
+});
+
 const MM = (() => {
     let _mdDown = false;
     const _onCerrar = {};
@@ -481,6 +509,10 @@ const MM = (() => {
         if (typeof optsOrCb === 'function') { cb = optsOrCb; }
         else if (optsOrCb && typeof optsOrCb === 'object') { cb = optsOrCb.cb; onEscape = optsOrCb.onEscape; }
         if (onEscape) { _onCerrar[id] = onEscape; } else { delete _onCerrar[id]; }
+        
+        // Empujamos un estado virtual al historial para atrapar el botón Atrás
+        history.pushState({ isModal: true, id: id }, '', '');
+
         m.classList.add('show');
         document.body.classList.add('modal-open');
         setTimeout(() => { m.addEventListener('mousedown', _onMD); m.addEventListener('click', _onClick); }, 100);
@@ -491,21 +523,33 @@ const MM = (() => {
         const m = document.getElementById(id); if (!m) return;
         delete _onCerrar[id];
         m.classList.remove('show');
-        // Cerrar portal de sugerencias si estaba abierto dentro de este modal
         cerrarPortalSugerencias();
-        // solo quitar modal-open si no quedan otros abiertos
         if (!document.querySelector('.modal.show')) document.body.classList.remove('modal-open');
         m.removeEventListener('mousedown', _onMD);
         m.removeEventListener('click', _onClick);
+        
+        // Si el cierre viene de un botón (y no del botón Atrás físico), retrocedemos el historial
+        // y le avisamos al eventListener que ignore esa acción para evitar bucles.
+        if (!HistoryLock.isPopping && history.state && history.state.isModal) {
+            HistoryLock.ignoreNextPop = true;
+            history.back();
+        }
+
         cb?.();
     }
 
     function cerrarTodos() {
-        document.querySelectorAll('.modal.show').forEach(m => {
+        const abiertos = document.querySelectorAll('.modal.show');
+        abiertos.forEach(m => {
             delete _onCerrar[m.id];
             m.classList.remove('show');
             m.removeEventListener('mousedown', _onMD);
             m.removeEventListener('click', _onClick);
+            // Manejo silencioso de la cola histórica en cierres forzados
+            if (!HistoryLock.isPopping && history.state && history.state.isModal) {
+                HistoryLock.ignoreNextPop = true;
+                history.back();
+            }
         });
         document.body.classList.remove('modal-open');
     }
