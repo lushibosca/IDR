@@ -473,20 +473,19 @@ const HistoryLock = {
     executePopped: function(callback) {
         this.isPopping = true;
         callback();
-        // Liberamos el bloqueo permitiendo que termine la pila de ejecución actual
-        setTimeout(() => { this.isPopping = false; }, 100);
+        // Damos 300ms para cubrir holgadamente los 150ms de transición de UI._nav
+        setTimeout(() => { this.isPopping = false; }, 300);
     }
 };
 
-// Escucha del botón Atrás nativo
 window.addEventListener('popstate', (e) => {
-    // Si la acción de volver atrás fue programática (botón "X" de la UI), ignoramos el evento
+    // Si la acción de volver atrás fue programática (botón "X" o "Volver"), la ignoramos
     if (HistoryLock.ignoreNextPop) {
         HistoryLock.ignoreNextPop = false;
         return;
     }
     
-    // Si el usuario tocó "Atrás" físicamente en su celular
+    // Si el usuario tocó "Atrás" físicamente
     const abiertos = [...document.querySelectorAll('.modal.show')];
     if (abiertos.length > 0) {
         HistoryLock.executePopped(() => {
@@ -498,6 +497,8 @@ window.addEventListener('popstate', (e) => {
 const MM = (() => {
     let _mdDown = false;
     const _onCerrar = {};
+    const ModalStack = [];
+    let closeTimeout = null;
 
     function _onMD(e) { _mdDown = e.target === e.currentTarget; }
     function _onClick(e) { if (!_mdDown) return; if (e.target === e.currentTarget) _cerrarConPadre(e.target.id); }
@@ -505,13 +506,46 @@ const MM = (() => {
 
     function abrir(id, optsOrCb) {
         const m = document.getElementById(id); if (!m) return;
+        
+        // Cancelamos cualquier cierre asíncrono pendiente (ej. transiciones con UI._nav)
+        if (closeTimeout) {
+            clearTimeout(closeTimeout);
+            closeTimeout = null;
+        }
+
         let cb, onEscape;
         if (typeof optsOrCb === 'function') { cb = optsOrCb; }
         else if (optsOrCb && typeof optsOrCb === 'object') { cb = optsOrCb.cb; onEscape = optsOrCb.onEscape; }
         if (onEscape) { _onCerrar[id] = onEscape; } else { delete _onCerrar[id]; }
         
-        // Empujamos un estado virtual al historial para atrapar el botón Atrás
-        history.pushState({ isModal: true, id: id }, '', '');
+        // --- Sincronización estricta con el historial del navegador ---
+        if (HistoryLock.isPopping) {
+            // El navegador ya retrocedió físicamente, solo ajustamos nuestro stack local
+            const idx = ModalStack.indexOf(id);
+            if (idx !== -1) {
+                ModalStack.splice(idx + 1);
+            } else {
+                ModalStack.push(id);
+            }
+        } else {
+            const idx = ModalStack.indexOf(id);
+            if (idx !== -1) {
+                // Estamos volviendo a un padre anterior mediante botones de la UI ("X")
+                const steps = ModalStack.length - 1 - idx;
+                if (steps > 0) {
+                    HistoryLock.isPopping = true;
+                    HistoryLock.ignoreNextPop = true;
+                    history.go(-steps);
+                    ModalStack.splice(idx + 1);
+                    setTimeout(() => { HistoryLock.isPopping = false; }, 300);
+                }
+            } else {
+                // Estamos abriendo un modal nuevo (hijo o principal)
+                ModalStack.push(id);
+                history.pushState({ isModal: true, id: id }, '', '');
+            }
+        }
+        // --------------------------------------
 
         m.classList.add('show');
         document.body.classList.add('modal-open');
@@ -528,12 +562,23 @@ const MM = (() => {
         m.removeEventListener('mousedown', _onMD);
         m.removeEventListener('click', _onClick);
         
-        // Si el cierre viene de un botón (y no del botón Atrás físico), retrocedemos el historial
-        // y le avisamos al eventListener que ignore esa acción para evitar bucles.
-        if (!HistoryLock.isPopping && history.state && history.state.isModal) {
-            HistoryLock.ignoreNextPop = true;
-            history.back();
+        // --- Sincronización estricta de cierre ---
+        if (HistoryLock.isPopping) {
+            // Limpiamos el modal del stack local
+            const idx = ModalStack.indexOf(id);
+            if (idx !== -1) ModalStack.splice(idx);
+        } else {
+            // Esperamos 200ms a ver si se abre otro modal (transición de UI._nav). 
+            // Si no se abre ninguno, retrocedemos el historial de forma nativa.
+            closeTimeout = setTimeout(() => {
+                if (ModalStack.length > 0) {
+                    ModalStack.pop();
+                    HistoryLock.ignoreNextPop = true;
+                    history.back();
+                }
+            }, 200);
         }
+        // -----------------------------------------
 
         cb?.();
     }
@@ -545,13 +590,14 @@ const MM = (() => {
             m.classList.remove('show');
             m.removeEventListener('mousedown', _onMD);
             m.removeEventListener('click', _onClick);
-            // Manejo silencioso de la cola histórica en cierres forzados
-            if (!HistoryLock.isPopping && history.state && history.state.isModal) {
-                HistoryLock.ignoreNextPop = true;
-                history.back();
-            }
         });
         document.body.classList.remove('modal-open');
+        
+        if (!HistoryLock.isPopping && ModalStack.length > 0) {
+            HistoryLock.ignoreNextPop = true;
+            history.go(-ModalStack.length);
+            ModalStack.length = 0;
+        }
     }
 
     function cerrarTop() {
