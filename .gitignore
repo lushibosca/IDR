@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-SGC/Utilidades/datos/
-SGC/Utilidades/cctv-scanner-config.json
-=======
-SGC/Utilidades/datos/
-SGC/Utilidades/cctv-scanner-config.json
->>>>>>> main
+SGC/Utilidades/datos/*
+*.json
+*.log
