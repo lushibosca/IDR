@@ -672,7 +672,7 @@
 
         thead th.th-sortable {
             cursor: pointer;
-            transition: color var(--t-fast);
+            transition: filter var(--t-fast);
         }
 
         tbody tr {
@@ -991,6 +991,7 @@
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+            border-right: 1px solid var(--text-muted);
         }
 
         .mov-line-1 {
@@ -1142,7 +1143,6 @@
             display: flex;
             flex-wrap: wrap;
             gap: 0.3rem;
-            border-left: 1px solid var(--text-muted);
         }
 
         .mov-mat-tag {
@@ -2267,7 +2267,8 @@
             gap: 0.75rem;
             padding: 0.65rem 0.25rem;
             border-bottom: var(--border-w) solid var(--border);
-            transition: background var(--t-fast);
+            transition: background var(--t-fast), filter var(--t-fast);
+            background: var(--bg-card);
         }
 
         .herr-item:last-child {
@@ -2381,7 +2382,11 @@
             .btn-gist-action:not(:disabled):hover,
             .year-summary:hover,
             .btn-scroll-top:hover,
-            .stat-chip:hover {
+            .stat-chip:hover,
+            .cat-item:hover,
+            thead th.th-sortable:hover,
+            .btn-add-linea:hover,
+            .herr-item:hover {
                 filter: var(--hover);
             }
 
@@ -2392,17 +2397,6 @@
             .mes-separador:hover,
             .fab-menu-item:hover {
                 background: var(--input-bg);
-            }
-
-            /* Elementos con reglas mixtas específicas */
-            thead th.th-sortable:hover {
-                color: var(--text-main);
-            }
-
-            .btn-add-linea:hover {
-                background: var(--input-bg);
-                color: var(--text-main);
-                filter: none;
             }
 
             .dropdown-item:hover {
@@ -2440,6 +2434,10 @@
             .mov-item-grid {
                 grid-template-columns: 1fr;
                 gap: 0.75rem;
+            }
+
+            .mov-col-left {
+                border-right: none;
             }
 
             /* ── NUEVO: Ocultar columnas secundarias en móviles ── */

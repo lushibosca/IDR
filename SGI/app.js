@@ -2974,6 +2974,8 @@ function renderMovimientos() {
 // ═══════════════════════════════════════════════════════
 //  SHORTCUTS DE TECLADO
 // ═══════════════════════════════════════════════════════
+let _lastTabSwitchTime = 0;
+
 document.addEventListener('keydown', e => {
     const modalOpen = document.body.classList.contains('modal-open');
     const modal = document.querySelector('.modal.show');
@@ -3010,10 +3012,31 @@ document.addEventListener('keydown', e => {
         return;
     }
 
-    // ── Alt + ← / → : cambiar pestaña ───────────────────
+    // ── Ctrl + ← / → : cambiar pestaña (Carrusel con Cooldown) ───────────────────
     if (!modalOpen && e.ctrlKey) {
-        if (e.key === 'ArrowLeft') { e.preventDefault(); switchTab('dashboard'); return; }
-        if (e.key === 'ArrowRight') { e.preventDefault(); switchTab('movimientos'); return; }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            
+            // Verificamos si pasaron al menos 300ms desde el último cambio
+            const now = Date.now();
+            if (now - _lastTabSwitchTime < 200) return; 
+            _lastTabSwitchTime = now; // Actualizamos el temporizador
+            
+            // 1. Buscamos el índice de la pestaña actual
+            const idx = TABS_CONFIG.findIndex(t => t.id === _tabActual);
+            let nextIdx;
+            
+            // 2. Calculamos el próximo índice con efecto carrusel (módulo)
+            if (e.key === 'ArrowRight') {
+                nextIdx = (idx + 1) % TABS_CONFIG.length;
+            } else {
+                nextIdx = (idx - 1 + TABS_CONFIG.length) % TABS_CONFIG.length;
+            }
+            
+            // 3. Cambiamos a la pestaña calculada
+            switchTab(TABS_CONFIG[nextIdx].id);
+            return;
+        }
     }
 
     // ── Sin modal y sin foco en input ────────────────────
@@ -3821,13 +3844,20 @@ function _ejecutarReporte() {
 
         // Configuramos umbrales: Mínimo 60px de recorrido horizontal, y máximo 40px de desvío vertical
         if (absDistX > 60 && absDistY < 40) {
+            // Buscamos el índice actual
+            const idx = TABS_CONFIG.findIndex(t => t.id === _tabActual);
+            let nextIdx;
+
             if (distX < 0) {
-                // Swipe a la izquierda (←)
-                if (_tabActual === 'dashboard') switchTab('movimientos');
+                // Swipe a la izquierda (←) -> Avanzar a la siguiente
+                nextIdx = (idx + 1) % TABS_CONFIG.length;
             } else {
-                // Swipe a la derecha (→)
-                if (_tabActual === 'movimientos') switchTab('dashboard');
+                // Swipe a la derecha (→) -> Retroceder a la anterior
+                nextIdx = (idx - 1 + TABS_CONFIG.length) % TABS_CONFIG.length;
             }
+            
+            // Cambiamos a la pestaña calculada
+            switchTab(TABS_CONFIG[nextIdx].id);
         }
     }, { passive: true });
 }());
