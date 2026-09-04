@@ -751,7 +751,11 @@ function toggleDarkMode() {
 function agregarCategoria() {
     const input = document.getElementById('cat-nueva-input');
     const nombre = input.value.trim();
-    if (!nombre) { input.classList.add('error'); return; }
+    if (!nombre) {
+        input.classList.add('error');
+        toast('Ingresá un nombre para la categoría', 'error');
+        return;
+    }
     if (!state.categorias) state.categorias = [];
     if (state.categorias.some(c => c.toLowerCase() === nombre.toLowerCase())) {
         toast('Esa categoría ya existe', 'error'); return;
@@ -1771,6 +1775,7 @@ function calcStock(materialId) {
 let _sortMat = { col: 'nombre', dir: 'asc' }; // Estado global de ordenamiento
 
 function ordenarMateriales(col) {
+    if (col === 'indicador' && _anioFiltro) return;
     // Si toco la misma columna, invierto la dirección. Si es nueva, la pongo ascendente.
     if (_sortMat.col === col) {
         _sortMat.dir = _sortMat.dir === 'asc' ? 'desc' : 'asc';
@@ -1941,7 +1946,7 @@ function renderMateriales() {
         }
         if (valA < valB) return _sortMat.dir === 'asc' ? -1 : 1;
         if (valA > valB) return _sortMat.dir === 'asc' ? 1 : -1;
-        return 0;
+        return a.nombre.localeCompare(b.nombre);
     });
 
     // PASO 3: Headers dinámicos
@@ -1958,12 +1963,10 @@ function renderMateriales() {
     if (thInd) {
         if (modoAnio) {
             thInd.classList.remove('th-sortable');
-            thInd.onclick = null;
             const indIcon = svgHidden;
             thInd.innerHTML = `<svg viewBox="0 0 10 14" width="14" height="18" class="svg-th-umbral-hidden"><use href="#icon-umbral"/></svg>${indIcon}`;
         } else {
             thInd.classList.add('th-sortable');
-            thInd.onclick = () => ordenarMateriales('indicador');
             const indIcon = _sortMat.col === 'indicador' ? (_sortMat.dir === 'asc' ? svgAsc : svgDesc) : svgHidden;
             thInd.innerHTML = `<svg viewBox="0 0 10 14" width="14" height="18" class="svg-th-umbral-dim"><use href="#icon-umbral"/></svg>${indIcon}`;
         }
