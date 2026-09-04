@@ -105,7 +105,7 @@
             background: var(--input-bg);
             color: var(--text-main);
             height: 44px;
-            transition: border-color var(--t-ui), background var(--t-ui);
+            transition: border-color var(--t-ui), background var(--t-ui), opacity var(--t-ui);
             font-family: inherit;
         }
 
@@ -440,7 +440,7 @@
             font-weight: 600;
             font-size: 0.9rem;
             cursor: pointer;
-            transition: filter var(--t-fast), transform var(--t-fast);
+            transition: filter var(--t-fast), transform var(--t-fast), opacity var(--t-ui);
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -2473,16 +2473,22 @@
         /* ═══════════════════════════════════════════
    MODAL LOCKER
    ═══════════════════════════════════════════ */
+        .modal input,
+        .modal select,
+        .modal textarea {
+            transition: border-color var(--t-ui), background var(--t-ui), opacity var(--t-ui);
+        }
+
+        .modal button {
+            transition: filter var(--t-fast), transform var(--t-fast), opacity var(--t-ui);
+        }
+
         .modal--bloqueado input,
         .modal--bloqueado select,
         .modal--bloqueado textarea {
-            opacity: 0.45;
+            opacity: 0.4;
             cursor: not-allowed;
             pointer-events: none;
-        }
-
-        .modal--bloqueado button {
-            transition: filter var(--t-fast), transform var(--t-fast), opacity var(--t-ui);
         }
 
         .btn-input-side {
@@ -2496,7 +2502,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: color var(--t-fast), filter var(--t-fast);
+            transition: background var(--t-ui), color var(--t-fast), filter var(--t-fast);
         }
 
         .btn-input-side.btn-input-side--baja {
