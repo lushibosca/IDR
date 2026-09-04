@@ -618,7 +618,7 @@ const ModalLocker = (() => {
     const CONFIGS = {
         'modal-material-editar': {
             lockBtnId: 'mat-editar-lock-btn',
-            exemptIds: new Set(['mat-editar-cancelar-btn', 'mat-editar-lock-btn']),
+            exemptIds: new Set(['mat-editar-cancelar-btn', 'mat-editar-lock-btn', 'mat-editar-buscar-btn']),
         },
         'modal-editar-mov': {
             lockBtnId: 'editar-mov-lock-btn',
