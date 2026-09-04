@@ -1156,14 +1156,15 @@ function buscarMovimientosMaterialEditar() {
     busqEl.value = textoBusqueda;
     if (btnClear) btnClear.style.display = 'flex';
 
-    // 4. Cambiamos de pestaña. switchTab ya se encarga de renderizar la vista con el filtro activo.
+    if (_busqTimer) clearTimeout(_busqTimer);
+
+    // 4. Cambiamos de pestaña si no estamos ya en ella
     if (_tabActual !== 'movimientos') {
         switchTab('movimientos');
-    } else {
-        // Por si acaso el usuario ya estaba en la pestaña de movimientos, forzamos el render
-        if (_busqTimer) clearTimeout(_busqTimer);
-        renderMovimientos();
     }
+
+    // 5. Renderizamos movimientos con el filtro aplicado para abrir colapsos de años y meses
+    renderMovimientos();
 
     // Sincronizamos silenciosamente el inventario oculto
     renderMateriales();
