@@ -63,11 +63,42 @@
             console.log('PWA instalada con éxito.');
         });
 
+        // Notificación Toast
+        function showToast(message, duration = 4500) {
+            let toast = document.getElementById('launcher-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'launcher-toast';
+                toast.className = 'launcher-toast';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+
         // Registrar Service Worker Unificado
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('PWA: Service Worker del Launcher registrado.', reg.scope))
+                    .then(registration => {
+                        console.log('PWA: Service Worker del Launcher registrado.', registration.scope);
+
+                        // Detectar si hay una actualización disponible en segundo plano
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            if (!newWorker) return;
+
+                            newWorker.addEventListener('statechange', () => {
+                                // Solo notificar si ya existía un controller previo (es una actualización, no la primera instalación)
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    showToast('Nueva versión disponible. Se aplicará al recargar o volver a abrir.');
+                                }
+                            });
+                        });
+                    })
                     .catch(err => console.error('PWA: Error al registrar Service Worker:', err));
 
                 // Saneamiento: Desregistrar workers secundarios obsoletos en subcarpetas
