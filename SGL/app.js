@@ -1652,17 +1652,22 @@ const UI = (function () {
         }, { passive: true });
     }
 
-    function toast(msg, type = '', duracion = 3000) {
-        if (!msg) return;
+    function mostrarToast(mensaje, tipo = 'info', duracion = 3000, detalle = null) {
+        if (!mensaje) return;
+        const texto = detalle ? `${mensaje}, ${detalle}` : mensaje;
         const toastEl = document.getElementById('toast');
         const actual = _toastRunning && toastEl ? toastEl.textContent : null;
-        if (msg === _toastLast || actual === msg) return;
+        if (texto === _toastLast || actual === texto) return;
 
-        _toastQueue.push({ msg, type, duracion });
+        _toastQueue.push({ msg: texto, type: tipo || 'info', duracion });
         if (_toastQueue.length > MAX_TOAST_QUEUE) {
             _toastQueue.splice(0, _toastQueue.length - MAX_TOAST_QUEUE);
         }
         if (!_toastRunning) _toastNext();
+    }
+
+    function toast(msg, type = 'info', duracion = 3000, detalle = null) {
+        return mostrarToast(msg, type, duracion, detalle);
     }
 
     function _toastNext() {
@@ -2121,8 +2126,11 @@ const UI = (function () {
 
     function confirmImport(mode) { if (_parsedImportData) Data.importData(_parsedImportData, mode); _parsedImportData = null; }
 
-    return { toggleTheme, toast, openPersonModal, editPerson, closeModals, goBack, openConfig, openGist, toggleEditLimits, toggleCustomLimits, toggleCustomSeason, loadYearConfig, initYearSelector, refreshYearSelector, toggleAddRangeForm, confirmAddRange, refreshVacList, toggleDateQuick, openHolidayModal, openAreasModal, resetAll, openImportModal, onImportFileSelected, confirmImport, showConfirm, closeConfirm, toggleGanttEditMode, goBackFromAreas };
+    return { toggleTheme, toast, mostrarToast, openPersonModal, editPerson, closeModals, goBack, openConfig, openGist, toggleEditLimits, toggleCustomLimits, toggleCustomSeason, loadYearConfig, initYearSelector, refreshYearSelector, toggleAddRangeForm, confirmAddRange, refreshVacList, toggleDateQuick, openHolidayModal, openAreasModal, resetAll, openImportModal, onImportFileSelected, confirmImport, showConfirm, closeConfirm, toggleGanttEditMode, goBackFromAreas };
 })();
+
+window.mostrarToast = UI.mostrarToast;
+window.toast = UI.toast;
 
 // --- HOLIDAYS MODULE ---
 const Holidays = (function () {

@@ -142,15 +142,16 @@
             }, 20);
         }
 
-        function toast(msg, tipo = 'info', duracion = 3000) {
-            if (!msg) return;
+        function mostrarToast(mensaje, tipo = 'info', duracion = 3000, detalle = null) {
+            if (!mensaje) return;
+            const texto = detalle ? `${mensaje}, ${detalle}` : mensaje;
             const ultimo = _toastQueue[_toastQueue.length - 1];
             const toastEl = document.getElementById('toast');
             const actual = _toastBusy && toastEl ? toastEl.textContent : null;
 
-            if ((ultimo && ultimo.msg === msg) || actual === msg) return;
+            if ((ultimo && ultimo.msg === texto) || actual === texto) return;
 
-            _toastQueue.push({ msg, tipo, duracion });
+            _toastQueue.push({ msg: texto, tipo, duracion });
             if (_toastQueue.length > MAX_TOAST_QUEUE) {
                 _toastQueue.splice(0, _toastQueue.length - MAX_TOAST_QUEUE);
             }
@@ -158,8 +159,11 @@
             if (!_toastBusy) _procesarToastQueue();
         }
 
-        // Alias para compatibilidad
-        const showToast = (msg, duracion = 4000) => toast(msg, 'info', duracion);
+        // Aliases para compatibilidad
+        const toast = (msg, tipo = 'info', duracion = 3000, detalle = null) => mostrarToast(msg, tipo, duracion, detalle);
+        const showToast = (msg, duracion = 4000) => mostrarToast(msg, 'info', duracion);
+        window.mostrarToast = mostrarToast;
+        window.toast = toast;
 
         // Registrar Service Worker Unificado
         if ('serviceWorker' in navigator) {

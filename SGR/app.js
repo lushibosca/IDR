@@ -359,21 +359,29 @@ function _flushToast() {
     }, 20);
 }
 
-function toast(msg, tipo = 'success', duracion = 3000) {
-    if (!msg) return;
+function mostrarToast(mensaje, tipo = 'info', duracion = 3000, detalle = null) {
+    if (!mensaje) return;
+    const texto = detalle ? `${mensaje}, ${detalle}` : mensaje;
     const ultimo = _toastQ[_toastQ.length - 1];
     const el = DOM.toast || document.getElementById('toast');
     const actual = _toastBusy && el ? el.textContent : null;
 
-    if ((ultimo && ultimo.msg === msg) || actual === msg) return;
+    if ((ultimo && ultimo.msg === texto) || actual === texto) return;
 
-    _toastQ.push({ msg, tipo, duracion });
+    _toastQ.push({ msg: texto, tipo, duracion });
     if (_toastQ.length > MAX_TOAST_QUEUE) {
         _toastQ.splice(0, _toastQ.length - MAX_TOAST_QUEUE);
     }
 
     if (!_toastBusy) _flushToast();
 }
+
+function toast(msg, tipo = 'success', duracion = 3000, detalle = null) {
+    return mostrarToast(msg, tipo, duracion, detalle);
+}
+
+window.mostrarToast = mostrarToast;
+window.toast = toast;
 
 // ═══════════════════════════════════════════════════════
 //  CONFIRMAR

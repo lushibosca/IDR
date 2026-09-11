@@ -579,20 +579,25 @@
             }, 20);
         }
 
-        function toast(msg, tipo = 'success', duracion = 3000) {
-            if (!msg) return;
+        function mostrarToast(mensaje, tipo = 'info', duracion = 3000, detalle = null) {
+            if (!mensaje) return;
+            const texto = detalle ? `${mensaje}, ${detalle}` : mensaje;
             const ultimo = _queue[_queue.length - 1];
             const el = document.getElementById('toast');
             const actual = _activo && el ? el.textContent : null;
 
-            if ((ultimo && ultimo.msg === msg) || actual === msg) return;
+            if ((ultimo && ultimo.msg === texto) || actual === texto) return;
 
-            _queue.push({ msg, tipo, duracion });
+            _queue.push({ msg: texto, tipo, duracion });
             if (_queue.length > MAX_TOAST_QUEUE) {
                 _queue.splice(0, _queue.length - MAX_TOAST_QUEUE);
             }
 
             if (!_activo) _procesarQueue();
+        }
+
+        function toast(msg, tipo = 'success', duracion = 3000, detalle = null) {
+            return mostrarToast(msg, tipo, duracion, detalle);
         }
 
         // ── Modal confirmar ───────────────────────────────────────────────────
@@ -665,8 +670,11 @@
             MM.abrir('modal-picker', { onEscape: () => _cerrarYCancelar() });
         }
 
-        return { toast, confirmarModal, pickerModal };
+        return { toast, mostrarToast, confirmarModal, pickerModal };
     })();
+
+    window.mostrarToast = Notif.mostrarToast;
+    window.toast = Notif.toast;
 
 
     // ════════════════════════════════════════════════════════════════════════════
