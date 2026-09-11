@@ -172,37 +172,29 @@ const historial = (() => {
 })();
 
 // ═══════════════════════════════════════════════════════
-//  MODAL MANAGER
+//  MODAL MANAGER (PATRÓN HORARIOS UNIFICADO)
 // ═══════════════════════════════════════════════════════
 const MM = (() => {
+    const _padres = {};
+    const _accionesVolver = {};
+
+    let _navegandoHaciaAtras = false;
+    let _ignorandoPopstate = false;
+    let _enAlternanciaHaciaAdelante = false;
+    let _enAlternanciaHaciaAtras = false;
     let _mdDown = false;
-    let _nav = false, _back = false, _ignorar = false;
-    const HIST_KEY = '_' + APP_KEY + 'histBase';
-    if (!sessionStorage.getItem(HIST_KEY)) sessionStorage.setItem(HIST_KEY, String(window.history.length));
-    window.addEventListener('popstate', () => {
-        if (_ignorar) { _ignorar = false; return; }
-        const abiertos = [...document.querySelectorAll('.modal.show')];
-        if (!abiertos.length) return;
-        _back = true; cerrarTop(); setTimeout(() => { _back = false; }, 50);
-    });
 
     // ── Focus trap ──────────────────────────────────────────
-    // Selectores de elementos que pueden recibir foco
     const FOCUSABLE = [
         'a[href]', 'button:not([disabled])', 'input:not([disabled])',
         'select:not([disabled])', 'textarea:not([disabled])',
         '[tabindex]:not([tabindex="-1"])'
     ].join(',');
-
-    // Mapa de modal-id → handler de Tab activo, para poder removerlo al cerrar
     const _trapHandlers = new Map();
-    // Elemento que tenía el foco antes de abrir el modal, para restaurarlo al cerrar
     const _prevFocus = new Map();
 
     function _instalarTrap(m) {
         _prevFocus.set(m.id, document.activeElement);
-
-        // Mover el foco al primer elemento interactivo del modal
         const focusables = () => Array.from(m.querySelectorAll(FOCUSABLE)).filter(el => !el.closest('[hidden]'));
         setTimeout(() => { focusables()[0]?.focus(); }, 50);
 
@@ -224,60 +216,209 @@ const MM = (() => {
     function _removerTrap(m) {
         const handler = _trapHandlers.get(m.id);
         if (handler) { m.removeEventListener('keydown', handler); _trapHandlers.delete(m.id); }
-        // Restaurar foco al elemento que lo tenía antes de abrir
         const prev = _prevFocus.get(m.id);
         if (prev && typeof prev.focus === 'function') { try { prev.focus(); } catch (_) { } }
         _prevFocus.delete(m.id);
     }
     // ────────────────────────────────────────────────────────
 
-    const _onCerrar = {};
+    function registrarAccionVolver(modalId, fn) {
+        _accionesVolver[modalId] = fn;
+    }
+
+    function _getAccionVolver(modalId) {
+        return _accionesVolver[modalId] || null;
+    }
+
+    function _ejecutarAccionCierre(modalId) {
+        const accionVolver = _getAccionVolver(modalId);
+        if (typeof accionVolver === 'function') {
+            accionVolver();
+            return;
+        }
+        const padreId = _padres[modalId];
+        if (padreId) {
+            const padreEl = document.getElementById(padreId);
+            if (padreEl && !padreEl.classList.contains('show')) {
+                alternar(modalId, padreId);
+                return;
+            }
+        }
+        cerrar(modalId);
+    }
+
+    window.addEventListener('popstate', () => {
+        if (_ignorandoPopstate) {
+            _ignorandoPopstate = false;
+            return;
+        }
+
+        _navegandoHaciaAtras = true;
+        const abiertos = Array.from(document.querySelectorAll('.modal.show'));
+        if (abiertos.length > 0) {
+            const topModal = abiertos[abiertos.length - 1];
+            _ejecutarAccionCierre(topModal.id);
+        }
+        setTimeout(() => { _navegandoHaciaAtras = false; }, 50);
+    });
+
     function _onMD(e) { _mdDown = e.target === e.currentTarget; }
-    function _onClick(e) { if (!_mdDown) return; if (e.target === e.currentTarget) _cerrarConPadre(e.target.id); }
-    function _cerrarConPadre(id) { const fn = _onCerrar[id]; if (fn) fn(); else cerrar(id); }
-    function abrir(id, optsOrCb) {
-        const m = document.getElementById(id); if (!m) return;
-        let cb, onEscape;
-        if (typeof optsOrCb === 'function') { cb = optsOrCb; }
-        else if (optsOrCb && typeof optsOrCb === 'object') { cb = optsOrCb.cb; onEscape = optsOrCb.onEscape; }
-        if (onEscape) { _onCerrar[id] = onEscape; } else { delete _onCerrar[id]; }
-        m.classList.add('show'); document.body.classList.add('modal-open');
-        if (!_back && !_nav) history.pushState({ rckModal: id }, '');
-        setTimeout(() => { m.addEventListener('mousedown', _onMD); m.addEventListener('click', _onClick); }, 100);
-        _instalarTrap(m);
-        cb?.();
+    function _onClick(e) {
+        if (!_mdDown) return;
+        if (e.target === e.currentTarget) {
+            _ejecutarAccionCierre(e.target.id);
+        }
     }
-    function cerrar(id, cb) {
-        const m = document.getElementById(id); if (!m) return;
-        delete _onCerrar[id];
-        m.classList.remove('show');
-        if (!document.querySelector('.modal.show')) document.body.classList.remove('modal-open');
-        m.removeEventListener('mousedown', _onMD); m.removeEventListener('click', _onClick);
-        _removerTrap(m);
-        if (!_back && !_nav) { _ignorar = true; history.back(); }
-        cb?.();
+
+    function abrir(modalId, optsOrCb) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+
+        let cb, onEscape, padre;
+        if (typeof optsOrCb === 'function') {
+            cb = optsOrCb;
+        } else if (optsOrCb && typeof optsOrCb === 'object') {
+            cb = optsOrCb.cb;
+            onEscape = optsOrCb.onEscape;
+            padre = optsOrCb.padre;
+        }
+
+        if (onEscape) {
+            _accionesVolver[modalId] = onEscape;
+        } else {
+            delete _accionesVolver[modalId];
+        }
+
+        if (padre) {
+            _padres[modalId] = padre;
+        }
+
+        modal.classList.add('show');
+        document.body.classList.add('modal-open');
+
+        if (!_navegandoHaciaAtras && !_enAlternanciaHaciaAtras) {
+            history.pushState({ modalId }, '');
+        }
+
+        setTimeout(() => {
+            modal.addEventListener('mousedown', _onMD);
+            modal.addEventListener('click', _onClick);
+        }, 100);
+
+        _instalarTrap(modal);
+        if (typeof cb === 'function') cb();
     }
+
+    function cerrar(modalId, callback = null) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+
+        const estabaAbierto = modal.classList.contains('show');
+        delete _accionesVolver[modalId];
+        modal.classList.remove('show');
+
+        if (document.querySelectorAll('.modal.show').length === 0) {
+            document.body.classList.remove('modal-open');
+        }
+
+        modal.removeEventListener('mousedown', _onMD);
+        modal.removeEventListener('click', _onClick);
+        _removerTrap(modal);
+
+        if (estabaAbierto && !_navegandoHaciaAtras && !_enAlternanciaHaciaAdelante) {
+            _ignorandoPopstate = true;
+            history.back();
+        }
+
+        if (typeof callback === 'function') callback();
+    }
+
+    function alternar(modalIdCerrar, modalIdAbrir, callbackCerrar = null, callbackAbrir = null) {
+        const esHaciaAtras = (_padres[modalIdCerrar] === modalIdAbrir);
+
+        if (esHaciaAtras) {
+            _enAlternanciaHaciaAtras = true;
+            delete _padres[modalIdCerrar];
+        } else {
+            _enAlternanciaHaciaAdelante = true;
+            if (modalIdCerrar && modalIdAbrir) {
+                _padres[modalIdAbrir] = modalIdCerrar;
+            }
+        }
+
+        cerrar(modalIdCerrar, callbackCerrar);
+        abrir(modalIdAbrir, callbackAbrir);
+
+        _enAlternanciaHaciaAdelante = false;
+        _enAlternanciaHaciaAtras = false;
+    }
+
+    function abrirConPadre(modalId, setupFn = null) {
+        const modalAbierto = document.querySelector('.modal.show');
+        const padre = modalAbierto ? modalAbierto.id : null;
+        if (typeof setupFn === 'function') setupFn();
+        if (padre) {
+            alternar(padre, modalId);
+        } else {
+            abrir(modalId);
+        }
+    }
+
+    function cerrarConPadre(modalId, callbackAbrirPadre = null) {
+        const padre = _padres[modalId];
+        if (padre) {
+            alternar(modalId, padre, null, callbackAbrirPadre ? () => callbackAbrirPadre(padre) : null);
+        } else {
+            cerrar(modalId);
+        }
+    }
+
     function cerrarTodos() {
-        document.querySelectorAll('.modal.show').forEach(m => {
-            delete _onCerrar[m.id];
-            m.classList.remove('show');
-            m.removeEventListener('mousedown', _onMD); m.removeEventListener('click', _onClick);
-            _removerTrap(m);
+        document.querySelectorAll('.modal.show').forEach(modal => {
+            delete _accionesVolver[modal.id];
+            modal.classList.remove('show');
+            modal.removeEventListener('mousedown', _onMD);
+            modal.removeEventListener('click', _onClick);
+            _removerTrap(modal);
         });
+        Object.keys(_padres).forEach(k => delete _padres[k]);
         document.body.classList.remove('modal-open');
     }
+
     function cerrarTop() {
-        const abiertos = [...document.querySelectorAll('.modal.show')];
+        const abiertos = Array.from(document.querySelectorAll('.modal.show'));
         if (!abiertos.length) return;
-        const conHandler = abiertos.filter(m => _onCerrar[m.id]);
-        const target = conHandler.length ? conHandler[conHandler.length - 1] : abiertos[abiertos.length - 1];
-        _cerrarConPadre(target.id);
+        const topModal = abiertos[abiertos.length - 1];
+        _ejecutarAccionCierre(topModal.id);
     }
+
+    // Compatibilidad para transiciones legacy
     function nav(desde, fn) {
-        _nav = true; cerrar(desde);
-        setTimeout(() => { fn(); _nav = false; }, 150);
+        if (desde) {
+            const mDesde = document.getElementById(desde);
+            if (mDesde && mDesde.classList.contains('show')) {
+                _enAlternanciaHaciaAdelante = true;
+                cerrar(desde);
+                _enAlternanciaHaciaAdelante = false;
+            }
+        }
+        if (typeof fn === 'function') fn();
     }
-    return { abrir, cerrar, cerrarTodos, cerrarTop, nav };
+
+    return {
+        abrir,
+        cerrar,
+        alternar,
+        abrirConPadre,
+        cerrarConPadre,
+        cerrarTodos,
+        cerrarTop,
+        registrarAccionVolver,
+        ejecutarAccionCierre: _ejecutarAccionCierre,
+        getPadre: (id) => _padres[id] || null,
+        setPadre: (id, padreId) => { if (id && padreId) _padres[id] = padreId; },
+        nav
+    };
 })();
 
 // ═══════════════════════════════════════════════════════
@@ -397,9 +538,12 @@ function confirmar(titulo, texto, cb) {
     document.getElementById('confirmar-titulo').textContent = titulo;
     document.getElementById('confirmar-texto').textContent = texto;
     _confirmarCb = cb;
-    const abiertos = [...document.querySelectorAll('.modal.show')];
+    const abiertos = Array.from(document.querySelectorAll('.modal.show'));
     _confirmarPadreId = abiertos.length ? abiertos[abiertos.length - 1].id : null;
-    MM.abrir('modal-confirmar', { onEscape: () => _volverAlPadreConfirmar() });
+    MM.abrir('modal-confirmar', {
+        padre: _confirmarPadreId,
+        onEscape: () => _volverAlPadreConfirmar()
+    });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -552,30 +696,32 @@ const UI = {
         MM.abrir('modal-rack-nuevo');
     },
     cerrarNuevoRack() { MM.cerrar('modal-rack-nuevo'); },
-    abrirGist() { MM.nav('modal-ajustes', () => { GistSync.poblarModal(); MM.abrir('modal-gist', { onEscape: () => UI.cerrarGist() }); }); },
-    cerrarGist() { MM.nav('modal-gist', () => MM.abrir('modal-ajustes')); },
+    abrirGist() {
+        GistSync.poblarModal();
+        MM.alternar('modal-ajustes', 'modal-gist');
+    },
+    cerrarGist() {
+        MM.alternar('modal-gist', 'modal-ajustes');
+    },
     abrirAjustes() { MM.abrir('modal-ajustes'); },
     cerrarAjustes() { MM.cerrar('modal-ajustes'); },
     abrirImportar() {
-        MM.nav('modal-ajustes', () => {
-            document.getElementById('importar-file-input').value = '';
-            document.getElementById('importar-dropzone-label').textContent = 'Seleccioná o arrastrá un archivo .json';
-            const dz = document.getElementById('importar-dropzone');
-            dz.classList.remove('dropzone-ok', 'dropzone-warn', 'dropzone-error');
-            document.getElementById('importar-confirmar-btn').disabled = true;
-            document.getElementById('importar-combinar-btn').disabled = true;
-            _importarParsed = null;
-            MM.abrir('modal-importar', {
-                onEscape: () => UI.cerrarImportar()
-            });
+        document.getElementById('importar-file-input').value = '';
+        document.getElementById('importar-dropzone-label').textContent = 'Seleccioná o arrastrá un archivo .json';
+        const dz = document.getElementById('importar-dropzone');
+        dz.classList.remove('dropzone-ok', 'dropzone-warn', 'dropzone-error');
+        document.getElementById('importar-confirmar-btn').disabled = true;
+        document.getElementById('importar-combinar-btn').disabled = true;
+        _importarParsed = null;
+        MM.alternar('modal-ajustes', 'modal-importar');
 
-            // Se ejecuta inmediatamente después de pedir abrir el modal
-            setTimeout(() => {
-                document.getElementById('importar-file-input')?.click();
-            }, 400);
-        });
+        setTimeout(() => {
+            document.getElementById('importar-file-input')?.click();
+        }, 400);
     },
-    cerrarImportar() { MM.nav('modal-importar', () => MM.abrir('modal-ajustes')); },
+    cerrarImportar() {
+        MM.alternar('modal-importar', 'modal-ajustes');
+    },
 };
 
 // ═══════════════════════════════════════════════════════
@@ -626,11 +772,11 @@ const GestorEdificios = (() => {
     function abrir() {
         _renderLista();
         ModalLocker.resetear('modal-edificios');
-        MM.nav('modal-ajustes', () => MM.abrir('modal-edificios', { onEscape: () => cerrar() }));
+        MM.alternar('modal-ajustes', 'modal-edificios');
     }
 
     function cerrar() {
-        MM.nav('modal-edificios', () => MM.abrir('modal-ajustes'));
+        MM.alternar('modal-edificios', 'modal-ajustes');
     }
 
     function agregar() {
@@ -773,8 +919,8 @@ function guardarNuevoRack() {
 }
 
 let _editandoRackId = null;
-function abrirModalEditarRack(id) {
-    const rack = state.racks.find(r => r.id === id); if (!rack) return;
+function _cargarCamposEditarRack(id) {
+    const rack = state.racks.find(r => r.id === id); if (!rack) return false;
     _editandoRackId = id;
     const set = (f, v) => {
         const el = document.getElementById(`rack-${f}-editar`);
@@ -796,18 +942,26 @@ function abrirModalEditarRack(id) {
         bajaBtn.classList.toggle('btn-baja--reactivar', esBaja);
     }
 
-    MM.abrir('modal-rack-editar');
-
     // Mostrar botón "ir a servicio" solo si el rack está en servicio
     const irServicioBtn = document.getElementById('rack-editar-ir-servicio-btn');
     if (irServicioBtn) irServicioBtn.hidden = rack.estado !== 'servicio';
     ModalLocker.resetear('modal-rack-editar');
+    return true;
+}
+
+function abrirModalEditarRack(id, desdeModal = null) {
+    if (!_cargarCamposEditarRack(id)) return;
+    if (desdeModal) {
+        MM.alternar(desdeModal, 'modal-rack-editar');
+    } else {
+        MM.abrir('modal-rack-editar');
+    }
 }
 
 let _editandoServicioId = null;
 
-function abrirModalEditarServicio(id) {
-    const rack = state.racks.find(r => r.id === id); if (!rack) return;
+function _cargarCamposEditarServicio(id) {
+    const rack = state.racks.find(r => r.id === id); if (!rack) return false;
     _editandoServicioId = id;
     const set = (fid, v) => {
         const el = document.getElementById(fid);
@@ -823,8 +977,17 @@ function abrirModalEditarServicio(id) {
         const partes = [rack.patrimonio, rack.unidades ? rack.unidades + 'U' : null, rack.marca, rack.modelo].filter(Boolean);
         info.textContent = partes.join(' · ');
     }
-    MM.abrir('modal-rack-editar-servicio');
     ModalLocker.resetear('modal-rack-editar-servicio');
+    return true;
+}
+
+function abrirModalEditarServicio(id, desdeModal = null) {
+    if (!_cargarCamposEditarServicio(id)) return;
+    if (desdeModal) {
+        MM.alternar(desdeModal, 'modal-rack-editar-servicio');
+    } else {
+        MM.abrir('modal-rack-editar-servicio');
+    }
 }
 
 // Compara un objeto de campos nuevos contra las propiedades actuales de un rack.
@@ -2496,7 +2659,7 @@ function _initBindings() {
     // Botón ir al activo (desde editar-servicio → editar-rack)
     document.getElementById('editar-servicio-ir-rack-btn')?.addEventListener('click', () => {
         if (!_editandoServicioId) return;
-        MM.nav('modal-rack-editar-servicio', () => abrirModalEditarRack(_editandoServicioId));
+        abrirModalEditarRack(_editandoServicioId, 'modal-rack-editar-servicio');
     });
     // Cerrar FAB al hacer click fuera
     document.addEventListener('click', e => {
@@ -2518,7 +2681,7 @@ function _initBindings() {
     // Botón ir a servicio (desde editar-rack → editar-servicio)
     document.getElementById('rack-editar-ir-servicio-btn')?.addEventListener('click', () => {
         if (!_editandoRackId) return;
-        MM.nav('modal-rack-editar', () => abrirModalEditarServicio(_editandoRackId));
+        abrirModalEditarServicio(_editandoRackId, 'modal-rack-editar');
     });
 
     // Clics en filas de tablas

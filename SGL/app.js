@@ -1601,6 +1601,254 @@ const Gantt = (function () {
     return { render, refreshColumnMode, scrollToToday, scrollToDate, filterRows, clearFilter, changeYear, refreshRow: refreshRowVisuals, togglePanoramicMode, isPanoramicActive: () => isPanoramic, closePanoramic: () => { if (isPanoramic) togglePanoramicMode(null); }, setContextMenuRowHandler: (fn) => { _onContextMenuRow = fn; }, setNavResetHandler: (fn) => { _onNavReset = fn; }, unlockPerson, isPersonUnlocked: (pid) => _unlockedIds.has(parseInt(pid)) };
 })();
 
+// ═══════════════════════════════════════════════════════
+//  MODAL MANAGER (PATRÓN HORARIOS UNIFICADO)
+// ═══════════════════════════════════════════════════════
+const MM = (() => {
+    const _padres = {};
+    const _accionesVolver = {};
+
+    let _navegandoHaciaAtras = false;
+    let _ignorandoPopstate = false;
+    let _enAlternanciaHaciaAdelante = false;
+    let _enAlternanciaHaciaAtras = false;
+    let _mdDown = false;
+
+    // ── Focus trap ──────────────────────────────────────────
+    const FOCUSABLE = [
+        'a[href]', 'button:not([disabled])', 'input:not([disabled])',
+        'select:not([disabled])', 'textarea:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])'
+    ].join(',');
+    const _trapHandlers = new Map();
+    const _prevFocus = new Map();
+
+    function _instalarTrap(m) {
+        _prevFocus.set(m.id, document.activeElement);
+        const focusables = () => Array.from(m.querySelectorAll(FOCUSABLE)).filter(el => !el.closest('[hidden]'));
+        setTimeout(() => { focusables()[0]?.focus(); }, 50);
+
+        function _onTab(e) {
+            if (e.key !== 'Tab') return;
+            const elems = focusables();
+            if (!elems.length) { e.preventDefault(); return; }
+            const first = elems[0], last = elems[elems.length - 1];
+            if (e.shiftKey) {
+                if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+            } else {
+                if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+        }
+        m.addEventListener('keydown', _onTab);
+        _trapHandlers.set(m.id, _onTab);
+    }
+
+    function _removerTrap(m) {
+        const handler = _trapHandlers.get(m.id);
+        if (handler) { m.removeEventListener('keydown', handler); _trapHandlers.delete(m.id); }
+        const prev = _prevFocus.get(m.id);
+        if (prev && typeof prev.focus === 'function') { try { prev.focus(); } catch (_) { } }
+        _prevFocus.delete(m.id);
+    }
+    // ────────────────────────────────────────────────────────
+
+    function registrarAccionVolver(modalId, fn) {
+        _accionesVolver[modalId] = fn;
+    }
+
+    function _getAccionVolver(modalId) {
+        return _accionesVolver[modalId] || null;
+    }
+
+    function _ejecutarAccionCierre(modalId) {
+        const accionVolver = _getAccionVolver(modalId);
+        if (typeof accionVolver === 'function') {
+            accionVolver();
+            return;
+        }
+        const padreId = _padres[modalId];
+        if (padreId) {
+            const padreEl = document.getElementById(padreId);
+            if (padreEl && !padreEl.classList.contains('show')) {
+                alternar(modalId, padreId);
+                return;
+            }
+        }
+        cerrar(modalId);
+    }
+
+    window.addEventListener('popstate', () => {
+        if (_ignorandoPopstate) {
+            _ignorandoPopstate = false;
+            return;
+        }
+
+        _navegandoHaciaAtras = true;
+        const abiertos = Array.from(document.querySelectorAll('.modal.show'));
+        if (abiertos.length > 0) {
+            const topModal = abiertos[abiertos.length - 1];
+            _ejecutarAccionCierre(topModal.id);
+        }
+        setTimeout(() => { _navegandoHaciaAtras = false; }, 50);
+    });
+
+    function _onMD(e) { _mdDown = e.target === e.currentTarget; }
+    function _onClick(e) {
+        if (!_mdDown) return;
+        if (e.target === e.currentTarget) {
+            if (e.target.id === 'modal-confirm') return;
+            _ejecutarAccionCierre(e.target.id);
+        }
+    }
+
+    function abrir(modalId, optsOrCb) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+
+        let cb, onEscape, padre;
+        if (typeof optsOrCb === 'function') {
+            cb = optsOrCb;
+        } else if (optsOrCb && typeof optsOrCb === 'object') {
+            cb = optsOrCb.cb;
+            onEscape = optsOrCb.onEscape;
+            padre = optsOrCb.padre;
+        }
+
+        if (onEscape) {
+            _accionesVolver[modalId] = onEscape;
+        } else {
+            delete _accionesVolver[modalId];
+        }
+
+        if (padre) {
+            _padres[modalId] = padre;
+        }
+
+        modal.classList.add('show');
+        document.body.classList.add('modal-open');
+
+        if (!_navegandoHaciaAtras && !_enAlternanciaHaciaAtras) {
+            history.pushState({ modalId }, '');
+        }
+
+        setTimeout(() => {
+            modal.addEventListener('mousedown', _onMD);
+            modal.addEventListener('click', _onClick);
+        }, 100);
+
+        _instalarTrap(modal);
+        if (typeof cb === 'function') cb();
+    }
+
+    function cerrar(modalId, callback = null) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+
+        const estabaAbierto = modal.classList.contains('show');
+        delete _accionesVolver[modalId];
+        modal.classList.remove('show');
+
+        if (document.querySelectorAll('.modal.show').length === 0) {
+            document.body.classList.remove('modal-open');
+        }
+
+        modal.removeEventListener('mousedown', _onMD);
+        modal.removeEventListener('click', _onClick);
+        _removerTrap(modal);
+
+        if (estabaAbierto && !_navegandoHaciaAtras && !_enAlternanciaHaciaAdelante) {
+            _ignorandoPopstate = true;
+            history.back();
+        }
+
+        if (typeof callback === 'function') callback();
+    }
+
+    function alternar(modalIdCerrar, modalIdAbrir, callbackCerrar = null, callbackAbrir = null) {
+        const esHaciaAtras = (_padres[modalIdCerrar] === modalIdAbrir);
+
+        if (esHaciaAtras) {
+            _enAlternanciaHaciaAtras = true;
+            delete _padres[modalIdCerrar];
+        } else {
+            _enAlternanciaHaciaAdelante = true;
+            if (modalIdCerrar && modalIdAbrir) {
+                _padres[modalIdAbrir] = modalIdCerrar;
+            }
+        }
+
+        cerrar(modalIdCerrar, callbackCerrar);
+        abrir(modalIdAbrir, callbackAbrir);
+
+        _enAlternanciaHaciaAdelante = false;
+        _enAlternanciaHaciaAtras = false;
+    }
+
+    function abrirConPadre(modalId, setupFn = null) {
+        const modalAbierto = document.querySelector('.modal.show');
+        const padre = modalAbierto ? modalAbierto.id : null;
+        if (typeof setupFn === 'function') setupFn();
+        if (padre) {
+            alternar(padre, modalId);
+        } else {
+            abrir(modalId);
+        }
+    }
+
+    function cerrarConPadre(modalId, callbackAbrirPadre = null) {
+        const padre = _padres[modalId];
+        if (padre) {
+            alternar(modalId, padre, null, callbackAbrirPadre ? () => callbackAbrirPadre(padre) : null);
+        } else {
+            cerrar(modalId);
+        }
+    }
+
+    function cerrarTodos() {
+        document.querySelectorAll('.modal.show').forEach(modal => {
+            delete _accionesVolver[modal.id];
+            modal.classList.remove('show');
+            modal.removeEventListener('mousedown', _onMD);
+            modal.removeEventListener('click', _onClick);
+            _removerTrap(modal);
+        });
+        Object.keys(_padres).forEach(k => delete _padres[k]);
+        document.body.classList.remove('modal-open');
+    }
+
+    function cerrarTop() {
+        const abiertos = Array.from(document.querySelectorAll('.modal.show'));
+        if (!abiertos.length) return;
+        const topModal = abiertos[abiertos.length - 1];
+        _ejecutarAccionCierre(topModal.id);
+    }
+
+    function nav(desde, fn) {
+        if (desde) {
+            const mDesde = document.getElementById(desde);
+            if (mDesde && mDesde.classList.contains('show')) {
+                _enAlternanciaHaciaAdelante = true;
+                cerrar(desde);
+                _enAlternanciaHaciaAdelante = false;
+            }
+        }
+        if (typeof fn === 'function') fn();
+    }
+
+    return {
+        abrir,
+        cerrar,
+        alternar,
+        abrirConPadre,
+        cerrarConPadre,
+        cerrarTodos,
+        cerrarTop,
+        nav,
+        registrarAccionVolver,
+        estaAbierto: (id) => document.getElementById(id)?.classList.contains('show') || false
+    };
+})();
+
 // --- UI UTILS MODULE ---
 const UI = (function () {
     function toggleTheme() {
@@ -1712,18 +1960,20 @@ const UI = (function () {
         $('modal-new-person').dataset.fromGantt = fromGantt ? '1' : '';
         const btnBack = document.getElementById('btn-new-person-back');
         if (fromGantt) {
-            btnBack.onclick = () => UI.closeModals();
+            btnBack.onclick = () => MM.cerrar('modal-new-person');
             btnBack.innerHTML = '<svg class="icon"><use href="#icon-close"/></svg>Cerrar';
+            MM.abrir('modal-new-person');
         } else {
-            btnBack.onclick = () => UI.openConfig();
+            btnBack.onclick = () => MM.cerrarConPadre('modal-new-person');
             btnBack.innerHTML = '<svg class="icon"><use href="#icon-undo"/></svg>Volver';
+            MM.abrirConPadre('modal-new-person');
         }
-        $('modal-new-person').classList.add('show');
         setTimeout(() => $('p-name').focus(), 50);
     }
 
     function editPerson(id) {
         const p = Data.people().find(x => x.id == id);
+        if (!p) return;
         $('ep-name').value = p.name;
         const pAreas = S.toAreaArray(p.area);
         Areas.populateSelect('ep-area', pAreas);
@@ -1741,7 +1991,8 @@ const UI = (function () {
         sel.value = currentYear;
 
         UI.loadYearConfig(currentYear);
-        refreshVacList(id); $('modal-edit-person').classList.add('show');
+        refreshVacList(id);
+        MM.abrir('modal-edit-person');
         // Reflejar si esta persona ya tiene el gantt desbloqueado
         const btnEG = $('btn-edit-gantt');
         if (btnEG) {
@@ -1908,45 +2159,51 @@ const UI = (function () {
             // Desbloquear esta persona y cerrar modal
             Gantt.unlockPerson(pid, true);
             const person = Data.people().find(p => p.id === pid);
-            closeModals();
+            MM.cerrar('modal-edit-person');
             UI.toast(`Editando fila de ${person ? person.name : ''}`, 'success');
         }
     }
 
     function openHolidayModal() {
-        closeModals();
         const sel = document.getElementById('year-selector');
         Holidays.renderList(sel ? parseInt(sel.value) : new Date().getFullYear());
-        document.getElementById('modal-holidays').classList.add('show');
+        MM.abrirConPadre('modal-holidays');
     }
 
     let _areasModalSource = null; // Guardará 'new-person', 'edit-person' o null
 
     function openAreasModal(source = null) {
         _areasModalSource = source;
-        closeModals();
         Areas.renderList();
-        $('modal-areas').classList.add('show');
-        setTimeout(() => $('area-name-input').focus(), 100);
+        let padreId = null;
+        if (source === 'new-person') {
+            padreId = 'modal-new-person';
+        } else if (source === 'edit-person') {
+            padreId = 'modal-edit-person';
+        } else if (source === 'ctx-selection') {
+            padreId = null;
+        } else {
+            const configEl = $('modal-config');
+            if (configEl && configEl.classList.contains('show')) {
+                padreId = 'modal-config';
+            }
+        }
+
+        MM.registrarAccionVolver('modal-areas', () => goBackFromAreas());
+
+        if (padreId) {
+            MM.alternar(padreId, 'modal-areas');
+        } else {
+            MM.abrir('modal-areas');
+        }
+        setTimeout(() => $('area-name-input')?.focus(), 100);
     }
 
     // Función para manejar el botón "Volver" con inteligencia
     function goBackFromAreas() {
-        closeModals();
-        if (_areasModalSource === 'new-person') {
-            $('modal-new-person').classList.add('show');
-        } else if (_areasModalSource === 'edit-person') {
-            $('modal-edit-person').classList.add('show');
-        } else if (_areasModalSource === 'ctx-selection') {
-            // Volver al menú de selección no tiene sentido sin evento de mouse,
-            // así que simplemente actualizamos la lista si el menú sigue visible
-            Areas.refresh();
-            _areasModalSource = null;
-            return;
-        } else {
-            openConfig(); // Default: vuelve al menú de ajustes
-        }
-        _areasModalSource = null; // Reseteamos la memoria
+        Areas.refresh();
+        MM.cerrarConPadre('modal-areas');
+        _areasModalSource = null;
     }
 
     function resetAll() {
@@ -1963,30 +2220,24 @@ const UI = (function () {
     }
 
     function openConfig() {
-        closeModals();
         const c = Data.config();
         $('conf-summer').value = c.defSummer; $('conf-winter').value = c.defWinter;
         $('conf-s-start').value = c.sStart; $('conf-s-end').value = c.sEnd;
         const spd = c.scrollSpeed ?? 3; $('conf-scroll-speed').value = spd; $('conf-scroll-speed-label').textContent = spd;
-        $('modal-config').classList.add('show');
+        MM.abrir('modal-config');
     }
 
     function openGist() {
-        closeModals();
         GistSync.poblarModal();
-        $('modal-gist').classList.add('show');
+        MM.abrirConPadre('modal-gist');
     }
 
     function closeModals() {
-        document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+        MM.cerrarTodos();
     }
 
     function goBack() {
-        const modal = document.querySelector('.modal.show');
-        if (!modal) return;
-        const btnBack = modal.querySelector('button svg use[href="#icon-undo"]')?.closest('button');
-        if (btnBack) btnBack.click();
-        else closeModals();
+        MM.cerrarTop();
     }
     function initYearSelector() { refreshYearSelector(); }
 
@@ -2055,25 +2306,36 @@ const UI = (function () {
         $('import-dropzone').classList.remove('has-file');
         $('btn-import-replace').disabled = true; $('btn-import-merge').disabled = true;
         if ($('import-file-input')) $('import-file-input').value = '';
-        UI.closeModals(); $('modal-import').classList.add('show');
+        MM.abrirConPadre('modal-import');
         setTimeout(() => { const f = $('import-file-input'); if (f) f.click(); }, 200);
     }
 
-    let _confirmParent = null;
+    let _confirmParentId = null;
     function showConfirm(title, msg, onOk) {
-        // Recordar el modal padre que estaba abierto (si hay alguno)
-        _confirmParent = document.querySelector('.modal.show:not(#modal-confirm)') || null;
-        if (_confirmParent) _confirmParent.classList.remove('show');
+        const padre = document.querySelector('.modal.show:not(#modal-confirm)');
+        _confirmParentId = padre ? padre.id : null;
         $('confirm-title').textContent = title;
         $('confirm-msg').textContent = msg;
-        $('confirm-ok').onclick = () => { closeConfirm(); onOk(); };
-        $('modal-confirm').classList.add('show');
+        $('confirm-ok').onclick = () => {
+            const fn = onOk;
+            closeConfirm();
+            if (typeof fn === 'function') fn();
+        };
+        if (_confirmParentId) {
+            MM.alternar(_confirmParentId, 'modal-confirm');
+        } else {
+            MM.abrir('modal-confirm');
+        }
     }
 
     function closeConfirm() {
-        $('modal-confirm').classList.remove('show');
-        // Restaurar el modal padre si había uno
-        if (_confirmParent) { _confirmParent.classList.add('show'); _confirmParent = null; }
+        if (_confirmParentId) {
+            const pid = _confirmParentId;
+            _confirmParentId = null;
+            MM.alternar('modal-confirm', pid);
+        } else {
+            MM.cerrar('modal-confirm');
+        }
     }
 
     function onImportFileSelected(input) {
@@ -2126,11 +2388,12 @@ const UI = (function () {
 
     function confirmImport(mode) { if (_parsedImportData) Data.importData(_parsedImportData, mode); _parsedImportData = null; }
 
-    return { toggleTheme, toast, mostrarToast, openPersonModal, editPerson, closeModals, goBack, openConfig, openGist, toggleEditLimits, toggleCustomLimits, toggleCustomSeason, loadYearConfig, initYearSelector, refreshYearSelector, toggleAddRangeForm, confirmAddRange, refreshVacList, toggleDateQuick, openHolidayModal, openAreasModal, resetAll, openImportModal, onImportFileSelected, confirmImport, showConfirm, closeConfirm, toggleGanttEditMode, goBackFromAreas };
+    return { toggleTheme, toast, mostrarToast, openPersonModal, editPerson, closeModals, goBack, openConfig, openGist, toggleEditLimits, toggleCustomLimits, toggleCustomSeason, loadYearConfig, initYearSelector, refreshYearSelector, toggleAddRangeForm, confirmAddRange, refreshVacList, toggleDateQuick, openHolidayModal, openAreasModal, resetAll, openImportModal, onImportFileSelected, confirmImport, showConfirm, closeConfirm, toggleGanttEditMode, goBackFromAreas, MM };
 })();
 
 window.mostrarToast = UI.mostrarToast;
 window.toast = UI.toast;
+window.MM = MM;
 
 // --- HOLIDAYS MODULE ---
 const Holidays = (function () {
@@ -2436,7 +2699,7 @@ const GistSync = (function () {
         }
         const btnOk = document.getElementById('gist-novedades-ok');
         if (btnOk) btnOk.onclick = onOk;
-        const show = () => document.getElementById('modal-gist-novedades')?.classList.add('show');
+        const show = () => MM.abrir('modal-gist-novedades');
         if (delay) setTimeout(show, delay); else show();
     }
 
@@ -2691,7 +2954,7 @@ const GistSync = (function () {
                 Data.importData(remotoRaw, 'hybrid');
                 _cfg.token = token; _cfg.gistId = gistId;
                 _cfg.lastSync = new Date().toISOString(); _guardarCfg(); _setStatusSync();
-                document.getElementById('modal-gist-novedades')?.classList.remove('show');
+                MM.cerrar('modal-gist-novedades');
             });
             _setBusy(false);
 
@@ -2752,7 +3015,7 @@ const GistSync = (function () {
                 Historial.empujar('Sincronización automática desde Gist');
                 Data.importData(remotoRaw, 'hybrid');
                 _cfg.lastSync = new Date().toISOString(); _guardarCfg(); _setStatusSync();
-                document.getElementById('modal-gist-novedades')?.classList.remove('show');
+                MM.cerrar('modal-gist-novedades');
             }, 600);
 
         } catch (_) { } finally { _spinStop(); }
@@ -2998,14 +3261,6 @@ window.addEventListener('DOMContentLoaded', () => {
     GistSync.init();
     GistSync.verificarAlAbrir();
     _resetColModeTimer(); // iniciar ciclo automático de columnas (después de Gantt.render para que #col-mode-progress exista)
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', (e) => {
-            if (e.target !== modal) return;
-            if (modal.id === 'modal-confirm') UI.closeConfirm();
-            else UI.goBack();
-        });
-    });
-
     // NAVEGACIÓN POR TECLADO
     const navState = (() => {
         let rowIndex = -1, rangoIndex = 0;
@@ -3054,7 +3309,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('search-filter'), modalAbierto = document.querySelector('.modal.show');
 
         if (e.key === 'Escape') {
-            if (Gantt.isPanoramicActive()) Gantt.closePanoramic(); else if (modalAbierto) UI.goBack(); else if (searchInput && searchInput.value) { Gantt.clearFilter(); navState.reset(); } else if (document.activeElement) document.activeElement.blur();
+            if (Gantt.isPanoramicActive()) Gantt.closePanoramic(); else if (modalAbierto) MM.cerrarTop(); else if (searchInput && searchInput.value) { Gantt.clearFilter(); navState.reset(); } else if (document.activeElement) document.activeElement.blur();
             return;
         }
 
@@ -3170,7 +3425,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // Modal feriados
     _on('holiday-year-selector', 'change', function () { Holidays.renderList(parseInt(this.value)); });
     _on('btn-holiday-add', 'click', () => Holidays.add());
-    _on('btn-holiday-back', 'click', () => UI.openConfig());
+    _on('btn-holiday-back', 'click', () => MM.cerrarConPadre('modal-holidays'));
 
     // Modal nueva persona
     const pAreaInput = document.getElementById('p-area-input');
@@ -3181,7 +3436,7 @@ window.addEventListener('DOMContentLoaded', () => {
         pAreaInput.addEventListener('keydown', (e) => Areas.comboKey(e, 'p-area'));
     }
     _on('btn-new-person-save', 'click', () => Data.savePerson());
-    _on('btn-new-person-back', 'click', () => UI.openConfig());
+    _on('btn-new-person-back', 'click', () => MM.cerrarConPadre('modal-new-person'));
 
     // Modal editar persona
     const epAreaInput = document.getElementById('ep-area-input');
@@ -3199,7 +3454,7 @@ window.addEventListener('DOMContentLoaded', () => {
     _on('btn-add-range', 'click', () => UI.confirmAddRange());
     _on('btn-edit-person-save', 'click', () => Data.savePerson());
     _on('btn-edit-person-delete', 'click', () => Data.deletePerson());
-    _on('btn-edit-person-close', 'click', () => UI.closeModals());
+    _on('btn-edit-person-close', 'click', () => MM.cerrar('modal-edit-person'));
 
     // Modal áreas
     _on('btn-areas-add', 'click', () => Areas.add());
@@ -3210,12 +3465,12 @@ window.addEventListener('DOMContentLoaded', () => {
     _on('import-file-input', 'change', function () { UI.onImportFileSelected(this); });
     _on('btn-import-replace', 'click', () => UI.confirmImport('replace'));
     _on('btn-import-merge', 'click', () => UI.confirmImport('merge'));
-    _on('btn-import-back', 'click', () => UI.openConfig());
+    _on('btn-import-back', 'click', () => MM.cerrarConPadre('modal-import'));
 
     // Modal config
     _on('btn-config-holidays', 'click', () => UI.openHolidayModal());
     _on('btn-config-areas', 'click', () => UI.openAreasModal());
-    _on('btn-config-new-person', 'click', () => { UI.closeModals(); UI.openPersonModal(); });
+    _on('btn-config-new-person', 'click', () => UI.openPersonModal(false));
     _on('conf-scroll-speed', 'input', function () {
         const lbl = document.getElementById('conf-scroll-speed-label');
         if (lbl) lbl.textContent = this.value;
@@ -3226,7 +3481,7 @@ window.addEventListener('DOMContentLoaded', () => {
     _on('btn-reset-all', 'click', () => UI.resetAll());
     _on('btn-toggle-theme', 'click', () => UI.toggleTheme());
     _on('btn-save-config', 'click', () => Data.saveConfig());
-    _on('btn-config-close', 'click', () => UI.closeModals());
+    _on('btn-config-close', 'click', () => MM.cerrar('modal-config'));
 
     // Modal Gist sync
     _on('gist-token-eye', 'click', () => GistSync.toggleToken());
@@ -3234,13 +3489,13 @@ window.addEventListener('DOMContentLoaded', () => {
     _on('btn-gist-bajar', 'click', () => GistSync.bajar());
     _on('gist-autosync-toggle', 'click', () => GistSync.toggleAuto());
     _on('btn-gist-save', 'click', () => GistSync.guardarConfig());
-    _on('btn-gist-back', 'click', () => UI.openConfig());
+    _on('btn-gist-back', 'click', () => MM.cerrarConPadre('modal-gist'));
     // Botones rápidos desde modal Config
     _on('btn-config-gist-subir', 'click', () => GistSync.subir());
     _on('btn-config-gist-bajar', 'click', () => GistSync.bajar());
 
     // Modal Gist novedades
-    _on('gist-novedades-ignorar-btn', 'click', () => { document.getElementById('modal-gist-novedades')?.classList.remove('show'); });
+    _on('gist-novedades-ignorar-btn', 'click', () => MM.cerrar('modal-gist-novedades'));
 
     // ── REGISTRO DEL SERVICE WORKER UNIFICADO (PWA) ──
     if ('serviceWorker' in navigator) {
