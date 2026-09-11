@@ -1692,14 +1692,18 @@ function _getGrupos(racks, agrupacion = _agrupInv) {
             porEdificio[ed][piso].push(r);
         });
         const grupos = [];
+        const dirEd = (agrupacion === _agrupServ && _sortServ.col === 'edificio') ? _sortServ.dir
+                    : (agrupacion === _agrupInv && _sortInv.col === 'edificio') ? _sortInv.dir : 1;
+        const dirPiso = (agrupacion === _agrupServ && _sortServ.col === 'piso') ? _sortServ.dir
+                      : (agrupacion === _agrupInv && _sortInv.col === 'piso') ? _sortInv.dir : 1;
 
         Object.keys(porEdificio).sort((a, b) => {
             if (a === 'Depósito') return 1;
             if (b === 'Depósito') return -1;
-            return a.localeCompare(b, 'es');
+            return a.localeCompare(b, 'es') * dirEd;
         }).forEach(ed => {
             const pisos = porEdificio[ed];
-            const keys = Object.keys(pisos).sort(_ordenarPisos);
+            const keys = Object.keys(pisos).sort((a, b) => _ordenarPisos(a, b) * dirPiso);
             const totalEd = keys.reduce((s, k) => s + pisos[k].length, 0);
             if (keys.length === 1 && keys[0] === '(Sin piso)') {
                 grupos.push({ titulo: ed, racks: pisos['(Sin piso)'], subgrupos: null });
@@ -1714,7 +1718,7 @@ function _getGrupos(racks, agrupacion = _agrupInv) {
         return grupos.sort((a, b) => {
             if (a.titulo === 'Depósito') return 1;
             if (b.titulo === 'Depósito') return -1;
-            return a.titulo.localeCompare(b.titulo, 'es');
+            return a.titulo.localeCompare(b.titulo, 'es') * dirEd;
         });
     }
 
@@ -2595,14 +2599,15 @@ function _initBindings() {
         renderInventario();
     });
 
-    document.querySelectorAll('#panel-servicio th.th-sortable').forEach(th => {
-        th.addEventListener('click', () => {
-            const col = th.dataset.sort;
-            if (_sortServ.col === col) _sortServ.dir *= -1;
-            else { _sortServ.col = col; _sortServ.dir = 1; }
-            try { localStorage.setItem(APP_KEY + 'sort_serv', JSON.stringify(_sortServ)); } catch (_) { }
-            renderServicio();
-        });
+    document.getElementById('panel-servicio')?.addEventListener('click', e => {
+        const th = e.target.closest('th.th-sortable');
+        if (!th || !th.dataset.sort) return;
+
+        const col = th.dataset.sort;
+        if (_sortServ.col === col) _sortServ.dir *= -1;
+        else { _sortServ.col = col; _sortServ.dir = 1; }
+        try { localStorage.setItem(APP_KEY + 'sort_serv', JSON.stringify(_sortServ)); } catch (_) { }
+        renderServicio();
     });
 
     // Filtro de Búsqueda — botón icono con dropdown multi-select
