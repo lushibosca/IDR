@@ -281,24 +281,98 @@ const MM = (() => {
 })();
 
 // ═══════════════════════════════════════════════════════
-//  TOAST
+//  SISTEMA TOAST ESTANDARIZADO (PATRÓN HORARIOS)
 // ═══════════════════════════════════════════════════════
-const _toastQ = []; let _toastBusy = false, _currentToast = null;
-function toast(msg, tipo = 'success') {
-    if (_currentToast && _currentToast.msg === msg && _currentToast.tipo === tipo) return;
-    if (_toastQ.some(t => t.msg === msg && t.tipo === tipo)) return;
-    _toastQ.push({ msg, tipo }); _flushToast();
+const _toastQ = [];
+let _toastBusy = false;
+let _toastTimeout = null;
+const MAX_TOAST_QUEUE = 5;
+
+function _cerrarToastActual() {
+    if (_toastTimeout) { clearTimeout(_toastTimeout); _toastTimeout = null; }
+    const el = DOM.toast || document.getElementById('toast');
+    if (!el || !el.classList.contains('show')) return;
+    el.classList.remove('show');
+    setTimeout(() => _flushToast(), 300);
 }
+
+function _habilitarInteraccionToast(toastEl) {
+    if (!toastEl || toastEl.dataset.toastInit) return;
+    toastEl.dataset.toastInit = '1';
+
+    // Cierre al hacer click o tocar
+    toastEl.addEventListener('click', () => _cerrarToastActual());
+
+    // Gesto Swipe horizontal para descartar en móviles
+    let startX = null, startY = null;
+    toastEl.addEventListener('touchstart', e => {
+        if (e.touches.length === 1) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        }
+    }, { passive: true });
+
+    toastEl.addEventListener('touchend', e => {
+        if (startX === null) return;
+        const diffX = e.changedTouches[0].clientX - startX;
+        const diffY = e.changedTouches[0].clientY - startY;
+        startX = null; startY = null;
+        if (Math.abs(diffY) > 60) return;
+        if (Math.abs(diffX) > 40) _cerrarToastActual();
+    }, { passive: true });
+}
+
 function _flushToast() {
-    if (_toastBusy || !_toastQ.length) return;
-    _currentToast = _toastQ.shift(); _toastBusy = true;
-    const el = DOM.toast;
-    el.textContent = _currentToast.msg;
-    el.className = `toast show ${_currentToast.tipo}`;
+    if (_toastQ.length === 0) {
+        _toastBusy = false;
+        return;
+    }
+
+    _toastBusy = true;
+    const actual = _toastQ.shift();
+    let el = DOM.toast || document.getElementById('toast');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'toast';
+        el.className = 'toast';
+        document.body.appendChild(el);
+    }
+
+    _habilitarInteraccionToast(el);
+
+    el.classList.remove('show');
+    el.textContent = actual.msg;
+    el.className = `toast ${actual.tipo}`;
+
+    let duracionFinal = actual.duracion || 3000;
+    if (_toastQ.length >= 1) {
+        duracionFinal = Math.floor(duracionFinal / 2);
+    }
+
     setTimeout(() => {
-        el.classList.remove('show');
-        setTimeout(() => { el.className = 'toast'; _toastBusy = false; _currentToast = null; _flushToast(); }, 300);
-    }, 2500);
+        el.classList.add('show');
+        _toastTimeout = setTimeout(() => {
+            el.classList.remove('show');
+            _toastTimeout = null;
+            setTimeout(() => _flushToast(), 300);
+        }, duracionFinal);
+    }, 20);
+}
+
+function toast(msg, tipo = 'success', duracion = 3000) {
+    if (!msg) return;
+    const ultimo = _toastQ[_toastQ.length - 1];
+    const el = DOM.toast || document.getElementById('toast');
+    const actual = _toastBusy && el ? el.textContent : null;
+
+    if ((ultimo && ultimo.msg === msg) || actual === msg) return;
+
+    _toastQ.push({ msg, tipo, duracion });
+    if (_toastQ.length > MAX_TOAST_QUEUE) {
+        _toastQ.splice(0, _toastQ.length - MAX_TOAST_QUEUE);
+    }
+
+    if (!_toastBusy) _flushToast();
 }
 
 // ═══════════════════════════════════════════════════════

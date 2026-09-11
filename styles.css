@@ -354,30 +354,51 @@ html.dark-mode .app-card:focus-visible {
     }
 }
 
-/* ════ 8. TOAST NOTIFICACIÓN ════ */
-.launcher-toast {
+/* ════ 8. TOAST NOTIFICACIÓN (PATRÓN HORARIOS) ════ */
+.toast {
     position: fixed;
     bottom: 2rem;
     left: 50%;
     transform: translateX(-50%) translateY(80px);
-    background-color: var(--bg-card);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+    background: var(--bg-card);
     color: var(--text-main);
-    border: var(--border-w) solid var(--accent);
+    border: 2px solid var(--c-blue);
     padding: 0.85rem 1.4rem;
     border-radius: var(--radius);
     box-shadow: var(--shadow-hover);
     font-size: 0.95rem;
     font-weight: 500;
-    z-index: 1000;
     opacity: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    white-space: pre-line;
     pointer-events: none;
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
-    max-width: 90vw;
+    width: calc(100% - 3rem);
+    max-width: 400px;
     text-align: center;
+    cursor: pointer;
+    user-select: none;
 }
 
-.launcher-toast.show {
-    transform: translateX(-50%) translateY(0);
+.toast.show {
     opacity: 1;
+    transform: translateX(-50%) translateY(0);
     pointer-events: auto;
+}
+
+.toast.success {
+    border-color: var(--c-green);
+}
+
+.toast.error,
+.toast.warning {
+    border-color: var(--c-red);
+}
+
+.toast.info {
+    border-color: var(--c-blue);
 }

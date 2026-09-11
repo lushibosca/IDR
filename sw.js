@@ -3,8 +3,8 @@
  * Control centralizado para Launcher y submódulos (SGC, SGI, SGL, SGR)
  */
 
-const CACHE_NAME = 'idr-suite-20260911';
-const RUNTIME_CACHE = 'idr-runtime-20260911';
+const CACHE_NAME = 'idr-suite-260911';
+const RUNTIME_CACHE = 'idr-runtime-260911';
 
 // Recursos esenciales que se precachean para garantizar funcionamiento offline total
 const PRECACHE_URLS = [

@@ -502,35 +502,97 @@
     // § NOTIFICACIONES — toast queue y modales de confirmación/picker
     // ════════════════════════════════════════════════════════════════════════════
     const Notif = (() => {
-        // ── Toast ─────────────────────────────────────────────────────────────
+        // ── Toast (Patrón Horarios) ──────────────────────────────────────────
         const _queue = [];
         let _activo = false;
-        let _ultimo = null;
+        let _timeout = null;
+        const MAX_TOAST_QUEUE = 5;
 
-        function _procesarQueue() {
-            if (_activo || _queue.length === 0) return;
-            const { msg, tipo } = _queue.shift();
-            _activo = true;
-            _ultimo = { msg, tipo };
-            const el = document.getElementById('toast'); if (!el) { _activo = false; return; }
-            el.textContent = msg;
-            el.className = `toast show ${tipo}`;
-            setTimeout(() => {
-                el.classList.remove('show');
-                setTimeout(() => {
-                    el.className = 'toast';
-                    _activo = false;
-                    _ultimo = null;
-                    _procesarQueue();
-                }, 300);
-            }, 3000);
+        function _cerrarToastActual() {
+            if (_timeout) { clearTimeout(_timeout); _timeout = null; }
+            const el = document.getElementById('toast');
+            if (!el || !el.classList.contains('show')) return;
+            el.classList.remove('show');
+            setTimeout(() => _procesarQueue(), 300);
         }
 
-        function toast(msg, tipo = 'success') {
-            if (_ultimo && _ultimo.msg === msg && _ultimo.tipo === tipo) return;
-            if (_queue.some(t => t.msg === msg && t.tipo === tipo)) return;
-            _queue.push({ msg, tipo });
-            _procesarQueue();
+        function _habilitarInteraccionToast(toastEl) {
+            if (!toastEl || toastEl.dataset.toastInit) return;
+            toastEl.dataset.toastInit = '1';
+
+            // Cierre al hacer click o tocar
+            toastEl.addEventListener('click', () => _cerrarToastActual());
+
+            // Gesto Swipe horizontal para descartar en móviles
+            let startX = null, startY = null;
+            toastEl.addEventListener('touchstart', e => {
+                if (e.touches.length === 1) {
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                }
+            }, { passive: true });
+
+            toastEl.addEventListener('touchend', e => {
+                if (startX === null) return;
+                const diffX = e.changedTouches[0].clientX - startX;
+                const diffY = e.changedTouches[0].clientY - startY;
+                startX = null; startY = null;
+                if (Math.abs(diffY) > 60) return;
+                if (Math.abs(diffX) > 40) _cerrarToastActual();
+            }, { passive: true });
+        }
+
+        function _procesarQueue() {
+            if (_queue.length === 0) {
+                _activo = false;
+                return;
+            }
+
+            _activo = true;
+            const actual = _queue.shift();
+            let el = document.getElementById('toast');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'toast';
+                el.className = 'toast';
+                document.body.appendChild(el);
+            }
+
+            _habilitarInteraccionToast(el);
+
+            el.classList.remove('show');
+            el.textContent = actual.msg;
+            el.className = `toast ${actual.tipo}`;
+
+            let duracionFinal = actual.duracion || 3000;
+            if (_queue.length >= 1) {
+                duracionFinal = Math.floor(duracionFinal / 2);
+            }
+
+            setTimeout(() => {
+                el.classList.add('show');
+                _timeout = setTimeout(() => {
+                    el.classList.remove('show');
+                    _timeout = null;
+                    setTimeout(() => _procesarQueue(), 300);
+                }, duracionFinal);
+            }, 20);
+        }
+
+        function toast(msg, tipo = 'success', duracion = 3000) {
+            if (!msg) return;
+            const ultimo = _queue[_queue.length - 1];
+            const el = document.getElementById('toast');
+            const actual = _activo && el ? el.textContent : null;
+
+            if ((ultimo && ultimo.msg === msg) || actual === msg) return;
+
+            _queue.push({ msg, tipo, duracion });
+            if (_queue.length > MAX_TOAST_QUEUE) {
+                _queue.splice(0, _queue.length - MAX_TOAST_QUEUE);
+            }
+
+            if (!_activo) _procesarQueue();
         }
 
         // ── Modal confirmar ───────────────────────────────────────────────────

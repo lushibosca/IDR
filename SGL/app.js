@@ -1615,30 +1615,88 @@ const UI = (function () {
     const _toastQueue = [];
     let _toastRunning = false;
     let _toastLast = '';
+    let _toastTimeout = null;
+    const MAX_TOAST_QUEUE = 5;
 
-    function toast(msg, type = '') {
-        if (msg === _toastLast && _toastQueue.length === 0) return;
-        _toastQueue.push({ msg, type });
+    function _cerrarToastActual() {
+        if (_toastTimeout) { clearTimeout(_toastTimeout); _toastTimeout = null; }
+        const t = document.getElementById('toast');
+        if (!t || !t.classList.contains('show')) return;
+        t.classList.remove('show');
+        setTimeout(_toastNext, 300);
+    }
+
+    function _habilitarInteraccionToast(toastEl) {
+        if (!toastEl || toastEl.dataset.toastInit) return;
+        toastEl.dataset.toastInit = '1';
+
+        // Cierre al hacer click o tocar
+        toastEl.addEventListener('click', () => _cerrarToastActual());
+
+        // Gesto Swipe horizontal para descartar en móviles
+        let startX = null, startY = null;
+        toastEl.addEventListener('touchstart', e => {
+            if (e.touches.length === 1) {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            }
+        }, { passive: true });
+
+        toastEl.addEventListener('touchend', e => {
+            if (startX === null) return;
+            const diffX = e.changedTouches[0].clientX - startX;
+            const diffY = e.changedTouches[0].clientY - startY;
+            startX = null; startY = null;
+            if (Math.abs(diffY) > 60) return;
+            if (Math.abs(diffX) > 40) _cerrarToastActual();
+        }, { passive: true });
+    }
+
+    function toast(msg, type = '', duracion = 3000) {
+        if (!msg) return;
+        const toastEl = document.getElementById('toast');
+        const actual = _toastRunning && toastEl ? toastEl.textContent : null;
+        if (msg === _toastLast || actual === msg) return;
+
+        _toastQueue.push({ msg, type, duracion });
+        if (_toastQueue.length > MAX_TOAST_QUEUE) {
+            _toastQueue.splice(0, _toastQueue.length - MAX_TOAST_QUEUE);
+        }
         if (!_toastRunning) _toastNext();
     }
 
     function _toastNext() {
         if (!_toastQueue.length) { _toastRunning = false; _toastLast = ''; return; }
         _toastRunning = true;
-        const { msg, type } = _toastQueue.shift();
-        if (msg === _toastLast && !_toastQueue.length) { _toastNext(); return; }
+        const { msg, type, duracion } = _toastQueue.shift();
         _toastLast = msg;
-        const t = document.getElementById('toast');
+        let t = document.getElementById('toast');
+        if (!t) {
+            t = document.createElement('div');
+            t.id = 'toast';
+            t.className = 'toast';
+            document.body.appendChild(t);
+        }
+
+        _habilitarInteraccionToast(t);
+
         t.textContent = msg;
-        t.className = 'toast show' + (type ? ' ' + type : '');
+        t.className = 'toast ' + (type ? type : 'info');
 
         // --- LÓGICA DE ACELERACIÓN ---
-        const tiempoExposicion = _toastQueue.length >= 2 ? 1350 : 2700;
+        let tiempoExposicion = duracion || 3000;
+        if (_toastQueue.length >= 1) {
+            tiempoExposicion = Math.floor(tiempoExposicion / 2);
+        }
 
         setTimeout(() => {
-            t.className = 'toast';
-            setTimeout(_toastNext, 300);
-        }, tiempoExposicion);
+            t.classList.add('show');
+            _toastTimeout = setTimeout(() => {
+                t.classList.remove('show');
+                _toastTimeout = null;
+                setTimeout(_toastNext, 300);
+            }, tiempoExposicion);
+        }, 20);
     }
 
     function $(id) { return document.getElementById(id); }

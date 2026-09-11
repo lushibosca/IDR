@@ -1260,15 +1260,16 @@
             font-size: 0.9rem;
         }
 
-        /* ── Toast ── */
+        /* ── Toast (Patrón Horarios) ── */
         .toast {
             position: fixed;
-            bottom: 1.5rem;
+            bottom: 2rem;
             left: 50%;
             transform: translateX(-50%) translateY(80px);
-            transition: opacity var(--t-modal), transform var(--t-modal);
-            background: var(--bg-toast);
-            color: var(--c-white);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 2px solid var(--c-blue);
             padding: 0.85rem 1.4rem;
             border-radius: var(--radius);
             box-shadow: var(--shadow);
@@ -1279,11 +1280,14 @@
             justify-content: center;
             text-align: center;
             gap: 0.6rem;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             font-weight: 500;
+            white-space: pre-line;
             pointer-events: none;
-            max-width: 380px;
-            width: calc(100% - 2rem);
+            max-width: 400px;
+            width: calc(100% - 3rem);
+            cursor: pointer;
+            user-select: none;
         }
 
         .toast.show {
@@ -1293,15 +1297,16 @@
         }
 
         .toast.success {
-            background: var(--c-green);
+            border-color: var(--c-green);
         }
 
-        .toast.error {
-            background: var(--c-red);
+        .toast.error,
+        .toast.warning {
+            border-color: var(--c-red);
         }
 
         .toast.info {
-            background: var(--c-blue);
+            border-color: var(--c-blue);
         }
 
         /* ── Modal ── */

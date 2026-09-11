@@ -63,21 +63,103 @@
             console.log('PWA instalada con éxito.');
         });
 
-        // Notificación Toast
-        function showToast(message, duration = 4500) {
-            let toast = document.getElementById('launcher-toast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'launcher-toast';
-                toast.className = 'launcher-toast';
-                document.body.appendChild(toast);
-            }
-            toast.textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, duration);
+        // ═══════════════════════════════════════════════════════
+        //  SISTEMA TOAST ESTANDARIZADO (PATRÓN HORARIOS)
+        // ═══════════════════════════════════════════════════════
+        const _toastQueue = [];
+        let _toastBusy = false;
+        let _toastTimeout = null;
+        const MAX_TOAST_QUEUE = 5;
+
+        function _cerrarToastActual() {
+            if (_toastTimeout) { clearTimeout(_toastTimeout); _toastTimeout = null; }
+            const toastEl = document.getElementById('toast');
+            if (!toastEl || !toastEl.classList.contains('show')) return;
+            toastEl.classList.remove('show');
+            setTimeout(() => _procesarToastQueue(), 300);
         }
+
+        function _habilitarInteraccionToast(toastEl) {
+            if (!toastEl || toastEl.dataset.toastInit) return;
+            toastEl.dataset.toastInit = '1';
+
+            // Cierre al hacer click o tocar
+            toastEl.addEventListener('click', () => _cerrarToastActual());
+
+            // Gesto Swipe horizontal para descartar en móviles
+            let startX = null, startY = null;
+            toastEl.addEventListener('touchstart', e => {
+                if (e.touches.length === 1) {
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                }
+            }, { passive: true });
+
+            toastEl.addEventListener('touchend', e => {
+                if (startX === null) return;
+                const diffX = e.changedTouches[0].clientX - startX;
+                const diffY = e.changedTouches[0].clientY - startY;
+                startX = null; startY = null;
+                if (Math.abs(diffY) > 60) return;
+                if (Math.abs(diffX) > 40) _cerrarToastActual();
+            }, { passive: true });
+        }
+
+        function _procesarToastQueue() {
+            if (_toastQueue.length === 0) {
+                _toastBusy = false;
+                return;
+            }
+
+            _toastBusy = true;
+            const actual = _toastQueue.shift();
+            let toastEl = document.getElementById('toast');
+            if (!toastEl) {
+                toastEl = document.createElement('div');
+                toastEl.id = 'toast';
+                toastEl.className = 'toast';
+                document.body.appendChild(toastEl);
+            }
+
+            _habilitarInteraccionToast(toastEl);
+
+            toastEl.classList.remove('show');
+            toastEl.textContent = actual.msg;
+            toastEl.className = `toast ${actual.tipo}`;
+
+            let duracionFinal = actual.duracion || 3000;
+            if (_toastQueue.length >= 1) {
+                duracionFinal = Math.floor(duracionFinal / 2);
+            }
+
+            setTimeout(() => {
+                toastEl.classList.add('show');
+                _toastTimeout = setTimeout(() => {
+                    toastEl.classList.remove('show');
+                    _toastTimeout = null;
+                    setTimeout(() => _procesarToastQueue(), 300);
+                }, duracionFinal);
+            }, 20);
+        }
+
+        function toast(msg, tipo = 'info', duracion = 3000) {
+            if (!msg) return;
+            const ultimo = _toastQueue[_toastQueue.length - 1];
+            const toastEl = document.getElementById('toast');
+            const actual = _toastBusy && toastEl ? toastEl.textContent : null;
+
+            if ((ultimo && ultimo.msg === msg) || actual === msg) return;
+
+            _toastQueue.push({ msg, tipo, duracion });
+            if (_toastQueue.length > MAX_TOAST_QUEUE) {
+                _toastQueue.splice(0, _toastQueue.length - MAX_TOAST_QUEUE);
+            }
+
+            if (!_toastBusy) _procesarToastQueue();
+        }
+
+        // Alias para compatibilidad
+        const showToast = (msg, duracion = 4000) => toast(msg, 'info', duracion);
 
         // Registrar Service Worker Unificado
         if ('serviceWorker' in navigator) {
@@ -94,7 +176,7 @@
                             newWorker.addEventListener('statechange', () => {
                                 // Solo notificar si ya existía un controller previo (es una actualización, no la primera instalación)
                                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    showToast('Nueva versión disponible. Se aplicará al recargar o volver a abrir.');
+                                    toast('Nueva versión disponible. Se aplicará al recargar o volver a abrir.', 'info', 4500);
                                 }
                             });
                         });
