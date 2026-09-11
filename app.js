@@ -63,12 +63,24 @@
             console.log('PWA instalada con éxito.');
         });
 
-        // Registrar Service Worker
+        // Registrar Service Worker Unificado
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
                     .then(reg => console.log('PWA: Service Worker del Launcher registrado.', reg.scope))
                     .catch(err => console.error('PWA: Error al registrar Service Worker:', err));
+
+                // Saneamiento: Desregistrar workers secundarios obsoletos en subcarpetas
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    const rootScope = new URL('./', window.location.href).href;
+                    registrations.forEach(reg => {
+                        if (reg.scope !== rootScope && (reg.scope.includes('/SGC/') || reg.scope.includes('/SGI/') || reg.scope.includes('/SGL/') || reg.scope.includes('/SGR/'))) {
+                            reg.unregister().then(unregistered => {
+                                if (unregistered) console.log('PWA: Worker secundario obsoleto desregistrado:', reg.scope);
+                            });
+                        }
+                    });
+                }).catch(() => {});
             });
         }
     }

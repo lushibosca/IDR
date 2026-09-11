@@ -8446,17 +8446,16 @@
         });
     })();
 
-    // ── REGISTRO DEL SERVICE WORKER (PWA) ──
+    // ── REGISTRO DEL SERVICE WORKER UNIFICADO (PWA) ──
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
+            navigator.serviceWorker.register('../sw.js', { scope: '../' })
                 .then(registration => {
-                    console.log('SW registrado:', registration.scope);
+                    console.log('SW unificado registrado desde SGC:', registration.scope);
                     registration.addEventListener('updatefound', () => {
                         const newWorker = registration.installing;
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // Al estar dentro del IIFE, ahora sí tiene acceso a Notif.toast()
                                 Notif.toast('Nueva versión disponible. Recargá o reiniciá la app para actualizar.', 'info');
                             }
                         });

@@ -2935,3 +2935,12 @@ if (document.readyState === 'loading') {
 } else {
     _initBindings();
 }
+
+// ── REGISTRO DEL SERVICE WORKER UNIFICADO (PWA) ──
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('../sw.js', { scope: '../' })
+            .then(reg => console.log('PWA SGR: Service Worker unificado registrado.', reg.scope))
+            .catch(err => console.error('PWA SGR: Error al registrar Service Worker:', err));
+    });
+}

@@ -1,39 +1,17 @@
-const CACHE_NAME = 'SGR-260819.0137';
-const urlsToCache = [
-  './',
-  './index.html',
-  './flash.js',
-  './manifest.json',
-  './styles.css',
-  './app.js',
-  './icon.svg'
-];
-
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
-  );
-  self.skipWaiting();
-});
+/**
+ * Service Worker Secundario (Heredado) - SGR
+ * El control offline ha sido unificado en el Service Worker raíz (/sw.js).
+ * Este archivo desregistra instancias huérfanas de este worker en los navegadores de los usuarios.
+ */
+self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) return caches.delete(cacheName);
-        })
-      );
-    })
-  );
-  return self.clients.claim();
-});
-
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
+    self.registration.unregister().then(() => {
+      console.log('[SGR-SW] Service worker secundario desregistrado con éxito.');
+      return self.clients.matchAll({ type: 'window' });
+    }).then(clients => {
+      clients.forEach(client => client.navigate(client.url));
     })
   );
 });

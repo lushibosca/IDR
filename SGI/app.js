@@ -4283,12 +4283,12 @@ function _ejecutarReporte() {
             }
         });
     }
-    // ── REGISTRO DEL SERVICE WORKER (PWA) ──
+    // ── REGISTRO DEL SERVICE WORKER UNIFICADO (PWA) ──
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('PWA: Service Worker registrado con éxito.', reg.scope))
-                .catch(err => console.error('PWA: Error al registrar Service Worker:', err));
+            navigator.serviceWorker.register('../sw.js', { scope: '../' })
+                .then(reg => console.log('PWA SGI: Service Worker unificado registrado con éxito.', reg.scope))
+                .catch(err => console.error('PWA SGI: Error al registrar Service Worker:', err));
         });
     }
 })();

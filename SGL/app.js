@@ -3175,4 +3175,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Modal Gist novedades
     _on('gist-novedades-ignorar-btn', 'click', () => { document.getElementById('modal-gist-novedades')?.classList.remove('show'); });
+
+    // ── REGISTRO DEL SERVICE WORKER UNIFICADO (PWA) ──
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('../sw.js', { scope: '../' })
+                .then(reg => console.log('PWA SGL: Service Worker unificado registrado.', reg.scope))
+                .catch(err => console.error('PWA SGL: Error al registrar Service Worker:', err));
+        });
+    }
 });
