@@ -422,79 +422,256 @@
 
 
     // ════════════════════════════════════════════════════════════════════════════
-    // § MODAL MANAGER (MM) — apertura/cierre de modales, Escape, click-fuera
+    // § MODAL MANAGER (MM) — PATRÓN HORARIOS UNIFICADO
     // ════════════════════════════════════════════════════════════════════════════
     const MM = (() => {
+        const _padres = {};
+        const _accionesVolver = {};
+
+        let _navegandoHaciaAtras = false;
+        let _ignorandoPopstate = false;
+        let _enAlternanciaHaciaAdelante = false;
+        let _enAlternanciaHaciaAtras = false;
         let _mdDown = false;
-        const _onCerrar = {};
+
+        // ── Focus trap ──────────────────────────────────────────
+        const FOCUSABLE = [
+            'a[href]', 'button:not([disabled])', 'input:not([disabled])',
+            'select:not([disabled])', 'textarea:not([disabled])',
+            '[tabindex]:not([tabindex="-1"])'
+        ].join(',');
+        const _trapHandlers = new Map();
+        const _prevFocus = new Map();
+
+        function _instalarTrap(m) {
+            _prevFocus.set(m.id, document.activeElement);
+            const focusables = () => Array.from(m.querySelectorAll(FOCUSABLE)).filter(el => !el.closest('[hidden]'));
+            setTimeout(() => { focusables()[0]?.focus(); }, 50);
+
+            function _onTab(e) {
+                if (e.key !== 'Tab') return;
+                const elems = focusables();
+                if (!elems.length) { e.preventDefault(); return; }
+                const first = elems[0], last = elems[elems.length - 1];
+                if (e.shiftKey) {
+                    if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+                } else {
+                    if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+                }
+            }
+            m.addEventListener('keydown', _onTab);
+            _trapHandlers.set(m.id, _onTab);
+        }
+
+        function _removerTrap(m) {
+            const handler = _trapHandlers.get(m.id);
+            if (handler) { m.removeEventListener('keydown', handler); _trapHandlers.delete(m.id); }
+            const prev = _prevFocus.get(m.id);
+            if (prev && typeof prev.focus === 'function') { try { prev.focus(); } catch (_) { } }
+            _prevFocus.delete(m.id);
+        }
+        // ────────────────────────────────────────────────────────
+
+        function registrarAccionVolver(modalId, fn) {
+            _accionesVolver[modalId] = fn;
+        }
+
+        function _getAccionVolver(modalId) {
+            return _accionesVolver[modalId] || null;
+        }
+
+        function _ejecutarAccionCierre(modalId) {
+            const accionVolver = _getAccionVolver(modalId);
+            if (typeof accionVolver === 'function') {
+                accionVolver();
+                return;
+            }
+            const padreId = _padres[modalId];
+            if (padreId) {
+                const padreEl = document.getElementById(padreId);
+                if (padreEl && !padreEl.classList.contains('show')) {
+                    alternar(modalId, padreId);
+                    return;
+                }
+            }
+            cerrar(modalId);
+        }
+
+        window.addEventListener('popstate', () => {
+            if (_ignorandoPopstate) {
+                _ignorandoPopstate = false;
+                return;
+            }
+
+            _navegandoHaciaAtras = true;
+            const abiertos = Array.from(document.querySelectorAll('.modal.show'));
+            if (abiertos.length > 0) {
+                const topModal = abiertos[abiertos.length - 1];
+                _ejecutarAccionCierre(topModal.id);
+            }
+            setTimeout(() => { _navegandoHaciaAtras = false; }, 50);
+        });
 
         function _onMD(e) { _mdDown = e.target === e.currentTarget; }
         function _onClick(e) {
             if (!_mdDown) return;
-            if (e.target === e.currentTarget) _cerrarConPadre(e.target.id);
+            if (e.target.id === 'modal-confirmar') return;
+            if (e.target === e.currentTarget) {
+                _ejecutarAccionCierre(e.target.id);
+            }
         }
 
-        function _cerrarConPadre(id) {
-            const fn = _onCerrar[id];
-            if (fn) { fn(); } else { cerrar(id); }
-        }
+        function abrir(modalId, optsOrCb) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
 
-        function abrir(id, optsOrCb) {
-            const m = document.getElementById(id); if (!m) return;
-            let cb, onEscape;
+            let cb, onEscape, padre;
             if (typeof optsOrCb === 'function') {
                 cb = optsOrCb;
             } else if (optsOrCb && typeof optsOrCb === 'object') {
                 cb = optsOrCb.cb;
                 onEscape = optsOrCb.onEscape;
+                padre = optsOrCb.padre;
             }
+
             if (onEscape) {
-                _onCerrar[id] = onEscape;
+                _accionesVolver[modalId] = onEscape;
             } else {
-                delete _onCerrar[id];
+                delete _accionesVolver[modalId];
             }
+
+            if (padre) {
+                _padres[modalId] = padre;
+            }
+
+            modal.classList.add('show');
             document.body.classList.add('modal-open');
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                m.classList.add('show');
-            }));
+
+            if (!_navegandoHaciaAtras && !_enAlternanciaHaciaAtras) {
+                history.pushState({ modalId }, '');
+            }
+
             setTimeout(() => {
-                m.addEventListener('mousedown', _onMD);
-                m.addEventListener('click', _onClick);
+                modal.addEventListener('mousedown', _onMD);
+                modal.addEventListener('click', _onClick);
             }, 100);
-            cb?.();
+
+            _instalarTrap(modal);
+            if (typeof cb === 'function') cb();
         }
 
-        function cerrar(id, cb) {
-            const m = document.getElementById(id); if (!m) return;
-            delete _onCerrar[id];
-            m.classList.remove('show');
-            if (!document.querySelector('.modal.show')) {
+        function cerrar(modalId, callback = null) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+
+            const estabaAbierto = modal.classList.contains('show');
+            delete _accionesVolver[modalId];
+            if (!_enAlternanciaHaciaAdelante) {
+                delete _padres[modalId];
+            }
+            modal.classList.remove('show');
+
+            if (document.querySelectorAll('.modal.show').length === 0) {
                 document.body.classList.remove('modal-open');
             }
-            m.removeEventListener('mousedown', _onMD);
-            m.removeEventListener('click', _onClick);
-            cb?.();
+
+            modal.removeEventListener('mousedown', _onMD);
+            modal.removeEventListener('click', _onClick);
+            _removerTrap(modal);
+
+            if (estabaAbierto && !_navegandoHaciaAtras && !_enAlternanciaHaciaAdelante) {
+                _ignorandoPopstate = true;
+                history.back();
+            }
+
+            if (typeof callback === 'function') callback();
+        }
+
+        function alternar(modalIdCerrar, modalIdAbrir, callbackCerrar = null, callbackAbrir = null) {
+            const esHaciaAtras = (_padres[modalIdCerrar] === modalIdAbrir);
+
+            if (esHaciaAtras) {
+                _enAlternanciaHaciaAtras = true;
+                delete _padres[modalIdCerrar];
+            } else {
+                _enAlternanciaHaciaAdelante = true;
+                if (modalIdCerrar && modalIdAbrir) {
+                    _padres[modalIdAbrir] = modalIdCerrar;
+                }
+            }
+
+            cerrar(modalIdCerrar, callbackCerrar);
+            abrir(modalIdAbrir, callbackAbrir);
+
+            _enAlternanciaHaciaAdelante = false;
+            _enAlternanciaHaciaAtras = false;
+        }
+
+        function abrirConPadre(modalId, setupFn = null) {
+            const modalAbierto = document.querySelector('.modal.show');
+            const padre = (modalAbierto && modalAbierto.id !== modalId) ? modalAbierto.id : null;
+            if (typeof setupFn === 'function') setupFn();
+            if (padre) {
+                alternar(padre, modalId);
+            } else {
+                abrir(modalId);
+            }
+        }
+
+        function cerrarConPadre(modalId, callbackAbrirPadre = null) {
+            const padre = _padres[modalId];
+            if (padre) {
+                alternar(modalId, padre, null, callbackAbrirPadre ? () => callbackAbrirPadre(padre) : null);
+            } else {
+                cerrar(modalId);
+            }
         }
 
         function cerrarTodos() {
-            document.querySelectorAll('.modal.show').forEach(m => {
-                delete _onCerrar[m.id];
-                m.classList.remove('show');
-                m.removeEventListener('mousedown', _onMD);
-                m.removeEventListener('click', _onClick);
+            document.querySelectorAll('.modal.show').forEach(modal => {
+                delete _accionesVolver[modal.id];
+                modal.classList.remove('show');
+                modal.removeEventListener('mousedown', _onMD);
+                modal.removeEventListener('click', _onClick);
+                _removerTrap(modal);
             });
+            Object.keys(_padres).forEach(k => delete _padres[k]);
             document.body.classList.remove('modal-open');
         }
 
         function cerrarTop() {
-            const abiertos = [...document.querySelectorAll('.modal.show')];
+            const abiertos = Array.from(document.querySelectorAll('.modal.show'));
             if (!abiertos.length) return;
-            const conHandler = abiertos.filter(m => _onCerrar[m.id]);
-            const target = conHandler.length ? conHandler[conHandler.length - 1] : abiertos[abiertos.length - 1];
-            _cerrarConPadre(target.id);
+            const topModal = abiertos[abiertos.length - 1];
+            _ejecutarAccionCierre(topModal.id);
         }
 
-        return { abrir, cerrar, cerrarTodos, cerrarTop };
+        function nav(desde, fn) {
+            if (desde) {
+                const mDesde = document.getElementById(desde);
+                if (mDesde && mDesde.classList.contains('show')) {
+                    _enAlternanciaHaciaAdelante = true;
+                    cerrar(desde);
+                    _enAlternanciaHaciaAdelante = false;
+                }
+            }
+            if (typeof fn === 'function') fn();
+        }
+
+        return {
+            abrir,
+            cerrar,
+            alternar,
+            abrirConPadre,
+            cerrarConPadre,
+            cerrarTodos,
+            cerrarTop,
+            registrarAccionVolver,
+            ejecutarAccionCierre: _ejecutarAccionCierre,
+            getPadre: (id) => _padres[id] || null,
+            setPadre: (id, padreId) => { if (id && padreId) _padres[id] = padreId; },
+            nav
+        };
     })();
 
 
@@ -603,6 +780,9 @@
         // ── Modal confirmar ───────────────────────────────────────────────────
         function confirmarModal(texto, labelOk = 'Eliminar', opciones = {}) {
             return new Promise(resolve => {
+                const modalPadre = document.querySelector('.modal.show');
+                const modalPadreId = modalPadre ? modalPadre.id : null;
+
                 document.getElementById('modal-confirmar-texto').textContent = texto;
                 document.getElementById('modal-confirmar-label').textContent = labelOk;
                 const ok = document.getElementById('modal-confirmar-ok');
@@ -616,19 +796,53 @@
                 const iconoOk = document.getElementById('modal-confirmar-icono');
                 if (iconoOk) iconoOk.style.display = opciones.ocultarIcono ? 'none' : '';
                 let resuelto = false;
-                function si() { if (!resuelto) { resuelto = true; cleanup(); resolve(true); } }
-                function no() { if (!resuelto) { resuelto = true; cleanup(); resolve(false); } }
-                function onEscape(e) { if (e.key === 'Escape') no(); }
+
                 function cleanup() {
                     ok.removeEventListener('click', si);
                     can.removeEventListener('click', no);
                     document.removeEventListener('keydown', onEscape, true);
-                    MM.cerrar('modal-confirmar');
+                    window.removeEventListener('popstate', onPopState);
                 }
+
+                function cerrarY(val) {
+                    if (resuelto) return;
+                    resuelto = true;
+                    cleanup();
+                    if (modalPadreId) {
+                        MM.alternar('modal-confirmar', modalPadreId);
+                    } else {
+                        MM.cerrar('modal-confirmar');
+                    }
+                    resolve(val);
+                }
+
+                function si() { cerrarY(true); }
+                function no() { cerrarY(false); }
+                function onEscape(e) {
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        cerrarY(false);
+                    }
+                }
+                function onPopState() {
+                    if (!resuelto) {
+                        resuelto = true;
+                        cleanup();
+                        resolve(false);
+                    }
+                }
+
                 ok.addEventListener('click', si);
                 can.addEventListener('click', no);
                 document.addEventListener('keydown', onEscape, true);
-                MM.abrir('modal-confirmar');
+                window.addEventListener('popstate', onPopState, { once: true });
+
+                if (modalPadreId) {
+                    MM.alternar(modalPadreId, 'modal-confirmar');
+                } else {
+                    MM.abrir('modal-confirmar');
+                }
             });
         }
 
@@ -637,13 +851,27 @@
         // onElegir(idx): se llama con el índice elegido.
         // onCancelar(): se llama al cancelar (Escape o botón) — debe reabrir el modal padre.
         function pickerModal(titulo, opciones, onElegir, onCancelar) {
+            const modalPadre = document.querySelector('.modal.show');
+            const modalPadreId = modalPadre ? modalPadre.id : null;
+
             document.getElementById('modal-picker-titulo').textContent = titulo;
             const contenedor = document.getElementById('modal-picker-opciones');
             const can = document.getElementById('modal-picker-cancel');
 
+            let cancelado = false;
             function _cerrarYCancelar() {
-                MM.cerrar('modal-picker');
-                setTimeout(() => onCancelar(), 150);
+                if (cancelado) return;
+                cancelado = true;
+                contenedor.onclick = null;
+                can.onclick = null;
+                if (modalPadreId) {
+                    MM.alternar('modal-picker', modalPadreId, null, () => {
+                        if (typeof onCancelar === 'function') onCancelar();
+                    });
+                } else {
+                    MM.cerrar('modal-picker');
+                    if (typeof onCancelar === 'function') onCancelar();
+                }
             }
 
             contenedor.innerHTML = opciones.map((op, i) => `
@@ -662,12 +890,18 @@
                 if (!btn) return;
                 contenedor.onclick = null;
                 can.onclick = null;
-                MM.cerrar('modal-picker');
-                onElegir(Number(btn.dataset.pickerIdx));
+                cancelado = true;
+                const idx = Number(btn.dataset.pickerIdx);
+                onElegir(idx);
             };
 
             can.onclick = () => _cerrarYCancelar();
-            MM.abrir('modal-picker', { onEscape: () => _cerrarYCancelar() });
+            if (modalPadreId) {
+                MM.alternar(modalPadreId, 'modal-picker', null, null);
+                MM.registrarAccionVolver('modal-picker', () => _cerrarYCancelar());
+            } else {
+                MM.abrir('modal-picker', { onEscape: () => _cerrarYCancelar() });
+            }
         }
 
         return { toast, mostrarToast, confirmarModal, pickerModal };
@@ -1911,7 +2145,7 @@
                 btnVerDetalle.onclick = () => _mostrarDetalleModal(resMerge.cambios || []);
             }
             
-            setTimeout(() => MM.abrir('modal-gist-novedades'), origen === 'manual' ? 0 : 600);
+            setTimeout(() => MM.abrirConPadre('modal-gist-novedades'), origen === 'manual' ? 0 : 600);
         }
 
         async function bajar() {
@@ -2205,7 +2439,7 @@
                 lista.appendChild(frag);
             }
 
-            MM.abrir('modal-gist-detalle');
+            MM.abrirConPadre('modal-gist-detalle');
         }
 
         return { subir, bajar, subirAuto, verificarAlAbrir, toggleToken, toggleAuto, guardarConfig, poblarModal, init, actualizarBotonesAjustes: _actualizarBotonesAjustes, _generarPayload, _combinarEntidades };
@@ -4192,16 +4426,12 @@
         },
 
         abrirGist() {
-            MM.cerrar('modal-ajustes');
-            setTimeout(() => {
-                GistSync.poblarModal();
-                MM.abrir('modal-gist', { onEscape: () => UI.cerrarGist() });
-            }, 150);
+            GistSync.poblarModal();
+            MM.abrirConPadre('modal-gist');
         },
 
         cerrarGist() {
-            MM.cerrar('modal-gist');
-            setTimeout(() => UI.abrirAjustes(), 150);
+            MM.cerrarConPadre('modal-gist');
         },
 
         abrirAjustes() {
@@ -4323,29 +4553,16 @@
         },
 
         abrirTiposDispositivo() {
-            MM.cerrar('modal-ajustes');
-            setTimeout(() => {
-                UI._renderTiposCustom();
-                MM.abrir('modal-tipos-dispositivo', { onEscape: () => UI.cerrarTiposDispositivo() });
-            }, 150);
+            UI._renderTiposCustom();
+            MM.abrirConPadre('modal-tipos-dispositivo');
         },
 
         cerrarTiposDispositivo() {
-            MM.cerrar('modal-tipos-dispositivo');
-            setTimeout(() => UI.abrirAjustes(), 150);
+            MM.cerrarConPadre('modal-tipos-dispositivo');
         },
 
         abrirImportarDesdeAjustes() {
-            MM.cerrar('modal-ajustes');
-            setTimeout(() => {
-                UI.abrirImportar();
-                setTimeout(() => {
-                    const m = document.getElementById('modal-importar');
-                    if (m && m.classList.contains('show')) {
-                        MM.abrir('modal-importar', { onEscape: () => { MM.cerrar('modal-importar'); setTimeout(() => UI.abrirAjustes(), 150); } });
-                    }
-                }, 20);
-            }, 150);
+            UI.abrirImportar();
         },
 
         async borrarTodosLosDatos() {
@@ -4429,6 +4646,7 @@
 
         abrirEdificios(origen = 'ajustes') {
             EdicionState.edicion.edificiosOrigen = origen;
+            const padreModalId = (origen && origen !== 'ajustes') ? `modal-${origen}` : 'modal-ajustes';
 
             if (origen === 'canal') {
                 EdicionState.edicion.edificiosSnapForm = {
@@ -4442,7 +4660,6 @@
                     rack: document.getElementById('canal-rack').value || '',
                     comentarios: document.getElementById('canal-comentarios').value || '',
                 };
-                MM.cerrar('modal-canal');
             } else if (origen === 'nuevo-grab') {
                 EdicionState.edicion.edificiosSnapForm = {
                     nombre: document.getElementById('nuevo-grab-nombre').value || '',
@@ -4453,12 +4670,8 @@
                     piso: document.getElementById('nuevo-grab-piso').value || '',
                     rack: document.getElementById('nuevo-grab-rack').value || ''
                 };
-                MM.cerrar('modal-nuevo-grab');
             } else if (origen === 'editar-grab') {
-                EdicionState.edicion.edificiosSnapForm = {
-
-                };
-                MM.cerrar('modal-editar-grab');
+                EdicionState.edicion.edificiosSnapForm = {};
             } else if (origen === 'nuevo-otro-prod' || origen === 'editar-otro-prod') {
                 const prefijo = origen;
                 EdicionState.edicion.edificiosSnapForm = {
@@ -4472,94 +4685,67 @@
                     rack: document.getElementById(`${prefijo}-rack`).value || '',
                     comentarios: document.getElementById(`${prefijo}-comentarios`).value || ''
                 };
-                MM.cerrar(`modal-${origen}`);
             } else {
-                MM.cerrar('modal-ajustes');
+                EdicionState.edicion.edificiosSnapForm = null;
             }
 
-            setTimeout(() => {
-                UI._renderEdificios();
-                document.getElementById('nuevo-edificio-nombre').value = '';
-                const btnVolver = document.querySelector('#modal-edificios .btn-cancel');
-                if (btnVolver) {
-                    if (origen === 'canal') btnVolver.innerHTML = `<svg class="icon icon-line"><use href="#icon-undo"/></svg> Volver al canal`;
-                    else if (origen === 'nuevo-grab' || origen === 'editar-grab') btnVolver.innerHTML = `<svg class="icon icon-line"><use href="#icon-undo"/></svg> Volver al grabador`;
-                    else btnVolver.innerHTML = `<svg class="icon icon-line"><use href="#icon-undo"/></svg> Volver`;
-                }
-                MM.abrir('modal-edificios', { onEscape: () => UI.cerrarEdificios() });
-                setTimeout(() => document.getElementById('nuevo-edificio-nombre').focus(), 50);
-            }, 150);
+            UI._renderEdificios();
+            document.getElementById('nuevo-edificio-nombre').value = '';
+            const btnVolver = document.querySelector('#modal-edificios .btn-cancel');
+            if (btnVolver) {
+                if (origen === 'canal') btnVolver.innerHTML = `<svg class="icon icon-line"><use href="#icon-undo"/></svg> Volver al canal`;
+                else if (origen === 'nuevo-grab' || origen === 'editar-grab') btnVolver.innerHTML = `<svg class="icon icon-line"><use href="#icon-undo"/></svg> Volver al grabador`;
+                else btnVolver.innerHTML = `<svg class="icon icon-line"><use href="#icon-undo"/></svg> Volver`;
+            }
+
+            MM.alternar(padreModalId, 'modal-edificios');
+            MM.registrarAccionVolver('modal-edificios', () => UI.cerrarEdificios());
+            setTimeout(() => document.getElementById('nuevo-edificio-nombre').focus(), 50);
         },
 
         cerrarEdificios() {
             const origen = EdicionState.edicion.edificiosOrigen;
             const snap = EdicionState.edicion.edificiosSnapForm;
-            MM.cerrar('modal-edificios');
 
-            if (origen === 'canal' && snap) {
-                setTimeout(() => {
-                    UI.abrirAsignarCanal(EdicionState.edicion.canalGrabId, EdicionState.edicion.canalN, EdicionState.edicion.canalDesdeDispId);
-                    setTimeout(() => {
-                        document.getElementById('sel-canal-dispositivo').value = snap.dispositivoId;
-                        document.getElementById('canal-disp-input').value = snap.dispInput;
-                        document.getElementById('canal-descripcion').value = snap.descripcion;
-                        document.getElementById('canal-ip').value = snap.ip;
-                        document.getElementById('canal-puerto').value = snap.puerto;
-                        document.getElementById('canal-piso').value = snap.piso;
-                        document.getElementById('canal-rack').value = snap.rack;
-                        document.getElementById('canal-comentarios').value = snap.comentarios;
-                        FormHelpers.poblarSelectEdificio('canal-edificio', snap.edificio);
-                        const btnVerActivo = document.getElementById('btn-ver-activo-canal');
+            MM.cerrarConPadre('modal-edificios', () => {
+                if (origen === 'canal' && snap) {
+                    document.getElementById('sel-canal-dispositivo').value = snap.dispositivoId;
+                    document.getElementById('canal-disp-input').value = snap.dispInput;
+                    document.getElementById('canal-descripcion').value = snap.descripcion;
+                    document.getElementById('canal-ip').value = snap.ip;
+                    document.getElementById('canal-puerto').value = snap.puerto;
+                    document.getElementById('canal-piso').value = snap.piso;
+                    document.getElementById('canal-rack').value = snap.rack;
+                    document.getElementById('canal-comentarios').value = snap.comentarios;
+                    FormHelpers.poblarSelectEdificio('canal-edificio', snap.edificio);
+                    const btnVerActivo = document.getElementById('btn-ver-activo-canal');
+                    if (btnVerActivo) btnVerActivo.classList.toggle('hidden', !snap.dispositivoId);
+                } else if (origen === 'nuevo-grab' && snap) {
+                    document.getElementById('nuevo-grab-nombre').value = snap.nombre;
+                    document.getElementById('nuevo-grab-dispositivo-id').value = snap.dispositivoId;
+                    document.getElementById('nuevo-grab-ip').value = snap.ip;
+                    document.getElementById('nuevo-grab-puerto').value = snap.puerto;
+                    document.getElementById('nuevo-grab-piso').value = snap.piso;
+                    document.getElementById('nuevo-grab-rack').value = snap.rack;
+                    FormHelpers.poblarSelectEdificio('nuevo-grab-edificio', snap.edificio);
+                } else if ((origen === 'nuevo-otro-prod' || origen === 'editar-otro-prod') && snap) {
+                    const prefijo = origen;
+                    document.getElementById(`sel-${prefijo}-dispositivo`).value = snap.dispositivoId;
+                    document.getElementById(`${prefijo}-disp-input`).value = snap.dispInput;
+                    document.getElementById(`${prefijo}-descripcion`).value = snap.descripcion;
+                    document.getElementById(`${prefijo}-ip`).value = snap.ip;
+                    document.getElementById(`${prefijo}-puerto`).value = snap.puerto;
+                    document.getElementById(`${prefijo}-piso`).value = snap.piso;
+                    document.getElementById(`${prefijo}-rack`).value = snap.rack;
+                    document.getElementById(`${prefijo}-comentarios`).value = snap.comentarios;
+                    FormHelpers.poblarSelectEdificio(`${prefijo}-edificio`, snap.edificio);
+                    if (prefijo === 'editar-otro-prod') {
+                        const btnVerActivo = document.getElementById('btn-ver-activo-otro-prod');
                         if (btnVerActivo) btnVerActivo.classList.toggle('hidden', !snap.dispositivoId);
-                        EdicionState.edicion.edificiosSnapForm = null;
-                    }, 220);
-                }, 150);
-            } else if (origen === 'nuevo-grab' && snap) {
-                setTimeout(() => {
-                    UI.abrirNuevoGrabador();
-                    setTimeout(() => {
-                        document.getElementById('nuevo-grab-nombre').value = snap.nombre;
-                        document.getElementById('nuevo-grab-dispositivo-id').value = snap.dispositivoId;
-                        document.getElementById('nuevo-grab-ip').value = snap.ip;
-                        document.getElementById('nuevo-grab-puerto').value = snap.puerto;
-                        document.getElementById('nuevo-grab-piso').value = snap.piso;
-                        document.getElementById('nuevo-grab-rack').value = snap.rack;
-                        FormHelpers.poblarSelectEdificio('nuevo-grab-edificio', snap.edificio);
-                        EdicionState.edicion.edificiosSnapForm = null;
-                    }, 220);
-                }, 150);
-            } else if (origen === 'editar-grab' && snap) {
-            } else if ((origen === 'nuevo-otro-prod' || origen === 'editar-otro-prod') && snap) {
-                setTimeout(() => {
-                    if (origen === 'editar-otro-prod' && EdicionState.edicion.otroProdId) {
-                        UI.abrirEditarOtroProd(EdicionState.edicion.otroProdId);
-                    } else {
-                        UI.abrirNuevoOtroProd();
                     }
-
-                    setTimeout(() => {
-                        const prefijo = origen;
-                        document.getElementById(`sel-${prefijo}-dispositivo`).value = snap.dispositivoId;
-                        document.getElementById(`${prefijo}-disp-input`).value = snap.dispInput;
-                        document.getElementById(`${prefijo}-descripcion`).value = snap.descripcion;
-                        document.getElementById(`${prefijo}-ip`).value = snap.ip;
-                        document.getElementById(`${prefijo}-puerto`).value = snap.puerto;
-                        document.getElementById(`${prefijo}-piso`).value = snap.piso;
-                        document.getElementById(`${prefijo}-rack`).value = snap.rack;
-                        document.getElementById(`${prefijo}-comentarios`).value = snap.comentarios;
-                        FormHelpers.poblarSelectEdificio(`${prefijo}-edificio`, snap.edificio);
-
-                        if (prefijo === 'editar-otro-prod') {
-                            const btnVerActivo = document.getElementById('btn-ver-activo-otro-prod');
-                            if (btnVerActivo) btnVerActivo.classList.toggle('hidden', !snap.dispositivoId);
-                        }
-                        EdicionState.edicion.edificiosSnapForm = null;
-                    }, 220);
-                }, 150);
-            } else {
+                }
                 EdicionState.edicion.edificiosSnapForm = null;
-                setTimeout(() => UI.abrirAjustes(), 150);
-            }
+            });
         },
 
         _renderEdificios() {
@@ -4834,11 +5020,11 @@
             EdicionState.edicion.dispId = null;
             FormHelpers.limpiarFormDisp('nuevo-disp');
             FormHelpers.poblarSelectTipo('nuevo-disp', null);
-            MM.abrir('modal-nuevo-disp');
+            MM.abrirConPadre('modal-nuevo-disp');
         },
 
         cerrarModalNuevoDispositivo() {
-            MM.cerrar('modal-nuevo-disp');
+            MM.cerrarConPadre('modal-nuevo-disp');
         },
 
         guardarNuevoDispositivo() {
@@ -4879,7 +5065,7 @@
                 Notif.toast('Dispositivo agregado', 'success');
             }
 
-            Store.guardar(); render(); MM.cerrar('modal-nuevo-disp');
+            Store.guardar(); render(); MM.cerrarConPadre('modal-nuevo-disp');
         },
 
         abrirEditarDispositivo(id) {
@@ -4977,31 +5163,18 @@
             }
 
             ModalLock.reset('modal-editar-disp');
-            MM.abrir('modal-editar-disp', { onEscape: () => UI.cerrarModalEditarDispositivo() });
+            MM.abrirConPadre('modal-editar-disp');
             const btnCerrarDisp = document.querySelector('#modal-editar-disp .btn-cancel');
-            if (btnCerrarDisp) btnCerrarDisp.innerHTML = (EdicionState.edicion.volverDesdeCanal || EdicionState.edicion.volverDesdeGrabador)
+            if (btnCerrarDisp) btnCerrarDisp.innerHTML = MM.getPadre('modal-editar-disp')
                 ? '<svg class="icon icon-line"><use href="#icon-undo"/></svg>Volver'
                 : '<svg class="icon icon-line"><use href="#icon-cancelar"/></svg>Cancelar';
         },
 
         cerrarModalEditarDispositivo() {
-            MM.cerrar('modal-editar-disp');
             EdicionState.edicion.estado = '';
-            const volverCanal = EdicionState.edicion.volverDesdeCanal;
-            const volverGrab = EdicionState.edicion.volverDesdeGrabador;
-            const grabId = EdicionState.edicion.canalGrabId;
-            const canalN = EdicionState.edicion.canalN;
-            const grabIdOrigen = EdicionState.edicion.grabId;
             EdicionState.edicion.dispId = null;
-            EdicionState.edicion.volverDesdeCanal = false;
-            EdicionState.edicion.volverDesdeGrabador = false;
-            if (volverCanal && grabId === 'OTRO_PROD') {
-                setTimeout(() => canalN ? UI.abrirEditarOtroProd(canalN) : UI.abrirNuevoOtroProd(), 180);
-            } else if (volverCanal && grabId != null && canalN != null) {
-                setTimeout(() => UI.abrirAsignarCanal(grabId, canalN), 180);
-            } else if (volverGrab && grabIdOrigen != null) {
-                setTimeout(() => UI.abrirEditarGrabador(grabIdOrigen), 180);
-            }
+            EdicionState.edicion.snapshotDisp = null;
+            MM.cerrarConPadre('modal-editar-disp');
         },
 
         onSelectEstadoDisp() {
@@ -5073,7 +5246,7 @@
             const obj = S.sanitizarDisp({ ...base, id: EdicionState.edicion.dispId, mac: macs[0] || '' });
             const nuevoSnap = FormHelpers.snapDisp(obj);
             const huboCambios = JSON.stringify(nuevoSnap) !== JSON.stringify(EdicionState.edicion.snapshotDisp);
-            if (!huboCambios) { Notif.toast('Sin cambios', 'info'); MM.cerrar('modal-editar-disp'); EdicionState.edicion.dispId = null; EdicionState.edicion.snapshotDisp = null; return; }
+            if (!huboCambios) { Notif.toast('Sin cambios', 'info'); MM.cerrarConPadre('modal-editar-disp'); EdicionState.edicion.dispId = null; EdicionState.edicion.snapshotDisp = null; return; }
 
             const estadoCambioAInactivo = ESTADOS_INACTIVOS.includes(EdicionState.edicion.estado) &&
                 !ESTADOS_INACTIVOS.includes(EdicionState.edicion.snapshotDisp?.estado || '');
@@ -5117,7 +5290,7 @@
             Store.sincronizarGrabadores(EdicionState.edicion.dispId);
             Notif.toast('Activo actualizado', 'success');
 
-            Store.guardar(); render(); MM.cerrar('modal-editar-disp'); EdicionState.edicion.dispId = null; EdicionState.edicion.snapshotDisp = null;
+            Store.guardar(); render(); MM.cerrarConPadre('modal-editar-disp'); EdicionState.edicion.dispId = null; EdicionState.edicion.snapshotDisp = null;
 
             if (EdicionState.grabAAbrirTrasGuardar) {
                 const { grabId, canal } = EdicionState.grabAAbrirTrasGuardar;
@@ -5154,11 +5327,10 @@
             // Si hay una sola asignación, ir directo
             if (asignaciones.length === 1) {
                 const asig = asignaciones[0];
-                MM.cerrar('modal-editar-disp');
                 if (asig.tipo === 'canal') {
-                    setTimeout(() => UI.abrirAsignarCanal(asig.grabId, asig.canal, dispId), 180);
+                    UI.abrirAsignarCanal(asig.grabId, asig.canal, dispId);
                 } else {
-                    setTimeout(() => UI.abrirEditarOtroProd(asig.id, dispId), 180);
+                    UI.abrirEditarOtroProd(asig.id, dispId);
                 }
                 return;
             }
@@ -5169,35 +5341,30 @@
                 return { titulo: `Otros Disp. — ${a.descripcion}`, sub: null };
             });
 
-            MM.cerrar('modal-editar-disp');
-            setTimeout(() => {
-                Notif.pickerModal(
-                    'Ver asignación en producción',
-                    opciones,
-                    (idx) => {
-                        const elegida = asignaciones[idx];
-                        if (elegida.tipo === 'canal') {
-                            setTimeout(() => UI.abrirAsignarCanal(elegida.grabId, elegida.canal, dispId), 150);
-                        } else {
-                            setTimeout(() => UI.abrirEditarOtroProd(elegida.id, dispId), 150);
-                        }
-                    },
-                    () => {
-                        UI.abrirEditarDispositivo(dispId);
+            Notif.pickerModal(
+                'Ver asignación en producción',
+                opciones,
+                (idx) => {
+                    const elegida = asignaciones[idx];
+                    if (elegida.tipo === 'canal') {
+                        UI.abrirAsignarCanal(elegida.grabId, elegida.canal, dispId);
+                    } else {
+                        UI.abrirEditarOtroProd(elegida.id, dispId);
                     }
-                );
-            }, 150);
+                    const nuevoModal = elegida.tipo === 'canal' ? 'modal-canal' : 'modal-editar-otro-prod';
+                    MM.setPadre(nuevoModal, 'modal-editar-disp');
+                },
+                () => {
+                    // Cancelar ya restaura modal-editar-disp
+                }
+            );
         },
 
         verGrabadorDesdeDispositivo() {
             if (!EdicionState.edicion.dispId) return;
             const grab = Store.data.grabadores.find(g => g.dispositivoId === EdicionState.edicion.dispId);
             if (!grab) return;
-            const dispIdOrigen = EdicionState.edicion.dispId;
-            EdicionState.edicion.volverDesdeDispositivo = true;
-            EdicionState.edicion.dispIdOrigenGrab = dispIdOrigen;
-            MM.cerrar('modal-editar-disp');
-            setTimeout(() => UI.abrirEditarGrabador(grab.id), 180);
+            UI.abrirEditarGrabador(grab.id);
         },
 
         async eliminarDispositivo() {
@@ -5224,7 +5391,7 @@
                 Store.data.grabadores = Store.data.grabadores.filter(g => g.dispositivoId !== EdicionState.edicion.dispId);
             }
             Store.data.dispositivos = Store.data.dispositivos.filter(x => x.id !== EdicionState.edicion.dispId);
-            Store.guardar(); render(); MM.cerrar('modal-editar-disp'); EdicionState.edicion.dispId = null;
+            Store.guardar(); render(); MM.cerrarConPadre('modal-editar-disp'); EdicionState.edicion.dispId = null;
             Notif.toast('Dispositivo eliminado', 'success');
         },
 
@@ -5233,11 +5400,11 @@
             FormHelpers.limpiarFormGrab('nuevo-grab');
             FormHelpers.poblarSelectorGrabador('nuevo-grab', null);
             FormHelpers.poblarSelectEdificio('nuevo-grab-edificio', '');
-            MM.abrir('modal-nuevo-grab');
+            MM.abrirConPadre('modal-nuevo-grab');
         },
 
         cerrarModalNuevoGrabador() {
-            MM.cerrar('modal-nuevo-grab');
+            MM.cerrarConPadre('modal-nuevo-grab');
         },
 
         guardarNuevoGrabador() {
@@ -5267,7 +5434,7 @@
 
             Store.data.grabadores.push({ ...S.sanitizarGrab(datos), updatedAt: new Date().toISOString() });
             Notif.toast('Grabador agregado', 'success');
-            Store.guardar(); render(); MM.cerrar('modal-nuevo-grab');
+            Store.guardar(); render(); MM.cerrarConPadre('modal-nuevo-grab');
         },
 
         abrirEditarGrabador(id) {
@@ -5289,11 +5456,11 @@
             EdicionState.edicion.snapshotGrab = FormHelpers.snapGrab(g);
 
             ModalLock.reset('modal-editar-grab');
-            MM.abrir('modal-editar-grab', { onEscape: () => UI.cerrarModalEditarGrabador() });
+            MM.abrirConPadre('modal-editar-grab');
             const btnVerActivo = document.getElementById('btn-ver-activo-grab');
             if (btnVerActivo) btnVerActivo.classList.toggle('hidden', !g.dispositivoId);
             const btnCerrarGrab = document.querySelector('#modal-editar-grab .btn-cancel');
-            if (btnCerrarGrab) btnCerrarGrab.innerHTML = EdicionState.edicion.volverDesdeDispositivo
+            if (btnCerrarGrab) btnCerrarGrab.innerHTML = MM.getPadre('modal-editar-grab')
                 ? '<svg class="icon icon-line"><use href="#icon-undo"/></svg>Volver'
                 : '<svg class="icon icon-line"><use href="#icon-cancelar"/></svg>Cancelar';
         },
@@ -5308,7 +5475,7 @@
             const ok = await Notif.confirmarModal(
                 `¿Limpiar la MAC de los ${ocupados} canal${ocupados !== 1 ? 'es' : ''} asignado${ocupados !== 1 ? 's' : ''}? Los demás datos del canal se conservan.`,
                 'Desasignar',
-                { claseOk: 'btn-edit', labelCancelar: 'Cancelar' }
+                { claseOk: 'btn-delete' }
             );
             if (!ok) return;
             historial.empujar('Desasignar canales del grabador');
@@ -5318,21 +5485,15 @@
             Store.data.grabadores[idx].updatedAt = new Date().toISOString();
             Store.guardar();
             render();
-            MM.cerrar('modal-editar-grab');
+            MM.cerrarConPadre('modal-editar-grab');
             EdicionState.edicion.grabId = null;
             Notif.toast(`${ocupados} canal${ocupados !== 1 ? 'es' : ''} desasignado${ocupados !== 1 ? 's' : ''}`, 'success');
         },
 
         cerrarModalEditarGrabador() {
-            MM.cerrar('modal-editar-grab');
             EdicionState.edicion.grabId = null;
-            const volver = EdicionState.edicion.volverDesdeDispositivo;
-            const dispIdOrigen = EdicionState.edicion.dispIdOrigenGrab;
-            EdicionState.edicion.volverDesdeDispositivo = false;
-            EdicionState.edicion.dispIdOrigenGrab = null;
-            if (volver && dispIdOrigen) {
-                setTimeout(() => UI.abrirEditarDispositivo(dispIdOrigen), 180);
-            }
+            EdicionState.edicion.snapshotGrab = null;
+            MM.cerrarConPadre('modal-editar-grab');
         },
 
         onGrabDispositivoChange() {
@@ -5344,9 +5505,7 @@
         verActivoDesdeGrabador() {
             const dispId = document.getElementById('editar-grab-dispositivo-id').value;
             if (!dispId) return;
-            EdicionState.edicion.volverDesdeGrabador = true;
-            MM.cerrar('modal-editar-grab');
-            setTimeout(() => UI.abrirEditarDispositivo(dispId), 180);
+            UI.abrirEditarDispositivo(dispId);
         },
 
         guardarEdicionGrabador() {
@@ -5389,7 +5548,7 @@
             const nuevoSnapGrab = FormHelpers.snapGrab(datos);
 
             const huboCambiosGrab = JSON.stringify(nuevoSnapGrab) !== JSON.stringify(EdicionState.edicion.snapshotGrab);
-            if (!huboCambiosGrab) { Notif.toast('Sin cambios', 'info'); MM.cerrar('modal-editar-grab'); EdicionState.edicion.grabId = null; EdicionState.edicion.snapshotGrab = null; EdicionState.edicion.volverDesdeDispositivo = false; EdicionState.edicion.dispIdOrigenGrab = null; return; }
+            if (!huboCambiosGrab) { Notif.toast('Sin cambios', 'info'); MM.cerrarConPadre('modal-editar-grab'); EdicionState.edicion.grabId = null; EdicionState.edicion.snapshotGrab = null; return; }
 
             historial.empujar('Editar grabador');
 
@@ -5398,7 +5557,7 @@
                 Store.data.grabadores[idx] = { ...S.sanitizarGrab(datos), updatedAt: new Date().toISOString() };
             }
             Notif.toast('Grabador actualizado', 'success');
-            Store.guardar(); render(); MM.cerrar('modal-editar-grab'); EdicionState.edicion.grabId = null; EdicionState.edicion.snapshotGrab = null; EdicionState.edicion.volverDesdeDispositivo = false; EdicionState.edicion.dispIdOrigenGrab = null;
+            Store.guardar(); render(); MM.cerrarConPadre('modal-editar-grab'); EdicionState.edicion.grabId = null; EdicionState.edicion.snapshotGrab = null;
         },
 
         async eliminarGrabador() {
@@ -5415,7 +5574,7 @@
             historial.empujar('Eliminar grabador');
 
             Store.data.grabadores = Store.data.grabadores.filter(x => x.id !== EdicionState.edicion.grabId);
-            Store.guardar(); render(); MM.cerrar('modal-editar-grab'); EdicionState.edicion.grabId = null; EdicionState.edicion.volverDesdeDispositivo = false; EdicionState.edicion.dispIdOrigenGrab = null;
+            Store.guardar(); render(); MM.cerrarConPadre('modal-editar-grab'); EdicionState.edicion.grabId = null;
             Notif.toast('Grabador eliminado', 'success');
         },
 
@@ -5470,7 +5629,7 @@
             EdicionState.edicion.canalDispHighlight = -1;
 
             ModalLock.reset('modal-canal');
-            MM.abrir('modal-canal', { onEscape: () => UI.cerrarModalCanal() });
+            MM.abrirConPadre('modal-canal');
 
             EdicionState.edicion.snapshotCanal = FormHelpers.snapUbicacion(slot);
 
@@ -5619,18 +5778,17 @@
         },
 
         cerrarModalCanal() {
-            MM.cerrar('modal-canal');
-            const dispId = EdicionState.edicion.canalDesdeDispId;
-            EdicionState.edicion.canalGrabId = null; EdicionState.edicion.canalN = null; EdicionState.edicion.canalDesdeDispId = null;
-            if (dispId) setTimeout(() => UI.abrirEditarDispositivo(dispId), 180);
+            EdicionState.edicion.canalGrabId = null;
+            EdicionState.edicion.canalN = null;
+            EdicionState.edicion.canalDesdeDispId = null;
+            EdicionState.edicion.snapshotCanal = null;
+            MM.cerrarConPadre('modal-canal');
         },
 
         verActivoDesdeCanal() {
             const dispId = document.getElementById('sel-canal-dispositivo').value;
             if (!dispId) return;
-            EdicionState.edicion.volverDesdeCanal = true;
-            MM.cerrar('modal-canal');
-            setTimeout(() => UI.abrirEditarDispositivo(dispId), 180);
+            UI.abrirEditarDispositivo(dispId);
         },
 
         limpiarAsignacionCanal() {
@@ -5701,7 +5859,7 @@
                 descripcion: FormHelpers.v('canal', 'descripcion'),
             });
             const huboCambiosCanal = JSON.stringify(nuevoSnapCanal) !== JSON.stringify(EdicionState.edicion.snapshotCanal);
-            if (!huboCambiosCanal) { Notif.toast('Sin cambios', 'info'); MM.cerrar('modal-canal'); EdicionState.edicion.canalGrabId = null; EdicionState.edicion.canalN = null; EdicionState.edicion.snapshotCanal = null; return; }
+            if (!huboCambiosCanal) { Notif.toast('Sin cambios', 'info'); MM.cerrarConPadre('modal-canal'); EdicionState.edicion.canalGrabId = null; EdicionState.edicion.canalN = null; EdicionState.edicion.snapshotCanal = null; return; }
 
             const fueAsignado = !EdicionState.edicion.snapshotCanal.dispositivoId && nuevoSnapCanal.dispositivoId;
             const fueDesasignado = EdicionState.edicion.snapshotCanal.dispositivoId && !nuevoSnapCanal.dispositivoId;
@@ -5743,7 +5901,7 @@
                 if (o.grabRef) o.grabRef.updatedAt = new Date().toISOString();
             });
 
-            Store.guardar(); render(); MM.cerrar('modal-canal');
+            Store.guardar(); render(); MM.cerrarConPadre('modal-canal');
 
             Notif.toast(propagar.length ? `${msg} · ubicación sincronizada en ${propagar.length} lugar${propagar.length !== 1 ? 'es' : ''} más` : msg, 'success');
             EdicionState.edicion.canalGrabId = null; EdicionState.edicion.canalN = null; EdicionState.edicion.snapshotCanal = null;
@@ -5776,11 +5934,11 @@
             ];
             EdicionState.edicion.canalDispOcupados = new Set(idsOcupados);
 
-            MM.abrir('modal-nuevo-otro-prod');
+            MM.abrirConPadre('modal-nuevo-otro-prod');
         },
 
         cerrarNuevoOtroProd() {
-            MM.cerrar('modal-nuevo-otro-prod');
+            MM.cerrarConPadre('modal-nuevo-otro-prod');
         },
 
         abrirEditarOtroProd(id, desdeDispId = null) {
@@ -5822,7 +5980,7 @@
             // Convertir el botón Cancelar en Volver si llegamos desde un dispositivo
             const btnCancel = document.querySelector('#modal-editar-otro-prod .btn-cancel');
             if (btnCancel) {
-                if (desdeDispId) {
+                if (desdeDispId || MM.getPadre('modal-editar-otro-prod')) {
                     btnCancel.innerHTML = `<svg class="icon icon-line"><use href="#icon-undo"></use></svg> Volver`;
                 } else {
                     btnCancel.innerHTML = `Cancelar`;
@@ -5830,22 +5988,16 @@
             }
 
             ModalLock.reset('modal-editar-otro-prod');
-            MM.abrir('modal-editar-otro-prod');
+            MM.abrirConPadre('modal-editar-otro-prod');
 
             EdicionState.edicion.snapshotOtroProd = FormHelpers.snapUbicacion(o);
         },
 
         cerrarEditarOtroProd() {
-            MM.cerrar('modal-editar-otro-prod');
-            const dispId = EdicionState.edicion.otroProdDesdeDispId; // Recuperamos si había un ID
-
-            // Limpiamos los estados
             EdicionState.edicion.otroProdId = null;
             EdicionState.edicion.snapshotOtroProd = null;
             EdicionState.edicion.otroProdDesdeDispId = null;
-
-            // Si vinimos del modal del dispositivo, lo reabrimos
-            if (dispId) setTimeout(() => UI.abrirEditarDispositivo(dispId), 180);
+            MM.cerrarConPadre('modal-editar-otro-prod');
         },
 
         async guardarOtroProd(prefijo) {
@@ -5872,20 +6024,17 @@
             if (esEdicion) {
                 const nuevoSnapOtro = FormHelpers.snapUbicacion(datos);
                 if (JSON.stringify(nuevoSnapOtro) === JSON.stringify(EdicionState.edicion.snapshotOtroProd)) {
-                    Notif.toast('Sin cambios', 'info'); MM.cerrar('modal-editar-otro-prod'); EdicionState.edicion.otroProdId = null; EdicionState.edicion.snapshotOtroProd = null; return;
+                    Notif.toast('Sin cambios', 'info'); MM.cerrarConPadre('modal-editar-otro-prod'); EdicionState.edicion.otroProdId = null; EdicionState.edicion.snapshotOtroProd = null; return;
                 }
             }
 
-            // Si cambió la ubicación (edificio/piso/rack/puerto) y este dispositivo está
-            // asignado en otro(s) lado(s), ofrecemos sincronizar la ubicación también ahí.
             let propagar = [];
             const antes = EdicionState.edicion.snapshotOtroProd || {};
-            const ubicCambio = !esEdicion || ['edificio', 'piso', 'rack', 'puerto'].some(k => (datos[k] || '') !== (antes[k] || ''));
+            const ubicCambio = ['edificio', 'piso', 'rack', 'puerto'].some(k => (datos[k] || '') !== (antes[k] || ''));
             if (ubicCambio) {
-                const excluir = esEdicion ? { otroProdId: EdicionState.edicion.otroProdId } : {};
-                const otras = FormHelpers.buscarUbicacionesDispositivo(dispId, excluir);
-                propagar = otras.filter(o => o.edificio !== (datos.edificio || '') || o.piso !== (datos.piso || '') ||
-                    o.rack !== (datos.rack || '') || o.puerto !== (datos.puerto || ''));
+                const otras = FormHelpers.buscarUbicacionesDispositivo(dispId, { otroProdId: datos.id });
+                propagar = otras.filter(o => o.edificio !== datos.edificio || o.piso !== datos.piso ||
+                    o.rack !== datos.rack || o.puerto !== datos.puerto);
                 if (propagar.length) {
                     const lista = propagar.map(o => `• ${o.origen}`).join('\n');
                     const ok = await Notif.confirmarModal(
@@ -5896,7 +6045,7 @@
                 }
             }
 
-            historial.empujar(esEdicion ? 'Editar dispositivo en producción' : 'Agregar dispositivo a producción');
+            historial.empujar(esEdicion ? 'Editar otro dispositivo' : 'Agregar otro dispositivo a producción');
 
             if (!Store.data.otros_prod) Store.data.otros_prod = [];
 
@@ -5904,11 +6053,11 @@
                 const idx = Store.data.otros_prod.findIndex(x => x.id === EdicionState.edicion.otroProdId);
                 if (idx !== -1) Store.data.otros_prod[idx] = { ...S.sanitizarOtroProd(datos), updatedAt: new Date().toISOString() };
                 Notif.toast(propagar.length ? `Actualizado · ubicación sincronizada en ${propagar.length} lugar${propagar.length !== 1 ? 'es' : ''} más` : 'Actualizado', 'success');
-                MM.cerrar('modal-editar-otro-prod');
+                MM.cerrarConPadre('modal-editar-otro-prod');
             } else {
                 Store.data.otros_prod.push({ ...S.sanitizarOtroProd(datos), updatedAt: new Date().toISOString() });
                 Notif.toast(propagar.length ? `Agregado a producción · ubicación sincronizada en ${propagar.length} lugar${propagar.length !== 1 ? 'es' : ''} más` : 'Agregado a producción', 'success');
-                MM.cerrar('modal-nuevo-otro-prod');
+                MM.cerrarConPadre('modal-nuevo-otro-prod');
             }
 
             propagar.forEach(o => {
@@ -5930,7 +6079,7 @@
             historial.empujar('Quitar dispositivo de producción');
             Store.data.otros_prod = Store.data.otros_prod.filter(x => x.id !== EdicionState.edicion.otroProdId);
 
-            Store.guardar(); render(); MM.cerrar('modal-editar-otro-prod');
+            Store.guardar(); render(); MM.cerrarConPadre('modal-editar-otro-prod');
             Notif.toast('Quitado de producción', 'success');
         },
 
@@ -6014,11 +6163,7 @@
         verActivoDesdeOtroProd() {
             const dispId = document.getElementById('sel-editar-otro-prod-dispositivo').value;
             if (!dispId) return;
-            EdicionState.edicion.volverDesdeCanal = true;
-            EdicionState.edicion.canalGrabId = 'OTRO_PROD';
-            EdicionState.edicion.canalN = EdicionState.edicion.otroProdId;
-            MM.cerrar('modal-editar-otro-prod');
-            setTimeout(() => UI.abrirEditarDispositivo(dispId), 180);
+            UI.abrirEditarDispositivo(dispId);
         },
 
         abrirImportar() {
@@ -6029,17 +6174,14 @@
             document.getElementById('btn-reemplazar').disabled = true;
             EdicionState.importarParsed = null;
 
-            MM.abrir('modal-importar', {
-                cb: () => {
-
-                    setTimeout(() => {
-                        document.getElementById('file-import').click();
-                    }, 400);
-                }
+            MM.abrirConPadre('modal-importar', () => {
+                setTimeout(() => {
+                    document.getElementById('file-import').click();
+                }, 400);
             });
         },
 
-        cerrarImportar() { MM.cerrar('modal-importar'); },
+        cerrarImportar() { MM.cerrarConPadre('modal-importar'); },
 
         onImportarFileChange(e) {
             const file = e.target.files[0];
@@ -6449,7 +6591,6 @@
                 return;
             }
 
-            MM.cerrar('modal-ajustes');
             _exportIpsModo = 'grabador';
 
             document.querySelectorAll('.mini-tab-btn[data-export-modo]').forEach(btn => {
@@ -6457,10 +6598,7 @@
             });
 
             UI._renderListaExportarIps();
-
-            setTimeout(() => {
-                MM.abrir('modal-exportar-ips', { onEscape: () => UI.cerrarExportarIps() });
-            }, 150);
+            MM.abrirConPadre('modal-exportar-ips');
         },
 
         // Cambia entre exportar por grabador o por modelo de cámara, misma lógica para ambos.
@@ -6600,14 +6738,12 @@
             document.body.removeChild(a);
             setTimeout(() => URL.revokeObjectURL(url), 10000);
 
-            MM.cerrar('modal-exportar-ips');
-            setTimeout(() => UI.abrirAjustes(), 150);
+            MM.cerrarConPadre('modal-exportar-ips');
             Notif.toast(`${ips.length} IP${ips.length !== 1 ? 's' : ''} exportada${ips.length !== 1 ? 's' : ''}`, 'success');
         },
 
         cerrarExportarIps() {
-            MM.cerrar('modal-exportar-ips');
-            setTimeout(() => UI.abrirAjustes(), 150);
+            MM.cerrarConPadre('modal-exportar-ips');
         },
 
         toggleCheckboxesExportarIps() {
@@ -7538,7 +7674,7 @@
                 };
             }
 
-            MM.abrir('modal-parseador-nuevos-disp');
+            MM.abrirConPadre('modal-parseador-nuevos-disp');
         }
 
         function _crearNuevosDisp(lista) {
@@ -7558,7 +7694,7 @@
                 if (nuevo) Store.data.dispositivos.push(nuevo);
             });
             Store.guardar(); render();
-            MM.cerrar('modal-parseador-nuevos-disp');
+            MM.cerrarConPadre('modal-parseador-nuevos-disp');
             Notif.toast(`${lista.length} dispositivo${lista.length !== 1 ? 's' : ''} agregado${lista.length !== 1 ? 's' : ''} a activos`, 'success');
         }
 
@@ -7568,8 +7704,7 @@
             } else if (_pasoActual === 'preview') {
                 _setStep('mapping');
             } else {
-                MM.cerrar('modal-parseador-canales');
-                setTimeout(() => UI.abrirAjustes(), 180);
+                MM.cerrarConPadre('modal-parseador-canales');
             }
         }
 
@@ -7605,8 +7740,8 @@
         function abrir() {
             _resetUI();
             _iniciarDropzone();
-            MM.cerrar('modal-ajustes');
-            setTimeout(() => MM.abrir('modal-parseador-canales', { onEscape: () => accionCancelar() }), 180);
+            MM.abrirConPadre('modal-parseador-canales');
+            MM.registrarAccionVolver('modal-parseador-canales', () => accionCancelar());
         }
 
         return { abrir, accionCancelar, mostrarPreview, aplicar };
@@ -7934,7 +8069,7 @@
                 });
 
                 Store.guardar(); render();
-                MM.cerrar('modal-parseador-datos');
+                MM.cerrarConPadre('modal-parseador-datos');
 
                 const partes = [];
                 if (actualizaciones.length) partes.push(`${actualizaciones.length} actualizado${actualizaciones.length !== 1 ? 's' : ''}`);
@@ -7946,8 +8081,7 @@
                 if (_pasoActual === 'preview') {
                     _setStep('upload');
                 } else {
-                    MM.cerrar('modal-parseador-datos');
-                    setTimeout(() => UI.abrirAjustes(), 180);
+                    MM.cerrarConPadre('modal-parseador-datos');
                 }
             }
 
@@ -7987,8 +8121,8 @@
                 if (cont) cont.innerHTML = '';
                 _setStep('upload');
                 _iniciarDropzone();
-                MM.cerrar('modal-ajustes');
-                setTimeout(() => MM.abrir('modal-parseador-datos', { onEscape: () => accionCancelar() }), 180);
+                MM.abrirConPadre('modal-parseador-datos');
+                MM.registrarAccionVolver('modal-parseador-datos', () => accionCancelar());
             }
 
             return { abrir, aplicar, accionCancelar };
@@ -8003,7 +8137,7 @@
         on('btn-parseador-cancelar', 'click', () => ParseadorCanales.accionCancelar());
         on('btn-parseador-ver-cambios', 'click', () => ParseadorCanales.mostrarPreview());
         on('btn-parseador-aplicar', 'click', () => ParseadorCanales.aplicar());
-        on('btn-parseador-nuevos-cerrar', 'click', () => MM.cerrar('modal-parseador-nuevos-disp'));
+        on('btn-parseador-nuevos-cerrar', 'click', () => MM.cerrarConPadre('modal-parseador-nuevos-disp'));
 
         on('label-recordar-grupos', 'click', () => UI.toggleRecordarGrupos());
         on('btn-ajustes-gist-subir', 'click', () => GistSync.subir());
@@ -8036,13 +8170,13 @@
 
         // Modal gist novedades
         document.querySelector('#modal-gist-novedades .btn-cancel')
-            ?.addEventListener('click', () => MM.cerrar('modal-gist-novedades'));
+            ?.addEventListener('click', () => MM.cerrarConPadre('modal-gist-novedades'));
         document.getElementById('gist-novedades-ignorar')
-            ?.addEventListener('click', () => MM.cerrar('modal-gist-novedades'));
+            ?.addEventListener('click', () => MM.cerrarConPadre('modal-gist-novedades'));
 
         // Modal gist detalle
         document.getElementById('gist-detalle-volver')
-            ?.addEventListener('click', () => MM.cerrar('modal-gist-detalle'));
+            ?.addEventListener('click', () => MM.cerrarConPadre('modal-gist-detalle'));
 
         // Scroll top
         on('btn-scroll-top', 'click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
@@ -8131,7 +8265,7 @@
         on('btn-reemplazar', 'click', () => UI.importarDatos('replace'));
         on('btn-combinar', 'click', () => UI.importarDatos('merge'));
         document.querySelector('#modal-importar .btn-cancel')
-            ?.addEventListener('click', () => { UI.cerrarImportar(); setTimeout(() => UI.abrirAjustes(), 150); });
+            ?.addEventListener('click', () => UI.cerrarImportar());
 
         // Modal filtros búsqueda
         on('btn-toggle-all-filtros', 'click', () => UI.toggleTodosFiltros());

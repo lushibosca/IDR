@@ -465,150 +465,255 @@ const historial = (() => {
 
 
 // ═══════════════════════════════════════════════════════
-//  GESTOR DE MODALES Y BOTÓN ATRÁS (ANDROID/BROWSER)
 // ═══════════════════════════════════════════════════════
-const HistoryLock = {
-    isPopping: false,
-    ignoreNextPop: false,
-    executePopped: function(callback) {
-        this.isPopping = true;
-        callback();
-        // Damos 300ms para cubrir holgadamente los 150ms de transición de UI._nav
-        setTimeout(() => { this.isPopping = false; }, 300);
-    }
-};
-
-window.addEventListener('popstate', (e) => {
-    // Si la acción de volver atrás fue programática (botón "X" o "Volver"), la ignoramos
-    if (HistoryLock.ignoreNextPop) {
-        HistoryLock.ignoreNextPop = false;
-        return;
-    }
-    
-    // Si el usuario tocó "Atrás" físicamente
-    const abiertos = [...document.querySelectorAll('.modal.show')];
-    if (abiertos.length > 0) {
-        HistoryLock.executePopped(() => {
-            MM.cerrarTop();
-        });
-    }
-});
-
+//  MODAL MANAGER (PATRÓN HORARIOS UNIFICADO)
+// ═══════════════════════════════════════════════════════
 const MM = (() => {
+    const _padres = {};
+    const _accionesVolver = {};
+
+    let _navegandoHaciaAtras = false;
+    let _ignorandoPopstate = false;
+    let _enAlternanciaHaciaAdelante = false;
+    let _enAlternanciaHaciaAtras = false;
     let _mdDown = false;
-    const _onCerrar = {};
-    const ModalStack = [];
-    let closeTimeout = null;
+
+    // ── Focus trap ──────────────────────────────────────────
+    const FOCUSABLE = [
+        'a[href]', 'button:not([disabled])', 'input:not([disabled])',
+        'select:not([disabled])', 'textarea:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])'
+    ].join(',');
+    const _trapHandlers = new Map();
+    const _prevFocus = new Map();
+
+    function _instalarTrap(m) {
+        _prevFocus.set(m.id, document.activeElement);
+        const focusables = () => Array.from(m.querySelectorAll(FOCUSABLE)).filter(el => !el.closest('[hidden]'));
+        setTimeout(() => { focusables()[0]?.focus(); }, 50);
+
+        function _onTab(e) {
+            if (e.key !== 'Tab') return;
+            const elems = focusables();
+            if (!elems.length) { e.preventDefault(); return; }
+            const first = elems[0], last = elems[elems.length - 1];
+            if (e.shiftKey) {
+                if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+            } else {
+                if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+        }
+        m.addEventListener('keydown', _onTab);
+        _trapHandlers.set(m.id, _onTab);
+    }
+
+    function _removerTrap(m) {
+        const handler = _trapHandlers.get(m.id);
+        if (handler) { m.removeEventListener('keydown', handler); _trapHandlers.delete(m.id); }
+        const prev = _prevFocus.get(m.id);
+        if (prev && typeof prev.focus === 'function') { try { prev.focus(); } catch (_) { } }
+        _prevFocus.delete(m.id);
+    }
+    // ────────────────────────────────────────────────────────
+
+    function registrarAccionVolver(modalId, fn) {
+        _accionesVolver[modalId] = fn;
+    }
+
+    function _getAccionVolver(modalId) {
+        return _accionesVolver[modalId] || null;
+    }
+
+    function _ejecutarAccionCierre(modalId) {
+        const accionVolver = _getAccionVolver(modalId);
+        if (typeof accionVolver === 'function') {
+            accionVolver();
+            return;
+        }
+        const padreId = _padres[modalId];
+        if (padreId) {
+            const padreEl = document.getElementById(padreId);
+            if (padreEl && !padreEl.classList.contains('show')) {
+                alternar(modalId, padreId);
+                return;
+            }
+        }
+        cerrar(modalId);
+    }
+
+    window.addEventListener('popstate', () => {
+        if (_ignorandoPopstate) {
+            _ignorandoPopstate = false;
+            return;
+        }
+
+        _navegandoHaciaAtras = true;
+        const abiertos = Array.from(document.querySelectorAll('.modal.show'));
+        if (abiertos.length > 0) {
+            const topModal = abiertos[abiertos.length - 1];
+            _ejecutarAccionCierre(topModal.id);
+        }
+        setTimeout(() => { _navegandoHaciaAtras = false; }, 50);
+    });
 
     function _onMD(e) { _mdDown = e.target === e.currentTarget; }
-    function _onClick(e) { if (!_mdDown) return; if (e.target === e.currentTarget) _cerrarConPadre(e.target.id); }
-    function _cerrarConPadre(id) { const fn = _onCerrar[id]; if (fn) fn(); else cerrar(id); }
-
-    function abrir(id, optsOrCb) {
-        const m = document.getElementById(id); if (!m) return;
-        
-        // Cancelamos cualquier cierre asíncrono pendiente (ej. transiciones con UI._nav)
-        if (closeTimeout) {
-            clearTimeout(closeTimeout);
-            closeTimeout = null;
+    function _onClick(e) {
+        if (!_mdDown) return;
+        if (e.target === e.currentTarget) {
+            _ejecutarAccionCierre(e.target.id);
         }
-
-        let cb, onEscape;
-        if (typeof optsOrCb === 'function') { cb = optsOrCb; }
-        else if (optsOrCb && typeof optsOrCb === 'object') { cb = optsOrCb.cb; onEscape = optsOrCb.onEscape; }
-        if (onEscape) { _onCerrar[id] = onEscape; } else { delete _onCerrar[id]; }
-        
-        // --- Sincronización estricta con el historial del navegador ---
-        if (HistoryLock.isPopping) {
-            // El navegador ya retrocedió físicamente, solo ajustamos nuestro stack local
-            const idx = ModalStack.indexOf(id);
-            if (idx !== -1) {
-                ModalStack.splice(idx + 1);
-            } else {
-                ModalStack.push(id);
-            }
-        } else {
-            const idx = ModalStack.indexOf(id);
-            if (idx !== -1) {
-                // Estamos volviendo a un padre anterior mediante botones de la UI ("X")
-                const steps = ModalStack.length - 1 - idx;
-                if (steps > 0) {
-                    HistoryLock.isPopping = true;
-                    HistoryLock.ignoreNextPop = true;
-                    history.go(-steps);
-                    ModalStack.splice(idx + 1);
-                    setTimeout(() => { HistoryLock.isPopping = false; }, 300);
-                }
-            } else {
-                // Estamos abriendo un modal nuevo (hijo o principal)
-                ModalStack.push(id);
-                history.pushState({ isModal: true, id: id }, '', '');
-            }
-        }
-        // --------------------------------------
-
-        m.classList.add('show');
-        document.body.classList.add('modal-open');
-        setTimeout(() => { m.addEventListener('mousedown', _onMD); m.addEventListener('click', _onClick); }, 100);
-        cb?.();
     }
 
-    function cerrar(id, cb) {
-        const m = document.getElementById(id); if (!m) return;
-        delete _onCerrar[id];
-        m.classList.remove('show');
-        cerrarPortalSugerencias();
-        if (!document.querySelector('.modal.show')) document.body.classList.remove('modal-open');
-        m.removeEventListener('mousedown', _onMD);
-        m.removeEventListener('click', _onClick);
-        
-        // --- Sincronización estricta de cierre ---
-        if (HistoryLock.isPopping) {
-            // Limpiamos el modal del stack local
-            const idx = ModalStack.indexOf(id);
-            if (idx !== -1) ModalStack.splice(idx);
-        } else {
-            // Esperamos 200ms a ver si se abre otro modal (transición de UI._nav). 
-            // Si no se abre ninguno, retrocedemos el historial de forma nativa.
-            closeTimeout = setTimeout(() => {
-                if (ModalStack.length > 0) {
-                    ModalStack.pop();
-                    HistoryLock.ignoreNextPop = true;
-                    history.back();
-                }
-            }, 200);
-        }
-        // -----------------------------------------
+    function abrir(modalId, optsOrCb) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
 
-        cb?.();
+        let cb, onEscape, padre;
+        if (typeof optsOrCb === 'function') {
+            cb = optsOrCb;
+        } else if (optsOrCb && typeof optsOrCb === 'object') {
+            cb = optsOrCb.cb;
+            onEscape = optsOrCb.onEscape;
+            padre = optsOrCb.padre;
+        }
+
+        if (onEscape) {
+            _accionesVolver[modalId] = onEscape;
+        } else {
+            delete _accionesVolver[modalId];
+        }
+
+        if (padre) {
+            _padres[modalId] = padre;
+        }
+
+        modal.classList.add('show');
+        document.body.classList.add('modal-open');
+
+        if (!_navegandoHaciaAtras && !_enAlternanciaHaciaAtras) {
+            history.pushState({ modalId }, '');
+        }
+
+        setTimeout(() => {
+            modal.addEventListener('mousedown', _onMD);
+            modal.addEventListener('click', _onClick);
+        }, 100);
+
+        _instalarTrap(modal);
+        if (typeof cb === 'function') cb();
+    }
+
+    function cerrar(modalId, callback = null) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+
+        const estabaAbierto = modal.classList.contains('show');
+        delete _accionesVolver[modalId];
+        modal.classList.remove('show');
+        if (typeof cerrarPortalSugerencias === 'function') cerrarPortalSugerencias();
+
+        if (document.querySelectorAll('.modal.show').length === 0) {
+            document.body.classList.remove('modal-open');
+        }
+
+        modal.removeEventListener('mousedown', _onMD);
+        modal.removeEventListener('click', _onClick);
+        _removerTrap(modal);
+
+        if (estabaAbierto && !_navegandoHaciaAtras && !_enAlternanciaHaciaAdelante) {
+            _ignorandoPopstate = true;
+            history.back();
+        }
+
+        if (typeof callback === 'function') callback();
+    }
+
+    function alternar(modalIdCerrar, modalIdAbrir, callbackCerrar = null, callbackAbrir = null) {
+        const esHaciaAtras = (_padres[modalIdCerrar] === modalIdAbrir);
+
+        if (esHaciaAtras) {
+            _enAlternanciaHaciaAtras = true;
+            delete _padres[modalIdCerrar];
+        } else {
+            _enAlternanciaHaciaAdelante = true;
+            if (modalIdCerrar && modalIdAbrir) {
+                _padres[modalIdAbrir] = modalIdCerrar;
+            }
+        }
+
+        cerrar(modalIdCerrar, callbackCerrar);
+        abrir(modalIdAbrir, callbackAbrir);
+
+        _enAlternanciaHaciaAdelante = false;
+        _enAlternanciaHaciaAtras = false;
+    }
+
+    function abrirConPadre(modalId, setupFn = null) {
+        const modalAbierto = document.querySelector('.modal.show');
+        const padre = modalAbierto ? modalAbierto.id : null;
+        if (typeof setupFn === 'function') setupFn();
+        if (padre) {
+            alternar(padre, modalId);
+        } else {
+            abrir(modalId);
+        }
+    }
+
+    function cerrarConPadre(modalId, callbackAbrirPadre = null) {
+        const padre = _padres[modalId];
+        if (padre) {
+            alternar(modalId, padre, null, callbackAbrirPadre ? () => callbackAbrirPadre(padre) : null);
+        } else {
+            cerrar(modalId);
+        }
     }
 
     function cerrarTodos() {
-        const abiertos = document.querySelectorAll('.modal.show');
-        abiertos.forEach(m => {
-            delete _onCerrar[m.id];
-            m.classList.remove('show');
-            m.removeEventListener('mousedown', _onMD);
-            m.removeEventListener('click', _onClick);
+        document.querySelectorAll('.modal.show').forEach(modal => {
+            delete _accionesVolver[modal.id];
+            modal.classList.remove('show');
+            modal.removeEventListener('mousedown', _onMD);
+            modal.removeEventListener('click', _onClick);
+            _removerTrap(modal);
         });
+        Object.keys(_padres).forEach(k => delete _padres[k]);
         document.body.classList.remove('modal-open');
-        
-        if (!HistoryLock.isPopping && ModalStack.length > 0) {
-            HistoryLock.ignoreNextPop = true;
-            history.go(-ModalStack.length);
-            ModalStack.length = 0;
-        }
     }
 
     function cerrarTop() {
-        const abiertos = [...document.querySelectorAll('.modal.show')];
+        const abiertos = Array.from(document.querySelectorAll('.modal.show'));
         if (!abiertos.length) return;
-        const conHandler = abiertos.filter(m => _onCerrar[m.id]);
-        const target = conHandler.length ? conHandler[conHandler.length - 1] : abiertos[abiertos.length - 1];
-        _cerrarConPadre(target.id);
+        const topModal = abiertos[abiertos.length - 1];
+        _ejecutarAccionCierre(topModal.id);
     }
 
-    return { abrir, cerrar, cerrarTodos, cerrarTop };
+    // Compatibilidad para transiciones legacy
+    function nav(desde, fn) {
+        if (desde) {
+            const mDesde = document.getElementById(desde);
+            if (mDesde && mDesde.classList.contains('show')) {
+                _enAlternanciaHaciaAdelante = true;
+                cerrar(desde);
+                _enAlternanciaHaciaAdelante = false;
+            }
+        }
+        if (typeof fn === 'function') fn();
+    }
+
+    return {
+        abrir,
+        cerrar,
+        alternar,
+        abrirConPadre,
+        cerrarConPadre,
+        cerrarTodos,
+        cerrarTop,
+        registrarAccionVolver,
+        ejecutarAccionCierre: _ejecutarAccionCierre,
+        getPadre: (id) => _padres[id] || null,
+        setPadre: (id, padreId) => { if (id && padreId) _padres[id] = padreId; },
+        nav
+    };
 })();
 
 // ═══════════════════════════════════════════════════════
@@ -761,7 +866,7 @@ window.mostrarToast = mostrarToast;
 window.toast = toast;
 
 // ═══════════════════════════════════════════════════════
-//  CONFIRMAR (con retorno a modal padre)
+//  CONFIRMAR
 // ═══════════════════════════════════════════════════════
 let _confirmarCb = null;
 let _confirmarPadreId = null;
@@ -771,23 +876,18 @@ function confirmar(titulo, texto, cb) {
     document.getElementById('confirmar-texto').textContent = texto;
     _confirmarCb = cb;
 
-    // guardar el modal padre que esté abierto en este momento (si hay)
-    const abiertos = [...document.querySelectorAll('.modal.show')];
+    const abiertos = Array.from(document.querySelectorAll('.modal.show'));
     _confirmarPadreId = abiertos.length ? abiertos[abiertos.length - 1].id : null;
 
     MM.abrir('modal-confirmar', {
+        padre: _confirmarPadreId,
         onEscape: () => _volverAlPadre()
     });
 }
 
 function _volverAlPadre() {
-    MM.cerrar('modal-confirmar');
     _confirmarCb = null;
-    if (_confirmarPadreId) {
-        const id = _confirmarPadreId;
-        _confirmarPadreId = null;
-        setTimeout(() => MM.abrir(id), 50);
-    }
+    MM.cerrar('modal-confirmar');
 }
 
 // Handlers de confirmar registrados en el IIFE de init (ver abajo)
@@ -1333,13 +1433,18 @@ function eliminarHerramienta(id) {
 const UI = {
     // Helper: cierra `desde`, espera 150ms, ejecuta `fn`
     _nav(desde, fn) {
-        MM.cerrar(desde);
-        setTimeout(fn, 150);
+        if (desde) {
+            const mDesde = document.getElementById(desde);
+            if (mDesde && mDesde.classList.contains('show')) {
+                MM.cerrar(desde);
+            }
+        }
+        if (typeof fn === 'function') fn();
     },
 
     // Helper: cierra un modal hijo y vuelve a ajustes
     _cerrarAjustesHijo(id) {
-        UI._nav(id, () => UI.abrirAjustes());
+        MM.alternar(id, 'modal-ajustes');
     },
 
     abrirAjustes() {
@@ -1347,10 +1452,8 @@ const UI = {
     },
 
     abrirCategorias() {
-        UI._nav('modal-ajustes', () => {
-            renderCategorias();
-            MM.abrir('modal-categorias', { onEscape: () => UI.cerrarCategorias() });
-        });
+        renderCategorias();
+        MM.alternar('modal-ajustes', 'modal-categorias');
     },
 
     cerrarCategorias() {
@@ -1358,27 +1461,19 @@ const UI = {
     },
 
     abrirImportar() {
-        UI._nav('modal-ajustes', () => {
-            // Reset del estado del modal
-            document.getElementById('importar-file-input').value = '';
-            document.getElementById('importar-dropzone-label').textContent = 'Seleccioná o arrastrá un archivo .json';
-            document.getElementById('importar-dropzone').style.borderColor = '';
-            document.getElementById('importar-confirmar-btn').disabled = true;
-            document.getElementById('importar-combinar-btn').disabled = true;
-            _importarParsed = null;
+        // Reset del estado del modal
+        document.getElementById('importar-file-input').value = '';
+        document.getElementById('importar-dropzone-label').textContent = 'Seleccioná o arrastrá un archivo .json';
+        document.getElementById('importar-dropzone').style.borderColor = '';
+        document.getElementById('importar-confirmar-btn').disabled = true;
+        document.getElementById('importar-combinar-btn').disabled = true;
+        _importarParsed = null;
 
-            // Abrimos el modal y pasamos un callback (cb)
-            MM.abrir('modal-importar', {
-                onEscape: () => UI.cerrarImportar(),
-                cb: () => {
-                    // Pequeño delay (400ms) para que la animación del modal 
-                    // termine antes de que salte la ventana del sistema
-                    setTimeout(() => {
-                        document.getElementById('importar-file-input').click();
-                    }, 400);
-                }
-            });
-        });
+        MM.alternar('modal-ajustes', 'modal-importar');
+
+        setTimeout(() => {
+            document.getElementById('importar-file-input')?.click();
+        }, 400);
     },
 
     cerrarImportar() {
@@ -1386,10 +1481,8 @@ const UI = {
     },
 
     abrirGist() {
-        UI._nav('modal-ajustes', () => {
-            GistSync.poblarModal();
-            MM.abrir('modal-gist', { onEscape: () => UI.cerrarGist() });
-        });
+        GistSync.poblarModal();
+        MM.alternar('modal-ajustes', 'modal-gist');
     },
 
     cerrarGist() {
@@ -1397,7 +1490,7 @@ const UI = {
     },
 
     abrirShortcuts() {
-        UI._nav('modal-ajustes', () => MM.abrir('modal-shortcuts', { onEscape: () => UI.cerrarShortcuts() }));
+        MM.alternar('modal-ajustes', 'modal-shortcuts');
     },
 
     cerrarShortcuts() {
@@ -1407,73 +1500,61 @@ const UI = {
     abrirReporte() {
         generarReporte();
         if (!state.materiales.length) return; // generarReporte ya emitió el toast
-        UI._nav('modal-ajustes', () => MM.abrir('modal-reporte', { onEscape: () => UI.cerrarReporte() }));
+        MM.alternar('modal-ajustes', 'modal-reporte');
     },
 
     cerrarReporte() {
         UI._cerrarAjustesHijo('modal-reporte');
     },
 
-    _herrPadreId: null, // <--- Nueva variable para recordar de dónde venimos
+    _herrPadreId: null, // <--- Variable para recordar origen si fuera necesario
 
     abrirHerramientas(origen = null) {
         if (origen) this._herrPadreId = origen;
+        renderHerramientas();
 
         if (this._herrPadreId === 'ajustes' && origen === 'ajustes') {
-            // Flujo 1: Venimos desde Ajustes
-            UI._nav('modal-ajustes', () => {
-                renderHerramientas();
-                MM.abrir('modal-herramientas', { onEscape: () => UI.cerrarHerramientas() });
-            });
+            MM.alternar('modal-ajustes', 'modal-herramientas');
         } else {
-            // Flujo 2: Venimos del FAB o estamos volviendo desde "Nueva Herramienta"
-            renderHerramientas();
-            MM.abrir('modal-herramientas', { onEscape: () => UI.cerrarHerramientas() });
+            MM.abrir('modal-herramientas');
         }
     },
 
     cerrarHerramientas() {
-        // Al cerrar la lista, decidimos a dónde ir según el origen original
         if (this._herrPadreId === 'ajustes') {
             this._herrPadreId = null;
             UI._cerrarAjustesHijo('modal-herramientas');
         } else {
             this._herrPadreId = null;
-            MM.cerrar('modal-herramientas'); // Cierra directo a la pantalla principal
+            MM.cerrar('modal-herramientas');
         }
     },
 
     abrirNuevaHerramienta(origen = null) {
         if (origen) this._herrPadreId = origen;
 
-        const accionAbrir = () => {
+        const accionSetup = () => {
             const fechaEl = document.getElementById('herr-fecha-input');
             if (fechaEl) fechaEl.value = getHoyLocal();
 
-            // Prepara las líneas si tenés la carga múltiple activa
             if (typeof _lineasState !== 'undefined' && _lineasState.herramienta) {
                 _lineasState.herramienta.lineas = [];
                 _lineasState.herramienta.counter = 0;
                 agregarLinea('herramienta');
             }
-
-            MM.abrir('modal-herramienta-nuevo', { onEscape: () => UI.cerrarNuevaHerramienta() });
         };
 
-        // Si venimos del modal de la lista, lo cerramos con animación suave primero
+        accionSetup();
         const modalLista = document.getElementById('modal-herramientas');
         if (modalLista && modalLista.classList.contains('show')) {
-            UI._nav('modal-herramientas', accionAbrir);
+            MM.alternar('modal-herramientas', 'modal-herramienta-nuevo');
         } else {
-            accionAbrir(); // Si venimos del FAB, abrimos directo
+            MM.abrir('modal-herramienta-nuevo');
         }
     },
 
     cerrarNuevaHerramienta() {
-        UI._nav('modal-herramienta-nuevo', () => {
-            // Regresa a la lista general, la cual sabe cómo cerrarse gracias a _herrPadreId
-            UI.abrirHerramientas();
-        });
+        MM.cerrarConPadre('modal-herramienta-nuevo', () => renderHerramientas());
     },
 
     // ──  Gestor de Long Press para los meses ──
