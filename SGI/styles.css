@@ -1659,11 +1659,16 @@
         .cat-input-row {
             display: flex;
             gap: 0.5rem;
-            margin-bottom: 0.85rem;
+            margin-bottom: 0;
         }
 
         .cat-input-row input {
             flex: 1;
+            min-width: 0;
+        }
+
+        .cat-input-row button {
+            flex: 0 0 40px;
         }
 
         /* ── Importar dropzone ── */

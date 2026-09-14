@@ -930,22 +930,22 @@
                 </h3>
             </div>
             <div class="modal-body">
-                <div class="cat-input-row">
-                    <input type="text" id="cat-nueva-input" placeholder="Nueva categoría…" autocomplete="off"
-                        class="input-flex">
-                    <button class="icon-btn" id="cat-agregar-btn">
-                        <svg class="svg-icon">
-                            <use href="#icon-add" />
-                        </svg>
-                    </button>
-                </div>
                 <div id="lista-categorias"></div>
                 <div id="categorias-empty" class="empty-state empty-state-hidden cat-empty">
                     <div class="empty-icon">🏷️</div>
                     <p>No hay categorías declaradas.</p>
                 </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer modal-footer-col">
+                <div class="cat-input-row">
+                    <input type="text" id="cat-nueva-input" placeholder="Nueva categoría…" autocomplete="off"
+                        class="input-flex">
+                    <button class="icon-btn" id="cat-agregar-btn" title="Agregar categoría">
+                        <svg class="svg-icon">
+                            <use href="#icon-add" />
+                        </svg>
+                    </button>
+                </div>
                 <button class="btn-full" id="cat-cerrar-btn">
                     <svg class="svg-icon">
                         <use href="#icon-back" />
