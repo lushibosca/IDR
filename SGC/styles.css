@@ -1783,7 +1783,6 @@ button:disabled {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: var(--sp-4);
-    margin-bottom: var(--sp-5);
 }
 
 .stat-chip {
@@ -1883,7 +1882,7 @@ button:disabled {
     gap: var(--sp-5);
     align-items: stretch;
     width: 100%;
-    padding: 16px;
+    padding: 0.25rem;
     box-sizing: border-box;
 }
 
@@ -2947,6 +2946,21 @@ button:disabled {
     /* IP ocupa su lugar limpiamente */
     .activo-info-derecha .ip-copiable {
         text-align: left;
+    }
+
+    /* ── Dropdown de filtros de búsqueda móvil ── */
+    #dropdown-filtros {
+        width: 250px;
+        max-width: calc(100vw - 24px);
+    }
+
+    #filtros-busqueda-lista {
+        grid-template-columns: 1fr;
+        gap: 0;
+        padding: 0;
+        max-height: min(280px, calc(100vh - 160px));
+        max-height: min(280px, calc(100dvh - 160px));
+        overflow-y: auto;
     }
 }
 
