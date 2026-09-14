@@ -2057,10 +2057,14 @@ button:disabled {
 }
 
 .dash-grab-col {
+    display: flex;
+    flex-direction: column;
     text-align: center;
 }
 
 .dash-grab-col--mid {
+    display: flex;
+    flex-direction: column;
     text-align: center;
     border-left: 1px solid var(--border);
     border-right: 1px solid var(--border);
@@ -2076,6 +2080,7 @@ button:disabled {
 }
 
 .dash-grab-val {
+    margin-top: auto;
     font-size: 1.3rem;
     font-weight: 700;
     color: var(--text-main);
