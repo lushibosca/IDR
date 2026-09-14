@@ -193,7 +193,7 @@ body {
     -webkit-user-select: none;
     user-select: none;
     -webkit-user-drag: none;
-    animation: fadeInUp 0.6s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+    animation: fadeInBlur 0.6s cubic-bezier(0.25, 1, 0.5, 1) backwards;
 }
 
 /* Iconos grandes */
@@ -286,7 +286,7 @@ html.dark-mode .app-card:focus-visible {
 }
 
 .app-card.exiting {
-    animation: fadeOutDown 0.4s cubic-bezier(0.25, 1, 0.5, 1) both;
+    animation: fadeOutBlur 0.4s cubic-bezier(0.25, 1, 0.5, 1) both;
     pointer-events: none;
 }
 
@@ -318,30 +318,59 @@ html.dark-mode .app-card:focus-visible {
     pointer-events: none;
     /* Mantiene el borde estático anulando el color del tema */
     border-color: var(--border) !important;
+    animation-name: fadeInBlurDisabled;
 }
 
-/* --- Animación de salida --- */
-@keyframes fadeOutDown {
-    from {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    to {
-        opacity: 0;
-        transform: translateY(20px);
-    }
+.app-card.disabled.exiting {
+    animation-name: fadeOutBlurDisabled;
 }
 
-@keyframes fadeInUp {
+/* --- Animaciones con Blur en el mismo sitio --- */
+@keyframes fadeInBlur {
     from {
         opacity: 0;
-        translate: 0 20px;
+        filter: blur(10px);
     }
 
     to {
         opacity: 1;
-        translate: 0 0;
+        filter: blur(0);
+    }
+}
+
+@keyframes fadeOutBlur {
+    from {
+        opacity: 1;
+        filter: blur(0);
+    }
+
+    to {
+        opacity: 0;
+        filter: blur(10px);
+    }
+}
+
+@keyframes fadeInBlurDisabled {
+    from {
+        opacity: 0;
+        filter: grayscale(100%) blur(10px);
+    }
+
+    to {
+        opacity: 0.5;
+        filter: grayscale(100%) blur(0);
+    }
+}
+
+@keyframes fadeOutBlurDisabled {
+    from {
+        opacity: 0.5;
+        filter: grayscale(100%) blur(0);
+    }
+
+    to {
+        opacity: 0;
+        filter: grayscale(100%) blur(10px);
     }
 }
 
