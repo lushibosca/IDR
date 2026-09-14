@@ -1128,6 +1128,9 @@
 
         function validarCampoMAC(elementId) {
             const el = document.getElementById(elementId);
+            if (el && el.value && el.value.endsWith(':')) {
+                el.value = el.value.slice(0, -1);
+            }
             const raw = el?.value.trim() || '';
             if (!raw) { el.classList.remove('error'); return true; }
             const tokens = raw.split(',').map(t => t.trim()).filter(Boolean);
@@ -1405,7 +1408,7 @@
         // ── Limpiar forms ─────────────────────────────────────────────────────
         function limpiarFormDisp(prefijo) {
             [`${prefijo}-marca`, `${prefijo}-modelo`, `${prefijo}-serial`, `${prefijo}-mac`, `${prefijo}-patrimonio`].forEach(id => {
-                const el = document.getElementById(id); if (el) { el.value = ''; el.classList.remove('error'); }
+                const el = document.getElementById(id); if (el) { el.value = ''; el.classList.remove('error'); el._prevLen = 0; }
             });
             const tipoEl = document.getElementById(`${prefijo}-tipo`);
             tipoEl.value = ''; tipoEl.classList.remove('error');
@@ -5777,6 +5780,71 @@
             }
         },
 
+        _macFiltrar(input, e) {
+            if (!input) return;
+            const raw = input.value;
+            if (/^sin/i.test(raw.trim())) return;
+
+            let isDeleting = false;
+            if (e?.inputType) {
+                isDeleting = e.inputType.startsWith('delete');
+            } else if (input._prevLen !== undefined) {
+                isDeleting = input.value.length < input._prevLen;
+            }
+
+            const oldCursor = input.selectionStart ?? raw.length;
+            const hexBeforeCursor = raw.slice(0, oldCursor).replace(/[^0-9A-Fa-f]/g, '').length;
+
+            const hex = raw.replace(/[^0-9A-Fa-f]/g, '').toUpperCase().slice(0, 12);
+            if (!hex) {
+                input.value = '';
+                input._prevLen = 0;
+                return;
+            }
+
+            const parts = [];
+            for (let i = 0; i < hex.length; i += 2) {
+                parts.push(hex.slice(i, i + 2));
+            }
+
+            let formatted = parts.join(':');
+            if (!isDeleting && hex.length < 12 && hex.length % 2 === 0) {
+                formatted += ':';
+            }
+
+            input.value = formatted;
+            input._prevLen = formatted.length;
+
+            let newCursor = 0;
+            let hexCount = 0;
+            for (let i = 0; i < formatted.length; i++) {
+                if (/[0-9A-Fa-f]/.test(formatted[i])) {
+                    hexCount++;
+                }
+                if (hexCount === hexBeforeCursor) {
+                    newCursor = i + 1;
+                    if (!isDeleting && formatted[newCursor] === ':') {
+                        newCursor++;
+                    }
+                    break;
+                }
+            }
+            if (hexBeforeCursor === 0) newCursor = 0;
+            if (newCursor > formatted.length) newCursor = formatted.length;
+
+            try {
+                input.setSelectionRange(newCursor, newCursor);
+            } catch (_) {}
+        },
+
+        _macBlur(input) {
+            if (!input) return;
+            if (input.value.endsWith(':')) {
+                input.value = input.value.slice(0, -1);
+                input._prevLen = input.value.length;
+            }
+        },
+
         cerrarModalCanal() {
             EdicionState.edicion.canalGrabId = null;
             EdicionState.edicion.canalN = null;
@@ -8206,6 +8274,8 @@
 
         // Modal nuevo dispositivo
         on('nuevo-disp-tipo', 'change', () => UI.onDispTipoChange('nuevo-disp'));
+        on('nuevo-disp-mac', 'input', (e) => UI._macFiltrar(document.getElementById('nuevo-disp-mac'), e));
+        on('nuevo-disp-mac', 'blur', () => UI._macBlur(document.getElementById('nuevo-disp-mac')));
         document.querySelector('#modal-nuevo-disp .btn-edit')
             ?.addEventListener('click', () => UI.guardarNuevoDispositivo());
         document.querySelector('#modal-nuevo-disp .btn-cancel')
@@ -8213,6 +8283,8 @@
 
         // Modal editar dispositivo
         on('editar-disp-tipo', 'change', () => UI.onDispTipoChange('editar-disp'));
+        on('editar-disp-mac', 'input', (e) => UI._macFiltrar(document.getElementById('editar-disp-mac'), e));
+        on('editar-disp-mac', 'blur', () => UI._macBlur(document.getElementById('editar-disp-mac')));
         on('btn-estado-disp', 'click', (e) => UI.toggleDropdownEstadoDisp(e));
         document.getElementById('dropdown-estado-disp')?.addEventListener('click', e => {
             const item = e.target.closest('.canal-disp-item[data-estado]');
