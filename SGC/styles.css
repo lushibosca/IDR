@@ -419,7 +419,7 @@ button {
     padding: var(--sp-4) var(--sp-5);
     border: 1px solid transparent;
     border-radius: var(--radius);
-    font-weight: 600;
+    font-weight: 500;
     font-size: var(--fs-lg);
     cursor: pointer;
     transition: transform 0.2s, background 0.2s, filter 0.15s;
@@ -650,7 +650,7 @@ button:disabled {
     cursor: pointer;
     text-transform: none;
     font-weight: 600;
-    font-size: 0.85em;
+    font-size: var(--fs-md);
     transition: opacity 0.2s ease;
 }
 
