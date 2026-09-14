@@ -37,12 +37,30 @@
     --bg-toast: #1a1d23;
     --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
     --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
-    --radius: 16px;
+    --radius: 20px;
     --radius-sm: 8px;
+    --border-w: 1.5px;
     --t-fast: 0.15s ease;
     --t-ui: 0.2s ease;
     --t-modal: 0.25s ease;
     --t-spring: cubic-bezier(0.34,1.56,0.64,1);
+
+    /* Escala tipográfica */
+    --fs-xs: 0.7rem;
+    --fs-sm: 0.75rem;
+    --fs-base: 0.8rem;
+    --fs-md: 0.85rem;
+    --fs-lg: 0.9rem;
+    --fs-xl: 1rem;
+    --fs-2xl: 1.1rem;
+
+    /* Botones y controles estándar */
+    --btn-fs: 0.9rem;
+    --btn-fw: 600;
+    --btn-pad-y: 0.75rem;
+    --btn-pad-x: 1rem;
+    --btn-padding: var(--btn-pad-y) var(--btn-pad-x);
+    --btn-icon-size: 40px;
 
     /* patchera jack colors */
     --jack-empty-bg: #e0e4ef;
@@ -99,7 +117,7 @@ label{display:block;font-size:0.76rem;font-weight:600;color:var(--text-muted);ma
 .header-logo svg{width:26px;height:26px;fill:var(--accent);flex-shrink:0;}
 .header-title{font-size:1.05rem;font-weight:700;letter-spacing:-0.01em;white-space:nowrap;}
 .header-actions{margin-left:auto;display:flex;gap:0.35rem;align-items:center;}
-.icon-btn{width:36px;height:36px;border:none;border-radius:50%;background:transparent;color:var(--text-main);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background var(--t-fast);}
+.icon-btn{width:var(--btn-icon-size);height:var(--btn-icon-size);border:none;border-radius:50%;background:transparent;color:var(--text-main);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background var(--t-fast);}
 .icon-btn:hover{background:var(--c-gray-btn);}
 .icon-btn:disabled{opacity:0.35;cursor:not-allowed;}
 .icon-btn-spinning{animation:spin 0.8s linear infinite;}
@@ -120,12 +138,12 @@ label{display:block;font-size:0.76rem;font-weight:600;color:var(--text-muted);ma
 /* ══════════════════════════════════════════════
    5. BOTONES
 ══════════════════════════════════════════════ */
-.btn-primary{background:var(--accent);color:#fff;border:none;border-radius:var(--radius);padding:0.65rem 1.2rem;font-size:0.9rem;font-weight:600;cursor:pointer;transition:filter var(--t-fast);display:flex;align-items:center;gap:0.4rem;font-family:inherit;}
+.btn-primary{background:var(--accent);color:#fff;border:none;border-radius:var(--radius);padding:var(--btn-padding);font-size:var(--btn-fs);font-weight:var(--btn-fw);cursor:pointer;transition:filter var(--t-fast);display:flex;align-items:center;gap:0.4rem;font-family:inherit;}
 .btn-primary:hover{filter:brightness(1.1);}
 .btn-primary:active{filter:brightness(0.9);}
-.btn-secondary{background:var(--c-gray-btn);color:var(--text-main);border:none;border-radius:var(--radius);padding:0.65rem 1.2rem;font-size:0.9rem;font-weight:600;cursor:pointer;transition:filter var(--t-fast);display:flex;align-items:center;gap:0.4rem;font-family:inherit;}
+.btn-secondary{background:var(--c-gray-btn);color:var(--text-main);border:none;border-radius:var(--radius);padding:var(--btn-padding);font-size:var(--btn-fs);font-weight:var(--btn-fw);cursor:pointer;transition:filter var(--t-fast);display:flex;align-items:center;gap:0.4rem;font-family:inherit;}
 .btn-secondary:hover{filter:brightness(0.95);}
-.btn-danger{background:var(--c-red-bg);color:var(--c-red);border:1.5px solid var(--c-red);border-radius:var(--radius);padding:0.65rem 1.2rem;font-size:0.9rem;font-weight:600;cursor:pointer;transition:filter var(--t-fast);display:flex;align-items:center;gap:0.4rem;font-family:inherit;}
+.btn-danger{background:var(--c-red-bg);color:var(--c-red);border:1.5px solid var(--c-red);border-radius:var(--radius);padding:var(--btn-padding);font-size:var(--btn-fs);font-weight:var(--btn-fw);cursor:pointer;transition:filter var(--t-fast);display:flex;align-items:center;gap:0.4rem;font-family:inherit;}
 .btn-danger:hover{filter:brightness(1.05);}
 .btn-flex{justify-content:center;}
 

@@ -27,6 +27,23 @@
     --radius: 20px;
     --radius-lg: 28px;
     --border-w: 1.5px;
+
+    /* Botones y controles estándar */
+    --btn-fs: 0.9rem;
+    --btn-fw: 600;
+    --btn-pad-y: 0.75rem;
+    --btn-pad-x: 1rem;
+    --btn-padding: var(--btn-pad-y) var(--btn-pad-x);
+    --btn-icon-size: 44px;
+
+    /* Escala tipográfica */
+    --fs-xs: 0.7rem;
+    --fs-sm: 0.75rem;
+    --fs-base: 0.8rem;
+    --fs-md: 0.85rem;
+    --fs-lg: 0.9rem;
+    --fs-xl: 1rem;
+    --fs-2xl: 1.1rem;
 }
 
 html.dark-mode body {
@@ -104,8 +121,8 @@ body {
 }
 
 .icon-btn {
-    width: 44px;
-    height: 44px;
+    width: var(--btn-icon-size);
+    height: var(--btn-icon-size);
     border-radius: 50%;
     background: transparent;
     border: none;

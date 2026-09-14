@@ -71,16 +71,26 @@
     --t-theme: 0.3s ease;
 
     /* Escala tipográfica */
-    --fs-xs: 0.72rem;
-    /* badges, labels caps, thead */
-    --fs-sm: 0.80rem;
-    /* texto secundario, rack-badge */
-    --fs-base: 0.88rem;
-    /* tabla, items de lista */
-    --fs-md: 0.92rem;
-    /* inputs, botones, texto normal */
-    --fs-lg: 1rem;
-    /* modal-header, stat-chip-label */
+    --fs-xs: 0.7rem;
+    --fs-sm: 0.75rem;
+    --fs-base: 0.8rem;
+    --fs-md: 0.85rem;
+    --fs-lg: 0.9rem;
+    --fs-xl: 1rem;
+    --fs-2xl: 1.1rem;
+
+    /* Botones y controles estándar */
+    --btn-fs: 0.9rem;
+    --btn-fw: 600;
+    --btn-pad-y: 0.75rem;
+    --btn-pad-x: 1rem;
+    --btn-padding: var(--btn-pad-y) var(--btn-pad-x);
+    --btn-icon-size: 40px;
+
+    /* Pestañas */
+    --tab-fs: 0.85rem;
+    --tab-fw: 600;
+    --tab-padding: 0.55rem 0.6rem;
 }
 
 /* ════════════════════════════════════════════════════════
@@ -279,7 +289,7 @@ body.modal-open {
 }
 
 .modal-header h3 {
-    font-size: var(--fs-lg);
+    font-size: var(--fs-xl);
     font-weight: 700;
 }
 
@@ -331,9 +341,9 @@ body.modal-open {
 
 .tab-btn {
     flex: 1;
-    padding: 0.55rem 0.5rem;
-    font-size: var(--fs-base);
-    font-weight: 700;
+    padding: var(--tab-padding);
+    font-size: var(--tab-fs);
+    font-weight: var(--tab-fw);
     background: transparent;
     border: none;
     border-radius: var(--radius);
@@ -590,7 +600,7 @@ body.modal-open {
 .busq-filtro-item::after {
     content: '\2713';
     color: var(--c-green);
-    font-size: var(--fs-lg);
+    font-size: var(--fs-xl);
     font-weight: 700;
     flex-shrink: 0;
     margin-left: 0.3rem;
@@ -831,7 +841,7 @@ textarea {
     padding: 0.65rem 0.85rem;
     border: var(--border-w) solid var(--border);
     border-radius: var(--radius);
-    font-size: var(--fs-md);
+    font-size: var(--fs-lg);
     background: var(--input-bg);
     color: var(--text-main);
     height: 44px;
@@ -934,7 +944,7 @@ label {
 }
 
 .stat-chip-label {
-    font-size: var(--fs-lg);
+    font-size: var(--fs-xl);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -1134,8 +1144,8 @@ input[type="file"].hidden {
 }
 
 .icon-btn {
-    width: 44px;
-    height: 44px;
+    width: var(--btn-icon-size);
+    height: var(--btn-icon-size);
     padding: 0;
     background: var(--c-gray-btn);
     border-radius: var(--radius);
@@ -1784,11 +1794,11 @@ input[type="file"].hidden {
 
 /* ── Botones ── */
 button {
-    padding: 0.75rem 1rem;
+    padding: var(--btn-padding);
     border: 1px solid transparent;
     border-radius: var(--radius);
-    font-weight: 700;
-    font-size: var(--fs-md);
+    font-weight: var(--btn-fw);
+    font-size: var(--btn-fs);
     cursor: pointer;
     transition: filter var(--t-fast), transform var(--t-fast), opacity var(--t-fast);
     display: inline-flex;
@@ -2459,7 +2469,7 @@ kbd {
 .resumen-td-total {
     color: var(--text-muted);
     font-weight: 700;
-    font-size: var(--fs-lg);
+    font-size: var(--fs-xl);
 }
 
 .resumen-td-con,

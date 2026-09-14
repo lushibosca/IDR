@@ -50,6 +50,22 @@
     --fs-lg: 0.9rem;
     --fs-xl: 1rem;
     --fs-2xl: 1.1rem;
+
+    --accent: #3b64d2;
+    --c-accent-bg: rgba(59, 100, 210, 0.12);
+
+    /* Botones y controles estándar */
+    --btn-fs: 0.9rem;
+    --btn-fw: 600;
+    --btn-pad-y: var(--sp-4);
+    --btn-pad-x: var(--sp-5);
+    --btn-padding: var(--btn-pad-y) var(--btn-pad-x);
+    --btn-icon-size: 40px;
+
+    /* Pestañas */
+    --tab-fs: 0.85rem;
+    --tab-fw: 600;
+    --tab-padding: var(--sp-3) var(--sp-1);
 }
 
 body.dark-mode,
@@ -416,11 +432,11 @@ textarea.textarea-modal {
 
 button {
     width: 100%;
-    padding: var(--sp-4) var(--sp-5);
+    padding: var(--btn-padding);
     border: 1px solid transparent;
     border-radius: var(--radius);
-    font-weight: 500;
-    font-size: var(--fs-lg);
+    font-weight: var(--btn-fw);
+    font-size: var(--btn-fs);
     cursor: pointer;
     transition: transform 0.2s, background 0.2s, filter 0.15s;
     display: flex;
@@ -461,9 +477,9 @@ button:disabled {
 }
 
 .icon-btn {
-    width: 40px;
-    min-width: 40px;
-    height: 40px;
+    width: var(--btn-icon-size);
+    min-width: var(--btn-icon-size);
+    height: var(--btn-icon-size);
     padding: 0;
     touch-action: manipulation;
 }
@@ -808,9 +824,9 @@ button:disabled {
 
 .tab-btn {
     flex: 1;
-    padding: var(--sp-3) var(--sp-1);
-    font-size: var(--fs-md);
-    font-weight: 600;
+    padding: var(--tab-padding);
+    font-size: var(--tab-fs);
+    font-weight: var(--tab-fw);
     background: transparent;
     border: none;
     border-radius: var(--radius);

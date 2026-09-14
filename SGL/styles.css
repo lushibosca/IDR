@@ -13,10 +13,32 @@
         --c-orange: rgba(210, 120, 50, 0.8);
         --c-white: #ffffff;
         --c-purple: rgba(129, 76, 172, 0.8);
+        /* UI */
         --c-gray-btn: #dde3ea;
         --hover: brightness(0.9);
         --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         --radius: 20px;
+        --radius-sm: 8px;
+        --accent: #3b64d2;
+        --c-accent-bg: rgba(59, 100, 210, 0.12);
+        --bg-toast: #1a1d23;
+
+        /* Escala tipográfica */
+        --fs-xs: 0.7rem;
+        --fs-sm: 0.75rem;
+        --fs-base: 0.8rem;
+        --fs-md: 0.85rem;
+        --fs-lg: 0.9rem;
+        --fs-xl: 1rem;
+        --fs-2xl: 1.1rem;
+
+        /* Botones y controles estándar */
+        --btn-fs: 0.9rem;
+        --btn-fw: 600;
+        --btn-pad-y: 0.75rem;
+        --btn-pad-x: 1rem;
+        --btn-padding: var(--btn-pad-y) var(--btn-pad-x);
+        --btn-icon-size: 40px;
 
         /* Gantt Variables */
         --gantt-line: #e5e7eb;
@@ -787,11 +809,11 @@
     }
 
     button {
-        padding: 0.75rem 1rem;
+        padding: var(--btn-padding);
         border: 1px solid transparent;
         border-radius: var(--radius);
-        font-weight: 600;
-        font-size: 0.9rem;
+        font-weight: var(--btn-fw);
+        font-size: var(--btn-fs);
         cursor: pointer;
         transition: filter 0.15s, transform 0.15s;
         display: inline-flex;
@@ -804,13 +826,18 @@
     }
 
     .icon-btn {
-        padding: 0.25rem;
+        width: var(--btn-icon-size);
+        height: var(--btn-icon-size);
+        padding: 0;
+        border: none;
+        border-radius: var(--radius);
         background: transparent;
         color: var(--text-main);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.25rem;
+        cursor: pointer;
+        flex-shrink: 0;
     }
 
     .icon-btn:disabled {
