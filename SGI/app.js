@@ -1691,7 +1691,7 @@ function switchTab(tab) {
         const headerTabTitle = document.getElementById('header-tab-title');
         if (headerTabTitle) {
             const cfg = TABS_CONFIG.find(t => t.id === tab);
-            if (cfg) headerTabTitle.innerHTML = `<svg class="svg-icon"><use href="${cfg.icon}"/></svg> ${cfg.label}`;
+            if (cfg) headerTabTitle.textContent = cfg.label;
         }
 
         saliente.classList.remove('activa');
@@ -4102,19 +4102,123 @@ function _ejecutarReporte() {
 }());
 
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  SELECTOR DE MÓDULOS (App Switcher)
+// ═══════════════════════════════════════════════════════
+function _initMenuModulos(moduloActual) {
+    const modulos = [
+        { id: 'cctv', nombre: 'CCTV', sub: 'Cámaras y switches', icon: 'icon-camera', cls: 'c-cctv', href: '../SGC/index.html' },
+        { id: 'materiales', nombre: 'Materiales', sub: 'Gestión de inventario', icon: 'icon-box', cls: 'c-materiales', href: '../SGI/index.html' },
+        { id: 'racks', nombre: 'Racks', sub: 'Gestión de racks', icon: 'icon-rack', cls: 'c-racks', href: '../SGR/index.html' }
+    ];
+
+    const overlay = document.createElement('div');
+    overlay.className = 'menu-modulos-overlay';
+
+    const menu = document.createElement('div');
+    menu.className = 'menu-modulos';
+    menu.setAttribute('role', 'menu');
+    menu.setAttribute('aria-label', 'Selector de módulos');
+
+    let html = '<div class="menu-modulos-header">Módulos IDR</div>';
+
+    modulos.forEach(m => {
+        const esActual = m.id === moduloActual;
+        html += `
+            <a href="${m.href}" class="menu-modulo-item ${esActual ? 'es-actual' : ''}" role="menuitem" data-modulo="${m.id}">
+                <div class="menu-modulo-icon ${m.cls}">
+                    <svg><use href="#${m.icon}"/></svg>
+                </div>
+                <div class="menu-modulo-info">
+                    <span class="menu-modulo-name">${m.nombre}</span>
+                    <span class="menu-modulo-sub">${m.sub}</span>
+                </div>
+                ${esActual ? '<span class="menu-modulo-badge">Actual</span>' : ''}
+            </a>
+        `;
+    });
+
+    html += `
+        <div class="menu-modulos-divider"></div>
+        <a href="../index.html" class="menu-modulo-item" role="menuitem">
+            <div class="menu-modulo-icon c-launcher">
+                <svg><use href="#icon-launcher"/></svg>
+            </div>
+            <div class="menu-modulo-info">
+                <span class="menu-modulo-name">Launcher</span>
+                <span class="menu-modulo-sub">Menú principal</span>
+            </div>
+        </a>
+    `;
+
+    menu.innerHTML = html;
+    document.body.appendChild(overlay);
+    document.body.appendChild(menu);
+
+    let isOpen = false;
+
+    function abrirMenu() {
+        isOpen = true;
+        overlay.classList.add('open');
+        menu.classList.add('open');
+    }
+
+    function cerrarMenu() {
+        isOpen = false;
+        overlay.classList.remove('open');
+        menu.classList.remove('open');
+    }
+
+    function toggleMenu() {
+        if (isOpen) cerrarMenu();
+        else abrirMenu();
+    }
+
+    overlay.addEventListener('click', cerrarMenu);
+
+    menu.querySelector('.es-actual')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        cerrarMenu();
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isOpen) cerrarMenu();
+    });
+
+    const logoEl = document.querySelector('.header-logo');
+    const titlesEl = document.querySelector('.header-titles');
+
+    [logoEl, titlesEl].forEach(el => {
+        if (!el) return;
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleMenu();
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (isOpen && !menu.contains(e.target) && !logoEl?.contains(e.target) && !titlesEl?.contains(e.target)) {
+            cerrarMenu();
+        }
+    });
+}
+
+// ═══════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════
 (function init() {
     // ── Listeners migrados desde atributos inline del HTML ──
     const _on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
 
+    // Selector de módulos en header
+    _initMenuModulos('materiales');
+
     // Header
-    _on('btn-inicio-logo', 'click', () => window.location.href = '../index.html');
     _on('btn-undo', 'click', () => historial.undo());
     _on('btn-redo', 'click', () => historial.redo());
     _on('btn-ajustes', 'click', () => MM.abrir('modal-ajustes'));
-    // Título de pestaña flotante (visible al scrollear): tocarlo alterna de pestaña
-    _on('header-tab-title', 'click', () => toggleHeaderTab());
 
     // Modal confirmar
     _on('confirmar-ok', 'click', () => {
