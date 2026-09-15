@@ -286,7 +286,7 @@ html.dark-mode .app-card:focus-visible {
 }
 
 .app-card.exiting {
-    animation: fadeOutBlur 0.4s cubic-bezier(0.25, 1, 0.5, 1) both;
+    animation: fadeOutBlur 0.25s cubic-bezier(0.25, 1, 0.5, 1) both;
     pointer-events: none;
 }
 

@@ -214,17 +214,25 @@
                 e.preventDefault(); // Evitamos el salto inmediato
                 const targetUrl = card.href;
 
-                // Aplicamos la clase de salida a todas las tarjetas
-                appCards.forEach((c, index) => {
-                    // Reasignamos el delay para que la salida también sea escalonada
-                    c.style.animationDelay = `${index * 0.05}s`;
+                // Aplicamos la animación de salida inmediata a todas las tarjetas
+                appCards.forEach(c => {
+                    c.style.animationDelay = '0s';
                     c.classList.add('exiting');
                 });
 
-                // Esperamos a que termine la animación (400ms de animación + delays) para redirigir
-                setTimeout(() => {
-                    window.location.href = targetUrl;
-                }, 500);
+                let redirected = false;
+                const redirect = () => {
+                    if (!redirected) {
+                        redirected = true;
+                        window.location.href = targetUrl;
+                    }
+                };
+
+                // Redirigir apenas termine la animación de blur
+                card.addEventListener('animationend', redirect, { once: true });
+
+                // Reducimos el debounce para que coincida con la animación de blur (250ms)
+                setTimeout(redirect, 250);
             });
         });
     }
@@ -235,8 +243,9 @@
         if (event.persisted) {
             const appCards = document.querySelectorAll('.app-card');
             appCards.forEach(card => {
-                // 1. Quitamos la clase de animación de salida
+                // 1. Quitamos la clase de animación de salida y restauramos el delay
                 card.classList.remove('exiting');
+                card.style.animationDelay = '';
                 
                 // 2. Este "truco" fuerza al navegador a redibujar el elemento inmediatamente, 
                 // solucionando el problema de los íconos SVG invisibles en Firefox.

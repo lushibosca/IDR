@@ -266,6 +266,7 @@
             flex: 1;
             min-width: 0;
             height: 100%;
+            pointer-events: none;
         }
 
         /* Modificamos el h1 principal para que admita transición */
@@ -277,6 +278,9 @@
             align-items: center;
             white-space: nowrap;
             transition: opacity var(--t-modal), transform var(--t-modal);
+            pointer-events: auto;
+            cursor: pointer;
+            width: fit-content;
         }
 
         /* El nuevo título de pestaña ubicado en el mismo lugar que el título */

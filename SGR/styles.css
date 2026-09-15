@@ -218,6 +218,7 @@ body.modal-open {
     flex: 1;
     min-width: 0;
     height: 100%;
+    pointer-events: none;
 }
 
 /* Modificamos el h1 principal para que admita transición */
@@ -229,6 +230,9 @@ body.modal-open {
     align-items: center;
     white-space: nowrap;
     transition: opacity var(--t-modal), transform var(--t-modal);
+    pointer-events: auto;
+    cursor: pointer;
+    width: fit-content;
 }
 
 /* El título de pestaña ubicado exactamente donde está el título principal */

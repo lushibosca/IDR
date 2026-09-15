@@ -289,10 +289,13 @@
             <rect x="14" y="14" width="7" height="7"></rect>
             <rect x="3" y="14" width="7" height="7"></rect>
         </symbol>
+        <symbol id="icon-arrow-up" viewBox="0 0 24 24">
+            <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z" />
+        </symbol>
     </svg>
 
     <header class="header" id="main-header">
-        <div class="header-logo clickable" id="btn-inicio-logo" title="Cambiar de módulo">
+        <div class="header-logo clickable" id="btn-inicio-logo" title="Ir a la página principal">
             <svg class="icon icon-line">
                 <use href="#icon-camera" />
             </svg>
@@ -1022,9 +1025,9 @@
         </div>
     </div>
 
-    <button id="btn-scroll-top" title="Ir arriba" class="hidden">
-        <svg class="icon icon-line icon--scroll-top">
-            <use href="#icon-chevron-up" />
+    <button id="btn-scroll-top" class="btn-scroll-top hidden" title="Subir">
+        <svg class="svg-icon svg-scroll-top icon--scroll-top">
+            <use href="#icon-arrow-up" />
         </svg>
     </button>
 

@@ -2860,11 +2860,13 @@ function _initMenuModulos(moduloActual) {
         if (e.key === 'Escape' && isOpen) cerrarMenu();
     });
 
-    const logoEl = document.querySelector('.header-logo');
-    const titlesEl = document.querySelector('.header-titles');
+    // Vincular EXCLUSIVAMENTE al label (título principal y título de pestaña al scroll)
+    const labelElements = [
+        document.getElementById('btn-inicio-titulo'),
+        document.getElementById('header-tab-title')
+    ].filter(Boolean);
 
-    [logoEl, titlesEl].forEach(el => {
-        if (!el) return;
+    labelElements.forEach(el => {
         el.style.cursor = 'pointer';
         el.addEventListener('click', (e) => {
             e.preventDefault();
@@ -2874,7 +2876,7 @@ function _initMenuModulos(moduloActual) {
     });
 
     document.addEventListener('click', (e) => {
-        if (isOpen && !menu.contains(e.target) && !logoEl?.contains(e.target) && !titlesEl?.contains(e.target)) {
+        if (isOpen && !menu.contains(e.target) && !labelElements.some(el => el.contains(e.target))) {
             cerrarMenu();
         }
     });
@@ -2887,8 +2889,11 @@ function _initBindings() {
     _initDOMRefs();
     _init();
 
-    // Selector de módulos en header
+    // Selector de módulos en header (solo en label)
     _initMenuModulos('racks');
+
+    // Logo vuelve al launcher
+    document.getElementById('btn-inicio-logo')?.addEventListener('click', () => window.location.href = '../index.html');
 
     // Tabs
     document.getElementById('tab-dashboard')?.addEventListener('click', () => switchTab('dashboard'));

@@ -7903,11 +7903,13 @@
             if (e.key === 'Escape' && isOpen) cerrarMenu();
         });
 
-        const logoEl = document.querySelector('.header-logo');
-        const titlesEl = document.querySelector('.header-titles');
+        // Vincular EXCLUSIVAMENTE al label (título principal y título de pestaña al scroll)
+        const labelElements = [
+            document.getElementById('btn-inicio'),
+            document.getElementById('header-tab-titulo')
+        ].filter(Boolean);
 
-        [logoEl, titlesEl].forEach(el => {
-            if (!el) return;
+        labelElements.forEach(el => {
             el.style.cursor = 'pointer';
             el.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -7917,7 +7919,7 @@
         });
 
         document.addEventListener('click', (e) => {
-            if (isOpen && !menu.contains(e.target) && !logoEl?.contains(e.target) && !titlesEl?.contains(e.target)) {
+            if (isOpen && !menu.contains(e.target) && !labelElements.some(el => el.contains(e.target))) {
                 cerrarMenu();
             }
         });
@@ -7926,8 +7928,11 @@
     function _bindStaticEvents() {
         const on = (id, evt, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(evt, fn); };
 
-        // Selector de módulos en header
+        // Selector de módulos en header (solo en label)
         _initMenuModulos('cctv');
+
+        // Logo vuelve al launcher
+        on('btn-inicio-logo', 'click', () => window.location.href = '../index.html');
 
         // Header
         on('btn-undo', 'click', () => historial.undo());

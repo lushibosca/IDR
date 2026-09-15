@@ -208,6 +208,7 @@ body.modal-open {
     flex: 1;
     min-width: 0;
     height: 100%;
+    pointer-events: none;
 }
 
 .header h1,
@@ -221,6 +222,8 @@ body.modal-open {
     cursor: pointer;
     white-space: nowrap;
     transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: auto;
+    width: fit-content;
 }
 
 .header-buttons {
@@ -583,6 +586,9 @@ button:disabled {
     opacity: 0;
     transition: opacity 0.25s, transform 0.25s;
     transform: translateY(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-group {
@@ -751,10 +757,12 @@ button:disabled {
     stroke: var(--text-muted);
 }
 
-.icon--scroll-top {
-    width: var(--sp-5);
-    height: var(--sp-5);
-    stroke: var(--c-white);
+.icon--scroll-top,
+.svg-scroll-top {
+    width: 24px;
+    height: 24px;
+    fill: var(--c-white);
+    stroke: none;
 }
 
 .icon-btn-spinning svg {
