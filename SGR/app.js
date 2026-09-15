@@ -121,6 +121,8 @@ function _initDOMRefs() {
     DOM.busqGlobal = document.getElementById('busq-global');
     DOM.tablaServicio = document.getElementById('tabla-servicio');
     DOM.tablaInventario = document.getElementById('tabla-inventario');
+    DOM.servCardsWrap = document.getElementById('serv-cards-wrap');
+    DOM.invCardsWrap = document.getElementById('inv-cards-wrap');
     DOM.servicioEmpty = document.getElementById('servicio-empty');
     DOM.inventarioEmpty = document.getElementById('inventario-empty');
     DOM.servicioCount = document.getElementById('servicio-count');
@@ -1262,6 +1264,140 @@ function _filaRackServicio(r) {
     </tr>`;
 }
 
+function _cardRackServicio(r) {
+    const edifPiso = [r.edificio, r.piso].filter(Boolean).join(' · ');
+    const edifPisoHtml = edifPiso ? `<div class="rack-card-edif-piso">${esc(edifPiso)}</div>` : '';
+    const depHtml = r.dependencia ? `<div class="rack-card-dep">${esc(r.dependencia)}</div>` : '';
+    const specs = [
+        r.marca ? esc(r.marca) : '',
+        r.unidades != null ? `${esc(String(r.unidades))}U` : '',
+        r.modelo ? esc(r.modelo) : ''
+    ].filter(Boolean).join(' · ');
+
+    const pat = r.patrimonio ? `PAT: ${esc(r.patrimonio)}` : '';
+
+    let titulo = esc(r.numero || 'Sin número');
+    if (r.numero) {
+        const num = r.numero.trim();
+        if (/^rack\b/i.test(num)) {
+            titulo = esc(num.charAt(0).toUpperCase() + num.slice(1));
+        }
+    }
+
+    return `<div class="rack-card rack-estado-${r.estado}" data-rack-id="${esc(r.id)}">
+        <div class="rack-card-thumb">
+            <svg class="svg-icon"><use href="#icon-rack"/></svg>
+        </div>
+        <div class="rack-card-info">
+            <div class="rack-card-titulo">
+                <span>${titulo}</span>
+            </div>
+            ${specs ? `<div class="rack-card-meta">${specs}</div>` : ''}
+            ${pat ? `<div class="rack-card-sub">${pat}</div>` : ''}
+        </div>
+        <div class="rack-card-derecha">
+            <div class="rack-card-derecha-row1"></div>
+            ${edifPisoHtml}
+            ${depHtml}
+        </div>
+    </div>`;
+}
+
+function _cardRackInv(r) {
+    const enServicio = r.estado === 'servicio';
+    let titulo = '';
+    if (enServicio && r.numero) {
+        const num = r.numero.trim();
+        if (/^rack\b/i.test(num)) {
+            titulo = esc(num.charAt(0).toUpperCase() + num.slice(1));
+        } else {
+            titulo = `Rack ${esc(num)}`;
+        }
+    } else if (r.marca) {
+        titulo = `${esc(r.marca)}${r.unidades != null ? ` ${esc(String(r.unidades))}U` : ''}`;
+    } else if (r.patrimonio && r.patrimonio.toLowerCase() !== 'no' && r.patrimonio.toLowerCase() !== 'relevar') {
+        titulo = `PAT: ${esc(r.patrimonio)}`;
+    } else {
+        titulo = 'Rack';
+    }
+
+    const specs = [
+        (enServicio || !r.marca) ? (r.marca ? esc(r.marca) : '') : '',
+        (enServicio || !r.marca) ? (r.unidades != null ? `${esc(String(r.unidades))}U` : '') : '',
+        r.modelo ? esc(r.modelo) : ''
+    ].filter(Boolean).join(' · ');
+
+    const pat = r.patrimonio ? `PAT: ${esc(r.patrimonio)}` : '';
+
+    let colDerechaHtml = '';
+    if (enServicio) {
+        const edifPiso = [r.edificio, r.piso].filter(Boolean).join(' · ');
+        const edifPisoHtml = edifPiso ? `<div class="rack-card-edif-piso">${esc(edifPiso)}</div>` : '';
+        const depHtml = r.dependencia ? `<div class="rack-card-dep">${esc(r.dependencia)}</div>` : '';
+        colDerechaHtml = `
+            <div class="rack-card-derecha-row1"></div>
+            ${edifPisoHtml}
+            ${depHtml}
+        `;
+    } else {
+        const badgeEstado = _badgeEstado(r);
+        colDerechaHtml = `
+            <div class="rack-card-derecha-row1">${badgeEstado}</div>
+        `;
+    }
+
+    return `<div class="rack-card rack-estado-${r.estado}" data-rack-id="${esc(r.id)}">
+        <div class="rack-card-thumb">
+            <svg class="svg-icon"><use href="#icon-rack"/></svg>
+        </div>
+        <div class="rack-card-info">
+            <div class="rack-card-titulo">
+                <span>${titulo}</span>
+            </div>
+            ${specs ? `<div class="rack-card-meta">${specs}</div>` : ''}
+            ${pat ? `<div class="rack-card-sub">${pat}</div>` : ''}
+        </div>
+        <div class="rack-card-derecha">
+            ${colDerechaHtml}
+        </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  MODO DE VISTA (TABLA / TARJETAS)
+// ═══════════════════════════════════════════════════════
+function _getModoVistaInicial(key) {
+    try {
+        const saved = localStorage.getItem(APP_KEY + key);
+        if (saved === 'tabla' || saved === 'tarjetas') return saved;
+    } catch (_) { }
+    return window.innerWidth <= 768 ? 'tarjetas' : 'tabla';
+}
+
+let _modoVistaServ = _getModoVistaInicial('modo_vista_serv');
+let _modoVistaInv = _getModoVistaInicial('modo_vista_inv');
+
+function _setModoVistaServ(val) {
+    _modoVistaServ = val;
+    try { localStorage.setItem(APP_KEY + 'modo_vista_serv', val); } catch (_) { }
+}
+
+function _setModoVistaInv(val) {
+    _modoVistaInv = val;
+    try { localStorage.setItem(APP_KEY + 'modo_vista_inv', val); } catch (_) { }
+}
+
+function _animarEntrada(elements) {
+    elements.forEach(el => {
+        if (el && !el.hasAttribute('hidden')) {
+            el.classList.remove('inv-agrup-entrando');
+            void el.offsetWidth;
+            el.classList.add('inv-agrup-entrando');
+            el.addEventListener('animationend', () => el.classList.remove('inv-agrup-entrando'), { once: true });
+        }
+    });
+}
+
 // ═══════════════════════════════════════════════════════
 //  ORDENAMIENTO (SORTING)
 // ═══════════════════════════════════════════════════════
@@ -1596,7 +1732,7 @@ function _renderResumenListaEdificios(contenedor, edificios, enServicio, totalSe
 // Construye pares de filas <tr> (encabezado + detalle) para una tabla
 // agrupada. El detalle envuelve una tabla anidada con las filas del grupo
 // dentro de un contenedor con animación de expansión/colapso.
-function _buildGrupoAccordionRows(grupos, { colspan, tablaClass, filaBuilder, abiertos, busq, subtitulo = 'PISO' }) {
+function _buildGrupoAccordionRows(grupos, { colspan, tablaClass, filaBuilder, abiertos, busq, subtitulo = 'PISO', esModoTarjetas = false }) {
     return grupos.map((g, i) => {
         const key = g.titulo;
         const isOpen = busq ? true : (abiertos !== null ? abiertos.has(key) : i === 0);
@@ -1605,7 +1741,9 @@ function _buildGrupoAccordionRows(grupos, { colspan, tablaClass, filaBuilder, ab
             const subHtml = g.subgrupos.map(sg => {
                 const subKey = `${key}__${sg.titulo}`;
                 const subOpen = busq ? true : (abiertos !== null ? abiertos.has(subKey) : isOpen);
-                const filas = sg.racks.map(filaBuilder).join('');
+                const items = esModoTarjetas
+                    ? `<div class="racks-cards-grid">${sg.racks.map(filaBuilder).join('')}</div>`
+                    : `<table class="${tablaClass}"><tbody>${sg.racks.map(filaBuilder).join('')}</tbody></table>`;
                 return `<tr class="inv-grupo-tr-header inv-grupo-tr-sub${subOpen ? ' open' : ''}" data-grupo-key="${esc(subKey)}">
                     <td colspan="${colspan}">
                         <div class="inv-grupo-header inv-grupo-header-sub">
@@ -1619,7 +1757,7 @@ function _buildGrupoAccordionRows(grupos, { colspan, tablaClass, filaBuilder, ab
                     <td colspan="${colspan}">
                         <div class="inv-grupo-detalle-grid${subOpen ? ' expanded' : ''}">
                             <div class="inv-grupo-detalle-inner">
-                                <table class="${tablaClass}"><tbody>${filas}</tbody></table>
+                                ${items}
                             </div>
                         </div>
                     </td>
@@ -1645,7 +1783,9 @@ function _buildGrupoAccordionRows(grupos, { colspan, tablaClass, filaBuilder, ab
                 </td>
             </tr>`;
         } else {
-            const filas = g.racks.map(filaBuilder).join('');
+            const items = esModoTarjetas
+                ? `<div class="racks-cards-grid">${g.racks.map(filaBuilder).join('')}</div>`
+                : `<table class="${tablaClass}"><tbody>${g.racks.map(filaBuilder).join('')}</tbody></table>`;
             return `<tr class="inv-grupo-tr-header${isOpen ? ' open' : ''}" data-grupo-key="${esc(key)}">
                 <td colspan="${colspan}">
                     <div class="inv-grupo-header">
@@ -1659,7 +1799,7 @@ function _buildGrupoAccordionRows(grupos, { colspan, tablaClass, filaBuilder, ab
                 <td colspan="${colspan}">
                     <div class="inv-grupo-detalle-grid${isOpen ? ' expanded' : ''}">
                         <div class="inv-grupo-detalle-inner">
-                            <table class="${tablaClass}"><tbody>${filas}</tbody></table>
+                            ${items}
                         </div>
                     </div>
                 </td>
@@ -1683,6 +1823,7 @@ function renderServicio() {
     const empty = DOM.servicioEmpty;
     const count = DOM.servicioCount;
     const tablaWrap = document.getElementById('serv-tabla-wrap');
+    const cardsWrap = document.getElementById('serv-cards-wrap');
     const gruposWrap = document.getElementById('serv-grupos-wrap');
     const tbody = DOM.tablaServicio;
 
@@ -1690,22 +1831,33 @@ function renderServicio() {
 
     if (!racks.length) {
         tablaWrap?.removeAttribute('hidden');
+        cardsWrap?.setAttribute('hidden', '');
         gruposWrap?.setAttribute('hidden', '');
         if (tbody) tbody.innerHTML = '';
+        if (cardsWrap) cardsWrap.innerHTML = '';
         empty?.classList.remove('empty-state-hidden');
         _actualizarIndicadoresSort('panel-servicio', _sortServ);
         return;
     }
     empty?.classList.add('empty-state-hidden');
 
+    const esTarjetas = _modoVistaServ === 'tarjetas';
     const grupos = _getGrupos(racks, _agrupServ);
 
     if (!grupos) {
         gruposWrap?.setAttribute('hidden', '');
-        tablaWrap?.removeAttribute('hidden');
-        if (tbody) tbody.innerHTML = racks.map(_filaRackServicio).join('');
+        if (esTarjetas) {
+            tablaWrap?.setAttribute('hidden', '');
+            cardsWrap?.removeAttribute('hidden');
+            if (cardsWrap) cardsWrap.innerHTML = `<div class="racks-cards-grid">${racks.map(_cardRackServicio).join('')}</div>`;
+        } else {
+            cardsWrap?.setAttribute('hidden', '');
+            tablaWrap?.removeAttribute('hidden');
+            if (tbody) tbody.innerHTML = racks.map(_filaRackServicio).join('');
+        }
     } else {
         tablaWrap?.setAttribute('hidden', '');
+        cardsWrap?.setAttribute('hidden', '');
         gruposWrap?.removeAttribute('hidden');
 
         let abiertos = null;
@@ -1717,7 +1869,7 @@ function renderServicio() {
         }
 
         if (gruposWrap) {
-            const thead = `<thead class="inv-thead-sticky">
+            const thead = esTarjetas ? '' : `<thead class="inv-thead-sticky">
                 <tr>
                     <th data-sort="numero" class="th-sortable">Rack</th>
                     <th data-sort="edificio" class="th-sortable">Edificio</th>
@@ -1738,14 +1890,15 @@ function renderServicio() {
 
             const tbodyRows = _buildGrupoAccordionRows(grupos, {
                 colspan: 5,
-                tablaClass: 'table-equal-cols table-eq-4',
-                filaBuilder: _filaServicio,
+                tablaClass: esTarjetas ? 'table-equal-cols inv-tabla-cards-mode' : 'table-equal-cols table-eq-4',
+                filaBuilder: esTarjetas ? _cardRackServicio : _filaServicio,
                 abiertos,
-                busq
+                busq,
+                esModoTarjetas: esTarjetas
             });
 
             gruposWrap.innerHTML = `<div class="table-wrap inv-tabla-agrupada">
-                <table class="table-equal-cols table-eq-4">
+                <table class="${esTarjetas ? 'table-equal-cols inv-tabla-cards-mode' : 'table-equal-cols table-eq-4'}">
                     ${thead}
                     <tbody id="tabla-servicio-grupos">${tbodyRows}</tbody>
                 </table>
@@ -1915,6 +2068,7 @@ function renderInventario() {
     const empty = DOM.inventarioEmpty;
     const count = DOM.inventarioCount;
     const tablaWrap = document.getElementById('inv-tabla-wrap');
+    const cardsWrap = document.getElementById('inv-cards-wrap');
     const gruposWrap = document.getElementById('inv-grupos-wrap');
     const tbody = DOM.tablaInventario;
 
@@ -1922,23 +2076,34 @@ function renderInventario() {
 
     if (!racks.length) {
         tablaWrap?.removeAttribute('hidden');
+        cardsWrap?.setAttribute('hidden', '');
         gruposWrap?.setAttribute('hidden', '');
         if (tbody) tbody.innerHTML = '';
+        if (cardsWrap) cardsWrap.innerHTML = '';
         empty?.classList.remove('empty-state-hidden');
-        _actualizarIndicadoresSort('panel-inventario', _sortInv); // Mantenlo aquí para el caso vacío
+        _actualizarIndicadoresSort('panel-inventario', _sortInv);
         return;
     }
     empty?.classList.add('empty-state-hidden');
 
+    const esTarjetas = _modoVistaInv === 'tarjetas';
     const grupos = _getGrupos(racks);
 
     if (!grupos) {
         gruposWrap?.setAttribute('hidden', '');
-        tablaWrap?.removeAttribute('hidden');
-        if (tbody) tbody.innerHTML = racks.map(_filaRackInv).join('');
+        if (esTarjetas) {
+            tablaWrap?.setAttribute('hidden', '');
+            cardsWrap?.removeAttribute('hidden');
+            if (cardsWrap) cardsWrap.innerHTML = `<div class="racks-cards-grid">${racks.map(_cardRackInv).join('')}</div>`;
+        } else {
+            cardsWrap?.setAttribute('hidden', '');
+            tablaWrap?.removeAttribute('hidden');
+            if (tbody) tbody.innerHTML = racks.map(_filaRackInv).join('');
+        }
     } else {
         // Vista agrupada: una sola tabla con thead sticky, grupos como filas separadoras
         tablaWrap?.setAttribute('hidden', '');
+        cardsWrap?.setAttribute('hidden', '');
         gruposWrap?.removeAttribute('hidden');
 
         // ── NUEVO: Determinar qué grupos mostrar abiertos (Búsqueda vs LocalStorage) ──
@@ -1953,7 +2118,7 @@ function renderInventario() {
         }
 
         if (gruposWrap) {
-            const thead = `<thead class="inv-thead-sticky">
+            const thead = esTarjetas ? '' : `<thead class="inv-thead-sticky">
                 <tr>
                     <th data-sort="estado" class="th-sortable">Estado</th>
                     <th data-sort="patrimonio" class="th-sortable">Patrimonio</th>
@@ -1974,14 +2139,15 @@ function renderInventario() {
 
             const tbodyRows = _buildGrupoAccordionRows(grupos, {
                 colspan: 5,
-                tablaClass: 'table-equal-cols',
-                filaBuilder: _filaRack,
+                tablaClass: esTarjetas ? 'table-equal-cols inv-tabla-cards-mode' : 'table-equal-cols',
+                filaBuilder: esTarjetas ? _cardRackInv : _filaRack,
                 abiertos,
-                busq
+                busq,
+                esModoTarjetas: esTarjetas
             });
 
             gruposWrap.innerHTML = `<div class="table-wrap inv-tabla-agrupada">
-                <table class="table-equal-cols">
+                <table class="${esTarjetas ? 'table-equal-cols inv-tabla-cards-mode' : 'table-equal-cols'}">
                     ${thead}
                     <tbody id="tabla-inventario-grupos">${tbodyRows}</tbody>
                 </table>
@@ -2684,14 +2850,22 @@ function _initBindings() {
         abrirModalEditarServicio(_editandoRackId, 'modal-rack-editar');
     });
 
-    // Clics en filas de tablas
+    // Clics en filas de tablas o tarjetas
     document.getElementById('tabla-servicio')?.addEventListener('click', e => {
-        const tr = e.target.closest('tr[data-rack-id]');
-        if (tr) abrirModalEditarServicio(tr.dataset.rackId);
+        const item = e.target.closest('[data-rack-id]');
+        if (item) abrirModalEditarServicio(item.dataset.rackId);
+    });
+    document.getElementById('serv-cards-wrap')?.addEventListener('click', e => {
+        const item = e.target.closest('[data-rack-id]');
+        if (item) abrirModalEditarServicio(item.dataset.rackId);
     });
     document.getElementById('tabla-inventario')?.addEventListener('click', e => {
-        const tr = e.target.closest('tr[data-rack-id]');
-        if (tr) abrirModalEditarRack(tr.dataset.rackId);
+        const item = e.target.closest('[data-rack-id]');
+        if (item) abrirModalEditarRack(item.dataset.rackId);
+    });
+    document.getElementById('inv-cards-wrap')?.addEventListener('click', e => {
+        const item = e.target.closest('[data-rack-id]');
+        if (item) abrirModalEditarRack(item.dataset.rackId);
     });
 
     document.getElementById('ajustes-edificios-btn')?.addEventListener('click', () => GestorEdificios.abrir());
@@ -2841,9 +3015,21 @@ function _initBindings() {
     // ── Botón vista inventario ──
     const btnVista = document.getElementById('btn-vista-inv');
     const vistaMenu = document.getElementById('inv-vista-menu');
+    let _syncVistaOpts = null;
     if (btnVista && vistaMenu) {
         // Poblar opciones
         vistaMenu.innerHTML = `
+            <p class="inv-vista-label">Diseño</p>
+            <div class="inv-vista-toggle-row">
+                <button class="inv-vista-modo-btn" data-modo="tabla">
+                    <svg class="svg-icon"><use href="#icon-table"/></svg>
+                    <span>Tabla</span>
+                </button>
+                <button class="inv-vista-modo-btn" data-modo="tarjetas">
+                    <svg class="svg-icon"><use href="#icon-layout"/></svg>
+                    <span>Tarjetas</span>
+                </button>
+            </div>
             <p class="inv-vista-label">Agrupar por</p>
             <button class="inv-vista-opt" data-agrup="ninguno">Sin agrupar</button>
             <button class="inv-vista-opt" data-agrup="patrimonio">Patrimonio</button>
@@ -2854,9 +3040,12 @@ function _initBindings() {
         // Mover al body para evitar clipping del card
         document.body.appendChild(vistaMenu);
 
-        const _syncVistaOpts = () => {
+        _syncVistaOpts = () => {
             vistaMenu.querySelectorAll('.inv-vista-opt').forEach(b => {
                 b.classList.toggle('activo', b.dataset.agrup === _agrupInv);
+            });
+            vistaMenu.querySelectorAll('.inv-vista-modo-btn').forEach(b => {
+                b.classList.toggle('activo', b.dataset.modo === _modoVistaInv);
             });
         };
         _syncVistaOpts();
@@ -2883,6 +3072,22 @@ function _initBindings() {
 
         vistaMenu.addEventListener('click', e => {
             e.stopPropagation();
+            const modoBtn = e.target.closest('.inv-vista-modo-btn');
+            if (modoBtn) {
+                if (modoBtn.dataset.modo !== _modoVistaInv) {
+                    _setModoVistaInv(modoBtn.dataset.modo);
+                    _syncVistaOpts();
+                    renderInventario();
+                    _animarEntrada([
+                        document.getElementById('inv-tabla-wrap'),
+                        document.getElementById('inv-cards-wrap'),
+                        document.getElementById('inv-grupos-wrap')
+                    ]);
+                }
+                _cerrarVista();
+                return;
+            }
+
             const opt = e.target.closest('.inv-vista-opt');
             if (!opt) return;
             _setAgrupInv(opt.dataset.agrup);
@@ -2890,15 +3095,9 @@ function _initBindings() {
             renderInventario();
             // Animar el contenedor tras el render
             const tablaWrap = document.getElementById('inv-tabla-wrap');
+            const cardsWrap = document.getElementById('inv-cards-wrap');
             const gruposWrap = document.getElementById('inv-grupos-wrap');
-            [tablaWrap, gruposWrap].forEach(el => {
-                if (el && !el.hasAttribute('hidden')) {
-                    el.classList.remove('inv-agrup-entrando');
-                    void el.offsetWidth; // reflow para reiniciar animación
-                    el.classList.add('inv-agrup-entrando');
-                    el.addEventListener('animationend', () => el.classList.remove('inv-agrup-entrando'), { once: true });
-                }
-            });
+            _animarEntrada([tablaWrap, cardsWrap, gruposWrap]);
             _cerrarVista();
         });
 
@@ -2910,9 +3109,21 @@ function _initBindings() {
     // ── Botón vista SERVICIO ──
     const btnVistaServ = document.getElementById('btn-vista-serv');
     const vistaMenuServ = document.getElementById('serv-vista-menu');
+    let _syncVistaOptsServ = null;
     if (btnVistaServ && vistaMenuServ) {
         // Poblar opciones
         vistaMenuServ.innerHTML = `
+            <p class="inv-vista-label">Diseño</p>
+            <div class="inv-vista-toggle-row">
+                <button class="inv-vista-modo-btn" data-modo="tabla">
+                    <svg class="svg-icon"><use href="#icon-table"/></svg>
+                    <span>Tabla</span>
+                </button>
+                <button class="inv-vista-modo-btn" data-modo="tarjetas">
+                    <svg class="svg-icon"><use href="#icon-layout"/></svg>
+                    <span>Tarjetas</span>
+                </button>
+            </div>
             <p class="inv-vista-label">Agrupar por</p>
             <button class="inv-vista-opt" data-agrup="ninguno">Sin agrupar</button>
             <button class="inv-vista-opt" data-agrup="edificio">Edificio</button>
@@ -2920,9 +3131,12 @@ function _initBindings() {
         // Mover al body para evitar clipping del card
         document.body.appendChild(vistaMenuServ);
 
-        const _syncVistaOptsServ = () => {
+        _syncVistaOptsServ = () => {
             vistaMenuServ.querySelectorAll('.inv-vista-opt').forEach(b => {
                 b.classList.toggle('activo', b.dataset.agrup === _agrupServ);
+            });
+            vistaMenuServ.querySelectorAll('.inv-vista-modo-btn').forEach(b => {
+                b.classList.toggle('activo', b.dataset.modo === _modoVistaServ);
             });
         };
         _syncVistaOptsServ();
@@ -2950,6 +3164,22 @@ function _initBindings() {
 
         vistaMenuServ.addEventListener('click', e => {
             e.stopPropagation();
+            const modoBtn = e.target.closest('.inv-vista-modo-btn');
+            if (modoBtn) {
+                if (modoBtn.dataset.modo !== _modoVistaServ) {
+                    _setModoVistaServ(modoBtn.dataset.modo);
+                    _syncVistaOptsServ();
+                    renderServicio();
+                    _animarEntrada([
+                        document.getElementById('serv-tabla-wrap'),
+                        document.getElementById('serv-cards-wrap'),
+                        document.getElementById('serv-grupos-wrap')
+                    ]);
+                }
+                _cerrarVistaServ();
+                return;
+            }
+
             const opt = e.target.closest('.inv-vista-opt');
             if (!opt) return;
             _setAgrupServ(opt.dataset.agrup);
@@ -2958,15 +3188,9 @@ function _initBindings() {
             
             // Animar el contenedor tras el render
             const tablaWrap = document.getElementById('serv-tabla-wrap');
+            const cardsWrap = document.getElementById('serv-cards-wrap');
             const gruposWrap = document.getElementById('serv-grupos-wrap');
-            [tablaWrap, gruposWrap].forEach(el => {
-                if (el && !el.hasAttribute('hidden')) {
-                    el.classList.remove('inv-agrup-entrando');
-                    void el.offsetWidth;
-                    el.classList.add('inv-agrup-entrando');
-                    el.addEventListener('animationend', () => el.classList.remove('inv-agrup-entrando'), { once: true });
-                }
-            });
+            _animarEntrada([tablaWrap, cardsWrap, gruposWrap]);
             _cerrarVistaServ();
         });
 
@@ -3118,10 +3342,10 @@ function _initBindings() {
         });
 
         wrap.addEventListener('click', e => {
-            const tr = e.target.closest('tr[data-rack-id]');
-            if (tr) { 
-                if (wrap.id === 'inv-grupos-wrap') abrirModalEditarRack(tr.dataset.rackId);
-                if (wrap.id === 'serv-grupos-wrap') abrirModalEditarServicio(tr.dataset.rackId);
+            const item = e.target.closest('[data-rack-id]');
+            if (item) { 
+                if (wrap.id === 'inv-grupos-wrap') abrirModalEditarRack(item.dataset.rackId);
+                if (wrap.id === 'serv-grupos-wrap') abrirModalEditarServicio(item.dataset.rackId);
                 return; 
             }
 

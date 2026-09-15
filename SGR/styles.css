@@ -2031,6 +2031,285 @@ kbd {
     font-weight: 700;
 }
 
+/* Fila de alternancia de modo (Tabla / Tarjetas) en el menú */
+.inv-vista-toggle-row {
+    display: flex;
+    padding: 0.45rem 0.6rem;
+    gap: 0.4rem;
+    background: var(--bg-card);
+    border-bottom: var(--border-w) solid var(--border);
+}
+
+.inv-vista-modo-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.4rem 0.5rem;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-body);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--t-fast);
+}
+
+.inv-vista-modo-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.inv-vista-modo-btn.activo {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+}
+
+.inv-vista-modo-btn:hover:not(.activo) {
+    background: var(--c-gray-btn);
+    color: var(--text-main);
+}
+
+/* ════════════════════════════════════════════════════════
+   VISTA EN TARJETAS (SGR CARDS)
+   ════════════════════════════════════════════════════════ */
+
+.racks-cards-wrap {
+    padding: 0.5rem 0.15rem;
+}
+
+.racks-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 0.75rem;
+    padding: 0.2rem 0;
+}
+
+@media (max-width: 768px) {
+    .racks-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+    }
+}
+
+.rack-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    user-select: none;
+    transition: transform var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast), filter var(--t-fast);
+    position: relative;
+}
+
+.rack-card:hover {
+    filter: var(--hover);
+    border-color: var(--accent);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.09);
+}
+
+.rack-card:active {
+    transform: scale(0.99);
+}
+
+/* Icono / Miniatura izquierda */
+.rack-card-thumb {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--c-accent-bg);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background var(--t-fast), color var(--t-fast);
+}
+
+.rack-card-thumb svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* Tinte del icono según estado */
+.rack-card.rack-estado-inventario .rack-card-thumb {
+    background: var(--c-green-bg);
+    color: var(--c-green);
+}
+
+.rack-card.rack-estado-servicio .rack-card-thumb {
+    background: var(--c-accent-bg);
+    color: var(--accent);
+}
+
+.rack-card.rack-estado-baja .rack-card-thumb {
+    background: var(--c-red-bg);
+    color: var(--c-red);
+}
+
+/* Contenedor central de información */
+.rack-card-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+}
+
+.rack-card-titulo {
+    font-size: var(--fs-md);
+    font-weight: 700;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    line-height: 1.25;
+}
+
+.rack-card-meta {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    line-height: 1.3;
+    font-weight: 500;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+}
+
+.rack-card-sub {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    opacity: 0.85;
+    line-height: 1.3;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+}
+
+.rack-card-sep {
+    opacity: 0.4;
+}
+
+/* Columna derecha / badges y ubicación */
+.rack-card-derecha {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.18rem;
+    text-align: right;
+    max-width: 48%;
+    font-weight: 400;
+}
+
+.rack-card-derecha,
+.rack-card-derecha * {
+    font-weight: 400 !important;
+}
+
+.rack-card-derecha-row1 {
+    min-height: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.rack-card-edif-piso {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+.rack-card-derecha .badge {
+    font-size: var(--fs-xs);
+    font-weight: 400 !important;
+    padding: 0.15rem 0.5rem;
+    border-radius: 99px;
+    white-space: nowrap;
+}
+
+.badge-edificio-piso {
+    background: var(--c-purple);
+    color: #ffffff;
+    border: none;
+}
+
+.rack-card-dep {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+.rack-card-patch {
+    font-size: var(--fs-xs);
+    color: var(--text-disabled);
+    line-height: 1.2;
+}
+
+/* Adaptación responsive para pantallas estrechas */
+@media (max-width: 540px) {
+    .rack-card {
+        flex-wrap: wrap;
+        padding: 0.7rem 0.8rem;
+        gap: 0.65rem;
+    }
+
+    .rack-card-info {
+        flex: 1 1 calc(100% - 56px);
+    }
+
+    .rack-card-derecha {
+        width: 100%;
+        max-width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 0.45rem;
+        border-top: 1px dashed var(--border);
+        margin-top: 0.15rem;
+        text-align: left;
+    }
+
+    .rack-card-derecha-row1:empty {
+        display: none;
+    }
+
+    .rack-card-derecha .rack-card-dep,
+    .rack-card-derecha .rack-card-patch {
+        text-align: right;
+    }
+}
+
+/* Estilos de acordeón cuando se visualiza en modo tarjetas */
+.inv-tabla-cards-mode {
+    table-layout: auto !important;
+}
+
+.inv-tabla-cards-mode thead {
+    display: none !important;
+}
+
+.inv-tabla-cards-mode td {
+    padding: 0 !important;
+    border-bottom: none !important;
+}
+
+.inv-tabla-cards-mode .inv-grupo-detalle-inner {
+    padding: 0.4rem 0.25rem 0.65rem;
+}
+
 /* ════════════════════════════════════════════════════════
    GRUPOS COLAPSABLES
    ════════════════════════════════════════════════════════ */
