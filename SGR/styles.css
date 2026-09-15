@@ -58,7 +58,7 @@
     --radius: 20px;
     --radius-sm: 12px;
     --border-w: 1px;
-    --hover: brightness(0.93);
+    --hover: brightness(0.9);
 
     /* Tokens de animación */
     --t-fast: 0.15s ease;
@@ -1702,7 +1702,8 @@ input[type="file"].hidden {
     .btn-gist-action:not(:disabled):hover,
     .th-sortable:hover,
     .busq-filtro-item:hover,
-    .busq-filtro-header button:hover {
+    .busq-filtro-header button:hover,
+    .rack-card:hover {
         filter: var(--hover);
     }
 
@@ -2122,14 +2123,12 @@ kbd {
     box-shadow: var(--shadow);
     cursor: pointer;
     user-select: none;
-    transition: transform var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast), filter var(--t-fast);
+    transition: filter var(--t-fast);
     position: relative;
 }
 
 .rack-card:hover {
     filter: var(--hover);
-    border-color: var(--accent);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.09);
 }
 
 .rack-card:active {
@@ -2872,7 +2871,7 @@ kbd {
     border-radius: 8px;
     text-decoration: none;
     color: var(--text-main);
-    transition: background 0.15s ease, transform 0.1s ease;
+    transition: filter 0.15s ease, background 0.15s ease, transform 0.1s ease;
     cursor: pointer;
     user-select: none;
 }
@@ -2880,6 +2879,7 @@ kbd {
 .menu-modulo-item:hover,
 .menu-modulo-item:focus-visible {
     background: var(--input-bg, rgba(0, 0, 0, 0.05));
+    filter: var(--hover);
     outline: none;
 }
 

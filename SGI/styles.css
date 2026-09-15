@@ -40,7 +40,7 @@
             --radius: 20px;
             --radius-sm: 8px;
             --border-w: 1.5px;
-            --hover: brightness(0.93);
+            --hover: brightness(0.9);
 
             /* Tokens de animación */
             --t-fast: 0.15s ease;
@@ -2629,7 +2629,7 @@
     border-radius: 8px;
     text-decoration: none;
     color: var(--text-main);
-    transition: background 0.15s ease, transform 0.1s ease;
+    transition: filter 0.15s ease, background 0.15s ease, transform 0.1s ease;
     cursor: pointer;
     user-select: none;
 }
@@ -2637,6 +2637,7 @@
 .menu-modulo-item:hover,
 .menu-modulo-item:focus-visible {
     background: var(--input-bg, rgba(0, 0, 0, 0.05));
+    filter: var(--hover);
     outline: none;
 }
 
