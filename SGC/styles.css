@@ -1684,6 +1684,7 @@ button:disabled {
     display: grid;
     grid-template-rows: 1fr;
     opacity: 1;
+    overflow: hidden;
     transition: grid-template-rows var(--t-collapse), opacity var(--t-collapse);
 }
 
@@ -1699,6 +1700,13 @@ button:disabled {
     grid-template-columns: 1fr 1fr;
     gap: var(--sp-3);
     padding: var(--sp-4);
+    transition: padding var(--t-collapse);
+}
+
+.nvr-canales-grid.collapsed .nvr-canales-grid-inner,
+.nvr-card.collapsed .nvr-canales-grid-inner {
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -3124,6 +3132,7 @@ button:disabled {
     display: grid;
     grid-template-rows: 1fr;
     opacity: 1;
+    overflow: hidden;
     transition: grid-template-rows var(--t-collapse), opacity var(--t-collapse);
 }
 
@@ -3699,6 +3708,7 @@ button:disabled {
     display: grid;
     grid-template-rows: 1fr;
     opacity: 1;
+    overflow: hidden;
     transition: grid-template-rows var(--t-collapse), opacity var(--t-collapse);
 }
 
