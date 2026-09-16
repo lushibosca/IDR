@@ -1655,6 +1655,16 @@ const TABS_CONFIG = [
 
 let _tabActual = 'dashboard';
 
+function actualizarHeaderTabTitle() {
+    const headerTabTitle = document.getElementById('header-tab-title');
+    if (headerTabTitle) {
+        const cfg = TABS_CONFIG.find(t => t.id === _tabActual);
+        if (cfg && headerTabTitle.textContent !== cfg.label) {
+            headerTabTitle.textContent = cfg.label;
+        }
+    }
+}
+
 function switchTab(tab) {
     if (_tabActual === tab) {
         let limpioAlgo = false;
@@ -1687,12 +1697,7 @@ function switchTab(tab) {
         } catch (_) { }
 
         _tabActual = tab;
-
-        const headerTabTitle = document.getElementById('header-tab-title');
-        if (headerTabTitle) {
-            const cfg = TABS_CONFIG.find(t => t.id === tab);
-            if (cfg) headerTabTitle.textContent = cfg.label;
-        }
+        actualizarHeaderTabTitle();
 
         saliente.classList.remove('activa');
         entrante.classList.add('activa');
@@ -3361,6 +3366,7 @@ window.addEventListener('scroll', () => {
     // 2. Lógica del Header Dinámico
     const header = document.getElementById('main-header');
     if (header) {
+        actualizarHeaderTabTitle();
         // Si bajamos más de 50px (aprox. la altura de las tabs), activamos el cambio
         if (window.scrollY > 50) {
             header.classList.add('scrolled');
@@ -4476,6 +4482,8 @@ function _initMenuModulos(moduloActual) {
         // Renovamos el temporizador desde "ahora"
         localStorage.setItem('SGI_tab_time', now.toString());
     } catch (_) { }
+
+    actualizarHeaderTabTitle();
 
     // fechas por defecto = hoy en los dos modales
     const hoy = getHoyLocal();

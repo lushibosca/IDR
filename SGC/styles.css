@@ -3171,8 +3171,19 @@ button:disabled {
     margin: 0;
     opacity: 0.8;
     font-size: 0.7rem;
-    border-left: 2px solid var(--c-orange);
-    padding-left: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.section-label--piso::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--c-orange);
+    flex-shrink: 0;
 }
 
 .piso-count {

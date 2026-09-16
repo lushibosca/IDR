@@ -1,12 +1,6 @@
-/**
- * Service Worker Unificado - Suite IDR
- * Control centralizado para Launcher y submódulos (SGC, SGI, SGL, SGR)
- */
+const CACHE_NAME = 'idr-suite-260916.2030';
+const RUNTIME_CACHE = 'idr-runtime-260916.2030';
 
-const CACHE_NAME = 'idr-suite-260916.1130';
-const RUNTIME_CACHE = 'idr-runtime-260916.1130';
-
-// Recursos esenciales que se precachean para garantizar funcionamiento offline total
 const PRECACHE_URLS = [
   // ── Launcher (Portada) ──
   './',
@@ -69,7 +63,7 @@ const PRECACHE_URLS = [
   './SGR/icons/icon-1024.png'
 ];
 
-// Instalación: precacheo resiliente
+// Instalación
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async cache => {
@@ -90,7 +84,7 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Activación: limpieza de cachés antiguas (incluye nombres heredados de submódulos)
+// Activación
 self.addEventListener('activate', event => {
   const allowedCaches = [CACHE_NAME, RUNTIME_CACHE];
 
@@ -111,10 +105,7 @@ self.addEventListener('activate', event => {
 // Fetch: Cache-First con guardado dinámico y fallback de navegación offline
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-
   const url = new URL(event.request.url);
-
-  // No interceptar peticiones a otros orígenes (ej. API de GitHub)
   if (url.origin !== location.origin) return;
 
   event.respondWith(
@@ -122,15 +113,12 @@ self.addEventListener('fetch', event => {
       if (cachedResponse) {
         return cachedResponse;
       }
-
-      // Si no está en caché, intentar red
       return fetch(event.request)
         .then(networkResponse => {
           if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
             return networkResponse;
           }
 
-          // Guardar dinámicamente recursos estáticos o imágenes en RUNTIME_CACHE
           const responseToCache = networkResponse.clone();
           caches.open(RUNTIME_CACHE).then(cache => {
             cache.put(event.request, responseToCache);
@@ -139,7 +127,6 @@ self.addEventListener('fetch', event => {
           return networkResponse;
         })
         .catch(() => {
-          // Si la red falla (Offline / Modo avión):
           if (event.request.mode === 'navigate') {
             const pathname = url.pathname;
             if (pathname.includes('/SGC')) {
@@ -157,7 +144,6 @@ self.addEventListener('fetch', event => {
             return caches.match('./index.html') || caches.match('./');
           }
 
-          // Si es una imagen y falló la red sin caché previa
           const esImagen = /\.(png|jpg|jpeg|webp|svg|ico)$/i.test(url.pathname);
           if (esImagen) {
             return new Response('', { status: 404, statusText: 'Offline - Image not found' });

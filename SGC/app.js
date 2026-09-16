@@ -3437,9 +3437,7 @@
             const isFloorCollapsed = _activos.pisosCollapsed.has(floorKey);
             return `<div class="sub-grupo-piso" data-floor-key="${S.esc(floorKey)}">
                         <div class="grupo-piso-header" data-toggle-piso="${S.esc(floorKey)}">
-                            <span class="section-label section-label--piso">
-                                PISO: ${S.esc(p)} <span class="piso-count">(${pisos[p].length})</span>
-                            </span>
+                            <span class="section-label section-label--piso">PISO: ${S.esc(p)} <span class="piso-count">(${pisos[p].length})</span></span>
                             <svg class="nvr-chevron nvr-chevron--piso${isFloorCollapsed ? ' nvr-chevron--collapsed' : ''}" viewBox="0 0 24 24"><use href="#icon-chevron-down"/></svg>
                         </div>
                         <div class="activos-grid-transition${isFloorCollapsed ? ' collapsed' : ''}">
@@ -3469,9 +3467,7 @@
             const isFloorCollapsed = _activos.pisosCollapsed.has(floorKey);
             return `<div class="sub-grupo-piso" data-floor-key="${S.esc(floorKey)}">
                         <div class="grupo-piso-header" data-toggle-piso="${S.esc(floorKey)}">
-                            <span class="section-label section-label--piso">
-                                FIRMWARE: ${S.esc(f)} <span class="piso-count">(${firmwares[f].length})</span>
-                            </span>
+                            <span class="section-label section-label--piso">FIRMWARE: ${S.esc(f)} <span class="piso-count">(${firmwares[f].length})</span></span>
                             <svg class="nvr-chevron nvr-chevron--piso${isFloorCollapsed ? ' nvr-chevron--collapsed' : ''}" viewBox="0 0 24 24"><use href="#icon-chevron-down"/></svg>
                         </div>
                         <div class="activos-grid-transition${isFloorCollapsed ? ' collapsed' : ''}">
@@ -4861,7 +4857,22 @@
         async eliminarEdificio(idx) {
             const nombre = S.edificios[idx];
             if (!nombre) return;
-            const ok = await Notif.confirmarModal(`¿Eliminar el edificio "${nombre}"?`);
+
+            const enCanales = (Store.data?.canales || []).filter(c => c.edificio === nombre).length;
+            const enGrabadores = (Store.data?.grabadores || []).filter(g => g.edificio === nombre).length;
+            const enOtros = (Store.data?.otrosProd || []).filter(o => o.edificio === nombre).length;
+            const totalUso = enCanales + enGrabadores + enOtros;
+
+            const partes = [];
+            if (enCanales) partes.push(`${enCanales} canal(es)`);
+            if (enGrabadores) partes.push(`${enGrabadores} grabador(es)`);
+            if (enOtros) partes.push(`${enOtros} dispositivo(s)`);
+
+            const msg = totalUso > 0
+                ? `"${nombre}" está asignado a ${totalUso} elemento(s) (${partes.join(', ')}). ¿Eliminar de todas formas?`
+                : `¿Eliminar el edificio "${nombre}"?`;
+
+            const ok = await Notif.confirmarModal(msg);
             if (!ok) return;
             historial.empujar(`Eliminar edificio "${nombre}"`);
             S.edificios.splice(idx, 1);

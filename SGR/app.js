@@ -820,29 +820,27 @@ const UI = {
 const GestorEdificios = (() => {
     function _renderLista() {
         const lista = document.getElementById('edificios-lista');
-        const empty = document.getElementById('edificios-empty');
         if (!lista) return;
         lista.innerHTML = '';
         const eds = state.edificios;
         if (!eds.length) {
-            if (empty) empty.removeAttribute('hidden');
+            lista.innerHTML = '<div class="dash-empty-text dash-empty-text--sm-pad">Sin edificios declarados</div>';
             return;
         }
-        if (empty) empty.setAttribute('hidden', '');
         eds.forEach((ed, i) => {
-            const li = document.createElement('li');
-            li.className = 'edificios-item';
+            const row = document.createElement('div');
+            row.className = 'tipo-custom-row';
             const span = document.createElement('span');
-            span.className = 'edificios-item-nombre';
+            span.className = 'tipo-custom-label';
             span.textContent = ed;
             const btn = document.createElement('button');
-            btn.className = 'edificios-item-eliminar icon-btn';
-            btn.title = 'Eliminar';
+            btn.className = 'icon-btn btn-delete btn-delete--sm';
+            btn.title = 'Eliminar edificio';
             btn.innerHTML = '<svg class="svg-icon"><use href="#icon-trash"/></svg>';
             btn.addEventListener('click', () => eliminar(i));
-            li.appendChild(span);
-            li.appendChild(btn);
-            lista.appendChild(li);
+            row.appendChild(span);
+            row.appendChild(btn);
+            lista.appendChild(row);
         });
     }
 
@@ -861,8 +859,8 @@ const GestorEdificios = (() => {
 
     function abrir() {
         _renderLista();
-        ModalLocker.resetear('modal-edificios');
         MM.alternar('modal-ajustes', 'modal-edificios');
+        setTimeout(() => document.getElementById('edificios-nuevo-input')?.focus(), 50);
     }
 
     function cerrar() {
@@ -872,18 +870,37 @@ const GestorEdificios = (() => {
     function agregar() {
         const input = document.getElementById('edificios-nuevo-input');
         if (!input) return;
-        const nombre = input.value.trim();
-        if (!nombre) { input.classList.add('error'); setTimeout(() => input.classList.remove('error'), 1200); return; }
-        if (state.edificios.some(e => e.toLowerCase() === nombre.toLowerCase())) {
-            toast('Ese edificio ya existe', 'error'); return;
-        }
+        const raw = input.value.trim();
+        if (!raw) { input.classList.add('error'); setTimeout(() => input.classList.remove('error'), 1200); toast('Ingresá un nombre para el edificio', 'error'); return; }
+
+        const nombres = raw.split(',').map(n => n.trim().slice(0, 100)).filter(Boolean);
+        if (!nombres.length) { input.classList.add('error'); return; }
+
         historial.empujar('Agregar edificio');
-        state.edificios.push(nombre);
-        state.edificios.sort((a, b) => a.localeCompare(b, 'es'));
-        guardar();
+        const agregados = [], duplicados = [];
+        for (const nombre of nombres) {
+            if (state.edificios.some(e => e.toLowerCase() === nombre.toLowerCase())) {
+                duplicados.push(nombre);
+            } else {
+                state.edificios.push(nombre);
+                agregados.push(nombre);
+            }
+        }
+        if (agregados.length) {
+            state.edificios.sort((a, b) => a.localeCompare(b, 'es'));
+            guardar();
+        }
         input.value = '';
+        input.classList.remove('error');
         _renderLista();
-        toast(`Edificio "${nombre}" agregado`, 'success');
+
+        if (agregados.length && !duplicados.length) {
+            toast(agregados.length === 1 ? `Edificio "${agregados[0]}" agregado` : `${agregados.length} edificios agregados`, 'success');
+        } else if (agregados.length && duplicados.length) {
+            toast(`${agregados.length} agregado${agregados.length > 1 ? 's' : ''}, ${duplicados.length} duplicado${duplicados.length > 1 ? 's' : ''} omitido${duplicados.length > 1 ? 's' : ''}`, 'info');
+        } else {
+            toast(duplicados.length === 1 ? `Ya existe "${duplicados[0]}"` : 'Todos ya existen', 'error');
+        }
     }
 
     function eliminar(idx) {
@@ -916,10 +933,6 @@ const ModalLocker = (() => {
         'modal-rack-editar-servicio': {
             lockBtnId: 'editar-servicio-lock-btn',
             exemptIds: new Set(['editar-servicio-cancelar-btn', 'editar-servicio-ir-rack-btn', 'editar-servicio-lock-btn']),
-        },
-        'modal-edificios': {
-            lockBtnId: 'edificios-lock-btn',
-            exemptIds: new Set(['edificios-cerrar-btn', 'edificios-lock-btn']),
         },
     };
 
@@ -1258,7 +1271,7 @@ function _restaurarCamposBusq() {
         const total = allChecks.length;
         const checked = saved.length;
         const filtroToggleAll = document.getElementById('busq-filtro-toggle-all');
-        if (filtroToggleAll) filtroToggleAll.textContent = checked === total ? 'Desactivar todo' : 'Activar todo';
+        if (filtroToggleAll) filtroToggleAll.textContent = checked > 0 ? 'Desactivar todo' : 'Activar todo';
         const filtroBtn = document.getElementById('busq-filtro-btn');
         if (filtroBtn) filtroBtn.classList.toggle('con-filtro', checked < total);
     } catch (_) { }
@@ -2689,7 +2702,13 @@ window.addEventListener('scroll', () => {
     const btn = document.getElementById('btn-scroll-top');
     if (btn) btn.classList.toggle('show', window.scrollY > window.innerHeight);
     const h = document.getElementById('main-header');
-    if (h) h.classList.toggle('scrolled', window.scrollY > 50);
+    if (h) {
+        const htt = document.getElementById('header-tab-title');
+        if (htt && TAB_LABELS[_tabActual] && htt.textContent !== TAB_LABELS[_tabActual]) {
+            htt.textContent = TAB_LABELS[_tabActual];
+        }
+        h.classList.toggle('scrolled', window.scrollY > 50);
+    }
     _cerrarTodosDropdowns();
 }, { passive: true });
 
@@ -3111,7 +3130,6 @@ function _initBindings() {
     // Botones de bloqueo de modales
     document.getElementById('rack-editar-lock-btn')?.addEventListener('click', () => ModalLocker.toggle('modal-rack-editar'));
     document.getElementById('editar-servicio-lock-btn')?.addEventListener('click', () => ModalLocker.toggle('modal-rack-editar-servicio'));
-    document.getElementById('edificios-lock-btn')?.addEventListener('click', () => ModalLocker.toggle('modal-edificios'));
 
     // Modal confirmar
     document.getElementById('confirmar-ok')?.addEventListener('click', () => {
@@ -3158,7 +3176,7 @@ function _initBindings() {
             filtroBtn.classList.toggle('activo', !abierto);
             if (!abierto) {
                 const rect = filtroBtn.getBoundingClientRect();
-                const menuW = 270;
+                const menuW = filtroMenu.offsetWidth || 380;
                 const menuH = filtroMenu.offsetHeight || 280;
                 const spaceBelow = window.innerHeight - rect.bottom;
                 const left = Math.max(8, Math.min(rect.right - menuW, window.innerWidth - menuW - 8));
@@ -3190,7 +3208,7 @@ function _initBindings() {
         _allChecks.forEach(cb => {
             cb.addEventListener('change', () => {
                 const checked = _allChecks.filter(c => c.checked).length;
-                if (filtroToggleAll) filtroToggleAll.textContent = checked === _total ? 'Desactivar todo' : 'Activar todo';
+                if (filtroToggleAll) filtroToggleAll.textContent = checked > 0 ? 'Desactivar todo' : 'Activar todo';
                 filtroBtn.classList.toggle('con-filtro', checked < _total);
                 _guardarCamposBusq();
                 onBusqGlobal();
@@ -3200,10 +3218,10 @@ function _initBindings() {
         if (filtroToggleAll) {
             filtroToggleAll.addEventListener('click', e => {
                 e.stopPropagation();
-                const allChecked = _allChecks.every(c => c.checked);
-                _allChecks.forEach(c => { c.checked = !allChecked; });
-                filtroToggleAll.textContent = allChecked ? 'Activar todo' : 'Desactivar todo';
-                filtroBtn.classList.toggle('con-filtro', allChecked);
+                const anyChecked = _allChecks.some(c => c.checked);
+                _allChecks.forEach(c => { c.checked = !anyChecked; });
+                filtroToggleAll.textContent = anyChecked ? 'Activar todo' : 'Desactivar todo';
+                filtroBtn.classList.toggle('con-filtro', anyChecked);
                 _guardarCamposBusq();
                 onBusqGlobal();
             });
