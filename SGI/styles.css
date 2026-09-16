@@ -983,23 +983,18 @@
         .year-content-wrapper {
             display: grid;
             grid-template-rows: 0fr;
-            transition: grid-template-rows var(--t-collapse);
+            opacity: 0;
+            transition: grid-template-rows var(--t-collapse), opacity var(--t-collapse);
         }
 
         .year-group.open .year-content-wrapper {
             grid-template-rows: 1fr;
+            opacity: 1;
         }
 
         .year-content {
             overflow: hidden;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity var(--t-collapse), visibility var(--t-collapse);
-        }
-
-        .year-group.open .year-content {
-            opacity: 1;
-            visibility: visible;
+            min-height: 0;
         }
 
         .year-content-inner {
@@ -1101,25 +1096,18 @@
         .month-content-wrapper {
             display: grid;
             grid-template-rows: 0fr;
-            transition: grid-template-rows var(--t-collapse);
+            opacity: 0;
+            transition: grid-template-rows var(--t-collapse), opacity var(--t-collapse);
         }
 
         .month-group.open .month-content-wrapper {
             grid-template-rows: 1fr;
+            opacity: 1;
         }
 
         .month-content {
             overflow: hidden;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity var(--t-collapse), visibility var(--t-collapse);
-        }
-
-        .month-group.open .month-content {
-            opacity: 1;
-            visibility: visible;
-            overflow: visible;
-            /* Clave para que el Sticky siga funcionando */
+            min-height: 0;
         }
 
         /* Permite que el Sticky funcione cuando el año está abierto */

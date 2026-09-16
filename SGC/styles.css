@@ -54,6 +54,8 @@
     --accent: #3b64d2;
     --c-accent-bg: rgba(59, 100, 210, 0.12);
 
+    --t-collapse: 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+
     /* Botones y controles estándar */
     --btn-fs: 0.9rem;
     --btn-fw: 600;
@@ -1666,7 +1668,7 @@ button:disabled {
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-    transition: transform 0.2s ease;
+    transition: transform var(--t-collapse);
 }
 
 .nvr-card.collapsed .nvr-chevron {
@@ -1679,18 +1681,20 @@ button:disabled {
 }
 
 .nvr-canales-grid {
-    overflow: hidden;
+    display: grid;
+    grid-template-rows: 1fr;
     opacity: 1;
-    max-height: 4000px;
-    transition: max-height 0.26s cubic-bezier(0.0, 0.0, 0.2, 1), opacity 0.2s ease;
+    transition: grid-template-rows var(--t-collapse), opacity var(--t-collapse);
 }
 
 .nvr-canales-grid.collapsed {
-    max-height: 0 !important;
+    grid-template-rows: 0fr;
     opacity: 0;
 }
 
 .nvr-canales-grid-inner {
+    overflow: hidden;
+    min-height: 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--sp-3);
@@ -3117,13 +3121,20 @@ button:disabled {
 }
 
 .activos-grid-transition {
-    transition: max-height 0.3s ease, opacity 0.25s ease;
-    overflow: hidden;
+    display: grid;
+    grid-template-rows: 1fr;
+    opacity: 1;
+    transition: grid-template-rows var(--t-collapse), opacity var(--t-collapse);
 }
 
 .activos-grid-transition.collapsed {
-    max-height: 0 !important;
-    opacity: 0 !important;
+    grid-template-rows: 0fr;
+    opacity: 0;
+}
+
+.activos-grid-inner {
+    overflow: hidden;
+    min-height: 0;
 }
 
 .nvr-chevron--collapsed {
@@ -3685,15 +3696,20 @@ button:disabled {
 }
 
 .parseador-preview-nvr-body {
-    overflow: hidden;
-    max-height: 20000px;
+    display: grid;
+    grid-template-rows: 1fr;
     opacity: 1;
-    transition: max-height 0.26s cubic-bezier(0.0, 0.0, 0.2, 1), opacity 0.2s ease;
+    transition: grid-template-rows var(--t-collapse), opacity var(--t-collapse);
 }
 
 .parseador-preview-nvr-body.collapsed {
-    max-height: 0 !important;
+    grid-template-rows: 0fr;
     opacity: 0;
+}
+
+.parseador-preview-nvr-body > * {
+    overflow: hidden;
+    min-height: 0;
 }
 
 .parseador-arrow {
