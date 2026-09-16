@@ -252,7 +252,7 @@ body {
 /* --- Modificamos el hover de la tarjeta (Modo Claro) --- */
 .app-card:hover,
 .app-card:focus-visible {
-    transform: translateY(-8px);
+    transform: scale(1.05);
     border-color: var(--theme-color);
     box-shadow: 0 10px 20px var(--theme-bg), 0 0 4px var(--theme-color);
 }

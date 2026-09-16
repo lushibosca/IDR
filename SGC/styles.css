@@ -192,13 +192,21 @@ body.modal-open {
 }
 
 .header-logo {
-    display: inline-flex;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--fs-2xl);
-    color: var(--text-main);
     flex-shrink: 0;
     cursor: pointer;
+    transition: fill 0.2s ease;
+}
+
+.header-logo svg {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .header-titles {
@@ -213,7 +221,7 @@ body.modal-open {
 
 .header h1,
 .header h1.header-main-title {
-    font-size: var(--fs-2xl);
+    font-size: 1.25rem;
     color: var(--text-main);
     font-weight: 700;
     display: inline-flex;
@@ -228,7 +236,15 @@ body.modal-open {
 
 .header-buttons {
     display: flex;
-    gap: var(--sp-3);
+    gap: 0.4rem;
+}
+
+.header .icon-btn .icon,
+.header .icon-btn svg,
+.header-buttons .icon-btn .icon,
+.header-buttons .icon-btn svg {
+    width: 1.1em;
+    height: 1.1em;
 }
 
 #header-tab-titulo,
@@ -237,7 +253,7 @@ body.modal-open {
     left: 0;
     top: 50%;
     transform: translateY(calc(-50% + 8px));
-    font-size: var(--fs-2xl);
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--text-main);
     letter-spacing: 0.01em;
@@ -2876,6 +2892,38 @@ button:disabled {
     to {
         transform: rotate(360deg);
     }
+}
+
+@keyframes mutacionSalida {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+}
+
+@keyframes mutacionEntrada {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.mutacion-saliente {
+    animation: mutacionSalida 0.22s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.mutacion-entrante {
+    animation: mutacionEntrada 0.22s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
 @keyframes tabFadeOut {

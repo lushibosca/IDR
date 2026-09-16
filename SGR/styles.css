@@ -199,8 +199,8 @@ body.modal-open {
 }
 
 .header-logo {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
@@ -208,6 +208,12 @@ body.modal-open {
     flex-shrink: 0;
     fill: var(--text-main);
     transition: fill 0.2s var(--t-spring);
+}
+
+.header-logo svg {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 /* Contenedor de títulos en el header para que compartan la misma posición */
@@ -318,8 +324,9 @@ body.modal-open {
 
 /* Ícono de logo en el header */
 .header-logo-icon {
-    width: 28px;
-    height: 28px;
+    width: 100%;
+    height: 100%;
+    display: block;
     fill: var(--c-red);
 }
 
@@ -1852,6 +1859,38 @@ kbd {
     box-shadow: 0 1px 0 var(--border);
     min-width: 1.6rem;
     text-align: center;
+}
+
+@keyframes mutacionSalida {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+}
+
+@keyframes mutacionEntrada {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.mutacion-saliente {
+    animation: mutacionSalida 0.22s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.mutacion-entrante {
+    animation: mutacionEntrada 0.22s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
 @keyframes tabFadeOut {

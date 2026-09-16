@@ -4382,8 +4382,93 @@
 
 
     // ════════════════════════════════════════════════════════════════════════════
-    // § UI — controlador de interfaz (modales, tabs, acciones del usuario)
     // ════════════════════════════════════════════════════════════════════════════
+    // § ANIMACIÓN DE MUTACIÓN
+    // ════════════════════════════════════════════════════════════════════════════
+    const _mutacionAnimEstado = new WeakMap();
+
+    function _fantasmaDe(el) {
+        const rect = el.getBoundingClientRect();
+        const clon = el.cloneNode(true);
+        clon.classList.add('mutacion-saliente');
+
+        Object.assign(clon.style, {
+            position: 'fixed',
+            top: rect.top + 'px',
+            left: rect.left + 'px',
+            width: rect.width + 'px',
+            height: rect.height + 'px',
+            margin: '0',
+            pointerEvents: 'none',
+            zIndex: '80'
+        });
+
+        const primerHijo = el.firstElementChild;
+        if (primerHijo) {
+            const childRect = primerHijo.getBoundingClientRect();
+            if (Math.abs(rect.top - childRect.top) < 1) {
+                clon.firstElementChild.style.marginTop = '0';
+            }
+        }
+
+        document.body.appendChild(clon);
+        return clon;
+    }
+
+    function _finalizarMutacionPendiente(el) {
+        const estado = _mutacionAnimEstado.get(el);
+        if (!estado) return;
+        clearTimeout(estado.timeout);
+        if (estado.fantasma && estado.fantasma.parentNode) {
+            estado.fantasma.remove();
+        }
+        el.classList.remove('mutacion-entrante');
+        _mutacionAnimEstado.delete(el);
+    }
+
+    function _animarMutacion(elementos, fn, duracion = 220) {
+        const els = (Array.isArray(elementos) ? elementos : [elementos]).filter(Boolean);
+
+        els.forEach(_finalizarMutacionPendiente);
+        if (els.length === 0) { return Promise.resolve(fn()); }
+
+        const fantasmasMap = [];
+        els.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                const f = _fantasmaDe(el);
+                fantasmasMap.push({ el, fantasma: f });
+            }
+        });
+
+        els.forEach(el => el.classList.remove('mutacion-entrante'));
+
+        return Promise.resolve(fn()).then((resultado) => {
+            els.forEach(el => {
+                void el.offsetWidth;
+                el.classList.add('mutacion-entrante');
+            });
+
+            const timeout = setTimeout(() => {
+                fantasmasMap.forEach(({ fantasma }) => fantasma.remove());
+                els.forEach(el => {
+                    el.classList.remove('mutacion-entrante');
+                    _mutacionAnimEstado.delete(el);
+                });
+            }, duracion);
+
+            els.forEach(el => {
+                const item = fantasmasMap.find(m => m.el === el);
+                _mutacionAnimEstado.set(el, {
+                    timeout,
+                    fantasma: item ? item.fantasma : null
+                });
+            });
+
+            return resultado;
+        });
+    }
+
     let _exportIpsModo = 'grabador'; // 'grabador' | 'modelo'
 
     const UI = {
@@ -4866,17 +4951,10 @@
             EdicionState.tabActual = tab;
 
             if (panelSaliente && panelSaliente !== panelEntrante) {
-                panelSaliente.classList.add('tab-saliendo');
-                setTimeout(() => {
-                    panelSaliente.classList.remove('tab-saliendo');
+                _animarMutacion([panelSaliente, panelEntrante], () => {
                     panelSaliente.classList.add('hidden');
                     panelEntrante.classList.remove('hidden');
-                    panelEntrante.getBoundingClientRect();
-                    panelEntrante.classList.add('tab-entrando');
-                    panelEntrante.addEventListener('animationend', () => {
-                        panelEntrante.classList.remove('tab-entrando');
-                    }, { once: true });
-                }, 180);
+                });
             } else {
                 if (panelEntrante) panelEntrante.classList.remove('hidden');
             }
@@ -4922,18 +5000,11 @@
             Busqueda.expandirTodosLosGrupos();
 
             if (panelSaliente && panelSaliente !== panelEntrante) {
-                panelSaliente.classList.add('tab-saliendo');
-                setTimeout(() => {
-                    panelSaliente.classList.remove('tab-saliendo');
+                _animarMutacion([panelSaliente, panelEntrante], () => {
                     panelSaliente.classList.add('hidden');
                     panelEntrante.classList.remove('hidden');
-                    panelEntrante.getBoundingClientRect();
-                    panelEntrante.classList.add('tab-entrando');
-                    panelEntrante.addEventListener('animationend', () => {
-                        panelEntrante.classList.remove('tab-entrando');
-                    }, { once: true });
                     ActivosRender.renderActivos();
-                }, 180);
+                });
             } else {
                 panelEntrante.classList.remove('hidden');
                 ActivosRender.renderActivos();

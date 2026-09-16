@@ -3404,6 +3404,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Header
     _on('btn-inicio', 'click', () => window.location.href = '../index.html');
+    _on('btn-inicio-logo', 'click', () => window.location.href = '../index.html');
     _on('year-selector', 'change', function () { Gantt.changeYear(this.value); });
     _on('btn-undo', 'click', () => Historial.undo());
     _on('btn-redo', 'click', () => Historial.redo());
