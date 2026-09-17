@@ -1281,7 +1281,7 @@ function _coincideToken(h, token) {
         return h.includes(token.texto);
     }
     const escaped = token.texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp('(?:^|\\s)' + escaped + '(?:\\s|$)', 'i');
+    const regex = new RegExp('(?<![\\p{L}\\p{N}])' + escaped + '(?![\\p{L}\\p{N}])', 'iu');
     return regex.test(h);
 }
 
@@ -1312,8 +1312,10 @@ function _coincideBusqueda(r, busqRaw, campos) {
 
     // 2. Extraemos el texto limpio de cada token y si es exacto (entre comillas o paréntesis)
     const tokens = tokensRaw.map(raw => {
-        const esExacto = (raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith('(') && raw.endsWith(')'));
-        const texto = normalizarTexto(raw.replace(/["()]/g, ''));
+        let inner = raw;
+        const esExacto = (inner.startsWith('"') && inner.endsWith('"')) || (inner.startsWith('(') && inner.endsWith(')'));
+        if (esExacto) inner = inner.slice(1, -1);
+        const texto = normalizarTexto(inner);
         return { texto, esExacto };
     }).filter(t => t.texto.length > 0);
 
@@ -1865,8 +1867,8 @@ function _renderResumenListaEdificios(contenedor, edificios, enServicio, totalSe
                 term = `"${ed}"`;
             }
             DOM.busqGlobal.value = term;
-            if (_tabActual !== 'inventario') {
-                switchTab('inventario');
+            if (_tabActual !== 'servicio') {
+                switchTab('servicio');
             }
             if (DOM.busqClearBtn) DOM.busqClearBtn.classList.toggle('visible', !!term);
             if (_busqTimer) clearTimeout(_busqTimer);
@@ -1963,6 +1965,7 @@ function _buildGrupoAccordionRows(grupos, { colspan, tablaClass, filaBuilder, ab
 // ═══════════════════════════════════════════════════════
 function renderServicio() {
     const busqRaw = DOM.busqGlobal?.value || '';
+    const busq = normalizarTexto(busqRaw);
     let racks = state.racks.filter(r => r.estado === 'servicio');
     if (busqRaw.trim()) {
         const campos = _getCamposBusq();
@@ -2188,7 +2191,7 @@ function _getGrupos(racks, agrupacion = _agrupInv) {
         });
     }
 
-    if (_agrupInv === 'unidades') {
+    if (agrupacion === 'unidades') {
         const porU = {};
         racks.forEach(r => {
             const key = r.unidades != null ? `${r.unidades}U` : 'Sin especificar';
