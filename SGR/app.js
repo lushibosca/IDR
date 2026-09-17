@@ -1276,6 +1276,15 @@ function _restaurarCamposBusq() {
         if (filtroBtn) filtroBtn.classList.toggle('con-filtro', checked < total);
     } catch (_) { }
 }
+function _coincideToken(h, token) {
+    if (!token.esExacto) {
+        return h.includes(token.texto);
+    }
+    const escaped = token.texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp('(?:^|\\s)' + escaped + '(?:\\s|$)', 'i');
+    return regex.test(h);
+}
+
 function _coincideBusqueda(r, busqRaw, campos) {
     const estadoVis = r.estado === 'inventario' ? 'disponible' : r.estado;
     const uniVis = r.unidades ? r.unidades + 'u' : '';
@@ -1298,11 +1307,17 @@ function _coincideBusqueda(r, busqRaw, campos) {
         return '';
     };
 
-    // 1. Extraemos los "tokens" respetando frases entre comillas ("anexo c" -> no se separa)
-    const tokensRaw = busqRaw.match(/"[^"]+"|\S+/g) || [];
+    // 1. Extraemos los "tokens" respetando frases entre comillas ("anexo c") o paréntesis ((anexo c))
+    const tokensRaw = busqRaw.match(/"[^"]+"|\([^)]+\)|\S+/g) || [];
 
-    // 2. Limpiamos las comillas y normalizamos cada bloque de búsqueda
-    const tokens = tokensRaw.map(t => normalizarTexto(t.replace(/"/g, '')));
+    // 2. Extraemos el texto limpio de cada token y si es exacto (entre comillas o paréntesis)
+    const tokens = tokensRaw.map(raw => {
+        const esExacto = (raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith('(') && raw.endsWith(')'));
+        const texto = normalizarTexto(raw.replace(/["()]/g, ''));
+        return { texto, esExacto };
+    }).filter(t => t.texto.length > 0);
+
+    if (!tokens.length) return true;
 
     if (esTodo) {
         const hayfields = [
@@ -1317,17 +1332,16 @@ function _coincideBusqueda(r, busqRaw, campos) {
             normalizarTexto([estadoVis].join(' ')),
         ];
         // Primero intentar que todos los tokens estén en UN MISMO campo
-        const matchSameField = hayfields.some(h => tokens.every(t => h.includes(t)));
+        const matchSameField = hayfields.some(h => tokens.every(t => _coincideToken(h, t)));
         if (matchSameField) return true;
-        // Fallback: todos los tokens en algún campo (cross-field), solo para tokens únicos
-        if (tokens.length === 1) return hayfields.some(h => h.includes(tokens[0]));
-        return false;
+        // Fallback: todos los tokens en algún campo (cross-field)
+        return tokens.every(t => hayfields.some(h => _coincideToken(h, t)));
     }
 
     // Multi-campo: basta con que TODAS las palabras (o frases) coincidan en al menos UN campo en común
     return camposArr.some(c => {
         const h = normalizarTexto(_textoParaCampo(c));
-        return tokens.every(t => h.includes(t));
+        return tokens.every(t => _coincideToken(h, t));
     });
 }
 
@@ -1752,7 +1766,7 @@ function _renderResumenListaEdificios(contenedor, edificios, enServicio, totalSe
             const t = mapaPisos[piso];
             const p = totalEdificio > 0 ? Math.round((t / totalEdificio) * 100) : 0;
             return `
-            <tr class="resumen-fila resumen-fila-sub">
+            <tr class="resumen-fila resumen-fila-sub resumen-fila-clickable resumen-fila-piso" data-edificio="${esc(ed)}" data-piso="${esc(piso)}">
                 <td class="resumen-td-label">${esc(piso)}</td>
                 <td class="resumen-td-total">
                     <div class="resumen-td-total-inner">
@@ -1836,6 +1850,28 @@ function _renderResumenListaEdificios(contenedor, edificios, enServicio, totalSe
             const detalle = tr.nextElementSibling;
             const grid = detalle?.querySelector(':scope > td > .resumen-detalle-grid');
             grid?.classList.toggle('expanded', open);
+        });
+    });
+
+    contenedor.querySelectorAll('.resumen-fila-piso').forEach(tr => {
+        tr.addEventListener('click', e => {
+            e.stopPropagation();
+            const ed = tr.dataset.edificio;
+            const piso = tr.dataset.piso;
+            let term = '';
+            if (piso && piso !== '(Sin piso)') {
+                term = `"${ed} ${piso}"`;
+            } else {
+                term = `"${ed}"`;
+            }
+            DOM.busqGlobal.value = term;
+            if (_tabActual !== 'inventario') {
+                switchTab('inventario');
+            }
+            if (DOM.busqClearBtn) DOM.busqClearBtn.classList.toggle('visible', !!term);
+            if (_busqTimer) clearTimeout(_busqTimer);
+            _busqTimer = setTimeout(renderTodo, 50);
+            DOM.busqGlobal.focus();
         });
     });
 }
@@ -1926,11 +1962,11 @@ function _buildGrupoAccordionRows(grupos, { colspan, tablaClass, filaBuilder, ab
 //  RENDER SERVICIO
 // ═══════════════════════════════════════════════════════
 function renderServicio() {
-    const busq = normalizarTexto(DOM.busqGlobal?.value || '');
+    const busqRaw = DOM.busqGlobal?.value || '';
     let racks = state.racks.filter(r => r.estado === 'servicio');
-    if (busq) {
+    if (busqRaw.trim()) {
         const campos = _getCamposBusq();
-        racks = racks.filter(r => _coincideBusqueda(r, busq, campos));
+        racks = racks.filter(r => _coincideBusqueda(r, busqRaw, campos));
     }
     racks = _ordenarArray(racks, _sortServ.col, _sortServ.dir);
 

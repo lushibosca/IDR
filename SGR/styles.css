@@ -2672,11 +2672,13 @@ kbd {
     transition: background var(--t-fast);
 }
 
-.resumen-fila-clickable:hover {
+.resumen-fila-clickable:hover,
+.resumen-fila-clickable:hover td {
     background: var(--input-bg);
 }
 
-.resumen-fila-clickable:active {
+.resumen-fila-clickable:active,
+.resumen-fila-clickable:active td {
     background: var(--c-accent-bg);
 }
 
