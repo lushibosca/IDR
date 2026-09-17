@@ -1754,23 +1754,33 @@ function _renderResumenListaEdificios(contenedor, edificios, enServicio, totalSe
             return `
             <tr class="resumen-fila resumen-fila-sub">
                 <td class="resumen-td-label">${esc(piso)}</td>
-                <td class="resumen-td-num resumen-td-total">${t} <span class="resumen-pct">(${p}%)</span></td>
+                <td class="resumen-td-total">
+                    <div class="resumen-td-total-inner">
+                        <span>${t} <span class="resumen-pct">(${p}%)</span></span>
+                    </div>
+                </td>
             </tr>`;
         }).join('');
 
         return `
         <tr class="resumen-fila resumen-fila-clickable resumen-fila-header${isOpen ? ' open' : ''}" data-edificio="${esc(ed)}">
             <td class="resumen-td-label">${esc(ed)}</td>
-            <td class="resumen-td-num resumen-td-total">${total}${pct}</td>
-            <td class="resumen-td-num resumen-td-chevron">
-                <svg class="svg-icon resumen-chevron-icon"><use href="#icon-chevron-right"/></svg>
+            <td class="resumen-td-total">
+                <div class="resumen-td-total-inner">
+                    <span>${total}${pct}</span>
+                    <svg class="svg-icon resumen-chevron-icon"><use href="#icon-chevron-right"/></svg>
+                </div>
             </td>
         </tr>
         <tr class="resumen-fila-detalle" data-edificio="${esc(ed)}">
-            <td colspan="3">
+            <td colspan="2">
                 <div class="resumen-detalle-grid${isOpen ? ' expanded' : ''}">
                     <div class="resumen-detalle-inner">
                         <table class="resumen-table">
+                            <colgroup>
+                                <col class="resumen-col-edificio">
+                                <col class="resumen-col-total">
+                            </colgroup>
                             <tbody>${filasPiso}</tbody>
                         </table>
                     </div>
@@ -1785,11 +1795,14 @@ function _renderResumenListaEdificios(contenedor, edificios, enServicio, totalSe
     contenedor.innerHTML = `
         <div class="table-wrap">
             <table class="resumen-table">
+                <colgroup>
+                    <col class="resumen-col-edificio">
+                    <col class="resumen-col-total">
+                </colgroup>
                 <thead>
                     <tr>
                         <th class="resumen-th-activo ${clsNombre}" data-sort-ed="nombre">EDIFICIO</th>
-                        <th class="resumen-th-num resumen-th-total ${clsTotal}" data-sort-ed="total">TOTAL</th>
-                        <th class="resumen-th-num resumen-th-chevron-col"></th>
+                        <th class="resumen-th-total ${clsTotal}" data-sort-ed="total">TOTAL</th>
                     </tr>
                 </thead>
                 <tbody>${filas}</tbody>

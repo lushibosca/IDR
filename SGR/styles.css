@@ -2898,6 +2898,18 @@ kbd {
     table-layout: fixed;
 }
 
+.resumen-col-edificio,
+.resumen-th-activo,
+.resumen-table td.resumen-td-label {
+    width: 75%;
+}
+
+.resumen-col-total,
+.resumen-th-total,
+.resumen-table td.resumen-td-total {
+    width: 25%;
+}
+
 .resumen-th-activo {
     text-align: left;
     padding: 0.55rem 0.85rem;
@@ -2907,7 +2919,18 @@ kbd {
     letter-spacing: 0.05em;
     color: var(--text-muted);
     border-bottom: 2px solid var(--border);
-    width: 100%;
+}
+
+.resumen-th-total {
+    text-align: left;
+    padding: 0.55rem 0.85rem;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
 }
 
 .resumen-th-num {
@@ -2923,10 +2946,6 @@ kbd {
     width: 100px;
 }
 
-.resumen-th-total {
-    color: var(--text-muted);
-}
-
 .resumen-fila td {
     padding: 0.65rem 0.85rem;
     border-bottom: var(--border-w) solid var(--border);
@@ -2939,6 +2958,7 @@ kbd {
 .resumen-td-label {
     font-weight: 700;
     color: var(--text-main);
+    text-align: left;
 }
 
 .resumen-td-num {
@@ -2950,9 +2970,19 @@ kbd {
 }
 
 .resumen-td-total {
+    text-align: left;
+    font-variant-numeric: tabular-nums;
     color: var(--text-muted);
     font-weight: 700;
     font-size: var(--fs-xl);
+    white-space: nowrap;
+}
+
+.resumen-td-total-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .resumen-td-con,
