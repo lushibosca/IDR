@@ -36,6 +36,9 @@
     --btn-padding: var(--btn-pad-y) var(--btn-pad-x);
     --btn-icon-size: 44px;
 
+    --bg-overlay: rgba(245, 246, 250, 0.72);
+    --bg-blur: 6px;
+
     /* Escala tipográfica */
     --fs-xs: 0.7rem;
     --fs-sm: 0.75rem;
@@ -53,6 +56,7 @@ html.dark-mode body {
     --text-main: #e3e3e3;
     --text-muted: #b4b4b4;
     --border: #313333;
+    --bg-overlay: rgba(19, 19, 20, 0.78);
     --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     --shadow-hover: 0 12px 30px rgba(0, 0, 0, 0.6);
 }
@@ -65,14 +69,76 @@ html.dark-mode body {
     -webkit-tap-highlight-color: transparent;
 }
 
+html {
+    background-color: var(--bg-body);
+}
+
 body {
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: var(--bg-body);
+    background-color: transparent;
     color: var(--text-main);
     transition: background-color 0.3s, border-color 0.3s, color 0.3s;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* ════ FONDO DINÁMICO CON OVERLAY Y DESENFOQUE ════ */
+.bg-backdrop {
+    position: fixed;
+    top: -20px;
+    left: -20px;
+    right: -20px;
+    bottom: -20px;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.bg-layer {
+    position: absolute;
+    inset: 0;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    filter: blur(var(--bg-blur));
+    transform: scale(1.04);
+    transition: opacity 0.4s ease;
+    will-change: opacity;
+}
+
+.bg-layer.bg-light {
+    background-image: url('./img/cco_light.jpeg');
+    opacity: 1;
+}
+
+.bg-layer.bg-dark {
+    background-image: url('./img/cco_dark.jpeg');
+    opacity: 0;
+}
+
+html.dark-mode .bg-layer.bg-light {
+    opacity: 0;
+}
+
+html.dark-mode .bg-layer.bg-dark {
+    opacity: 1;
+}
+
+.bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-overlay);
+    transition: background-color 0.4s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bg-layer,
+    .bg-overlay {
+        transition: none;
+    }
 }
 
 #btn-install-app {

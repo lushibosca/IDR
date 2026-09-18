@@ -1,5 +1,5 @@
-const CACHE_NAME = 'idr-suite-260918.0018';
-const RUNTIME_CACHE = 'idr-runtime-260918.0018';
+const CACHE_NAME = 'idr-suite-260918.0028';
+const RUNTIME_CACHE = 'idr-runtime-260918.0028';
 
 const PRECACHE_URLS = [
   // ── Launcher (Portada) ──
@@ -13,8 +13,8 @@ const PRECACHE_URLS = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-1024.png',
-  './img/cco.jpeg',
-  './img/cco_black.jpeg',
+  './img/cco_light.jpeg',
+  './img/cco_dark.jpeg',
 
   // ── SGC (CCTV) ──
   './SGC/',
