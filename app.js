@@ -212,6 +212,7 @@
     // --- LÓGICA DE NAVEGACIÓN ANIMADA ---
     function setupNavigation() {
         const appCards = document.querySelectorAll('.app-card');
+        const bgBackdrop = document.querySelector('.bg-backdrop');
         
         appCards.forEach(card => {
             card.addEventListener('click', (e) => {
@@ -221,11 +222,14 @@
                 e.preventDefault(); // Evitamos el salto inmediato
                 const targetUrl = card.href;
 
-                // Aplicamos la animación de salida inmediata a todas las tarjetas
+                // Aplicamos la animación de salida inmediata a todas las tarjetas y al fondo
                 appCards.forEach(c => {
                     c.style.animationDelay = '0s';
                     c.classList.add('exiting');
                 });
+                if (bgBackdrop) {
+                    bgBackdrop.classList.add('exiting');
+                }
 
                 let redirected = false;
                 const redirect = () => {
@@ -258,6 +262,12 @@
                 // solucionando el problema de los íconos SVG invisibles en Firefox.
                 void card.offsetWidth; 
             });
+
+            const bgBackdrop = document.querySelector('.bg-backdrop');
+            if (bgBackdrop) {
+                bgBackdrop.classList.remove('exiting');
+                void bgBackdrop.offsetWidth;
+            }
         }
     });
 
