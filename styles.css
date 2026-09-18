@@ -471,26 +471,58 @@ html.dark-mode .app-card:focus-visible {
 /* Ajustes para móviles */
 @media (max-width: 600px) {
     .container {
-        padding: 2rem 1rem;
+        padding: 1.25rem 1rem;
     }
 
     .welcome-section h2 {
         font-size: 1.5rem;
     }
 
+    .app-grid {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+    }
+
     .app-card {
-        padding: 2rem 1.25rem;
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
+        padding: 1rem 1.15rem;
+        gap: 1rem;
+        border-radius: var(--radius);
     }
 
     .app-icon-wrapper {
-        width: 70px;
-        height: 70px;
-        border-radius: 20px;
+        flex: 0 0 22%;
+        max-width: 66px;
+        aspect-ratio: 1;
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        margin-bottom: 0;
     }
 
     .app-icon {
-        width: 34px;
-        height: 34px;
+        width: 32px;
+        height: 32px;
+    }
+
+    .app-info {
+        flex: 1;
+        min-width: 0;
+        text-align: left;
+    }
+
+    .app-info h3 {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+        letter-spacing: -0.01em;
+    }
+
+    .app-info p {
+        font-size: 0.82rem;
+        line-height: 1.35;
     }
 }
 
