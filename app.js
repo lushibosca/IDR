@@ -22,8 +22,15 @@
     } 
 
     function renderTheme(isDark) {
-        if (isDark) document.documentElement.classList.add('dark-mode');
-        else document.documentElement.classList.remove('dark-mode');
+        if (isDark) {
+            document.documentElement.classList.add('dark-mode');
+            document.documentElement.style.backgroundColor = '#131314';
+            document.documentElement.style.colorScheme = 'dark';
+        } else {
+            document.documentElement.classList.remove('dark-mode');
+            document.documentElement.style.backgroundColor = '#f5f6fa';
+            document.documentElement.style.colorScheme = 'light';
+        }
 
         if (btnDarkMode && iconThemeUse) {
             btnDarkMode.title = isDark ? 'Activar modo claro' : 'Activar modo oscuro';

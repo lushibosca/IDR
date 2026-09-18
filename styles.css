@@ -49,6 +49,7 @@
     --fs-2xl: 1.1rem;
 }
 
+html.dark-mode,
 html.dark-mode body {
     --bg-body: #131314;
     --bg-card: #1e1f20;
@@ -59,6 +60,11 @@ html.dark-mode body {
     --bg-overlay: rgba(19, 19, 20, 0.78);
     --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     --shadow-hover: 0 12px 30px rgba(0, 0, 0, 0.6);
+}
+
+html.dark-mode {
+    background-color: #131314;
+    color-scheme: dark;
 }
 
 /* ════ 2. RESET & BASE ════ */
@@ -88,13 +94,14 @@ body {
 /* ════ FONDO DINÁMICO CON OVERLAY Y DESENFOQUE ════ */
 .bg-backdrop {
     position: fixed;
-    top: -20px;
-    left: -20px;
-    right: -20px;
-    bottom: -20px;
+    top: -24px;
+    left: -24px;
+    right: -24px;
+    bottom: -24px;
     z-index: -1;
     overflow: hidden;
     pointer-events: none;
+    animation: bgFadeIn 0.5s cubic-bezier(0.25, 1, 0.5, 1) backwards;
 }
 
 .bg-layer {
@@ -104,9 +111,10 @@ body {
     background-repeat: no-repeat;
     background-size: cover;
     filter: blur(var(--bg-blur));
-    transform: scale(1.04);
+    transform: scale(1.05);
     transition: opacity 0.4s ease;
-    will-change: opacity;
+    will-change: opacity, transform;
+    animation: bgZoom 0.5s cubic-bezier(0.25, 1, 0.5, 1) backwards;
 }
 
 .bg-layer.bg-light {
@@ -134,9 +142,29 @@ html.dark-mode .bg-layer.bg-dark {
     transition: background-color 0.4s ease;
 }
 
+@keyframes bgFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes bgZoom {
+    from {
+        transform: scale(1);
+    }
+    to {
+        transform: scale(1.05);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
+    .bg-backdrop,
     .bg-layer,
     .bg-overlay {
+        animation: none;
         transition: none;
     }
 }
