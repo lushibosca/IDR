@@ -1,5 +1,5 @@
-const CACHE_NAME = 'idr-suite-260919.0125';
-const RUNTIME_CACHE = 'idr-runtime-260919.0125';
+const CACHE_NAME = 'idr-suite-260921.1945';
+const RUNTIME_CACHE = 'idr-runtime-260921.1945';
 
 const PRECACHE_URLS = [
   // ── Launcher (Portada) ──
@@ -62,7 +62,19 @@ const PRECACHE_URLS = [
   './SGR/icon.svg',
   './SGR/icons/icon-192.png',
   './SGR/icons/icon-512.png',
-  './SGR/icons/icon-1024.png'
+  './SGR/icons/icon-1024.png',
+
+  // ── SGP (Patcheras) ──
+  './SGP/',
+  './SGP/index.html',
+  './SGP/flash.js',
+  './SGP/manifest.json',
+  './SGP/styles.css',
+  './SGP/app.js',
+  './SGP/icon.svg',
+  './SGP/icons/icon-192.png',
+  './SGP/icons/icon-512.png',
+  './SGP/icons/icon-1024.png'
 ];
 
 // Instalación

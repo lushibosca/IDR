@@ -1,3 +1,5 @@
 SGC/Utilidades/datos/*
 *.json
+!manifest.json
+!*/manifest.json
 *.log
