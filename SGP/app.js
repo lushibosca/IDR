@@ -61,6 +61,8 @@ async function generarFirma(obj) {
             r.id,
             r.nombre,
             r.us,
+            r.edificio || '',
+            r.sgrId || '',
             (r.unidades || []).map(u => [
                 u.id,
                 u.tipo,
@@ -68,7 +70,8 @@ async function generarFirma(obj) {
                 u.pos,
                 (u.puertos || []).map(p => [p.num, p.label || '', p.notas || '', p.color || ''])
             ])
-        ])
+        ]),
+        edificios: Array.isArray(obj.edificios) ? obj.edificios.slice().sort() : []
     };
     const str = JSON.stringify(core);
     const enc = new TextEncoder();
@@ -81,7 +84,31 @@ async function generarFirma(obj) {
 async function verificarFirma(raw) {
     if (!raw || typeof raw !== 'object' || !raw._firma) return false;
     const calc = await generarFirma(raw);
-    return raw._firma === calc;
+    if (raw._firma === calc) return true;
+
+    // Fallback de retrocompatibilidad con firmas anteriores (sin edificios)
+    try {
+        const oldCore = {
+            racks: (raw.racks || []).map(r => [
+                r.id,
+                r.nombre,
+                r.us,
+                (r.unidades || []).map(u => [
+                    u.id,
+                    u.tipo,
+                    u.nombre,
+                    u.pos,
+                    (u.puertos || []).map(p => [p.num, p.label || '', p.notas || '', p.color || ''])
+                ])
+            ])
+        };
+        const enc = new TextEncoder();
+        const buf = await crypto.subtle.digest('SHA-256', enc.encode(JSON.stringify(oldCore)));
+        const oldCalc = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        return raw._firma === oldCalc;
+    } catch (_) {
+        return false;
+    }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -132,6 +159,8 @@ function _sanitizarRack(r) {
     return {
         id,
         nombre,
+        edificio: _strSeg(r.edificio || '', 80) ?? '',
+        sgrId: _strSeg(r.sgrId || '', 32) ?? '',
         us: Number.isFinite(us) && us > 0 ? Math.floor(us) : 24,
         desc: _strSeg(r.desc || '', 120) ?? '',
         unidades: Array.isArray(r.unidades)
@@ -144,13 +173,19 @@ function _sanitizarRack(r) {
 function sanitizarEstado(raw) {
     if (!raw || typeof raw !== 'object') return null;
     if (!Array.isArray(raw.racks)) return null;
-    return { racks: raw.racks.map(_sanitizarRack).filter(Boolean) };
+    const edificios = Array.isArray(raw.edificios)
+        ? raw.edificios.map(e => _strSeg(e, 80)).filter(Boolean)
+        : [];
+    return {
+        racks: raw.racks.map(_sanitizarRack).filter(Boolean),
+        edificios
+    };
 }
 
 // ══════════════════════════════════════════════════════════════
 //  4. ESTADO LOCAL
 // ══════════════════════════════════════════════════════════════
-let state = { racks: [] };
+let state = { racks: [], edificios: [] };
 
 function guardar() {
     try {
@@ -165,6 +200,22 @@ function cargar() {
         if (raw) {
             const limpio = sanitizarEstado(raw);
             if (limpio) state = limpio;
+        }
+    } catch (_) {}
+
+    // Lectura e incorporación automática de edificios de SGR
+    try {
+        const sgrEds = SGRBridge.obtenerEdificios();
+        if (sgrEds.length > 0) {
+            if (!Array.isArray(state.edificios)) state.edificios = [];
+            const set = new Set(state.edificios.map(e => e.toLowerCase()));
+            sgrEds.forEach(ed => {
+                if (!set.has(ed.toLowerCase())) {
+                    state.edificios.push(ed);
+                    set.add(ed.toLowerCase());
+                }
+            });
+            state.edificios.sort((a, b) => a.localeCompare(b, 'es'));
         }
     } catch (_) {}
 }
@@ -518,20 +569,36 @@ const Tooltip = (() => {
 // ══════════════════════════════════════════════════════════════
 //  11. RENDER RACKS & PATCHERAS
 // ══════════════════════════════════════════════════════════════
+let _filtroEdificio = '';
+
 function renderRacks() {
     const container = document.getElementById('racks-list');
     const empty = document.getElementById('racks-empty');
     if (!container || !empty) return;
 
-    if (!state.racks.length) {
+    let racksMostrar = state.racks;
+    if (_filtroEdificio) {
+        const fEd = _filtroEdificio.toLowerCase().trim();
+        racksMostrar = racksMostrar.filter(r => (r.edificio || '').toLowerCase().trim() === fEd);
+    }
+
+    if (!racksMostrar.length) {
         container.innerHTML = '';
         empty.classList.remove('hidden');
+        const emptyP = empty.querySelector('p');
+        if (emptyP) {
+            if (state.racks.length > 0 && _filtroEdificio) {
+                emptyP.textContent = `No hay racks en el edificio "${_filtroEdificio}".`;
+            } else {
+                emptyP.innerHTML = 'No hay racks registrados.<br>Comenzá creando tu primer rack de telecomunicaciones.';
+            }
+        }
         return;
     }
     empty.classList.add('hidden');
-    container.innerHTML = state.racks.map(r => renderRackCard(r)).join('');
+    container.innerHTML = racksMostrar.map(r => renderRackCard(r)).join('');
 
-    state.racks.forEach(r => {
+    racksMostrar.forEach(r => {
         bindRackEvents(r.id);
     });
 }
@@ -547,6 +614,12 @@ function renderRackCard(rack) {
         <div class="rack-item-header ${isOpen ? 'open' : ''}" id="rheader-${esc(rack.id)}">
             <svg class="svg-icon icon-accent"><use href="#icon-rack"/></svg>
             <span class="rack-item-name">${esc(rack.nombre)}</span>
+            ${rack.edificio ? `
+                <span class="rack-edificio-badge" title="Edificio">
+                    <svg class="svg-icon icon-xs"><use href="#icon-building"/></svg>
+                    ${esc(rack.edificio)}
+                </span>` : ''}
+            ${rack.sgrId ? `<span class="badge badge-sgr" title="Vinculado a rack de SGR">SGR</span>` : ''}
             ${rack.desc ? `<span class="rack-item-meta">${esc(rack.desc)}</span>` : ''}
             <span class="badge badge-gray">${rack.unidades.length} patchera${rack.unidades.length !== 1 ? 's' : ''}</span>
             <span class="badge ${pct > 80 ? 'badge-orange' : 'badge-blue'}">${pct}% ocupado</span>
@@ -692,7 +765,265 @@ function bindRackEvents(rackId) {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  12. CRUD DE RACKS
+//  12. INTEGRACIÓN SGR & GESTOR DE EDIFICIOS
+// ══════════════════════════════════════════════════════════════
+const SGRBridge = {
+    obtenerData() {
+        try {
+            const raw = parseSeguro(localStorage.getItem('RCK_data') || 'null');
+            return (raw && typeof raw === 'object') ? raw : null;
+        } catch (_) {
+            return null;
+        }
+    },
+    obtenerEdificios() {
+        const data = this.obtenerData();
+        if (!data) return [];
+        const set = new Set();
+        if (Array.isArray(data.edificios)) {
+            data.edificios.forEach(e => {
+                if (typeof e === 'string' && e.trim()) set.add(e.trim());
+            });
+        }
+        if (Array.isArray(data.racks)) {
+            data.racks.forEach(r => {
+                if (typeof r?.edificio === 'string' && r.edificio.trim()) set.add(r.edificio.trim());
+            });
+        }
+        return Array.from(set).sort((a, b) => a.localeCompare(b, 'es'));
+    },
+    obtenerRacks(edificio = '') {
+        const data = this.obtenerData();
+        if (!data || !Array.isArray(data.racks)) return [];
+        let list = data.racks.filter(r => r && (r.numero || r.identificador || r.marca));
+        if (edificio) {
+            const edNorm = edificio.trim().toLowerCase();
+            list = list.filter(r => (r.edificio || '').trim().toLowerCase() === edNorm);
+        }
+        return list.sort((a, b) => {
+            const numA = (a.numero || a.identificador || '').toString();
+            const numB = (b.numero || b.identificador || '').toString();
+            return numA.localeCompare(numB, 'es', { numeric: true });
+        });
+    }
+};
+
+const GestorEdificios = (() => {
+    function obtenerTodos() {
+        const set = new Set();
+        (state.edificios || []).forEach(e => { if (typeof e === 'string' && e.trim()) set.add(e.trim()); });
+        (state.racks || []).forEach(r => { if (typeof r?.edificio === 'string' && r.edificio.trim()) set.add(r.edificio.trim()); });
+        SGRBridge.obtenerEdificios().forEach(e => set.add(e));
+        return Array.from(set).sort((a, b) => a.localeCompare(b, 'es'));
+    }
+
+    function _renderLista() {
+        const lista = document.getElementById('edificios-lista');
+        const sgrAviso = document.getElementById('edificios-sgr-aviso');
+        const sgrInfo = document.getElementById('edificios-sgr-info');
+        if (!lista) return;
+
+        const sgrEds = new Set(SGRBridge.obtenerEdificios());
+        if (sgrAviso && sgrInfo) {
+            if (sgrEds.size > 0) {
+                sgrInfo.textContent = `Conectado a SGR (${sgrEds.size} edificio${sgrEds.size !== 1 ? 's' : ''} detectado${sgrEds.size !== 1 ? 's' : ''})`;
+                sgrAviso.classList.remove('hidden');
+            } else {
+                sgrAviso.classList.add('hidden');
+            }
+        }
+
+        const todos = obtenerTodos();
+        if (!todos.length) {
+            lista.innerHTML = '<div class="edificios-empty">Sin edificios declarados</div>';
+            return;
+        }
+
+        lista.innerHTML = '';
+        todos.forEach(ed => {
+            const esDeSgr = sgrEds.has(ed);
+            const row = document.createElement('div');
+            row.className = 'tipo-custom-row';
+
+            const span = document.createElement('span');
+            span.className = 'tipo-custom-label';
+            span.textContent = ed;
+
+            if (esDeSgr) {
+                const badge = document.createElement('span');
+                badge.className = 'badge-sgr';
+                badge.textContent = 'SGR';
+                badge.title = 'Disponible desde módulo SGR';
+                span.appendChild(badge);
+            }
+
+            const btn = document.createElement('button');
+            btn.className = 'icon-btn btn-delete btn-delete--sm';
+            btn.title = 'Eliminar edificio';
+            btn.innerHTML = '<svg class="svg-icon"><use href="#icon-trash"/></svg>';
+            btn.addEventListener('click', () => eliminar(ed));
+
+            row.appendChild(span);
+            row.appendChild(btn);
+            lista.appendChild(row);
+        });
+    }
+
+    function poblarSelect(selectId, valorActual = '', incluirOpcionTodos = false) {
+        const sel = document.getElementById(selectId);
+        if (!sel) return;
+        const todos = obtenerTodos();
+        sel.innerHTML = '';
+
+        const optVacia = document.createElement('option');
+        optVacia.value = '';
+        optVacia.textContent = incluirOpcionTodos ? 'Todos los edificios' : '— Sin edificio —';
+        sel.appendChild(optVacia);
+
+        todos.forEach(ed => {
+            const opt = document.createElement('option');
+            opt.value = ed;
+            opt.textContent = ed;
+            sel.appendChild(opt);
+        });
+        sel.value = (valorActual && todos.includes(valorActual)) ? valorActual : '';
+    }
+
+    function abrir() {
+        _renderLista();
+        MM.alternar('modal-ajustes', 'modal-edificios');
+        setTimeout(() => document.getElementById('edificios-nuevo-input')?.focus(), 50);
+    }
+
+    function cerrar() {
+        MM.alternar('modal-edificios', 'modal-ajustes');
+        actualizarFiltrosYSelects();
+    }
+
+    function agregar() {
+        const input = document.getElementById('edificios-nuevo-input');
+        if (!input) return;
+        const raw = input.value.trim();
+        if (!raw) {
+            input.classList.add('error');
+            setTimeout(() => input.classList.remove('error'), 1200);
+            toast('Ingresá un nombre para el edificio', 'error');
+            return;
+        }
+
+        const nombres = raw.split(',').map(n => n.trim().slice(0, 80)).filter(Boolean);
+        if (!nombres.length) return;
+
+        if (!Array.isArray(state.edificios)) state.edificios = [];
+        const agregados = [], duplicados = [];
+        const existentes = new Set(obtenerTodos().map(e => e.toLowerCase()));
+
+        for (const n of nombres) {
+            if (existentes.has(n.toLowerCase())) {
+                duplicados.push(n);
+            } else {
+                state.edificios.push(n);
+                existentes.add(n.toLowerCase());
+                agregados.push(n);
+            }
+        }
+
+        if (agregados.length) {
+            state.edificios.sort((a, b) => a.localeCompare(b, 'es'));
+            guardar();
+            actualizarFiltrosYSelects();
+        }
+
+        input.value = '';
+        input.classList.remove('error');
+        _renderLista();
+
+        if (agregados.length && !duplicados.length) {
+            toast(agregados.length === 1 ? `Edificio "${agregados[0]}" agregado` : `${agregados.length} edificios agregados`, 'success');
+        } else if (agregados.length && duplicados.length) {
+            toast(`${agregados.length} agregado${agregados.length > 1 ? 's' : ''}, ${duplicados.length} ya existía${duplicados.length > 1 ? 'n' : ''}`, 'info');
+        } else {
+            toast(duplicados.length === 1 ? `Ya existe "${duplicados[0]}"` : 'Todos ya existen', 'error');
+        }
+    }
+
+    function sincronizarDesdeSGR() {
+        const sgrEds = SGRBridge.obtenerEdificios();
+        if (!sgrEds.length) {
+            toast('No se encontraron edificios en SGR', 'info');
+            return;
+        }
+        if (!Array.isArray(state.edificios)) state.edificios = [];
+        const localesSet = new Set(state.edificios.map(e => e.toLowerCase()));
+        let nuevos = 0;
+        sgrEds.forEach(ed => {
+            if (!localesSet.has(ed.toLowerCase())) {
+                state.edificios.push(ed);
+                localesSet.add(ed.toLowerCase());
+                nuevos++;
+            }
+        });
+        if (nuevos > 0) {
+            state.edificios.sort((a, b) => a.localeCompare(b, 'es'));
+            guardar();
+            actualizarFiltrosYSelects();
+            toast(`${nuevos} edificio${nuevos > 1 ? 's' : ''} importado${nuevos > 1 ? 's' : ''} desde SGR`, 'success');
+        } else {
+            toast('Todos los edificios de SGR ya están sincronizados', 'info');
+        }
+        _renderLista();
+    }
+
+    function eliminar(ed) {
+        const enUso = state.racks.some(r => r.edificio === ed);
+        const count = state.racks.filter(r => r.edificio === ed).length;
+        const msg = enUso
+            ? `"${ed}" está asignado a ${count} rack(s) en SGP. ¿Eliminar de la lista? (los racks conservarán el nombre)`
+            : `¿Eliminar el edificio "${ed}"?`;
+
+        confirmar('Eliminar edificio', msg, () => {
+            historial.empujar(`Eliminar edificio ${ed}`);
+            state.edificios = (state.edificios || []).filter(e => e !== ed);
+            guardar();
+            _renderLista();
+            actualizarFiltrosYSelects();
+            toast(`Edificio "${ed}" eliminado`);
+        });
+    }
+
+    return { obtenerTodos, poblarSelect, abrir, cerrar, agregar, eliminar, sincronizarDesdeSGR };
+})();
+
+function actualizarFiltrosYSelects() {
+    const filtroSel = document.getElementById('filtro-edificio-select');
+    const filtroWrap = document.getElementById('filtro-edificio-wrap');
+    const todosEds = GestorEdificios.obtenerTodos();
+
+    if (filtroSel) {
+        const valActual = filtroSel.value;
+        filtroSel.innerHTML = '<option value="">Todos los edificios</option>';
+        todosEds.forEach(ed => {
+            const opt = document.createElement('option');
+            opt.value = ed;
+            opt.textContent = ed;
+            filtroSel.appendChild(opt);
+        });
+        if (todosEds.includes(valActual)) {
+            filtroSel.value = valActual;
+            _filtroEdificio = valActual;
+        } else {
+            filtroSel.value = '';
+            _filtroEdificio = '';
+        }
+    }
+
+    if (filtroWrap) {
+        filtroWrap.classList.toggle('hidden', todosEds.length === 0);
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  13. CRUD DE RACKS
 // ══════════════════════════════════════════════════════════════
 function toggleRack(rackId) {
     const rack = state.racks.find(r => r.id === rackId);
@@ -703,27 +1034,174 @@ function toggleRack(rackId) {
 }
 
 let _editandoRackId = null;
+let _rackSgrId = null;
+
+function poblarSelectorSGR(edificioFiltro = '') {
+    const sel = document.getElementById('rack-sgr-select');
+    if (!sel) return;
+    const racksSGR = SGRBridge.obtenerRacks(edificioFiltro);
+    sel.innerHTML = '';
+
+    const optDefecto = document.createElement('option');
+    optDefecto.value = '';
+    optDefecto.textContent = racksSGR.length
+        ? '— Seleccionar de SGR (o cargar manual) —'
+        : '— Sin racks en SGR (cargar manual) —';
+    sel.appendChild(optDefecto);
+
+    if (!racksSGR.length) return;
+
+    const yaEnSgpIds = new Set(state.racks.map(r => r.sgrId).filter(Boolean));
+
+    racksSGR.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.id;
+        const yaExiste = yaEnSgpIds.has(r.id);
+        const partes = [];
+        if (r.numero) partes.push(`Rack ${r.numero}`);
+        else if (r.identificador) partes.push(r.identificador);
+        else partes.push(`Rack ${r.id.slice(0, 6)}`);
+
+        if (r.marca || r.modelo) partes.push(`${r.marca || ''} ${r.modelo || ''}`.trim());
+        if (r.unidades) partes.push(`[${r.unidades}U]`);
+        if (r.edificio) partes.push(`· ${r.edificio}`);
+        if (r.piso) partes.push(`P.${r.piso}`);
+
+        opt.textContent = partes.join(' ') + (yaExiste ? ' ✓ (Ya en SGP)' : '');
+        opt.dataset.rack = JSON.stringify(r);
+        sel.appendChild(opt);
+    });
+}
+
+function onRackSgrSelectChange() {
+    const sel = document.getElementById('rack-sgr-select');
+    if (!sel || !sel.value) {
+        _rackSgrId = null;
+        return;
+    }
+
+    const opt = sel.selectedOptions[0];
+    if (!opt || !opt.dataset.rack) return;
+
+    try {
+        const r = JSON.parse(opt.dataset.rack);
+        _rackSgrId = r.id;
+
+        // Autocompletar nombre
+        const inputNombre = document.getElementById('rack-nombre');
+        if (inputNombre) {
+            inputNombre.value = r.numero ? `Rack ${r.numero}` : (r.identificador || `${r.marca || ''} ${r.modelo || ''}`.trim() || `Rack`);
+            inputNombre.classList.remove('error');
+        }
+
+        // Autocompletar descripción / ubicación
+        const inputDesc = document.getElementById('rack-desc');
+        if (inputDesc) {
+            const detalles = [];
+            if (r.edificio) detalles.push(r.edificio);
+            if (r.piso) detalles.push(`Piso ${r.piso}`);
+            if (r.dependencia) detalles.push(r.dependencia);
+            if (r.notas) detalles.push(`(${r.notas})`);
+            inputDesc.value = detalles.join(' - ');
+        }
+
+        // Autocompletar edificio
+        if (r.edificio) {
+            const selEd = document.getElementById('rack-edificio');
+            if (selEd) {
+                let found = Array.from(selEd.options).some(o => o.value === r.edificio);
+                if (!found) {
+                    const o = document.createElement('option');
+                    o.value = r.edificio;
+                    o.textContent = r.edificio;
+                    selEd.appendChild(o);
+                }
+                selEd.value = r.edificio;
+            }
+        }
+
+        // Autocompletar unidades (U)
+        if (r.unidades) {
+            const selUs = document.getElementById('rack-us');
+            if (selUs) {
+                const uVal = String(r.unidades);
+                let found = Array.from(selUs.options).some(o => o.value === uVal);
+                if (!found) {
+                    const optU = document.createElement('option');
+                    optU.value = uVal;
+                    optU.textContent = `${uVal}U`;
+                    selUs.appendChild(optU);
+                }
+                selUs.value = uVal;
+            }
+        }
+
+        toast('Datos cargados desde Rack de SGR', 'info');
+    } catch (_) {}
+}
+
+function onModalRackEdificioChange() {
+    const selEd = document.getElementById('rack-edificio');
+    const edificio = selEd ? selEd.value : '';
+    poblarSelectorSGR(edificio);
+}
 
 function abrirNuevoRack() {
     _editandoRackId = null;
+    _rackSgrId = null;
     document.getElementById('modal-rack-titulo').textContent = 'Nuevo Rack';
     document.getElementById('rack-nombre').value = '';
     document.getElementById('rack-desc').value = '';
     document.getElementById('rack-us').value = '24';
     document.getElementById('rack-eliminar-btn').classList.add('hidden');
+
+    // Mostrar grupo de SGR y poblar selects
+    document.getElementById('rack-sgr-group')?.classList.remove('hidden');
+    GestorEdificios.poblarSelect('rack-edificio', '', false);
+    poblarSelectorSGR('');
+
     MM.abrir('modal-rack', { onEscape: () => MM.cerrar('modal-rack') });
-    setTimeout(() => document.getElementById('rack-nombre').focus(), 150);
+    setTimeout(() => {
+        const sgrSel = document.getElementById('rack-sgr-select');
+        if (sgrSel && sgrSel.options.length > 1) {
+            sgrSel.focus();
+        } else {
+            document.getElementById('rack-nombre')?.focus();
+        }
+    }, 150);
 }
 
 function abrirEditarRack(rackId) {
     const rack = state.racks.find(r => r.id === rackId);
     if (!rack) return;
     _editandoRackId = rackId;
+    _rackSgrId = rack.sgrId || null;
+
     document.getElementById('modal-rack-titulo').textContent = 'Editar Rack';
     document.getElementById('rack-nombre').value = rack.nombre;
     document.getElementById('rack-desc').value = rack.desc || '';
-    document.getElementById('rack-us').value = String(rack.us);
+
+    // Manejar unidades
+    const selUs = document.getElementById('rack-us');
+    if (selUs) {
+        const uVal = String(rack.us);
+        let found = Array.from(selUs.options).some(o => o.value === uVal);
+        if (!found) {
+            const optU = document.createElement('option');
+            optU.value = uVal;
+            optU.textContent = `${uVal}U`;
+            selUs.appendChild(optU);
+        }
+        selUs.value = uVal;
+    }
+
+    // Poblar edificio
+    GestorEdificios.poblarSelect('rack-edificio', rack.edificio || '', false);
+
+    // En edición, ocultar selector de importación de SGR para evitar sobreescritura accidental
+    document.getElementById('rack-sgr-group')?.classList.add('hidden');
     document.getElementById('rack-eliminar-btn').classList.remove('hidden');
+
     MM.abrir('modal-rack', { onEscape: () => MM.cerrar('modal-rack') });
 }
 
@@ -731,6 +1209,7 @@ function guardarRack() {
     const nombre = document.getElementById('rack-nombre').value.trim();
     const desc = document.getElementById('rack-desc').value.trim();
     const us = Number(document.getElementById('rack-us').value);
+    const edificio = document.getElementById('rack-edificio')?.value.trim() || '';
 
     if (!nombre) {
         document.getElementById('rack-nombre').classList.add('error');
@@ -745,13 +1224,31 @@ function guardarRack() {
             rack.nombre = nombre;
             rack.desc = desc;
             rack.us = us;
+            rack.edificio = edificio;
+            if (_rackSgrId) rack.sgrId = _rackSgrId;
         }
     } else {
         historial.empujar(`Agregar rack "${nombre}"`);
-        state.racks.push({ id: uid(), nombre, desc, us, unidades: [], abierto: true });
+        state.racks.push({
+            id: uid(),
+            nombre,
+            desc,
+            us,
+            edificio,
+            sgrId: _rackSgrId || '',
+            unidades: [],
+            abierto: true
+        });
     }
+
+    if (edificio && Array.isArray(state.edificios) && !state.edificios.includes(edificio)) {
+        state.edificios.push(edificio);
+        state.edificios.sort((a, b) => a.localeCompare(b, 'es'));
+    }
+
     guardar();
     MM.cerrar('modal-rack');
+    actualizarFiltrosYSelects();
     renderRacks();
     toast(_editandoRackId ? 'Rack actualizado' : 'Rack creado');
 }
@@ -769,6 +1266,7 @@ function eliminarRack() {
             _editandoRackId = null;
             guardar();
             MM.cerrar('modal-rack');
+            actualizarFiltrosYSelects();
             renderRacks();
             toast('Rack eliminado', 'info');
         }
@@ -1034,20 +1532,24 @@ function importarDatos(modo) {
     if (modo === 'reemplazar') {
         confirmar(
             '¿Importar y reemplazar?',
-            alerta + 'Todos los racks y patcheras actuales serán reemplazados por el contenido del archivo.',
+            alerta + 'Todos los racks, patcheras y edificios actuales serán reemplazados por el contenido del archivo.',
             () => {
                 historial.empujar('Importar y reemplazar datos');
                 state.racks = parsed.racks || [];
+                if (Array.isArray(parsed.edificios)) {
+                    state.edificios = parsed.edificios;
+                }
                 guardar();
                 MM.cerrar('modal-importar');
+                actualizarFiltrosYSelects();
                 renderRacks();
-                toast(`Datos reemplazados (${parsed.racks.length} racks)`);
+                toast(`Datos reemplazados (${(parsed.racks || []).length} racks)`);
             }
         );
     } else {
         confirmar(
             '¿Combinar datos?',
-            alerta + 'Se incorporarán los racks del archivo que no existan actualmente en este dispositivo.',
+            alerta + 'Se incorporarán los racks y edificios del archivo que no existan actualmente en este dispositivo.',
             () => {
                 historial.empujar('Combinar datos importados');
                 const ids = new Set(state.racks.map(r => r.id));
@@ -1058,8 +1560,15 @@ function importarDatos(modo) {
                         nuevos++;
                     }
                 });
+                if (Array.isArray(parsed.edificios)) {
+                    if (!Array.isArray(state.edificios)) state.edificios = [];
+                    parsed.edificios.forEach(e => {
+                        if (!state.edificios.includes(e)) state.edificios.push(e);
+                    });
+                }
                 guardar();
                 MM.cerrar('modal-importar');
+                actualizarFiltrosYSelects();
                 renderRacks();
                 toast(nuevos > 0 ? `Combinados (+${nuevos} racks)` : 'Sin racks nuevos para agregar', nuevos > 0 ? 'success' : 'info');
             }
@@ -1070,12 +1579,14 @@ function importarDatos(modo) {
 function restablecerDatos() {
     confirmar(
         '¿Restablecer todos los datos?',
-        'Se eliminarán todos los racks y patcheras de la memoria local. Esta acción se puede revertir con Ctrl+Z antes de recargar.',
+        'Se eliminarán todos los racks, patcheras y edificios de la memoria local. Esta acción se puede revertir con Ctrl+Z antes de recargar.',
         () => {
             MM.cerrar('modal-ajustes');
             historial.empujar('Restablecer todos los datos');
             state.racks = [];
+            state.edificios = [];
             guardar();
+            actualizarFiltrosYSelects();
             renderRacks();
             toast('Datos restablecidos');
         }
@@ -1530,14 +2041,20 @@ document.addEventListener('DOMContentLoaded', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    // ── Nuevo Rack ──
+    // ── Nuevo Rack & Filtros ──
     document.getElementById('btn-nuevo-rack')?.addEventListener('click', abrirNuevoRack);
+    document.getElementById('filtro-edificio-select')?.addEventListener('change', function () {
+        _filtroEdificio = this.value;
+        renderRacks();
+    });
 
     // ── Modal Rack ──
     document.getElementById('modal-rack-cerrar')?.addEventListener('click', () => MM.cerrar('modal-rack'));
     document.getElementById('rack-guardar-btn')?.addEventListener('click', guardarRack);
     document.getElementById('rack-cancelar-btn')?.addEventListener('click', () => MM.cerrar('modal-rack'));
     document.getElementById('rack-eliminar-btn')?.addEventListener('click', eliminarRack);
+    document.getElementById('rack-sgr-select')?.addEventListener('change', onRackSgrSelectChange);
+    document.getElementById('rack-edificio')?.addEventListener('change', onModalRackEdificioChange);
     document.getElementById('rack-nombre')?.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); guardarRack(); }
     });
@@ -1570,6 +2087,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Modal Ajustes ──
     document.getElementById('ajustes-cerrar-btn')?.addEventListener('click', () => MM.cerrar('modal-ajustes'));
+    document.getElementById('ajustes-edificios-btn')?.addEventListener('click', GestorEdificios.abrir);
+
+    // ── Modal Edificios ──
+    document.getElementById('edificios-cerrar-btn')?.addEventListener('click', GestorEdificios.cerrar);
+    document.getElementById('edificios-cerrar-x')?.addEventListener('click', () => MM.cerrar('modal-edificios'));
+    document.getElementById('edificios-agregar-btn')?.addEventListener('click', GestorEdificios.agregar);
+    document.getElementById('btn-sync-edificios-sgr')?.addEventListener('click', GestorEdificios.sincronizarDesdeSGR);
+    document.getElementById('edificios-nuevo-input')?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); GestorEdificios.agregar(); }
+    });
     document.getElementById('btn-abrir-gist')?.addEventListener('click', () => {
         MM.cerrar('modal-ajustes', () => {
             GistSync.poblarModal();
@@ -1696,6 +2223,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Carga inicial
+    actualizarFiltrosYSelects();
     renderRacks();
     GistSync.init();
     GistSync.verificarAlAbrir();
