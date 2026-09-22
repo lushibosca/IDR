@@ -673,56 +673,148 @@ function _jackHTML(num, portMap, unidadId, rackId) {
     const filled = p && p.label;
     const colorClass = p && p.color ? `col-${p.color}` : '';
     const labelAttr = p ? ` data-label="${esc(p.label || '')}" data-notas="${esc(p.notas || '')}"` : '';
-    return `<div class="jack ${filled ? 'filled' : colorClass ? 'filled' : ''} ${colorClass} ${!filled && !colorClass ? 'empty' : ''}"
-        data-action="editar-jack" data-rack="${esc(rackId)}" data-unidad="${esc(unidadId)}" data-num="${num}"${labelAttr}
-        title="${p && p.label ? esc(p.label) : `Puerto ${num}`}">
-        <span class="jack-num">${num}</span>
+
+    return `
+    <div class="patch-port-col">
+        <div class="patch-label-cell ${p && p.label ? 'has-label' : ''}"
+             data-action="editar-jack" data-rack="${esc(rackId)}" data-unidad="${esc(unidadId)}" data-num="${num}"${labelAttr}
+             title="${p && p.label ? esc(p.label) : `Puerto ${num}`}">
+            <span class="plc-text">${esc(p?.label || '')}</span>
+        </div>
+        <span class="patch-port-num">${num}</span>
+        <div class="jack ${filled ? 'filled' : colorClass ? 'filled' : ''} ${colorClass} ${!filled && !colorClass ? 'empty' : ''}"
+             data-action="editar-jack" data-rack="${esc(rackId)}" data-unidad="${esc(unidadId)}" data-num="${num}"${labelAttr}
+             title="${p && p.label ? esc(p.label) : `Puerto ${num}`}">
+            <div class="jack-bezel">
+                <div class="jack-cavity">
+                    <div class="jack-pins">
+                        <span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                    <div class="jack-notch"></div>
+                    <div class="jack-plug">
+                        <div class="jack-plug-clip"></div>
+                        <div class="jack-plug-led"></div>
+                    </div>
+                </div>
+            </div>
+            <span class="jack-num">${num}</span>
+        </div>
     </div>`;
 }
 
 function _jacksGrupo(nums, portMap, unidadId, rackId) {
-    let html = '';
-    for (let i = 0; i < nums.length; i++) {
-        if (i > 0 && i % 6 === 0) {
-            html += `<div class="jack-group-sep"></div>`;
-        }
-        html += _jackHTML(nums[i], portMap, unidadId, rackId);
+    // Dividir en bloques modulares de 6 bocas (estándar de plano técnico 1U)
+    const blocks = [];
+    for (let i = 0; i < nums.length; i += 6) {
+        blocks.push(nums.slice(i, i + 6));
     }
-    return html;
+
+    return blocks.map((block, idx) => {
+        const divider = idx > 0 ? '<div class="patch-module-divider"></div>' : '';
+        const portsHtml = block.map(n => _jackHTML(n, portMap, unidadId, rackId)).join('');
+        return `${divider}
+        <div class="patch-module" data-module="${idx + 1}">
+            <div class="patch-module-inner">
+                <div class="patch-module-ports">${portsHtml}</div>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 function renderPatchera24(u, rackId, portMap) {
     const nums = Array.from({ length: 24 }, (_, i) => i + 1);
+    const totalPuertos = 24;
+    const usados = u.puertos.filter(p => p.label || p.color).length;
+    const pct = Math.round((usados / totalPuertos) * 100);
+
     return `
-    <div class="rack-unit" id="unit-${esc(u.id)}">
+    <div class="rack-unit patch-panel-unit" id="unit-${esc(u.id)}">
         <div class="rack-unit-label">
-            <span class="rul-name">${esc(u.nombre || `Patchera ${u.pos}U`)}</span>
+            <div class="rul-info">
+                <span class="rul-pos-badge">${u.pos}U</span>
+                <span class="rul-name">${esc(u.nombre || `Patchera ${u.pos}U`)}</span>
+                ${u.desc ? `<span class="rul-desc">${esc(u.desc)}</span>` : ''}
+            </div>
             <div class="rack-unit-controls">
-                <span class="rack-unit-pos">24p · Pos: ${u.pos}U</span>
+                <span class="rack-unit-pos">24p RJ45 · ${usados}/24 (${pct}%)</span>
                 <button data-action="editar-patchera" data-rack="${esc(rackId)}" data-unidad="${esc(u.id)}">Editar</button>
             </div>
         </div>
-        ${u.desc ? `<div class="patch-panel-label">${esc(u.desc)}</div>` : ''}
-        <div class="patch-row">${_jacksGrupo(nums, portMap, u.id, rackId)}</div>
+        <div class="patch-chassis">
+            <div class="patch-ear patch-ear-left">
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+                <div class="patch-ground-symbol" title="Puesta a tierra física">
+                    <svg viewBox="0 0 16 16" class="patch-svg-icon">
+                        <line x1="8" y1="2" x2="8" y2="9"/>
+                        <line x1="3" y1="9" x2="13" y2="9"/>
+                        <line x1="5" y1="12" x2="11" y2="12"/>
+                        <line x1="7" y1="15" x2="9" y2="15"/>
+                    </svg>
+                </div>
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+            </div>
+            <div class="patch-faceplate">
+                <div class="patch-modules-row">
+                    ${_jacksGrupo(nums, portMap, u.id, rackId)}
+                </div>
+            </div>
+            <div class="patch-ear patch-ear-right">
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+                <div class="patch-ear-tag">19" 1U</div>
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+            </div>
+        </div>
     </div>`;
 }
 
 function renderPatchera48(u, rackId, portMap) {
     const fila1 = Array.from({ length: 24 }, (_, i) => i + 1);
     const fila2 = Array.from({ length: 24 }, (_, i) => i + 25);
+    const totalPuertos = 48;
+    const usados = u.puertos.filter(p => p.label || p.color).length;
+    const pct = Math.round((usados / totalPuertos) * 100);
+
     return `
-    <div class="rack-unit" id="unit-${esc(u.id)}">
+    <div class="rack-unit patch-panel-unit patch-panel-48" id="unit-${esc(u.id)}">
         <div class="rack-unit-label">
-            <span class="rul-name">${esc(u.nombre || `Patchera ${u.pos}U`)}</span>
+            <div class="rul-info">
+                <span class="rul-pos-badge">${u.pos}U</span>
+                <span class="rul-name">${esc(u.nombre || `Patchera ${u.pos}U`)}</span>
+                ${u.desc ? `<span class="rul-desc">${esc(u.desc)}</span>` : ''}
+            </div>
             <div class="rack-unit-controls">
-                <span class="rack-unit-pos">48p · Pos: ${u.pos}U</span>
+                <span class="rack-unit-pos">48p RJ45 · ${usados}/48 (${pct}%)</span>
                 <button data-action="editar-patchera" data-rack="${esc(rackId)}" data-unidad="${esc(u.id)}">Editar</button>
             </div>
         </div>
-        ${u.desc ? `<div class="patch-panel-label">${esc(u.desc)}</div>` : ''}
-        <div class="patch-double-row">
-            <div class="patch-row">${_jacksGrupo(fila1, portMap, u.id, rackId)}</div>
-            <div class="patch-row">${_jacksGrupo(fila2, portMap, u.id, rackId)}</div>
+        <div class="patch-chassis patch-chassis-48">
+            <div class="patch-ear patch-ear-left">
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+                <div class="patch-ground-symbol" title="Puesta a tierra física">
+                    <svg viewBox="0 0 16 16" class="patch-svg-icon">
+                        <line x1="8" y1="2" x2="8" y2="9"/>
+                        <line x1="3" y1="9" x2="13" y2="9"/>
+                        <line x1="5" y1="12" x2="11" y2="12"/>
+                        <line x1="7" y1="15" x2="9" y2="15"/>
+                    </svg>
+                </div>
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+            </div>
+            <div class="patch-faceplate patch-faceplate-48">
+                <div class="patch-modules-row">
+                    ${_jacksGrupo(fila1, portMap, u.id, rackId)}
+                </div>
+                <div class="patch-row-divider"></div>
+                <div class="patch-modules-row">
+                    ${_jacksGrupo(fila2, portMap, u.id, rackId)}
+                </div>
+            </div>
+            <div class="patch-ear patch-ear-right">
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+                <div class="patch-ear-tag">19" 2U</div>
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+            </div>
         </div>
     </div>`;
 }
@@ -751,7 +843,7 @@ function bindRackEvents(rackId) {
 
     // Tooltips interactivos
     card.addEventListener('mouseover', e => {
-        const jack = e.target.closest('.jack');
+        const jack = e.target.closest('.jack, .patch-label-cell');
         if (!jack || !jack.dataset.action) return;
         const num = jack.dataset.num;
         const label = jack.dataset.label || '';
@@ -760,7 +852,7 @@ function bindRackEvents(rackId) {
         Tooltip.show(pNum, label, notas, jack.getBoundingClientRect());
     });
     card.addEventListener('mouseout', e => {
-        if (e.target.closest('.jack')) Tooltip.hide();
+        if (e.target.closest('.jack, .patch-label-cell')) Tooltip.hide();
     });
 }
 
@@ -1594,6 +1686,324 @@ function restablecerDatos() {
 }
 
 // ══════════════════════════════════════════════════════════════
+//  15b. IMPORTADOR DE PLANILLAS DE PATCHERAS (EXCEL / CSV / PEGAR)
+// ══════════════════════════════════════════════════════════════
+let _planillaParsed = null;
+
+function abrirModalImportarPlanilla() {
+    _planillaParsed = null;
+
+    // Resetear formulario
+    const inputArchivo = document.getElementById('input-archivo-planilla');
+    if (inputArchivo) inputArchivo.value = '';
+    const textarea = document.getElementById('textarea-pegar-planilla');
+    if (textarea) textarea.value = '';
+
+    const labelDrop = document.getElementById('label-dropzone-planilla');
+    if (labelDrop) {
+        labelDrop.innerHTML = `
+            <span class="dropzone-icon">📊</span>
+            <strong>Seleccioná o arrastrá tu archivo Excel (.xlsx) o CSV</strong>
+            <span class="dropzone-sub">Detecta automáticamente el rack, patcheras A..G, bocas y servicios</span>
+        `;
+    }
+
+    // Ocultar selector de hojas hasta que se cargue un archivo con múltiples hojas
+    const groupHoja = document.getElementById('group-hoja-select');
+    if (groupHoja) groupHoja.style.display = 'none';
+
+    // Pestaña por defecto: archivo
+    document.querySelectorAll('.importar-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === 'archivo');
+    });
+    document.querySelectorAll('.importar-tab-content').forEach(tab => {
+        tab.classList.toggle('active', tab.id === 'tab-content-archivo');
+    });
+
+    // Ocultar preview
+    const previewContainer = document.getElementById('importar-preview-container');
+    if (previewContainer) previewContainer.classList.add('hidden');
+
+    const btnConfirmar = document.getElementById('importar-planilla-confirmar-btn');
+    if (btnConfirmar) btnConfirmar.disabled = true;
+
+    // Poblar selector de destino
+    const selectDestino = document.getElementById('importar-destino-select');
+    if (selectDestino) {
+        selectDestino.innerHTML = '<option value="nuevo">Crear como Nuevo Rack</option>';
+        state.racks.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.id;
+            opt.textContent = `Agregar a: ${r.nombre} (${r.unidades.length} patcheras)`;
+            selectDestino.appendChild(opt);
+        });
+    }
+
+    MM.abrir('modal-importar-planilla', {
+        onEscape: () => MM.cerrar('modal-importar-planilla')
+    });
+}
+
+async function procesarPlanillaEntrada(entrada) {
+    try {
+        toast('Analizando planilla...', 'info');
+        const parsed = await PlanillaParser.procesarEntrada(entrada);
+        _planillaParsed = parsed;
+        _planillaParsed.seleccionHoja = '0';
+
+        const groupHoja = document.getElementById('group-hoja-select');
+        const selectHoja = document.getElementById('importar-hoja-select');
+
+        if (parsed.todosRacks && parsed.todosRacks.length > 1) {
+            if (groupHoja) groupHoja.style.display = 'block';
+            if (selectHoja) {
+                let optionsHtml = parsed.todosRacks.map((r, idx) => 
+                    `<option value="${idx}">${esc(r.sheetName)}: ${esc(r.rackNombre)} (${r.patcheras.length} patcheras)</option>`
+                ).join('');
+                optionsHtml += `<option value="all">⭐ Todas las hojas (${parsed.todosRacks.length} racks)</option>`;
+                selectHoja.innerHTML = optionsHtml;
+                selectHoja.value = '0';
+            }
+        } else {
+            if (groupHoja) groupHoja.style.display = 'none';
+        }
+
+        mostrarPreviewPlanilla(parsed);
+        const totalP = parsed.todosRacks && parsed.todosRacks.length > 1
+            ? parsed.todosRacks.reduce((s, r) => s + r.patcheras.length, 0)
+            : parsed.patcheras.length;
+        toast(`Planilla procesada: ${totalP} patcheras detectadas`, 'success');
+    } catch (err) {
+        _planillaParsed = null;
+        console.error('Error parseando planilla:', err);
+        toast(err.message || 'Error al procesar la planilla', 'error');
+
+        const btnConfirmar = document.getElementById('importar-planilla-confirmar-btn');
+        if (btnConfirmar) btnConfirmar.disabled = true;
+        const previewContainer = document.getElementById('importar-preview-container');
+        if (previewContainer) previewContainer.classList.add('hidden');
+    }
+}
+
+function _obtenerRackSeleccionado(parsed) {
+    if (!parsed) return null;
+    if (!parsed.todosRacks || parsed.todosRacks.length <= 1) {
+        return {
+            rackNombre: parsed.rackNombre,
+            rackFecha: parsed.rackFecha,
+            patcheras: parsed.patcheras || [],
+            esMultiples: false
+        };
+    }
+    const sel = parsed.seleccionHoja ?? '0';
+    if (sel === 'all') {
+        return {
+            rackNombre: `Múltiples Racks (${parsed.todosRacks.length})`,
+            rackFecha: parsed.rackFecha,
+            todos: parsed.todosRacks,
+            patcheras: parsed.todosRacks.flatMap(r => r.patcheras),
+            esMultiples: true
+        };
+    }
+    const idx = parseInt(sel, 10) || 0;
+    const rack = parsed.todosRacks[idx] || parsed.todosRacks[0];
+    return {
+        rackNombre: rack.rackNombre,
+        rackFecha: rack.rackFecha,
+        sheetName: rack.sheetName,
+        patcheras: rack.patcheras || [],
+        esMultiples: false
+    };
+}
+
+function _renderPreviewPatcheraItem(p) {
+    const chipsHtml = p.puertos.length
+        ? p.puertos.map(pt => `
+            <span class="preview-port-chip chip-${esc(pt.color || 'blue')}" title="${esc(pt.label)} (${esc(pt.notas || '')})">
+                <strong>B${pt.num}:</strong> ${esc(pt.label)}
+            </span>`).join('')
+        : '<span class="empty-text-sm">Sin bocas en uso (panel libre)</span>';
+
+    return `
+    <div class="preview-patchera-item">
+        <div class="preview-patchera-header">
+            <span class="preview-patchera-name">${esc(p.nombre)}</span>
+            <span class="preview-patchera-meta">${p.tipo} bocas · ${p.puertos.length} activas</span>
+        </div>
+        <div class="preview-ports-chips">${chipsHtml}</div>
+    </div>`;
+}
+
+function mostrarPreviewPlanilla(parsed) {
+    const previewContainer = document.getElementById('importar-preview-container');
+    const inputRackNombre = document.getElementById('importar-rack-nombre');
+    const badgePatcheras = document.getElementById('preview-badge-patcheras');
+    const badgePuertos = document.getElementById('preview-badge-puertos');
+    const listPatcheras = document.getElementById('importar-patcheras-preview-list');
+    const btnConfirmar = document.getElementById('importar-planilla-confirmar-btn');
+
+    if (!previewContainer) return;
+
+    const data = _obtenerRackSeleccionado(parsed);
+    if (!data) return;
+
+    if (inputRackNombre) {
+        if (data.esMultiples) {
+            inputRackNombre.value = 'Múltiples racks (creación individual)';
+            inputRackNombre.disabled = true;
+        } else {
+            inputRackNombre.value = data.rackNombre || 'Rack Relevamiento';
+            inputRackNombre.disabled = false;
+        }
+    }
+
+    const totalPuertosUsados = data.patcheras.reduce((sum, p) => sum + p.puertos.length, 0);
+
+    if (badgePatcheras) {
+        badgePatcheras.textContent = `${data.patcheras.length} patchera${data.patcheras.length !== 1 ? 's' : ''}`;
+    }
+    if (badgePuertos) {
+        badgePuertos.textContent = `${totalPuertosUsados} bocas rotuladas`;
+    }
+
+    if (listPatcheras) {
+        if (data.esMultiples && data.todos) {
+            listPatcheras.innerHTML = data.todos.map(r => `
+                <div class="preview-rack-group-header">
+                    📁 Hoja "${esc(r.sheetName)}": ${esc(r.rackNombre)} (${r.patcheras.length} patcheras)
+                </div>
+                ${r.patcheras.map(p => _renderPreviewPatcheraItem(p)).join('')}
+            `).join('');
+        } else {
+            listPatcheras.innerHTML = data.patcheras.map(p => _renderPreviewPatcheraItem(p)).join('');
+        }
+    }
+
+    previewContainer.classList.remove('hidden');
+    if (btnConfirmar) btnConfirmar.disabled = false;
+}
+
+function confirmarImportarPlanilla() {
+    if (!_planillaParsed) {
+        toast('No hay datos válidos para importar', 'error');
+        return;
+    }
+
+    const data = _obtenerRackSeleccionado(_planillaParsed);
+    if (!data || !data.patcheras || !data.patcheras.length) {
+        toast('No hay patcheras válidas para importar', 'error');
+        return;
+    }
+
+    const inputRackNombre = document.getElementById('importar-rack-nombre');
+    const selectDestino = document.getElementById('importar-destino-select');
+    const destino = selectDestino?.value || 'nuevo';
+
+    if (data.esMultiples && destino === 'nuevo') {
+        // Importar todas las hojas como racks independientes
+        historial.empujar(`Importar ${data.todos.length} racks desde planilla`);
+        let totalUnidades = 0;
+        data.todos.forEach(r => {
+            const nuevoRack = {
+                id: uid(),
+                nombre: r.rackNombre,
+                edificio: '',
+                sgrId: '',
+                us: Math.max(24, Math.ceil(r.patcheras.length * 1.5)),
+                desc: r.rackFecha ? `Relevamiento ${esc(r.rackFecha)}` : `Importado de hoja "${esc(r.sheetName)}"`,
+                unidades: r.patcheras.map((p, idx) => ({
+                    id: uid(),
+                    tipo: p.tipo,
+                    nombre: p.nombre,
+                    pos: idx + 1,
+                    desc: p.desc || '',
+                    puertos: p.puertos.map(pt => ({
+                        num: pt.num,
+                        label: pt.label || '',
+                        notas: pt.notas || '',
+                        color: pt.color || ''
+                    }))
+                })),
+                abierto: true
+            };
+            totalUnidades += nuevoRack.unidades.length;
+            state.racks.push(nuevoRack);
+        });
+
+        guardar();
+        MM.cerrar('modal-importar-planilla');
+        actualizarFiltrosYSelects();
+        renderRacks();
+        toast(`Se importaron ${data.todos.length} racks con éxito (+${totalUnidades} patcheras)`, 'success');
+        return;
+    }
+
+    const rackNombre = (!data.esMultiples && inputRackNombre?.value.trim()) || data.rackNombre || 'Rack Importado';
+
+    if (destino === 'nuevo') {
+        const nuevoRack = {
+            id: uid(),
+            nombre: rackNombre,
+            edificio: '',
+            sgrId: '',
+            us: Math.max(24, Math.ceil(data.patcheras.length * 1.5)),
+            desc: data.rackFecha ? `Relevamiento ${esc(data.rackFecha)}` : 'Importado desde planilla',
+            unidades: data.patcheras.map((p, idx) => ({
+                id: uid(),
+                tipo: p.tipo,
+                nombre: p.nombre,
+                pos: idx + 1,
+                desc: p.desc || '',
+                puertos: p.puertos.map(pt => ({
+                    num: pt.num,
+                    label: pt.label || '',
+                    notas: pt.notas || '',
+                    color: pt.color || ''
+                }))
+            })),
+            abierto: true
+        };
+
+        historial.empujar(`Importar planilla en rack "${rackNombre}"`);
+        state.racks.push(nuevoRack);
+        guardar();
+        MM.cerrar('modal-importar-planilla');
+        actualizarFiltrosYSelects();
+        renderRacks();
+        toast(`Rack "${rackNombre}" importado con éxito (+${nuevoRack.unidades.length} patcheras)`, 'success');
+    } else {
+        const rack = state.racks.find(r => r.id === destino);
+        if (!rack) {
+            toast('Rack de destino no encontrado', 'error');
+            return;
+        }
+
+        historial.empujar(`Agregar patcheras importadas a "${rack.nombre}"`);
+        const inicioPos = rack.unidades.length;
+        data.patcheras.forEach((p, idx) => {
+            rack.unidades.push({
+                id: uid(),
+                tipo: p.tipo,
+                nombre: p.nombre,
+                pos: inicioPos + idx + 1,
+                desc: p.desc || '',
+                puertos: p.puertos.map(pt => ({
+                    num: pt.num,
+                    label: pt.label || '',
+                    notas: pt.notas || '',
+                    color: pt.color || ''
+                }))
+            });
+        });
+        rack.abierto = true;
+        guardar();
+        MM.cerrar('modal-importar-planilla');
+        renderRacks();
+        toast(`Se agregaron ${data.patcheras.length} patcheras a "${rack.nombre}"`, 'success');
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
 //  16. GIST SYNC (GITHUB GIST SYNCHRONIZATION)
 // ══════════════════════════════════════════════════════════════
 const GistSync = (() => {
@@ -2283,6 +2693,74 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // ── Modal Importar Planilla (Excel / CSV / Pegar) ──
+    document.getElementById('btn-importar-planilla')?.addEventListener('click', abrirModalImportarPlanilla);
+    document.getElementById('importar-planilla-cerrar-btn')?.addEventListener('click', () => MM.cerrar('modal-importar-planilla'));
+    document.getElementById('importar-planilla-cancelar-btn')?.addEventListener('click', () => MM.cerrar('modal-importar-planilla'));
+    document.getElementById('importar-planilla-confirmar-btn')?.addEventListener('click', confirmarImportarPlanilla);
+    document.getElementById('importar-hoja-select')?.addEventListener('change', function () {
+        if (_planillaParsed) {
+            _planillaParsed.seleccionHoja = this.value;
+            mostrarPreviewPlanilla(_planillaParsed);
+        }
+    });
+
+    // Pestañas del modal
+    document.querySelectorAll('.importar-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab;
+            document.querySelectorAll('.importar-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.importar-tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(`tab-content-${tabId}`)?.classList.add('active');
+        });
+    });
+
+    // Zona de archivo Excel/CSV
+    const dzPlanilla = document.getElementById('dropzone-planilla');
+    const inputPlanilla = document.getElementById('input-archivo-planilla');
+    if (dzPlanilla && inputPlanilla) {
+        dzPlanilla.addEventListener('click', () => inputPlanilla.click());
+        inputPlanilla.addEventListener('change', e => {
+            const f = e.target.files?.[0];
+            if (f) procesarPlanillaEntrada(f);
+        });
+
+        dzPlanilla.addEventListener('dragover', e => {
+            e.preventDefault();
+            dzPlanilla.classList.add('drag');
+        });
+        dzPlanilla.addEventListener('dragleave', () => dzPlanilla.classList.remove('drag'));
+        dzPlanilla.addEventListener('drop', e => {
+            e.preventDefault();
+            dzPlanilla.classList.remove('drag');
+            const f = e.dataTransfer?.files?.[0];
+            if (f) {
+                const dt = new DataTransfer();
+                dt.items.add(f);
+                inputPlanilla.files = dt.files;
+                procesarPlanillaEntrada(f);
+            }
+        });
+    }
+
+    // Área de pegar texto desde Excel
+    document.getElementById('btn-procesar-pegado')?.addEventListener('click', () => {
+        const txt = document.getElementById('textarea-pegar-planilla')?.value || '';
+        if (!txt.trim()) {
+            toast('Por favor pegá primero las celdas copiadas de Excel', 'error');
+            return;
+        }
+        procesarPlanillaEntrada(txt);
+    });
+
+    document.getElementById('textarea-pegar-planilla')?.addEventListener('paste', () => {
+        setTimeout(() => {
+            const txt = document.getElementById('textarea-pegar-planilla')?.value || '';
+            if (txt.trim()) procesarPlanillaEntrada(txt);
+        }, 100);
+    });
 
     // ── Confirmar ──
     document.getElementById('confirmar-ok-btn')?.addEventListener('click', () => {

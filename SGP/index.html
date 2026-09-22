@@ -23,6 +23,7 @@
     <link rel="icon" type="image/svg+xml" href="./icon.svg">
     <script src="./flash.js"></script>
     <link rel="stylesheet" href="./styles.css">
+    <script src="./parser_planilla.js" defer></script>
     <script src="./app.js" defer></script>
     <title>SGP — Patcheras</title>
 </head>
@@ -236,6 +237,11 @@
                 <svg class="svg-icon">
                     <use href="#icon-add" />
                 </svg> Nuevo Rack
+            </button>
+            <button class="btn-secondary" id="btn-importar-planilla" title="Importar relevamiento desde Excel (.xlsx), CSV o Portapapeles">
+                <svg class="svg-icon">
+                    <use href="#icon-upload" />
+                </svg> Importar Planilla
             </button>
             <div class="filtro-edificio-wrap" id="filtro-edificio-wrap">
                 <svg class="svg-icon icon-sm filtro-icon">
@@ -744,6 +750,97 @@
                     <button class="btn-primary btn-flex" id="importar-confirmar-btn" disabled>Reemplazar</button>
                     <button class="btn-secondary btn-flex" id="importar-combinar-btn" disabled>Combinar</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Importar Planilla (Excel / CSV / Pegar) -->
+    <div class="modal" id="modal-importar-planilla">
+        <div class="modal-content modal-content-lg">
+            <div class="modal-header">
+                <h3>
+                    <svg class="svg-icon icon-accent">
+                        <use href="#icon-upload" />
+                    </svg>
+                    <span>Importar Planilla de Patcheras</span>
+                </h3>
+                <button class="icon-btn" id="importar-planilla-cerrar-btn" title="Cerrar">
+                    <svg class="svg-icon">
+                        <use href="#icon-close" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body modal-body-pb">
+                <!-- Pestañas de método de importación -->
+                <div class="importar-tabs">
+                    <button class="importar-tab-btn active" id="tab-btn-archivo" data-tab="archivo">
+                        <svg class="svg-icon icon-sm"><use href="#icon-upload" /></svg> Subir Archivo (.xlsx / .csv)
+                    </button>
+                    <button class="importar-tab-btn" id="tab-btn-pegar" data-tab="pegar">
+                        <svg class="svg-icon icon-sm"><use href="#icon-edit" /></svg> Pegar desde Excel
+                    </button>
+                </div>
+
+                <!-- Tab 1: Subir Archivo Excel/CSV -->
+                <div class="importar-tab-content active" id="tab-content-archivo">
+                    <div class="importar-dropzone" id="dropzone-planilla">
+                        <input type="file" id="input-archivo-planilla" accept=".xlsx,.xls,.csv,.tsv" class="hidden">
+                        <label id="label-dropzone-planilla" class="dropzone-label">
+                            <span class="dropzone-icon">📊</span>
+                            <strong>Seleccioná o arrastrá tu archivo Excel (.xlsx) o CSV</strong>
+                            <span class="dropzone-sub">Detecta automáticamente el rack, patcheras A..G, bocas y servicios</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Pegar desde Excel (Ctrl+V) -->
+                <div class="importar-tab-content" id="tab-content-pegar">
+                    <p class="importar-help-text">
+                        Seleccioná y copiá las celdas en tu planilla Excel (Ctrl+C) y pegalas en este cuadro (Ctrl+V):
+                    </p>
+                    <textarea id="textarea-pegar-planilla" class="importar-textarea" placeholder="Pegá acá las celdas copiadas de Excel..."></textarea>
+                    <div class="importar-pegar-actions">
+                        <button class="btn-primary btn-sm" id="btn-procesar-pegado">
+                            <svg class="svg-icon icon-xs"><use href="#icon-add" /></svg> Procesar texto pegado
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Vista Previa de Datos Detectados -->
+                <div id="importar-preview-container" class="importar-preview-container hidden">
+                    <div class="importar-preview-header">
+                        <div class="form-group flex-1" id="group-hoja-select" style="display:none;">
+                            <label for="importar-hoja-select">Hoja del archivo</label>
+                            <select id="importar-hoja-select" class="input-modern"></select>
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="importar-rack-nombre">Nombre del Rack</label>
+                            <input type="text" id="importar-rack-nombre" class="input-modern" placeholder="Ej: Rack 0400">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="importar-destino-select">Destino de importación</label>
+                            <select id="importar-destino-select" class="input-modern">
+                                <option value="nuevo">Crear como Nuevo Rack</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="importar-stats-row">
+                        <span class="badge badge-blue" id="preview-badge-patcheras">0 patcheras</span>
+                        <span class="badge badge-green" id="preview-badge-puertos">0 bocas con servicio</span>
+                    </div>
+
+                    <!-- Lista de patcheras detectadas con sus chips de puertos -->
+                    <div id="importar-patcheras-preview-list" class="importar-patcheras-preview-list"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary btn-flex" id="importar-planilla-confirmar-btn" disabled>
+                    Importar Rack a SGP
+                </button>
+                <button class="btn-secondary btn-flex" id="importar-planilla-cancelar-btn">
+                    Cancelar
+                </button>
             </div>
         </div>
     </div>

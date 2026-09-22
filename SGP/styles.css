@@ -487,127 +487,522 @@ label {
     color: #888;
 }
 
+/* ──────────────────────────────────────────────
+   UNIDAD DE RACK & PANEL 19" 1U
+   ────────────────────────────────────────────── */
 .rack-unit {
-    background: var(--panel-bg);
-    border: 1px solid var(--panel-border);
-    border-radius: var(--radius-sm);
-    margin-bottom: 0.5rem;
-    padding: 0.55rem 0.75rem;
-    min-width: 680px;
+    background: transparent;
+    border: none;
+    margin-bottom: 1.25rem;
+    padding: 0;
+    min-width: 880px;
 }
 
 .rack-unit-label {
-    font-size: 0.68rem;
+    font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: #888;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.4rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 0 4px;
 }
 
-.rack-unit-label .rul-name {
-    color: #ddd;
+.rul-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.rul-pos-badge {
+    background: #252834;
+    border: 1px solid #3c4052;
+    color: #38bdf8;
+    font-family: monospace;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+}
+
+.rul-name {
+    color: #e2e8f0;
+    font-size: 0.85rem;
+}
+
+.rul-desc {
+    color: #94a3b8;
+    font-weight: 400;
+    font-size: 0.75rem;
+    text-transform: none;
+    letter-spacing: normal;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .rack-unit-controls {
     display: flex;
-    gap: 0.35rem;
+    gap: 0.6rem;
     align-items: center;
 }
 
+.rack-unit-pos {
+    color: #94a3b8;
+    font-size: 0.72rem;
+    font-family: monospace;
+}
+
 .rack-unit-controls button {
-    background: transparent;
-    border: 1px solid #444;
-    color: #bbb;
+    background: #1e222d;
+    border: 1px solid #3b4254;
+    color: #cbd5e1;
     border-radius: 4px;
-    padding: 0.15rem 0.45rem;
-    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.72rem;
     cursor: pointer;
     transition: all var(--t-fast);
 }
 
 .rack-unit-controls button:hover {
-    background: #444;
+    background: #334155;
     color: #fff;
+    border-color: #64748b;
 }
 
-/* Patchera 24 puertos */
+/* ──────────────────────────────────────────────
+   CHASIS FÍSICO DE PATCHERA (19" 1U / 2U)
+   ────────────────────────────────────────────── */
+.patch-chassis {
+    display: flex;
+    align-items: stretch;
+    background: linear-gradient(180deg, #1e212a 0%, #15171e 50%, #111318 100%);
+    border: 1.5px solid #2e3342;
+    border-radius: 5px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -1px 0 rgba(0, 0, 0, 0.6);
+    padding: 6px 4px;
+    position: relative;
+    user-select: none;
+}
+
+/* Orejas de montaje de Rack (Rack Ears) */
+.patch-ear {
+    width: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 2px;
+    background: linear-gradient(180deg, #252934 0%, #1b1e26 100%);
+    border: 1px solid #353b4b;
+    border-radius: 3px;
+    box-shadow: inset 1px 1px 1px rgba(255, 255, 255, 0.08), inset -1px -1px 1px rgba(0, 0, 0, 0.5);
+    flex-shrink: 0;
+}
+
+.patch-ear-left {
+    margin-right: 6px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.patch-ear-right {
+    margin-left: 6px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* Ranuras ovales y tornillos M6 de rack */
+.patch-screw-slot {
+    width: 14px;
+    height: 18px;
+    background: #090a0d;
+    border: 1px solid #3c4254;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+.patch-screw {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #8a92a3 25%, #424754 85%);
+    border: 1px solid #282c36;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    position: relative;
+}
+
+.patch-screw::before {
+    content: '';
+    position: absolute;
+    top: 3.5px;
+    left: 1px;
+    width: 5px;
+    height: 1px;
+    background: #1b1e26;
+    border-radius: 1px;
+}
+
+.patch-screw::after {
+    content: '';
+    position: absolute;
+    top: 1.5px;
+    left: 3px;
+    width: 1px;
+    height: 5px;
+    background: #1b1e26;
+    border-radius: 1px;
+}
+
+/* Símbolo de tierra / marca en orejas */
+.patch-ground-symbol {
+    color: #64748b;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.75;
+}
+
+.patch-svg-icon {
+    width: 100%;
+    height: 100%;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+}
+
+.patch-ear-tag {
+    font-family: monospace;
+    font-size: 7px;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: -0.5px;
+    text-align: center;
+    line-height: 1;
+}
+
+/* ──────────────────────────────────────────────
+   CUERPO Y MÓDULOS DE PUERTOS
+   ────────────────────────────────────────────── */
+.patch-faceplate {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: #14161c;
+    border: 1px solid #222530;
+    border-radius: 4px;
+    padding: 6px 8px;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
+}
+
+.patch-modules-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 6px;
+}
+
+/* Divisor mecánico entre módulos de 6 bocas */
+.patch-module-divider {
+    width: 6px;
+    align-self: stretch;
+    background: linear-gradient(90deg, #1b1d24 0%, #2b303d 50%, #171920 100%);
+    border: 1px solid #333846;
+    border-radius: 2px;
+    box-shadow: 1px 0 2px rgba(0, 0, 0, 0.4);
+    flex-shrink: 0;
+}
+
+/* Módulo individual de 6 bocas (Keystone block) */
+.patch-module {
+    flex: 1;
+    background: #1b1e27;
+    border: 1px solid #2e3444;
+    border-radius: 4px;
+    padding: 5px 6px;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.05), 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.patch-module-inner {
+    width: 100%;
+}
+
+.patch-module-ports {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+/* Columna de cada boca: Portaetiquetas + Número + Jack */
+.patch-port-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    flex: 1;
+    min-width: 30px;
+    max-width: 44px;
+}
+
+/* Tira / Ventana Portaetiquetas técnica */
+.patch-label-cell {
+    width: 100%;
+    height: 18px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+    cursor: pointer;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: all var(--t-fast);
+    overflow: hidden;
+    position: relative;
+}
+
+.patch-label-cell:hover {
+    border-color: #38bdf8;
+    background: #ffffff;
+    box-shadow: 0 0 5px rgba(56, 189, 248, 0.4);
+}
+
+.patch-label-cell.has-label {
+    background: #f1f5f9;
+}
+
+.plc-text {
+    font-family: monospace;
+    font-size: 8px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    max-width: 100%;
+    text-align: center;
+}
+
+.patch-label-cell:not(.has-label) .plc-text::after {
+    content: '—';
+    color: #cbd5e1;
+    font-size: 7px;
+}
+
+/* Número de boca sobre la patchera */
+.patch-port-num {
+    font-size: 9px;
+    font-weight: 800;
+    color: #94a3b8;
+    font-family: monospace;
+    line-height: 1;
+    user-select: none;
+    letter-spacing: -0.2px;
+}
+
+/* ──────────────────────────────────────────────
+   CONECTOR RJ45 REALISTA (8P8C)
+   ────────────────────────────────────────────── */
+.jack {
+    width: 32px;
+    height: 28px;
+    border-radius: 4px;
+    background: #1e222c;
+    border: 1.5px solid #363c4e;
+    cursor: pointer;
+    position: relative;
+    padding: 2px;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 2px 4px rgba(0, 0, 0, 0.4);
+    transition: transform var(--t-fast), border-color var(--t-fast), box-shadow var(--t-fast);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.jack:hover {
+    transform: translateY(-2px);
+    border-color: #38bdf8;
+    box-shadow: 0 4px 10px rgba(56, 189, 248, 0.35);
+    z-index: 5;
+}
+
+.jack-bezel {
+    width: 100%;
+    height: 100%;
+    background: #141720;
+    border-radius: 2px;
+    border: 1px solid #282d3b;
+    padding: 1.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Cavidad interior del jack hembra */
+.jack-cavity {
+    width: 100%;
+    height: 100%;
+    background: #090a0e;
+    border-radius: 1.5px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.95);
+    overflow: hidden;
+}
+
+/* 8 Pines dorados de contacto (8P8C) */
+.jack-pins {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: flex-start;
+    width: 82%;
+    margin: 2px auto 0;
+    height: 5px;
+}
+
+.jack-pins span {
+    width: 1px;
+    height: 4.5px;
+    background: linear-gradient(180deg, #fef08a 0%, #ca8a04 100%);
+    box-shadow: 0 0 1px #eab308;
+    border-radius: 0.5px;
+    display: block;
+}
+
+/* Muesca inferior para la traba / clip RJ45 */
+.jack-notch {
+    width: 8px;
+    height: 3.5px;
+    background: #050608;
+    border-top: 1px solid #1f2430;
+    border-left: 1px solid #1f2430;
+    border-right: 1px solid #1f2430;
+    border-radius: 1px 1px 0 0;
+    margin: 0 auto;
+}
+
+/* Número dentro del jack para compatibilidad */
+.jack-num {
+    display: none;
+}
+
+/* ──────────────────────────────────────────────
+   ESTADO CONECTADO (PLUG DE PATCH CORD INSERTADO)
+   ────────────────────────────────────────────── */
+.jack-plug {
+    display: none;
+    position: absolute;
+    inset: 1px;
+    border-radius: 2px;
+    background: #ea580c;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.4);
+    align-items: center;
+    justify-content: center;
+}
+
+.jack.filled .jack-plug,
+.jack.col-blue .jack-plug,
+.jack.col-green .jack-plug,
+.jack.col-red .jack-plug,
+.jack.col-orange .jack-plug,
+.jack.col-yellow .jack-plug,
+.jack.col-purple .jack-plug,
+.jack.col-teal .jack-plug,
+.jack.col-gray .jack-plug {
+    display: flex;
+}
+
+.jack.filled .jack-pins,
+.jack.filled .jack-notch {
+    opacity: 0.15;
+}
+
+/* Clip de traba plástico translúcido en el conector */
+.jack-plug-clip {
+    width: 8px;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    margin-top: 1px;
+}
+
+/* LED indicador de enlace activo */
+.jack-plug-led {
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    width: 3px;
+    height: 3px;
+    background: #4ade80;
+    border-radius: 50%;
+    box-shadow: 0 0 4px #22c55e, 0 0 6px #4ade80;
+}
+
+/* Colores de patch cord por categoría/VLAN */
+.jack.col-blue   .jack-plug { background: #1d4ed8; }
+.jack.col-green  .jack-plug { background: #15803d; }
+.jack.col-red    .jack-plug { background: #b91c1c; }
+.jack.col-orange .jack-plug { background: #c2410c; }
+.jack.col-yellow .jack-plug { background: #a16207; }
+.jack.col-purple .jack-plug { background: #6d28d9; }
+.jack.col-teal   .jack-plug { background: #0f766e; }
+.jack.col-gray   .jack-plug { background: #475569; }
+
+.jack.col-blue   { border-color: #2563eb; }
+.jack.col-green  { border-color: #16a34a; }
+.jack.col-red    { border-color: #dc2626; }
+.jack.col-orange { border-color: #ea580c; }
+.jack.col-yellow { border-color: #ca8a04; }
+.jack.col-purple { border-color: #7c3aed; }
+.jack.col-teal   { border-color: #0d9488; }
+.jack.col-gray   { border-color: #64748b; }
+
+/* ──────────────────────────────────────────────
+   PATCHERA 48 PUERTOS (2U O DOBLE FILA)
+   ────────────────────────────────────────────── */
+.patch-chassis-48 {
+    padding: 8px 4px;
+}
+
+.patch-faceplate-48 {
+    gap: 8px;
+}
+
+.patch-row-divider {
+    height: 3px;
+    background: linear-gradient(180deg, #0f1116 0%, #282d3a 50%, #0f1116 100%);
+    border-radius: 1px;
+    margin: 2px 0;
+}
+
+/* Compatibilidad con estilos legacy */
 .patch-row {
     display: flex;
     gap: 3px;
     align-items: center;
     flex-wrap: nowrap;
-}
-
-.jack {
-    width: 26px;
-    height: 26px;
-    border-radius: 4px;
-    border: 1.5px solid var(--jack-empty-border);
-    background: var(--jack-empty-bg);
-    cursor: pointer;
-    transition: transform var(--t-fast), border-color var(--t-fast), background var(--t-fast);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0;
-    position: relative;
-    flex-shrink: 0;
-}
-
-.jack:hover {
-    border-color: var(--accent);
-    transform: scale(1.15);
-    z-index: 2;
-}
-
-.jack.filled {
-    background: var(--jack-filled-bg);
-    border-color: var(--jack-filled-border);
-    color: #fff;
-}
-
-.jack.filled:hover {
-    filter: brightness(1.15);
-    transform: scale(1.15);
-}
-
-/* Colores de jack por función/conexión */
-.jack.col-blue   { background: #1a6fd4; border-color: #1459ae; }
-.jack.col-green  { background: #1aa870; border-color: #158a5a; }
-.jack.col-red    { background: #d23c3c; border-color: #a83030; }
-.jack.col-orange { background: #d27830; border-color: #a86020; }
-.jack.col-yellow { background: #c8a010; border-color: #a07a08; }
-.jack.col-purple { background: #7846c8; border-color: #5e38a0; }
-.jack.col-teal   { background: #14a0a0; border-color: #108080; }
-.jack.col-gray   { background: #6a7280; border-color: #525a68; }
-
-.jack-num {
-    position: absolute;
-    bottom: 1px;
-    right: 2px;
-    font-size: 6px;
-    color: rgba(255, 255, 255, 0.65);
-    line-height: 1;
-    pointer-events: none;
-}
-
-.jack.empty .jack-num {
-    color: rgba(0, 0, 0, 0.35);
-}
-
-html.dark-mode .jack.empty .jack-num {
-    color: rgba(255, 255, 255, 0.25);
-}
-
-/* Patchera 48 puertos (doble fila) */
-.patch-double-row {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
 }
 
 .jack-group-sep {
@@ -1675,4 +2070,176 @@ html.dark-mode .jack.empty .jack-num {
     height: 1px;
     background: var(--border);
     margin: 4px 6px;
+}
+
+/* ──────────────────────────────────────────────
+   MODAL IMPORTAR PLANILLA (EXCEL / CSV / PEGAR)
+   ────────────────────────────────────────────── */
+.modal-content-lg {
+    --modal-max: 680px;
+}
+
+.importar-tabs {
+    display: flex;
+    gap: 6px;
+    background: var(--input-bg, #1a1d26);
+    padding: 4px;
+    border-radius: var(--radius-sm, 6px);
+    margin-bottom: 1rem;
+    border: 1px solid var(--border, #2c3140);
+}
+
+.importar-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted, #94a3b8);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all var(--t-fast);
+}
+
+.importar-tab-btn.active {
+    background: var(--bg-card, #222634);
+    color: var(--text-main, #f8fafc);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.importar-tab-content {
+    display: none;
+}
+
+.importar-tab-content.active {
+    display: block;
+}
+
+.importar-textarea {
+    width: 100%;
+    min-height: 110px;
+    background: var(--input-bg, #181b24);
+    border: 1px solid var(--border, #2c3140);
+    border-radius: var(--radius-sm, 6px);
+    color: var(--text-main, #f8fafc);
+    font-family: monospace;
+    font-size: 0.75rem;
+    padding: 0.6rem;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color var(--t-fast);
+}
+
+.importar-textarea:focus {
+    border-color: var(--accent, #38bdf8);
+}
+
+.importar-help-text {
+    font-size: 0.75rem;
+    color: var(--text-muted, #94a3b8);
+    margin-bottom: 0.5rem;
+}
+
+.importar-pegar-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+}
+
+.dropzone-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.importar-preview-container {
+    margin-top: 1rem;
+    border-top: 1px solid var(--border, #2c3140);
+    padding-top: 1rem;
+}
+
+.importar-preview-header {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.importar-stats-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.importar-patcheras-preview-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.preview-patchera-item {
+    background: #181b24;
+    border: 1px solid #2d3344;
+    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+}
+
+.preview-patchera-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.4rem;
+}
+
+.preview-patchera-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #e2e8f0;
+}
+
+.preview-patchera-meta {
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+
+.preview-ports-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.preview-port-chip {
+    font-size: 0.65rem;
+    font-family: monospace;
+    padding: 2px 5px;
+    border-radius: 3px;
+    background: #252a38;
+    color: #cbd5e1;
+    border-left: 3px solid #38bdf8;
+    white-space: nowrap;
+}
+
+.preview-port-chip.chip-red    { border-left-color: #ef4444; }
+.preview-port-chip.chip-teal   { border-left-color: #14b8a6; }
+.preview-port-chip.chip-yellow { border-left-color: #eab308; }
+.preview-port-chip.chip-blue   { border-left-color: #3b82f6; }
+.preview-port-chip.chip-purple { border-left-color: #a855f7; }
+.preview-port-chip.chip-orange { border-left-color: #f97316; }
+.preview-port-chip.chip-gray   { border-left-color: #64748b; }
+
+.preview-rack-group-header {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--accent, #38bdf8);
+    padding: 6px 0 3px 0;
+    margin-top: 6px;
+    border-bottom: 1px dashed var(--border, #2c3140);
 }
