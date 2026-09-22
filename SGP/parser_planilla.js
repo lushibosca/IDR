@@ -485,10 +485,11 @@ const PlanillaParser = (function () {
                 }
             }
 
+            const esFibra = /fibra/i.test(patcheraNombre);
             patcheras.push({
                 id: 'p_' + Date.now().toString(36) + '_' + i,
                 nombre: patcheraNombre,
-                tipo: pr.totalPuertos,
+                tipo: esFibra ? 'fibra-v' : pr.totalPuertos,
                 pos: i + 1,
                 desc: rackFecha ? `Relevamiento: ${rackFecha}` : '',
                 puertos: puertos

@@ -132,8 +132,12 @@ function _sanitizarUnidad(u) {
     if (!u || typeof u !== 'object') return null;
     const id = _strSeg(u.id, 32);
     if (!id || !RE_ID.test(id)) return null;
-    const tipo = Number(u.tipo);
-    if (tipo !== 24 && tipo !== 48) return null;
+    let tipo = u.tipo;
+    if (tipo !== 24 && tipo !== 48 && tipo !== 'fibra-v' && tipo !== 'fibra-h') {
+        if (Number(tipo) === 24) tipo = 24;
+        else if (Number(tipo) === 48) tipo = 48;
+        else return null;
+    }
     const nombre = _strSeg(u.nombre || '', 40) ?? '';
     const pos = Number(u.pos);
     const puertos = Array.isArray(u.puertos)
@@ -571,10 +575,58 @@ const Tooltip = (() => {
 // ══════════════════════════════════════════════════════════════
 let _filtroEdificio = '';
 
+function _initRacksListDelegation() {
+    const container = document.getElementById('racks-list');
+    if (!container || container._hasDelegation) return;
+    container._hasDelegation = true;
+
+    container.addEventListener('click', e => {
+        const el = e.target.closest('[data-action]');
+        if (!el) return;
+        const action = el.dataset.action;
+
+        if (action === 'toggle-rack') {
+            toggleRack(el.dataset.id);
+        } else if (action === 'editar-rack') {
+            abrirEditarRack(el.dataset.id);
+        } else if (action === 'nueva-patchera') {
+            abrirNuevaPatchera(el.dataset.rack);
+        } else if (action === 'editar-patchera') {
+            abrirEditarPatchera(el.dataset.rack, el.dataset.unidad);
+        } else if (action === 'editar-jack') {
+            abrirEditarJack(el.dataset.rack, el.dataset.unidad, Number(el.dataset.num));
+        }
+    });
+
+    // Tooltips interactivos con guardia contra layout thrashing
+    container.addEventListener('mouseover', e => {
+        const jack = e.target.closest('.jack, .fiber-coupler, .patch-label-cell');
+        if (!jack || !jack.dataset.action) return;
+        // Evitar recalcular getBoundingClientRect si el puntero se mueve entre hijos del mismo conector
+        if (e.relatedTarget && jack.contains(e.relatedTarget)) return;
+
+        const num = jack.dataset.num;
+        const label = jack.dataset.label || '';
+        const notas = jack.dataset.notas || '';
+        const pNum = `Puerto ${num}`;
+        Tooltip.show(pNum, label, notas, jack.getBoundingClientRect());
+    });
+
+    container.addEventListener('mouseout', e => {
+        const jack = e.target.closest('.jack, .fiber-coupler, .patch-label-cell');
+        if (!jack) return;
+        // Evitar ocultar tooltip si seguimos dentro del mismo conector
+        if (e.relatedTarget && jack.contains(e.relatedTarget)) return;
+        Tooltip.hide();
+    });
+}
+
 function renderRacks() {
     const container = document.getElementById('racks-list');
     const empty = document.getElementById('racks-empty');
     if (!container || !empty) return;
+
+    _initRacksListDelegation();
 
     let racksMostrar = state.racks;
     if (_filtroEdificio) {
@@ -597,21 +649,28 @@ function renderRacks() {
     }
     empty.classList.add('hidden');
     container.innerHTML = racksMostrar.map(r => renderRackCard(r)).join('');
+}
 
-    racksMostrar.forEach(r => {
-        bindRackEvents(r.id);
-    });
+function _renderRackBodyContent(rack) {
+    if (!rack.unidades.length) {
+        return `
+            <div class="empty-state empty-state-sm">
+                <div class="empty-icon empty-icon-sm">🔌</div>
+                <p class="empty-text-sm">Sin patcheras registradas en este rack.</p>
+            </div>`;
+    }
+    return renderRackView(rack);
 }
 
 function renderRackCard(rack) {
-    const totalPuertos = rack.unidades.reduce((s, u) => s + u.tipo, 0);
+    const totalPuertos = rack.unidades.reduce((s, u) => s + (typeof u.tipo === 'number' ? u.tipo : 24), 0);
     const usados = rack.unidades.reduce((s, u) => s + u.puertos.filter(p => p.label).length, 0);
     const pct = totalPuertos ? Math.round((usados / totalPuertos) * 100) : 0;
     const isOpen = rack.abierto;
 
     return `
     <div class="rack-item-card" id="rcard-${esc(rack.id)}">
-        <div class="rack-item-header ${isOpen ? 'open' : ''}" id="rheader-${esc(rack.id)}">
+        <div class="rack-item-header ${isOpen ? 'open' : ''}" id="rheader-${esc(rack.id)}" data-action="toggle-rack" data-id="${esc(rack.id)}">
             <svg class="svg-icon icon-accent"><use href="#icon-rack"/></svg>
             <span class="rack-item-name">${esc(rack.nombre)}</span>
             ${rack.edificio ? `
@@ -621,8 +680,8 @@ function renderRackCard(rack) {
                 </span>` : ''}
             ${rack.sgrId ? `<span class="badge badge-sgr" title="Vinculado a rack de SGR">SGR</span>` : ''}
             ${rack.desc ? `<span class="rack-item-meta">${esc(rack.desc)}</span>` : ''}
-            <span class="badge badge-gray">${rack.unidades.length} patchera${rack.unidades.length !== 1 ? 's' : ''}</span>
-            <span class="badge ${pct > 80 ? 'badge-orange' : 'badge-blue'}">${pct}% ocupado</span>
+            <span class="badge badge-gray" id="runits-${esc(rack.id)}">${rack.unidades.length} patchera${rack.unidades.length !== 1 ? 's' : ''}</span>
+            <span class="badge ${pct > 80 ? 'badge-orange' : 'badge-blue'}" id="rocc-${esc(rack.id)}">${pct}% ocupado</span>
             <span class="badge badge-gray">${rack.us}U</span>
             <button class="icon-btn" data-action="editar-rack" data-id="${esc(rack.id)}" title="Editar rack">
                 <svg class="svg-icon icon-md"><use href="#icon-edit"/></svg>
@@ -637,11 +696,9 @@ function renderRackCard(rack) {
                     <svg class="svg-icon icon-sm"><use href="#icon-add"/></svg> Agregar patchera
                 </button>
             </div>
-            ${rack.unidades.length ? renderRackView(rack) : `
-                <div class="empty-state empty-state-sm">
-                    <div class="empty-icon empty-icon-sm">🔌</div>
-                    <p class="empty-text-sm">Sin patcheras registradas en este rack.</p>
-                </div>`}
+            <div class="rack-body-content" id="rcontent-${esc(rack.id)}">
+                ${isOpen ? _renderRackBodyContent(rack) : ''}
+            </div>
         </div>
     </div>`;
 }
@@ -661,10 +718,14 @@ function renderPatchera(u, rackId) {
     const portMap = {};
     u.puertos.forEach(p => { portMap[p.num] = p; });
 
-    if (u.tipo === 24) {
-        return renderPatchera24(u, rackId, portMap);
-    } else {
+    if (u.tipo === 'fibra-v') {
+        return renderPatcheraFibraVertical(u, rackId, portMap);
+    } else if (u.tipo === 'fibra-h') {
+        return renderPatcheraFibraHorizontal(u, rackId, portMap);
+    } else if (Number(u.tipo) === 48) {
         return renderPatchera48(u, rackId, portMap);
+    } else {
+        return renderPatchera24(u, rackId, portMap);
     }
 }
 
@@ -682,15 +743,12 @@ function _jackHTML(num, portMap, unidadId, rackId) {
             <span class="plc-text">${esc(p?.label || '')}</span>
         </div>
         <span class="patch-port-num">${num}</span>
-        <div class="jack ${filled ? 'filled' : colorClass ? 'filled' : ''} ${colorClass} ${!filled && !colorClass ? 'empty' : ''}"
+        <div class="jack ${filled || colorClass ? 'filled' : ''} ${colorClass} ${!filled && !colorClass ? 'empty' : ''}"
              data-action="editar-jack" data-rack="${esc(rackId)}" data-unidad="${esc(unidadId)}" data-num="${num}"${labelAttr}
              title="${p && p.label ? esc(p.label) : `Puerto ${num}`}">
             <div class="jack-bezel">
                 <div class="jack-cavity">
-                    <div class="jack-pins">
-                        <span></span><span></span><span></span><span></span>
-                        <span></span><span></span><span></span><span></span>
-                    </div>
+                    <div class="jack-pins"></div>
                     <div class="jack-notch"></div>
                     <div class="jack-plug">
                         <div class="jack-plug-clip"></div>
@@ -698,7 +756,6 @@ function _jackHTML(num, portMap, unidadId, rackId) {
                     </div>
                 </div>
             </div>
-            <span class="jack-num">${num}</span>
         </div>
     </div>`;
 }
@@ -819,41 +876,233 @@ function renderPatchera48(u, rackId, portMap) {
     </div>`;
 }
 
+// ══════════════════════════════════════════════════════════════
+//  PATCHERAS DE FIBRA ÓPTICA (ODF 19" 1U)
+// ══════════════════════════════════════════════════════════════
+const _FIBER_TIA598_PAIRS = [
+    ['#2563eb', '#ea580c'], // Par 1: 1-Azul, 2-Naranja
+    ['#16a34a', '#78350f'], // Par 2: 3-Verde, 4-Marrón
+    ['#64748b', '#e2e8f0'], // Par 3: 5-Gris, 6-Blanco
+    ['#dc2626', '#1e293b'], // Par 4: 7-Rojo, 8-Negro
+    ['#eab308', '#9333ea'], // Par 5: 9-Amarillo, 10-Violeta
+    ['#ec4899', '#06b6d4'], // Par 6: 11-Rosa, 12-Aqua
+];
+
+const _FIBER_COLOR_MAP = {
+    blue: '#2563eb',
+    orange: '#ea580c',
+    green: '#16a34a',
+    red: '#dc2626',
+    yellow: '#eab308',
+    purple: '#9333ea',
+    teal: '#06b6d4',
+    gray: '#64748b'
+};
+
+function _getFiberFerruleColors(portNum, portObj) {
+    if (portObj && portObj.color && _FIBER_COLOR_MAP[portObj.color]) {
+        const c = _FIBER_COLOR_MAP[portObj.color];
+        return [c, c];
+    }
+    const pairIdx = ((portNum - 1) % 6);
+    return _FIBER_TIA598_PAIRS[pairIdx] || ['#06b6d4', '#06b6d4'];
+}
+
+function _fiberCouplerVHTML(num, portMap, unidadId, rackId) {
+    const p = portMap[num];
+    const filled = p && p.label;
+    const [c1, c2] = _getFiberFerruleColors(num, p);
+    const colorClass = p && p.color ? `col-${p.color}` : '';
+    const labelAttr = p ? ` data-label="${esc(p.label || '')}" data-notas="${esc(p.notas || '')}"` : '';
+
+    return `
+    <div class="patch-port-col fiber-port-col fiber-col-v">
+        <div class="patch-label-cell ${filled ? 'has-label' : ''}"
+             data-action="editar-jack" data-rack="${esc(rackId)}" data-unidad="${esc(unidadId)}" data-num="${num}"${labelAttr}
+             title="${filled ? esc(p.label) : `Fibra Dúplex ${num}`}">
+            <span class="plc-text">${esc(p?.label || '')}</span>
+        </div>
+        <span class="patch-port-num">${num}</span>
+        <div class="fiber-coupler fiber-coupler-v ${filled || colorClass ? 'active' : ''} ${colorClass}"
+             data-action="editar-jack" data-rack="${esc(rackId)}" data-unidad="${esc(unidadId)}" data-num="${num}"${labelAttr}
+             title="${filled ? esc(p.label) : `Fibra Dúplex ${num}`}">
+            <div class="fiber-flange-screw"></div>
+            <div class="fiber-coupler-body">
+                <div class="fiber-ferrule" style="background:${c1};">
+                    <div class="fiber-core"></div>
+                </div>
+                <div class="fiber-ferrule-divider"></div>
+                <div class="fiber-ferrule" style="background:${c2};">
+                    <div class="fiber-core"></div>
+                </div>
+            </div>
+            <div class="fiber-flange-screw"></div>
+        </div>
+    </div>`;
+}
+
+function _fiberCouplerHHTML(num, portMap, unidadId, rackId) {
+    const p = portMap[num];
+    const filled = p && p.label;
+    const [c1, c2] = _getFiberFerruleColors(num, p);
+    const colorClass = p && p.color ? `col-${p.color}` : '';
+    const labelAttr = p ? ` data-label="${esc(p.label || '')}" data-notas="${esc(p.notas || '')}"` : '';
+
+    return `
+    <div class="fiber-coupler-h-wrap">
+        <div class="patch-label-cell ${filled ? 'has-label' : ''}"
+             data-action="editar-jack" data-rack="${esc(rackId)}" data-unidad="${esc(unidadId)}" data-num="${num}"${labelAttr}
+             title="${filled ? esc(p.label) : `Fibra Dúplex ${num}`}">
+            <span class="plc-text">${esc(p?.label || '')}</span>
+        </div>
+        <div class="fiber-coupler-h-inner">
+            <span class="patch-port-num">${num}</span>
+            <div class="fiber-coupler fiber-coupler-h ${filled || colorClass ? 'active' : ''} ${colorClass}"
+                 data-action="editar-jack" data-rack="${esc(rackId)}" data-unidad="${esc(unidadId)}" data-num="${num}"${labelAttr}
+                 title="${filled ? esc(p.label) : `Fibra Dúplex ${num}`}">
+                <div class="fiber-flange-screw"></div>
+                <div class="fiber-coupler-body">
+                    <div class="fiber-ferrule" style="background:${c1};">
+                        <div class="fiber-core"></div>
+                    </div>
+                    <div class="fiber-ferrule-divider"></div>
+                    <div class="fiber-ferrule" style="background:${c2};">
+                        <div class="fiber-core"></div>
+                    </div>
+                </div>
+                <div class="fiber-flange-screw"></div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function renderPatcheraFibraVertical(u, rackId, portMap) {
+    const totalPuertos = 24;
+    const usados = u.puertos.filter(p => p.label || p.color).length;
+    const pct = Math.round((usados / totalPuertos) * 100);
+
+    const portsG1 = Array.from({ length: 12 }, (_, i) => i + 1).map(n => _fiberCouplerVHTML(n, portMap, u.id, rackId)).join('');
+    const portsG2 = Array.from({ length: 12 }, (_, i) => i + 13).map(n => _fiberCouplerVHTML(n, portMap, u.id, rackId)).join('');
+
+    return `
+    <div class="rack-unit patch-panel-unit patch-panel-fibra" id="unit-${esc(u.id)}">
+        <div class="rack-unit-label">
+            <div class="rul-info">
+                <span class="rul-pos-badge">${u.pos}U</span>
+                <span class="rul-name">${esc(u.nombre || `ODF ${u.pos}U`)}</span>
+                ${u.desc ? `<span class="rul-desc">${esc(u.desc)}</span>` : ''}
+            </div>
+            <div class="rack-unit-controls">
+                <span class="rack-unit-pos">24p Dúplex Vertical FO · ${usados}/24 (${pct}%)</span>
+                <button data-action="editar-patchera" data-rack="${esc(rackId)}" data-unidad="${esc(u.id)}">Editar</button>
+            </div>
+        </div>
+        <div class="patch-chassis">
+            <div class="patch-ear patch-ear-left">
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+                <div class="patch-ground-symbol" title="Puesta a tierra física">
+                    <svg viewBox="0 0 16 16" class="patch-svg-icon">
+                        <line x1="8" y1="2" x2="8" y2="9"/>
+                        <line x1="3" y1="9" x2="13" y2="9"/>
+                        <line x1="5" y1="12" x2="11" y2="12"/>
+                        <line x1="7" y1="15" x2="9" y2="15"/>
+                    </svg>
+                </div>
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+            </div>
+            <div class="patch-faceplate">
+                <div class="fiber-v-row">
+                    <div class="fiber-plunger" title="Perno de fijación rápida">
+                        <div class="fiber-plunger-knob"></div>
+                    </div>
+                    ${portsG1}
+                    <div class="fiber-plunger" title="Perno de fijación rápida">
+                        <div class="fiber-plunger-knob"></div>
+                    </div>
+                    ${portsG2}
+                    <div class="fiber-plunger" title="Perno de fijación rápida">
+                        <div class="fiber-plunger-knob"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="patch-ear patch-ear-right">
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+                <div class="patch-ear-tag patch-ear-tag-fo">19" 1U FO</div>
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function renderPatcheraFibraHorizontal(u, rackId, portMap) {
+    const totalPuertos = 24;
+    const usados = u.puertos.filter(p => p.label || p.color).length;
+    const pct = Math.round((usados / totalPuertos) * 100);
+
+    const c1Row1 = [1, 2, 3, 4, 5, 6].map(n => _fiberCouplerHHTML(n, portMap, u.id, rackId)).join('');
+    const c1Row2 = [7, 8, 9, 10, 11, 12].map(n => _fiberCouplerHHTML(n, portMap, u.id, rackId)).join('');
+
+    const c2Row1 = [13, 14, 15, 16, 17, 18].map(n => _fiberCouplerHHTML(n, portMap, u.id, rackId)).join('');
+    const c2Row2 = [19, 20, 21, 22, 23, 24].map(n => _fiberCouplerHHTML(n, portMap, u.id, rackId)).join('');
+
+    return `
+    <div class="rack-unit patch-panel-unit patch-panel-fibra patch-panel-fibra-h" id="unit-${esc(u.id)}">
+        <div class="rack-unit-label">
+            <div class="rul-info">
+                <span class="rul-pos-badge">${u.pos}U</span>
+                <span class="rul-name">${esc(u.nombre || `ODF ${u.pos}U`)}</span>
+                ${u.desc ? `<span class="rul-desc">${esc(u.desc)}</span>` : ''}
+            </div>
+            <div class="rack-unit-controls">
+                <span class="rack-unit-pos">24p Dúplex Horizontal FO (2 Filas) · ${usados}/24 (${pct}%)</span>
+                <button data-action="editar-patchera" data-rack="${esc(rackId)}" data-unidad="${esc(u.id)}">Editar</button>
+            </div>
+        </div>
+        <div class="patch-chassis">
+            <div class="patch-ear patch-ear-left">
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+                <div class="patch-ground-symbol" title="Puesta a tierra física">
+                    <svg viewBox="0 0 16 16" class="patch-svg-icon">
+                        <line x1="8" y1="2" x2="8" y2="9"/>
+                        <line x1="3" y1="9" x2="13" y2="9"/>
+                        <line x1="5" y1="12" x2="11" y2="12"/>
+                        <line x1="7" y1="15" x2="9" y2="15"/>
+                    </svg>
+                </div>
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+            </div>
+            <div class="patch-faceplate">
+                <div class="fiber-h-container">
+                    <div class="fiber-plunger" title="Perno de fijación rápida">
+                        <div class="fiber-plunger-knob"></div>
+                    </div>
+                    <div class="fiber-h-cassette">
+                        <div class="fiber-h-row">${c1Row1}</div>
+                        <div class="fiber-h-row">${c1Row2}</div>
+                    </div>
+                    <div class="fiber-plunger" title="Perno de fijación rápida">
+                        <div class="fiber-plunger-knob"></div>
+                    </div>
+                    <div class="fiber-h-cassette">
+                        <div class="fiber-h-row">${c2Row1}</div>
+                        <div class="fiber-h-row">${c2Row2}</div>
+                    </div>
+                    <div class="fiber-plunger" title="Perno de fijación rápida">
+                        <div class="fiber-plunger-knob"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="patch-ear patch-ear-right">
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+                <div class="patch-ear-tag patch-ear-tag-fo">19" 1U FO</div>
+                <div class="patch-screw-slot"><div class="patch-screw"></div></div>
+            </div>
+        </div>
+    </div>`;
+}
+
 function bindRackEvents(rackId) {
-    const card = document.getElementById(`rcard-${rackId}`);
-    if (!card) return;
-
-    card.addEventListener('click', e => {
-        const el = e.target.closest('[data-action]');
-        if (!el) return;
-        const action = el.dataset.action;
-
-        if (action === 'toggle-rack') {
-            toggleRack(el.dataset.id);
-        } else if (action === 'editar-rack') {
-            abrirEditarRack(el.dataset.id);
-        } else if (action === 'nueva-patchera') {
-            abrirNuevaPatchera(el.dataset.rack);
-        } else if (action === 'editar-patchera') {
-            abrirEditarPatchera(el.dataset.rack, el.dataset.unidad);
-        } else if (action === 'editar-jack') {
-            abrirEditarJack(el.dataset.rack, el.dataset.unidad, Number(el.dataset.num));
-        }
-    });
-
-    // Tooltips interactivos
-    card.addEventListener('mouseover', e => {
-        const jack = e.target.closest('.jack, .patch-label-cell');
-        if (!jack || !jack.dataset.action) return;
-        const num = jack.dataset.num;
-        const label = jack.dataset.label || '';
-        const notas = jack.dataset.notas || '';
-        const pNum = `Puerto ${num}`;
-        Tooltip.show(pNum, label, notas, jack.getBoundingClientRect());
-    });
-    card.addEventListener('mouseout', e => {
-        if (e.target.closest('.jack, .patch-label-cell')) Tooltip.hide();
-    });
+    // Delegado globalmente a #racks-list en _initRacksListDelegation()
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1122,7 +1371,24 @@ function toggleRack(rackId) {
     if (!rack) return;
     rack.abierto = !rack.abierto;
     guardar();
-    renderRacks();
+
+    const header = document.getElementById(`rheader-${rackId}`);
+    const body = document.getElementById(`rbody-${rackId}`);
+    const content = document.getElementById(`rcontent-${rackId}`);
+    const btn = header?.querySelector('button[data-action="toggle-rack"]');
+
+    if (rack.abierto) {
+        if (header) header.classList.add('open');
+        if (body) body.classList.add('open');
+        if (btn) btn.title = 'Colapsar';
+        if (content && !content.firstElementChild) {
+            content.innerHTML = _renderRackBodyContent(rack);
+        }
+    } else {
+        if (header) header.classList.remove('open');
+        if (body) body.classList.remove('open');
+        if (btn) btn.title = 'Expandir';
+    }
 }
 
 let _editandoRackId = null;
@@ -1403,7 +1669,8 @@ function abrirEditarPatchera(rackId, unidadId) {
 function guardarPatchera() {
     const nombre = document.getElementById('patchera-nombre').value.trim();
     const pos = Number(document.getElementById('patchera-pos').value);
-    const tipo = Number(document.getElementById('patchera-tipo').value);
+    const tipoVal = document.getElementById('patchera-tipo').value;
+    const tipo = (tipoVal === 'fibra-v' || tipoVal === 'fibra-h') ? tipoVal : Number(tipoVal);
     const desc = document.getElementById('patchera-desc').value.trim();
 
     if (!nombre) {
@@ -1487,6 +1754,28 @@ function abrirEditarJack(rackId, unidadId, num) {
     setTimeout(() => document.getElementById('jack-label').focus(), 150);
 }
 
+function _actualizarStatsRackCard(rack) {
+    const totalPuertos = rack.unidades.reduce((s, u) => s + (typeof u.tipo === 'number' ? u.tipo : 24), 0);
+    const usados = rack.unidades.reduce((s, u) => s + u.puertos.filter(p => p.label).length, 0);
+    const pct = totalPuertos ? Math.round((usados / totalPuertos) * 100) : 0;
+    const occBadge = document.getElementById(`rocc-${rack.id}`);
+    if (occBadge) {
+        occBadge.className = `badge ${pct > 80 ? 'badge-orange' : 'badge-blue'}`;
+        occBadge.textContent = `${pct}% ocupado`;
+    }
+}
+
+function _actualizarUnidadDOM(rack, u) {
+    const el = document.getElementById(`unit-${u.id}`);
+    if (el) {
+        el.outerHTML = renderPatchera(u, rack.id);
+    } else {
+        renderRacks();
+        return;
+    }
+    _actualizarStatsRackCard(rack);
+}
+
 function guardarJack() {
     const rack = state.racks.find(r => r.id === _editandoJackRackId);
     const u = rack?.unidades.find(x => x.id === _editandoJackUnidadId);
@@ -1505,7 +1794,7 @@ function guardarJack() {
 
     guardar();
     MM.cerrar('modal-jack');
-    renderRacks();
+    _actualizarUnidadDOM(rack, u);
     toast(label ? 'Puerto actualizado' : 'Puerto liberado', label ? 'success' : 'info');
 }
 
@@ -1517,7 +1806,7 @@ function limpiarJack() {
     u.puertos = u.puertos.filter(p => p.num !== _editandoJackNum);
     guardar();
     MM.cerrar('modal-jack');
-    renderRacks();
+    _actualizarUnidadDOM(rack, u);
     toast('Puerto liberado', 'info');
 }
 
@@ -1828,7 +2117,7 @@ function _renderPreviewPatcheraItem(p) {
     <div class="preview-patchera-item">
         <div class="preview-patchera-header">
             <span class="preview-patchera-name">${esc(p.nombre)}</span>
-            <span class="preview-patchera-meta">${p.tipo} bocas · ${p.puertos.length} activas</span>
+            <span class="preview-patchera-meta">${p.tipo === 'fibra-v' ? '24p Fibra Vert.' : p.tipo === 'fibra-h' ? '24p Fibra Horiz.' : p.tipo + ' bocas'} · ${p.puertos.length} activas</span>
         </div>
         <div class="preview-ports-chips">${chipsHtml}</div>
     </div>`;

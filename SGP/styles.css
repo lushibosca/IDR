@@ -495,7 +495,11 @@ label {
     border: none;
     margin-bottom: 1.25rem;
     padding: 0;
-    min-width: 880px;
+    width: 100%;
+    min-width: 780px;
+    box-sizing: border-box;
+    content-visibility: auto;
+    contain-intrinsic-size: 80px;
 }
 
 .rack-unit-label {
@@ -580,6 +584,8 @@ label {
    CHASIS FÍSICO DE PATCHERA (19" 1U / 2U)
    ────────────────────────────────────────────── */
 .patch-chassis {
+    width: 100%;
+    box-sizing: border-box;
     display: flex;
     align-items: stretch;
     background: linear-gradient(180deg, #1e212a 0%, #15171e 50%, #111318 100%);
@@ -589,6 +595,7 @@ label {
     padding: 6px 4px;
     position: relative;
     user-select: none;
+    contain: layout style;
 }
 
 /* Orejas de montaje de Rack (Rack Ears) */
@@ -696,7 +703,8 @@ label {
    CUERPO Y MÓDULOS DE PUERTOS
    ────────────────────────────────────────────── */
 .patch-faceplate {
-    flex: 1;
+    flex: 1 1 0%;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -705,6 +713,7 @@ label {
     border-radius: 4px;
     padding: 6px 8px;
     box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
+    box-sizing: border-box;
 }
 
 .patch-modules-row {
@@ -712,7 +721,9 @@ label {
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    min-width: 0;
     gap: 6px;
+    box-sizing: border-box;
 }
 
 /* Divisor mecánico entre módulos de 6 bocas */
@@ -728,16 +739,20 @@ label {
 
 /* Módulo individual de 6 bocas (Keystone block) */
 .patch-module {
-    flex: 1;
+    flex: 1 1 0%;
+    min-width: 0;
     background: #1b1e27;
     border: 1px solid #2e3444;
     border-radius: 4px;
     padding: 5px 6px;
     box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.05), 0 2px 4px rgba(0, 0, 0, 0.3);
+    box-sizing: border-box;
 }
 
 .patch-module-inner {
     width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .patch-module-ports {
@@ -745,6 +760,9 @@ label {
     align-items: flex-start;
     justify-content: space-between;
     gap: 4px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 /* Columna de cada boca: Portaetiquetas + Número + Jack */
@@ -753,14 +771,17 @@ label {
     flex-direction: column;
     align-items: center;
     gap: 3px;
-    flex: 1;
-    min-width: 30px;
-    max-width: 44px;
+    flex: 1 1 0%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 /* Tira / Ventana Portaetiquetas técnica */
 .patch-label-cell {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     height: 18px;
     background: #f8fafc;
     border: 1px solid #cbd5e1;
@@ -771,7 +792,7 @@ label {
     padding: 0 2px;
     cursor: pointer;
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-    transition: all var(--t-fast);
+    transition: border-color var(--t-fast), background-color var(--t-fast), box-shadow var(--t-fast);
     overflow: hidden;
     position: relative;
 }
@@ -870,23 +891,14 @@ label {
     overflow: hidden;
 }
 
-/* 8 Pines dorados de contacto (8P8C) */
+/* 8 Pines dorados de contacto (8P8C) renderizados nativamente por gradiente */
 .jack-pins {
-    display: flex;
-    justify-content: space-evenly;
-    align-items: flex-start;
     width: 82%;
     margin: 2px auto 0;
-    height: 5px;
-}
-
-.jack-pins span {
-    width: 1px;
     height: 4.5px;
-    background: linear-gradient(180deg, #fef08a 0%, #ca8a04 100%);
+    background: repeating-linear-gradient(90deg, #fef08a 0px, #ca8a04 1px, transparent 1px, transparent 2px);
     box-shadow: 0 0 1px #eab308;
     border-radius: 0.5px;
-    display: block;
 }
 
 /* Muesca inferior para la traba / clip RJ45 */
@@ -1066,6 +1078,9 @@ label {
 .rack-item-body {
     display: none;
     padding: 1rem;
+    overflow-x: auto;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .rack-item-body.open {
@@ -2242,4 +2257,266 @@ label {
     padding: 6px 0 3px 0;
     margin-top: 6px;
     border-bottom: 1px dashed var(--border, #2c3140);
+}
+
+/* ──────────────────────────────────────────────
+   PATCHERAS DE FIBRA ÓPTICA (ODF 1U 19")
+   Modelos: Conectores Verticales y Horizontales
+   ────────────────────────────────────────────── */
+
+.patch-panel-fibra .patch-chassis {
+    background: linear-gradient(180deg, #181c24 0%, #11141b 100%);
+    border-color: #2b3242;
+}
+
+.patch-ear-tag-fo {
+    font-size: 8px;
+    font-weight: 800;
+    color: #38bdf8;
+    letter-spacing: 0.5px;
+}
+
+/* Pasador rápido / Plunger de liberación */
+.fiber-plunger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #94a3b8 0%, #475569 70%, #1e293b 100%);
+    border: 1px solid #64748b;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    margin: 0 6px;
+    cursor: default;
+    flex-shrink: 0;
+}
+
+.fiber-plunger-knob {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #0f172a;
+    border: 1px solid #334155;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Contenedor de acopladores verticales */
+.fiber-v-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    width: 100%;
+    min-width: 0;
+    justify-content: space-between;
+    padding: 0 4px;
+    box-sizing: border-box;
+}
+
+.fiber-port-col.fiber-col-v {
+    flex: 1 1 0%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* Acoplador Dúplex Vertical */
+.fiber-coupler {
+    cursor: pointer;
+    transition: transform 0.1s ease, filter 0.15s ease, border-color 0.15s ease;
+    user-select: none;
+}
+
+.fiber-coupler:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+}
+
+.fiber-coupler-v {
+    width: 100%;
+    height: 48px;
+    background: #0c0e14;
+    border: 1px solid #232938;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 1px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+    position: relative;
+}
+
+.fiber-coupler.active {
+    border-color: #38bdf8;
+    box-shadow: 0 0 6px rgba(56, 189, 248, 0.35), inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Tornillos de montaje en brida */
+.fiber-flange-screw {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #475569;
+    border: 0.5px solid #1e293b;
+    box-shadow: inset 0 0.5px 0.5px rgba(255, 255, 255, 0.5);
+    flex-shrink: 0;
+}
+
+.fiber-coupler-body {
+    flex: 1;
+    width: 90%;
+    background: #141721;
+    border: 1px solid #2c3345;
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    padding: 2px 0;
+}
+
+.fiber-ferrule-divider {
+    width: 80%;
+    height: 1px;
+    background: #252b3b;
+}
+
+/* Casquillo / Ferrule de Fibra */
+.fiber-ferrule {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6), 0 0 2px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    flex-shrink: 0;
+}
+
+/* Núcleo cerámico de la fibra */
+.fiber-core {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #f8fafc;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.4), 0 0 2px rgba(255, 255, 255, 0.8);
+    position: relative;
+}
+
+.fiber-core::after {
+    content: '';
+    position: absolute;
+    width: 1.5px;
+    height: 1.5px;
+    background: #0f172a;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* ──────────────────────────────────────────────
+   MODELO HORIZONTAL (2 FILAS DE 12 DÚPLEX)
+   ────────────────────────────────────────────── */
+.patch-panel-fibra-h .patch-chassis {
+    padding: 5px 6px;
+}
+
+.fiber-h-container {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+}
+
+.fiber-h-cassette {
+    flex: 1 1 0%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: #11141b;
+    border: 1px solid #232938;
+    border-radius: 4px;
+    padding: 4px 6px;
+    box-sizing: border-box;
+}
+
+.fiber-h-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.fiber-coupler-h-wrap {
+    flex: 1 1 0%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.fiber-coupler-h-wrap .patch-label-cell {
+    width: 100%;
+    height: 14px;
+    margin-bottom: 2px;
+    font-size: 8px;
+}
+
+.fiber-coupler-h-inner {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    width: 100%;
+}
+
+.fiber-coupler-h-inner .patch-port-num {
+    font-size: 8px;
+    font-weight: 700;
+    color: #64748b;
+    min-width: 13px;
+    text-align: right;
+}
+
+.fiber-coupler-h {
+    flex: 1;
+    height: 22px;
+    background: #0c0e14;
+    border: 1px solid #232938;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1px 3px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.fiber-coupler-h .fiber-coupler-body {
+    flex-direction: row;
+    height: 85%;
+    width: 82%;
+    padding: 0 2px;
+}
+
+.fiber-coupler-h .fiber-ferrule-divider {
+    width: 1px;
+    height: 70%;
+}
+
+.fiber-coupler-h .fiber-ferrule {
+    width: 11px;
+    height: 11px;
+}
+
+.fiber-coupler-h .fiber-core {
+    width: 4px;
+    height: 4px;
 }
