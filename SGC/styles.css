@@ -4183,6 +4183,11 @@ tr.parseador-row-cambio .parseador-td-canal {
     color: #8b5cf6;
 }
 
+.menu-modulo-icon.c-patcheras {
+    background: rgba(235, 119, 52, 0.14);
+    color: #eb7734;
+}
+
 .menu-modulo-icon.c-launcher {
     background: var(--input-bg, rgba(0, 0, 0, 0.06));
     color: var(--text-muted);

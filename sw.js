@@ -1,5 +1,5 @@
-const CACHE_NAME = 'idr-suite-260921.2005';
-const RUNTIME_CACHE = 'idr-runtime-260921.2005';
+const CACHE_NAME = 'idr-suite-260922.1115';
+const RUNTIME_CACHE = 'idr-runtime-260922.1115';
 
 const PRECACHE_URLS = [
   // ── Launcher (Portada) ──

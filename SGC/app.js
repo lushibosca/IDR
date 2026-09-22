@@ -7880,7 +7880,8 @@
         const modulos = [
             { id: 'cctv', nombre: 'CCTV', sub: 'Cámaras y switches', icon: 'icon-camera', cls: 'c-cctv', href: '../SGC/index.html' },
             { id: 'materiales', nombre: 'Materiales', sub: 'Gestión de inventario', icon: 'icon-box', cls: 'c-materiales', href: '../SGI/index.html' },
-            { id: 'racks', nombre: 'Racks', sub: 'Gestión de racks', icon: 'icon-rack', cls: 'c-racks', href: '../SGR/index.html' }
+            { id: 'racks', nombre: 'Racks', sub: 'Gestión de racks', icon: 'icon-rack', cls: 'c-racks', href: '../SGR/index.html' },
+            { id: 'patcheras', nombre: 'Patcheras', sub: 'Bocas de red en racks', icon: 'icon-plug', cls: 'c-patcheras', href: '../SGP/index.html' }
         ];
 
         const overlay = document.createElement('div');
