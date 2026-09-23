@@ -1,15 +1,26 @@
 """
 ================================================================================
-MONITOR DE DISPONIBILIDAD CCTV (Hikvision ISAPI Channel Status)
+DOCUMENTACIÓN GENERAL: Monitor de Disponibilidad CCTV (Hikvision ISAPI)
 ================================================================================
-Consulta periódica y ultra liviana a los NVRs para conocer el estado online/offline
-de los canales IP en tiempo real sin consultar individualmente a las cámaras.
 
-Unificación total con cctv-scanner-config.json y .env:
-  - Credenciales:   .env (NVR_USER/NVR_PASS) -> cctv-scanner-config.json -> Keyring
-  - Seguridad/TLS:  "opcion_puerto" (mismas opciones 1 a 5 del scanner)
-  - Frecuencia:     "monitor_minutos" (JSON o .env, default: 5 min)
-  - Ruta de Log:    "ruta_salida" -> "carpeta" (default: "datos/cctv_monitor.log")
+1. DESCRIPCIÓN Y ARQUITECTURA
+   Monitor continuo de consulta al endpoint del nvr:
+     GET /ISAPI/ContentMgmt/InputProxy/channels/status
+
+2. COMPATIBILIDAD CON cctv-scanner
+   Se comparte la misma configuración de cctv-scanner:
+     - .env                        : Credenciales NVR_USER y NVR_PASS.
+     - cctv-scanner-config.json    : Lista de NVRs, TLS ("opcion_puerto") y salida.
+     - datos/cctv_online.json      : Base de datos para mapear Channel ID -> Nombre/IP.
+
+3. CAMPOS ADICIONALES RECONOCIDOS EN cctv-scanner-config.json:
+   - "monitor_minutos": intervalo de consulta al endpoint
+     Default: 5 minutos.
+   - "ruta_salida" : Respeta la carpeta definida ("carpeta") para almacenar
+     el archivo histórico "cctv_monitor.log".
+
+4. CONTROL DE EJECUCIÓN
+   - Salida del script : Presionar Ctrl + C en cualquier momento.
 ================================================================================
 """
 
@@ -23,7 +34,7 @@ import warnings
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 
-# Silenciar advertencias de SSL/TLS (necesario para cámaras/NVRs legacy)
+# Silenciar advertencias de SSL/TLS (compatibilidad con equipos legacy)
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="ssl")
 
 try:
@@ -33,7 +44,7 @@ try:
     from requests.auth import HTTPDigestAuth, HTTPBasicAuth
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 except ImportError:
-    print("[ERROR] Se requiere la librería 'requests'. Ejecutá: pip install requests")
+    print("[ERROR FATAL] Falta la librería 'requests'. Ejecutá: pip install requests")
     sys.exit(1)
 
 try:
@@ -54,7 +65,7 @@ ARCHIVO_MONITOR_LOG_DEFAULT = "cctv_monitor.log"
 TIMEOUT_NVR = (3.0, 5.0)
 
 # ---------------------------------------------------------------------------
-# ADAPTADORES TLS Y CADENAS DE PROTOCOLOS (Idéntico a cctv-scanner.py)
+# ADAPTADORES TLS Y CADENAS DE PROTOCOLOS (Misma estructura de cctv-scanner)
 # ---------------------------------------------------------------------------
 class TLS13Adapter(HTTPAdapter):
     def init_poolmanager(self, *args, **kwargs):
@@ -113,7 +124,7 @@ OPCIONES_PUERTOS = {
 }
 
 # ---------------------------------------------------------------------------
-# CARGA DE .ENV Y CONFIGURACIÓN
+# CARGA DE VARIABLES Y CONFIGURACIÓN
 # ---------------------------------------------------------------------------
 def cargar_env():
     if not os.path.isfile(ARCHIVO_ENV):
@@ -168,7 +179,6 @@ def resolver_credenciales(config_data):
     return user, password
 
 def resolver_puertos(config_data):
-    """Obtiene la configuración de puertos según 'opcion_puerto' del JSON."""
     op = str((config_data or {}).get("opcion_puerto", "3")).strip()
     return OPCIONES_PUERTOS.get(op, OPCIONES_PUERTOS["3"])
 
@@ -298,6 +308,9 @@ def consultar_status_nvr(args):
 # CICLO PRINCIPAL DE MONITOREO
 # ---------------------------------------------------------------------------
 def ejecutar_monitor():
+    # 1. Mostrar documentación y ayuda técnica al iniciar
+    print(__doc__)
+
     config_data = {}
     if os.path.isfile(ARCHIVO_CONFIG):
         try:
@@ -308,12 +321,12 @@ def ejecutar_monitor():
 
     user, password = resolver_credenciales(config_data)
     if not user or not password:
-        print("[ERROR] No se encontraron credenciales en .env ni en cctv-scanner-config.json.")
+        print("[ERROR FATAL] No se encontraron credenciales válidas en .env ni en cctv-scanner-config.json.")
         return
 
     nvr_list = [item["ip"] for item in config_data.get("nvrs", []) if "ip" in item]
     if not nvr_list:
-        print("[ERROR] No hay lista de NVRs configurada en cctv-scanner-config.json.")
+        print("[ERROR FATAL] No hay NVRs configurados en el archivo JSON.")
         return
 
     puertos = resolver_puertos(config_data)
@@ -326,14 +339,14 @@ def ejecutar_monitor():
     estado_previo = {}
     primera_pasada = True
 
-    print(f"\n=======================================================")
-    print(f"   MONITOR DE CANALES CCTV ACTIVO ({len(nvr_list)} NVRs)")
-    print(f"   Frecuencia   : cada {intervalo_minutos:g} min ({intervalo_segundos} seg)")
-    print(f"   Seguridad/TLS: Opción {opcion_puerto_num} (del JSON)")
-    print(f"   Archivo Log  : '{ruta_log}'")
-    print(f"   Mapeo Nombres: {len(mapa_camaras)} cargados desde cctv_online.json")
-    print(f"   Salir        : Presioná Ctrl + C")
-    print(f"=======================================================\n")
+    print("================================================================================")
+    print(f" MONITOR DE CANALES CCTV ACTIVO ({len(nvr_list)} NVRs)")
+    print(f" Frecuencia   : Cada {intervalo_minutos:g} min ({intervalo_segundos} s)")
+    print(f" Nivel TLS    : Opción {opcion_puerto_num}")
+    print(f" Archivo Log  : {ruta_log}")
+    print(f" Mapeo Nombres: {len(mapa_camaras)} canales cargados desde cctv_online.json")
+    print(" Salir        : Presioná Ctrl + C")
+    print("================================================================================\n")
 
     escribir_log(ruta_log, f"\n=== INICIO DE MONITOR CCTV ({datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}) ===")
 
@@ -362,6 +375,7 @@ def ejecutar_monitor():
                 estado_actual = c["online"]
                 estado_anterior = estado_previo.get(clave)
 
+                # Detección de cambios de estado entre pasadas consecutivas
                 if not primera_pasada and estado_anterior is not None and estado_anterior != estado_actual:
                     if not estado_actual:
                         txt_evento = f"[¡CAÍDA RECIENTE!] {c['nombre']} ({c['ip']}) - NVR {c['nvr_ip']} CH:{c['canal']}"
@@ -380,30 +394,33 @@ def ejecutar_monitor():
                     total_offline += 1
                     caidas_actuales.append(c)
 
+        # Imprimir cambios de estado detectados
         if eventos_cambio:
             print(f"\n[{hora_corta}] --- ALERTAS DE CAMBIO DE ESTADO ---")
             for evento in eventos_cambio:
                 print(evento)
             print("------------------------------------------")
 
+        # Resumen general por consola
         resumen_txt = f"[{hora_corta}] Estado general: {total_online} Online | {total_offline} Offline"
         print(resumen_txt)
 
+        # Detalle con caja auto-ajustable
         if total_offline > 0:
             lineas_imprimir = []
             for c in caidas_actuales:
                 ip_display = f"IP: {c['ip']:<15}" if c['ip'] != "N/A" else "IP: No asignada  "
-                lineas_imprimir.append(f"  │ [CAÍDA] {c['nombre'][:32]:<32} │ {ip_display} │ NVR: {c['nvr_ip']} (CH {c['canal']})")
+                lineas_imprimir.append(f"│ [CAÍDA] {c['nombre'][:32]:<32} │ {ip_display} │ NVR: {c['nvr_ip']} (CH {c['canal']})")
 
-            # Calcular el ancho exacto según la línea más ancha
-            ancho_total = max([len(l) for l in lineas_imprimir] + [45])
+            # Cálculo de ancho dinámico exacto
+            ancho_contenido = max([len(l) for l in lineas_imprimir] + [50])
             titulo_cabecera = "── Detalle de Cámaras Offline "
-            relleno_superior = "─" * max(0, ancho_total - len(titulo_cabecera) - 3)
-            borde_inferior = "─" * (ancho_total - 3)
+            relleno_superior = "─" * max(0, ancho_contenido - len(titulo_cabecera) - 1)
+            borde_inferior = "─" * (ancho_contenido - 1)
 
             print(f"  ┌{titulo_cabecera}{relleno_superior}┐")
             for l in lineas_imprimir:
-                print(f"{l.ljust(ancho_total)}│")
+                print(f"  {l.ljust(ancho_contenido)}│")
             print(f"  └{borde_inferior}┘")
 
             if primera_pasada:
