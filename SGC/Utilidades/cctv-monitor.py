@@ -4,20 +4,18 @@ DOCUMENTACIÓN GENERAL: Monitor de Disponibilidad CCTV (Hikvision ISAPI)
 ================================================================================
 
 1. DESCRIPCIÓN Y ARQUITECTURA
-   Monitor continuo de consulta al endpoint del nvr:
+   Monitor continuo de consulta al endpoint del NVR:
      GET /ISAPI/ContentMgmt/InputProxy/channels/status
 
 2. COMPATIBILIDAD CON cctv-scanner
-   Se comparte la misma configuración de cctv-scanner:
+   Comparte la misma configuración de cctv-scanner:
      - .env                        : Credenciales NVR_USER y NVR_PASS.
      - cctv-scanner-config.json    : Lista de NVRs, TLS ("opcion_puerto") y salida.
      - datos/cctv_online.json      : Base de datos para mapear Channel ID -> Nombre/IP.
 
 3. CAMPOS ADICIONALES RECONOCIDOS EN cctv-scanner-config.json:
-   - "monitor_minutos": intervalo de consulta al endpoint
-     Default: 5 minutos.
-   - "ruta_salida" : Respeta la carpeta definida ("carpeta") para almacenar
-     el archivo histórico "cctv_monitor.log".
+   - "monitor_minutos": intervalo de consulta al endpoint (Default: 5 min).
+   - "ruta_salida"    : Respeta la carpeta definida para "cctv_monitor.log".
 
 4. CONTROL DE EJECUCIÓN
    - Salida del script : Presionar Ctrl + C en cualquier momento.
@@ -31,6 +29,8 @@ import json
 import time
 import datetime
 import warnings
+import re
+import traceback
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 
@@ -45,6 +45,7 @@ try:
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 except ImportError:
     print("[ERROR FATAL] Falta la librería 'requests'. Ejecutá: pip install requests")
+    input("\nPresioná Enter para salir...")
     sys.exit(1)
 
 try:
@@ -65,7 +66,7 @@ ARCHIVO_MONITOR_LOG_DEFAULT = "cctv_monitor.log"
 TIMEOUT_NVR = (3.0, 5.0)
 
 # ---------------------------------------------------------------------------
-# ADAPTADORES TLS Y CADENAS DE PROTOCOLOS (Misma estructura de cctv-scanner)
+# ADAPTADORES TLS Y CADENAS DE PROTOCOLOS
 # ---------------------------------------------------------------------------
 class TLS13Adapter(HTTPAdapter):
     def init_poolmanager(self, *args, **kwargs):
@@ -126,6 +127,11 @@ OPCIONES_PUERTOS = {
 # ---------------------------------------------------------------------------
 # CARGA DE VARIABLES Y CONFIGURACIÓN
 # ---------------------------------------------------------------------------
+def limpiar_texto(texto):
+    if not texto or texto == "N/A":
+        return "N/A"
+    return re.sub(r'[\r\n\x1b\x00-\x1f]', '', str(texto)).strip()
+
 def cargar_env():
     if not os.path.isfile(ARCHIVO_ENV):
         return
@@ -148,6 +154,7 @@ def cargar_env():
                         valor = valor[1:-1]
                     if clave:
                         os.environ[clave] = valor
+                        os.environ[clave.upper()] = valor  # Compatibilidad mayúsculas/minúsculas
                 break
         except Exception:
             continue
@@ -155,13 +162,21 @@ def cargar_env():
 cargar_env()
 
 def resolver_credenciales(config_data):
-    user = os.environ.get("NVR_USER") or os.environ.get("CCTV_USER")
+    user = (os.environ.get("NVR_USER") or 
+            os.environ.get("nvr_user") or 
+            os.environ.get("CCTV_USER") or 
+            os.environ.get("cctv_user"))
+    
     if not user and config_data:
         user = config_data.get("nvr_user")
     if user:
         user = str(user).strip()
 
-    password = os.environ.get("NVR_PASS") or os.environ.get("CCTV_PASS")
+    password = (os.environ.get("NVR_PASS") or 
+                os.environ.get("nvr_pass") or 
+                os.environ.get("CCTV_PASS") or 
+                os.environ.get("cctv_pass"))
+    
     if password:
         password = str(password).strip()
 
@@ -236,8 +251,8 @@ def cargar_mapa_camaras():
                     ch_id = str(cam.get("channel_id"))
                     if nvr_ip and ch_id:
                         mapa[(nvr_ip, ch_id)] = {
-                            "nombre": cam.get("camera_name", "N/A"),
-                            "ip": cam.get("ip_address", "N/A")
+                            "nombre": limpiar_texto(cam.get("camera_name", "N/A")),
+                            "ip": limpiar_texto(cam.get("ip_address", "N/A"))
                         }
         except Exception as e:
             print(f"[WARN] No se pudo leer {ARCHIVO_ONLINE}: {e}")
@@ -261,6 +276,7 @@ def consultar_status_nvr(args):
         try:
             resp = session.get(url, auth=HTTPDigestAuth(user, password), timeout=TIMEOUT_NVR, verify=False)
             if resp.status_code == 401:
+                # Fallback necesario para grabadores o firmwares legacy
                 resp = session.get(url, auth=HTTPBasicAuth(user, password), timeout=TIMEOUT_NVR, verify=False)
 
             if resp.status_code == 200:
@@ -277,7 +293,7 @@ def consultar_status_nvr(args):
                             elif hijo.tag.endswith("online"):
                                 online_el = hijo
 
-                        if ch_id_el is not None and online_el is not None:
+                        if ch_id_el is not None and online_el is not None and ch_id_el.text and online_el.text:
                             ch_id = ch_id_el.text.strip()
                             esta_online = (online_el.text.strip().lower() == "true")
                             
@@ -293,11 +309,14 @@ def consultar_status_nvr(args):
                                 "ip": ip_cam
                             })
                 exito = True
+                session.close()
                 break
             else:
                 error_msg = f"HTTP {resp.status_code}"
         except Exception as e:
             error_msg = str(e)
+        finally:
+            session.close()
 
     if not exito:
         return nvr_ip, False, error_msg, []
@@ -308,7 +327,6 @@ def consultar_status_nvr(args):
 # CICLO PRINCIPAL DE MONITOREO
 # ---------------------------------------------------------------------------
 def ejecutar_monitor():
-    # 1. Mostrar documentación y ayuda técnica al iniciar
     print(__doc__)
 
     config_data = {}
@@ -316,17 +334,24 @@ def ejecutar_monitor():
         try:
             with open(ARCHIVO_CONFIG, "r", encoding="utf-8") as f:
                 config_data = json.load(f)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[WARN] Error al leer config JSON: {e}")
 
     user, password = resolver_credenciales(config_data)
     if not user or not password:
-        print("[ERROR FATAL] No se encontraron credenciales válidas en .env ni en cctv-scanner-config.json.")
+        print("\n" + "="*70)
+        print(" [ERROR FATAL] No se encontraron credenciales en .env ni en JSON.")
+        print(f" Archivo buscado: {ARCHIVO_ENV} / {ARCHIVO_CONFIG}")
+        print("="*70)
+        input("\nPresioná Enter para salir...")
         return
 
     nvr_list = [item["ip"] for item in config_data.get("nvrs", []) if "ip" in item]
     if not nvr_list:
-        print("[ERROR FATAL] No hay NVRs configurados en el archivo JSON.")
+        print("\n" + "="*70)
+        print(" [ERROR FATAL] No hay NVRs configurados en cctv-scanner-config.json.")
+        print("="*70)
+        input("\nPresioná Enter para salir...")
         return
 
     puertos = resolver_puertos(config_data)
@@ -375,7 +400,6 @@ def ejecutar_monitor():
                 estado_actual = c["online"]
                 estado_anterior = estado_previo.get(clave)
 
-                # Detección de cambios de estado entre pasadas consecutivas
                 if not primera_pasada and estado_anterior is not None and estado_anterior != estado_actual:
                     if not estado_actual:
                         txt_evento = f"[¡CAÍDA RECIENTE!] {c['nombre']} ({c['ip']}) - NVR {c['nvr_ip']} CH:{c['canal']}"
@@ -394,34 +418,31 @@ def ejecutar_monitor():
                     total_offline += 1
                     caidas_actuales.append(c)
 
-        # Imprimir cambios de estado detectados
         if eventos_cambio:
             print(f"\n[{hora_corta}] --- ALERTAS DE CAMBIO DE ESTADO ---")
             for evento in eventos_cambio:
                 print(evento)
             print("------------------------------------------")
 
-        # Resumen general por consola
         resumen_txt = f"[{hora_corta}] Estado general: {total_online} Online | {total_offline} Offline"
         print(resumen_txt)
 
         # Detalle con caja auto-ajustable
         if total_offline > 0:
-            lineas_imprimir = []
+            filas_cuerpo = []
             for c in caidas_actuales:
                 ip_display = f"IP: {c['ip']:<15}" if c['ip'] != "N/A" else "IP: No asignada  "
-                lineas_imprimir.append(f"│ [CAÍDA] {c['nombre'][:32]:<32} │ {ip_display} │ NVR: {c['nvr_ip']} (CH {c['canal']})")
+                filas_cuerpo.append(f"[CAÍDA] {c['nombre'][:32]:<32} │ {ip_display} │ NVR: {c['nvr_ip']} (CH {c['canal']})")
 
-            # Cálculo de ancho dinámico exacto
-            ancho_contenido = max([len(l) for l in lineas_imprimir] + [50])
+            ancho_interior = max([len(f) for f in filas_cuerpo] + [50])
             titulo_cabecera = "── Detalle de Cámaras Offline "
-            relleno_superior = "─" * max(0, ancho_contenido - len(titulo_cabecera) - 1)
-            borde_inferior = "─" * (ancho_contenido - 1)
+            relleno_superior = "─" * max(0, ancho_interior - len(titulo_cabecera))
+            borde_inferior = "─" * ancho_interior
 
             print(f"  ┌{titulo_cabecera}{relleno_superior}┐")
-            for l in lineas_imprimir:
-                print(f"  {l.ljust(ancho_contenido)}│")
-            print(f"  └{borde_inferior}┘")
+            for f in filas_cuerpo:
+                print(f"  │ {f.ljust(ancho_interior)} │")
+            print(f"  └{borde_inferior}──┘")
 
             if primera_pasada:
                 escribir_log(ruta_log, f"[{timestamp_completo}] Resumen inicial: {total_online} Online | {total_offline} Offline")
@@ -439,3 +460,7 @@ if __name__ == "__main__":
         ejecutar_monitor()
     except KeyboardInterrupt:
         print("\n[INFO] Monitor detenido por el usuario.")
+    except Exception as e:
+        print(f"\n[ERROR GRAVE INESPERADO]: {e}")
+        traceback.print_exc()
+        input("\nPresioná Enter para salir...")
