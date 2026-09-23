@@ -3,3 +3,4 @@ SGC/Utilidades/datos/*
 !manifest.json
 !*/manifest.json
 *.log
+*.env

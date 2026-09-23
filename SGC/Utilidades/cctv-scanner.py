@@ -18,15 +18,18 @@ Instalación rápida:
     pip install requests keyring (Recomendado para PC de escritorio)
 
 Si "keyring" no está instalado (ej. servidores Linux), el script seguirá funcionando 
-pidiendo la contraseña de forma manual o leyéndola del archivo JSON.
+pidiendo la contraseña de forma manual, leyéndola del archivo JSON, o desde un 
+archivo .env (variables de entorno).
 
 2. FUNCIONAMIENTO DEL SCRIPT
 
 A. Lectura de Credenciales y Parámetros:
+   - Se recomienda el uso de un archivo ".env" en la misma carpeta para guardar
+     NVR_USER y NVR_PASS de forma segura, evitando exponer contraseñas en el JSON.
    - Intenta leer configuración desde el archivo "cctv-scanner-config.json".
    - Si no lo encuentra, activa el Modo Interactivo pidiendo los datos por consola.
    - Orden de prioridad de contraseñas: 
-     1º Archivo JSON -> 2º Keyring (si está instalado) -> 3º Ingreso manual.
+     1º Archivo .env / Entorno -> 2º Archivo JSON -> 3º Keyring -> 4º Ingreso manual.
 
 B. Fase 1 - Extracción desde NVRs y Cámaras directas (asíncrona): 
    Se conecta a los NVRs en mediante ISAPI para extraer los canales IP y su descripción.
@@ -51,9 +54,9 @@ D. Almacenamiento de Reportes:
 3. ESTRUCTURA DE cctv-scanner-config.json (Debe estar junto al script)
 --------------------------------------------------------------------------------
 Explicación de los Campos Clave:
-- nvr_user: usuario del dispositivo
+- nvr_user: usuario del dispositivo (opcional si está en .env)
 
-- nvr_pass (Opcional): Ideal para automatizar el script en servidores sin Keyring.
+- nvr_pass (Opcional): Ideal para automatizar el script en servidores sin Keyring (se recomienda usar .env en su lugar).
 
 - opcion_puerto (String) -> Control de TLS para optimizar velocidad:
   "1": Fallback Total (TLS 1.3 -> 1.2 -> 1.0 -> HTTP).
@@ -66,9 +69,11 @@ Explicación de los Campos Clave:
 
 - tipo_escaneo: "1" (Solo NVRs/Cámaras directas, muy rápido) o "2" (Completo Unicast).
 
-- auto_repetir (Opcional, booleano): Si es true, al terminar el escaneo el script no
-  se cierra: espera a que se presione una tecla, y si no se presiona ninguna
-  dentro del tiempo definido en "intervalo_horas", vuelve a ejecutarse solo.
+- auto_repetir (Opcional, booleano): Si es true, al terminar el escaneo el script
+  queda a la espera:
+  * Presionar [R], [Enter] o [Espacio] para re-ejecutar en el acto.
+  * Presionar [Q] o [ESC] para salir y cerrar la ventana.
+  * Si no se presiona nada, vuelve a ejecutarse solo cumplido el "intervalo_horas".
   Default: false.
 
 - intervalo_horas (Opcional, número): Cada cuántas horas se vuelve a ejecutar
@@ -105,7 +110,6 @@ Explicación de los Campos Clave:
     estructura de archivo de configuracion "cctv-scanner-config.json"
 
     {
-    "nvr_user": "quemirabobo",
     "opcion_puerto": "3",
     "max_workers": 50,
     "tipo_escaneo": "2",
@@ -124,6 +128,9 @@ Explicación de los Campos Clave:
         "archivo_json": "cctv_online.json",
         "archivo_log": "cctv_offline.log"
     }
+
+    - la variables "auto_repetir", "intervalo_horas", "camaras", "ruta_salida", son opcionales
+    para el json
 }
 
 ================================================================================
@@ -132,6 +139,7 @@ Explicación de los Campos Clave:
 import os
 import sys
 import ssl
+import warnings
 import xml.etree.ElementTree as ET
 import json
 import re
@@ -140,6 +148,9 @@ import getpass
 import ipaddress
 import time
 import datetime
+
+# Silenciar aviso de deprecación de SSL TLSv1 (Se usa por compatibilidad con cámaras legacy)
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="ssl")
 
 # --- GESTIÓN DE DEPENDENCIAS OBLIGATORIAS ---
 try:
@@ -175,8 +186,10 @@ try:
 except NameError:
     pass
 
-# Variables de rutas
-ARCHIVO_CONFIG = "cctv-scanner-config.json"
+# Variables de rutas (Soporte absoluto para evitar fallos de CWD)
+_DIR_BASE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
+ARCHIVO_CONFIG = os.path.join(_DIR_BASE, "cctv-scanner-config.json")
+ARCHIVO_ENV    = os.path.join(_DIR_BASE, ".env")
 
 # Ruta y nombres de archivos de salida por defecto (usados cuando "default"
 # es true, o cuando no se indica nada en absoluto, tanto en el JSON como en
@@ -187,6 +200,56 @@ ARCHIVO_LOG_DEFAULT   = "cctv_offline.log"
 
 # Configuración de Timeouts: (Conexión TCP, Tiempo de Lectura/Procesamiento)
 T_OUT = (3.0, 10.0)
+
+
+# ---------------------------------------------------------------------------
+# CARGADOR DE VARIABLES .ENV (NATURAL, SIN DEPENDENCIAS)
+# ---------------------------------------------------------------------------
+def cargar_variables_env():
+    """Lee el archivo .env si existe y lo carga en os.environ"""
+    if not os.path.exists(ARCHIVO_ENV):
+        return
+
+    # Soporte para codificaciones típicas de Windows/Linux
+    codificaciones = ["utf-8-sig", "utf-16", "utf-8", "latin-1"]
+    contenido = None
+
+    for enc in codificaciones:
+        try:
+            with open(ARCHIVO_ENV, "r", encoding=enc) as f:
+                texto = f.read()
+                if "=" in texto:
+                    contenido = texto
+                    break
+        except (UnicodeDecodeError, UnicodeError):
+            continue
+
+    if not contenido:
+        return
+
+    for linea in contenido.splitlines():
+        linea = linea.strip()
+        if not linea or linea.startswith("#") or "=" not in linea:
+            continue
+        
+        # Eliminar 'export ' si se copió formato bash
+        if linea.lower().startswith("export "):
+            linea = linea[7:].strip()
+            
+        clave, valor = linea.split("=", 1)
+        clave = clave.strip()
+        valor = valor.strip()
+        
+        # Limpiar comillas
+        if len(valor) >= 2 and ((valor.startswith('"') and valor.endswith('"')) or (valor.startswith("'") and valor.endswith("'"))):
+            valor = valor[1:-1]
+            
+        if clave:
+            os.environ[clave] = valor
+
+# Cargar automáticamente al inicio del módulo
+cargar_variables_env()
+
 
 class TLS13Adapter(HTTPAdapter):
     def init_poolmanager(self, *args, **kwargs):
@@ -842,21 +905,29 @@ def cargar_config_auto_repeticion(config_data=None):
 
 def esperar_tecla_o_timeout(timeout_seg):
     """
-    Espera hasta 'timeout_seg' segundos a que el usuario presione una tecla.
-    Devuelve True si se presionó una tecla (el usuario quiere cerrar).
-    Devuelve False si se cumplió el timeout sin que se presione nada
-    (hay que volver a ejecutar el escaneo).
+    Espera hasta 'timeout_seg' segundos.
+    Devuelve:
+      - 'salir'   : si el usuario presionó 'q', 'Q' o la tecla ESC (cierra el script).
+      - 'repetir' : si el usuario presionó 'r', 'R', Enter o Espacio (fuerza escaneo ya).
+      - 'timeout' : si se cumplió el tiempo sin presionar teclas de salida.
     """
+    inicio = time.time()
     if os.name == "nt":
         # --- Windows ---
         import msvcrt
-        inicio = time.time()
         while True:
             if msvcrt.kbhit():
-                msvcrt.getch()
-                return True
+                ch = msvcrt.getch()
+                # En Windows, ESC es b'\x1b'
+                if ch in (b'q', b'Q', b'\x1b'):
+                    return 'salir'
+                elif ch in (b'r', b'R', b'\r', b' '):
+                    return 'repetir'
+                else:
+                    # Si toca cualquier otra tecla, podés tratarlo como salir o ignorarlo
+                    return 'salir'
             if time.time() - inicio >= timeout_seg:
-                return False
+                return 'timeout'
             time.sleep(0.1)
     else:
         # --- Linux / macOS ---
@@ -868,21 +939,30 @@ def esperar_tecla_o_timeout(timeout_seg):
             modo_anterior = termios.tcgetattr(fd)
             try:
                 tty.setcbreak(fd)
-                rlist, _, _ = select.select([sys.stdin], [], [], timeout_seg)
-                if rlist:
-                    sys.stdin.read(1)
-                    return True
-                return False
+                while True:
+                    tiempo_restante = max(0.0, timeout_seg - (time.time() - inicio))
+                    rlist, _, _ = select.select([sys.stdin], [], [], min(0.2, tiempo_restante))
+                    if rlist:
+                        ch = sys.stdin.read(1)
+                        if ch.lower() == 'q' or ch == '\x1b':
+                            return 'salir'
+                        elif ch.lower() == 'r' or ch in ('\n', ' '):
+                            return 'repetir'
+                        else:
+                            return 'salir'
+                    if time.time() - inicio >= timeout_seg:
+                        return 'timeout'
             finally:
                 termios.tcsetattr(fd, termios.TCSADRAIN, modo_anterior)
         except Exception:
-            # Fallback (ej. sin terminal interactiva real, tipo systemd/cron):
-            # requiere Enter para detectar la tecla, pero el timeout sigue funcionando.
+            # Fallback para sesiones sin TTY interactivo (cron / background)
             rlist, _, _ = select.select([sys.stdin], [], [], timeout_seg)
             if rlist:
-                sys.stdin.readline()
-                return True
-            return False
+                linea = sys.stdin.readline().strip().lower()
+                if linea in ('q', 'exit', 'quit'):
+                    return 'salir'
+                return 'repetir'
+            return 'timeout'
 
 
 # ---------------------------------------------------------------------------
@@ -955,20 +1035,33 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
     user = None
     password = None
 
-    # 1. Intentar sacar User y Pass directamente del JSON
+    # 1. Intentar sacar User y Pass de Variables de Entorno / .env
+    env_user = os.environ.get("NVR_USER") or os.environ.get("CCTV_USER")
+    if env_user and env_user.strip():
+        user = env_user.strip()
+
+    env_pass = os.environ.get("NVR_PASS") or os.environ.get("CCTV_PASS")
+    if env_pass and env_pass.strip():
+        password = env_pass.strip()
+
+    # 2. Intentar sacar User y Pass directamente del JSON si no están en el entorno
     if config_data:
-        user = str(config_data.get("nvr_user", "")).strip() or None
-        password = str(config_data.get("nvr_pass", "")).strip() or None
+        if not user:
+            user_json = str(config_data.get("nvr_user", "")).strip()
+            if user_json: user = user_json
+        if not password:
+            pass_json = str(config_data.get("nvr_pass", "")).strip()
+            if pass_json: password = pass_json
 
     if not user:
-        print("\n[!] No se detectó usuario en la configuración.")
+        print("\n[!] No se detectó usuario en el entorno ni en la configuración.")
         user = input("  -> Ingresá el usuario de los NVRs/Cámaras: ").strip()
         if not user:
             print("[ERROR] El usuario no puede estar vacío. Saliendo.")
             return valor_repeticion_fallback
         usar_interactivo = True
 
-    # 2. Si no hay contraseña en el JSON, buscarla con Keyring o manualmente
+    # 3. Si no hay contraseña en el entorno ni en el JSON, buscarla con Keyring o manualmente
     if not password:
         # Intento A: Leer de Keyring (solo si está instalado)
         if HAS_KEYRING:
@@ -1190,16 +1283,18 @@ if __name__ == "__main__":
             break
 
         proxima_ejecucion = datetime.datetime.now() + datetime.timedelta(hours=intervalo_horas)
-        print("Presioná una tecla para cerrar, o el script se volverá a ejecutar")
-        print(f"automáticamente el {proxima_ejecucion.strftime('%d/%m/%Y')} "
-              f"a las {proxima_ejecucion.strftime('%H:%M')} hs "
-              f"(dentro de {intervalo_horas:g} h)...")
+        print(f"Próxima ejecución programada: {proxima_ejecucion.strftime('%d/%m/%Y a las %H:%M hs')} (en {intervalo_horas:g} h)")
+        print("  [R] Re-ejecutar escaneo ahora mismo")
+        print("  [Q / ESC] Salir y cerrar la ventana")
 
-        cancelado_por_usuario = esperar_tecla_o_timeout(intervalo_horas * 3600)
+        accion = esperar_tecla_o_timeout(intervalo_horas * 3600)
 
-        if cancelado_por_usuario:
-            print("\n[INFO] Cerrado por el usuario.")
+        if accion == 'salir':
+            print("\n[INFO] Detenido por el usuario.")
             break
-        else:
-            print(f"\n[INFO] Se cumplió el tiempo de espera. Reiniciando escaneo automáticamente...")
-            print("="*40)
+        elif accion == 'repetir':
+            print("\n[INFO] Re-ejecución manual solicitada. Iniciando escaneo...")
+            print("=" * 40)
+        else:  # 'timeout'
+            print("\n[INFO] Se cumplió el tiempo de espera programado. Reiniciando escaneo...")
+            print("=" * 40)
