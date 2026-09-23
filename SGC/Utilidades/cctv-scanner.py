@@ -143,6 +143,7 @@ import warnings
 import xml.etree.ElementTree as ET
 import json
 import re
+import threading
 import concurrent.futures
 import getpass
 import ipaddress
@@ -191,26 +192,39 @@ _DIR_BASE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals(
 ARCHIVO_CONFIG = os.path.join(_DIR_BASE, "cctv-scanner-config.json")
 ARCHIVO_ENV    = os.path.join(_DIR_BASE, ".env")
 
-# Ruta y nombres de archivos de salida por defecto (usados cuando "default"
-# es true, o cuando no se indica nada en absoluto, tanto en el JSON como en
-# el Modo Interactivo).
+# Ruta y nombres de archivos de salida por defecto
 CARPETA_DATOS_DEFAULT = "datos"
 ARCHIVO_JSON_DEFAULT  = "cctv_online.json"
 ARCHIVO_LOG_DEFAULT   = "cctv_offline.log"
 
 # Configuración de Timeouts: (Conexión TCP, Tiempo de Lectura/Procesamiento)
 T_OUT = (3.0, 10.0)
-
+MAX_RESPONSE_BYTES = 2 * 1024 * 1024  # Tope de 2MB para evitar ataques de XML gigantes
 
 # ---------------------------------------------------------------------------
-# CARGADOR DE VARIABLES .ENV (NATURAL, SIN DEPENDENCIAS)
+# SEGURIDAD: FRENO ANTI-BLOQUEO (KILL SWITCH)
+# ---------------------------------------------------------------------------
+abortar_escaneo = threading.Event()
+errores_auth_globales = 0
+lock_auth = threading.Lock()
+MAX_FAILS_AUTH = 3  # Si 3 equipos devuelven 401, abortamos todo el escaneo para no bloquear cuentas.
+
+def registrar_falla_auth():
+    global errores_auth_globales
+    with lock_auth:
+        errores_auth_globales += 1
+        if errores_auth_globales >= MAX_FAILS_AUTH:
+            abortar_escaneo.set()
+
+# ---------------------------------------------------------------------------
+# CARGADOR DE VARIABLES .ENV Y SANITIZACIÓN
 # ---------------------------------------------------------------------------
 def cargar_variables_env():
-    """Lee el archivo .env si existe y lo carga en os.environ"""
+    """Lee el archivo .env pero solo carga variables permitidas (Whitelist)"""
     if not os.path.exists(ARCHIVO_ENV):
         return
 
-    # Soporte para codificaciones típicas de Windows/Linux
+    CLAVES_PERMITIDAS = {"NVR_USER", "NVR_PASS", "CCTV_USER", "CCTV_PASS"}
     codificaciones = ["utf-8-sig", "utf-16", "utf-8", "latin-1"]
     contenido = None
 
@@ -232,23 +246,46 @@ def cargar_variables_env():
         if not linea or linea.startswith("#") or "=" not in linea:
             continue
         
-        # Eliminar 'export ' si se copió formato bash
         if linea.lower().startswith("export "):
             linea = linea[7:].strip()
             
         clave, valor = linea.split("=", 1)
-        clave = clave.strip()
+        clave = clave.strip().upper()
         valor = valor.strip()
         
-        # Limpiar comillas
         if len(valor) >= 2 and ((valor.startswith('"') and valor.endswith('"')) or (valor.startswith("'") and valor.endswith("'"))):
             valor = valor[1:-1]
             
-        if clave:
+        if clave in CLAVES_PERMITIDAS:
             os.environ[clave] = valor
 
 # Cargar automáticamente al inicio del módulo
 cargar_variables_env()
+
+def ip_valida(ip_str):
+    """Valida estáticamente que el string sea una IP ruteable para evitar SSRF."""
+    if not ip_str: return None
+    try:
+        ip = ipaddress.ip_address(str(ip_str).strip())
+        if ip.is_loopback or ip.is_multicast or ip.is_unspecified or ip.is_reserved:
+            return None
+        return str(ip)
+    except ValueError:
+        return None
+
+def leer_xml_seguro(resp):
+    """Lee el XML con tope de tamaño para prevenir ataques de red (Slowloris/Archivos inmensos)"""
+    cuerpo = resp.raw.read(MAX_RESPONSE_BYTES, decode_content=True)
+    if not cuerpo:
+        raise ValueError("Respuesta vacía")
+    
+    # Prevenir DTDs maliciosas
+    if b"<!DOCTYPE" in cuerpo.upper() or b"<!ENTITY" in cuerpo.upper():
+        raise ValueError("XML rechazado (Posible inyección XXE/DTD)")
+        
+    texto = cuerpo.decode("utf-8", errors="replace")
+    texto = re.sub(' xmlns="[^"]+"', '', texto)
+    return ET.fromstring(texto)
 
 
 class TLS13Adapter(HTTPAdapter):
@@ -481,26 +518,24 @@ def pedir_ruta_salida():
     nombre_json = input(f"  -> Nombre del archivo JSON [Enter='{ARCHIVO_JSON_DEFAULT}']: ").strip()
     if not nombre_json:
         nombre_json = ARCHIVO_JSON_DEFAULT
-    elif not nombre_json.lower().endswith(".json"):
-        nombre_json += ".json"
+    else:
+        nombre_json = os.path.basename(nombre_json) # PREVENIR PATH TRAVERSAL
+        if not nombre_json.lower().endswith(".json"):
+            nombre_json += ".json"
 
     nombre_log = input(f"  -> Nombre del archivo LOG [Enter='{ARCHIVO_LOG_DEFAULT}']: ").strip()
     if not nombre_log:
         nombre_log = ARCHIVO_LOG_DEFAULT
-    elif not nombre_log.lower().endswith(".log"):
-        nombre_log += ".log"
+    else:
+        nombre_log = os.path.basename(nombre_log) # PREVENIR PATH TRAVERSAL
+        if not nombre_log.lower().endswith(".log"):
+            nombre_log += ".log"
 
     return carpeta, nombre_json, nombre_log
 
 def cargar_config_ruta_salida(config_data=None):
     """
     Lee la sección opcional 'ruta_salida' del JSON de configuración.
-    No requiere un flag explícito: si "carpeta", "archivo_json" o
-    "archivo_log" tienen algún valor cargado, se usan esos (cada uno cae al
-    valor por defecto si falta o está vacío). Si la sección no existe, o
-    existe pero los tres campos están vacíos/ausentes, se usan siempre la
-    carpeta y los nombres por defecto.
-    Devuelve (carpeta: str, nombre_json: str, nombre_log: str).
     """
     cfg = config_data if config_data is not None else cargar_config_json()
     seccion = (cfg or {}).get("ruta_salida")
@@ -516,8 +551,8 @@ def cargar_config_ruta_salida(config_data=None):
         return CARPETA_DATOS_DEFAULT, ARCHIVO_JSON_DEFAULT, ARCHIVO_LOG_DEFAULT
 
     carpeta     = carpeta or CARPETA_DATOS_DEFAULT
-    nombre_json = nombre_json or ARCHIVO_JSON_DEFAULT
-    nombre_log  = nombre_log or ARCHIVO_LOG_DEFAULT
+    nombre_json = os.path.basename(nombre_json) or ARCHIVO_JSON_DEFAULT # PREVENIR PATH TRAVERSAL
+    nombre_log  = os.path.basename(nombre_log) or ARCHIVO_LOG_DEFAULT # PREVENIR PATH TRAVERSAL
 
     if not nombre_json.lower().endswith(".json"):
         nombre_json += ".json"
@@ -547,23 +582,37 @@ def procesar_nvr(args):
     camaras_nvr_list = []
 
     for protocolo_key, puerto in puertos:
+        if abortar_escaneo.is_set():
+            break
+
         proto_real = "https" if protocolo_key.startswith("https") else "http"
         session = requests.Session()
+        session.trust_env = False # Prevenir fugas si hay variables de proxy maliciosas
         session.mount(f"{proto_real}://", ADAPTERS[protocolo_key])
+        resp_info = None
+        resp_cam = None
 
         try:
             url_info = f"{proto_real}://{nvr['ip']}:{puerto}/ISAPI/System/deviceInfo"
             resp_info = session.get(
                 url_info, auth=HTTPDigestAuth(user, password),
-                timeout=T_OUT, verify=False
+                timeout=T_OUT, verify=False, stream=True
             )
-            # Si el NVR es legacy y requiere BasicAuth en lugar de Digest
+            
             if resp_info.status_code == 401:
-                resp_info = session.get(url_info, auth=HTTPBasicAuth(user, password), timeout=T_OUT, verify=False)
+                desafio = resp_info.headers.get("WWW-Authenticate", "").lower()
+                # Solo reintenta Basic si el server lo anuncia o si es HTTPS
+                if "basic" in desafio or proto_real == "https":
+                    resp_info.close()
+                    resp_info = session.get(url_info, auth=HTTPBasicAuth(user, password), timeout=T_OUT, verify=False, stream=True)
+
+            if resp_info.status_code == 401:
+                registrar_falla_auth()
+                print(f"  -> [ERROR AUTH] Credenciales rechazadas en NVR {nvr['ip']}.")
+                break # Romper loop de puertos, la clave está mal.
 
             if resp_info.status_code == 200:
-                xml_info  = re.sub(' xmlns="[^"]+"', '', resp_info.text)
-                root_info = ET.fromstring(xml_info)
+                root_info = leer_xml_seguro(resp_info)
 
                 def _f(tag):
                     el = root_info.find(tag)
@@ -576,70 +625,74 @@ def procesar_nvr(args):
                 nvr_mac      = _f('macAddress')
                 nvr_firmware = _f('firmwareVersion')
 
-            etiqueta      = " (Fallback)" if (protocolo_key, puerto) != puertos[0] else ""
-            proto_display = describir_protocolo(protocolo_key)
-            print(f"Consultando NVR: {nvr_name} ({nvr['ip']}) en {proto_display}:{puerto}{etiqueta}...")
+                etiqueta      = " (Fallback)" if (protocolo_key, puerto) != puertos[0] else ""
+                proto_display = describir_protocolo(protocolo_key)
+                print(f"Consultando NVR: {nvr_name} ({nvr['ip']}) en {proto_display}:{puerto}{etiqueta}...")
 
-            url_cameras = f"{proto_real}://{nvr['ip']}:{puerto}/ISAPI/ContentMgmt/InputProxy/channels"
-            response = session.get(
-                url_cameras, auth=HTTPDigestAuth(user, password),
-                timeout=T_OUT, verify=False
-            )
-            if response.status_code == 401:
-                response = session.get(url_cameras, auth=HTTPBasicAuth(user, password), timeout=T_OUT, verify=False)
+                url_cameras = f"{proto_real}://{nvr['ip']}:{puerto}/ISAPI/ContentMgmt/InputProxy/channels"
+                resp_cam = session.get(
+                    url_cameras, auth=HTTPDigestAuth(user, password),
+                    timeout=T_OUT, verify=False, stream=True
+                )
+                if resp_cam.status_code == 401:
+                    resp_cam.close()
+                    resp_cam = session.get(url_cameras, auth=HTTPBasicAuth(user, password), timeout=T_OUT, verify=False, stream=True)
 
-            response.raise_for_status()
-            xml_data = re.sub(' xmlns="[^"]+"', '', response.text)
-            root = ET.fromstring(xml_data)
+                resp_cam.raise_for_status()
+                root_cam = leer_xml_seguro(resp_cam)
 
-            camaras_nvr = 0
-            for channel in root.findall('InputProxyChannel'):
-                chan_id_elem = channel.find('id')
-                chan_id = chan_id_elem.text if chan_id_elem is not None else "N/A"
-                
-                chan_name_elem = channel.find('name')
-                camera_desc = chan_name_elem.text if (chan_name_elem is not None and chan_name_elem.text is not None) else "N/A"
-                
-                # PARCHE PARA CARACTERES RAROS DEL NVR
-                if camera_desc != "N/A":
-                    camera_desc = camera_desc.replace("~N", "Ñ").replace("~n", "ñ")
+                camaras_nvr = 0
+                for channel in root_cam.findall('InputProxyChannel'):
+                    chan_id_elem = channel.find('id')
+                    chan_id = chan_id_elem.text if chan_id_elem is not None else "N/A"
+                    
+                    chan_name_elem = channel.find('name')
+                    camera_desc = chan_name_elem.text if (chan_name_elem is not None and chan_name_elem.text is not None) else "N/A"
+                    
+                    if camera_desc != "N/A":
+                        camera_desc = camera_desc.replace("~N", "Ñ").replace("~n", "ñ")
 
-                ip_address = "N/A"
-                descriptor = channel.find('sourceInputPortDescriptor')
-                if descriptor is not None:
-                    ip_elem = descriptor.find('ipAddress')
-                    if ip_elem is not None and ip_elem.text:
-                        ip_address = ip_elem.text
+                    ip_address = None
+                    descriptor = channel.find('sourceInputPortDescriptor')
+                    if descriptor is not None:
+                        ip_elem = descriptor.find('ipAddress')
+                        if ip_elem is not None and ip_elem.text:
+                            # VALIDACIÓN CRÍTICA: Filtrar IPs inyectadas por el NVR (SSRF)
+                            ip_address = ip_valida(ip_elem.text)
 
-                if ip_address and ip_address != "0.0.0.0" and ip_address != "N/A":
-                    camaras_nvr_list.append({
-                        "ip_address": ip_address,
-                        "camera_name": camera_desc,
-                        "channel_id": int(chan_id) if chan_id.isdigit() else chan_id,
-                        "nvr_ip":     nvr['ip'],
-                        "nvr_name":   nvr_name,
-                        "origen_datos": "NVR (Modo Básico)"
-                    })
-                    camaras_nvr += 1
+                    if ip_address:
+                        camaras_nvr_list.append({
+                            "ip_address": ip_address,
+                            "camera_name": camera_desc,
+                            "channel_id": int(chan_id) if chan_id.isdigit() else chan_id,
+                            "nvr_ip":     nvr['ip'],
+                            "nvr_name":   nvr_name,
+                            "origen_datos": "NVR (Modo Básico)"
+                        })
+                        camaras_nvr += 1
 
-            nvr_info = {
-                "ip":                nvr['ip'],
-                "nvr_name":          nvr_name,
-                "modelo":            nvr_modelo,
-                "nro_serie":         nvr_serial,
-                "mac_address":       nvr_mac,
-                "firmware":          nvr_firmware,
-                "protocolo_conexion": f"{describir_protocolo(protocolo_key)}:{puerto}",
-                "total_camaras":     camaras_nvr,
-            }
-            print(f"  -> OK: {camaras_nvr} cámaras extraídas de {nvr['ip']}.")
-            return camaras_nvr_list, nvr_info
+                nvr_info = {
+                    "ip":                nvr['ip'],
+                    "nvr_name":          nvr_name,
+                    "modelo":            nvr_modelo,
+                    "nro_serie":         nvr_serial,
+                    "mac_address":       nvr_mac,
+                    "firmware":          nvr_firmware,
+                    "protocolo_conexion": f"{describir_protocolo(protocolo_key)}:{puerto}",
+                    "total_camaras":     camaras_nvr,
+                }
+                print(f"  -> OK: {camaras_nvr} cámaras extraídas de {nvr['ip']}.")
+                return camaras_nvr_list, nvr_info
 
         except Exception as e:
             if (protocolo_key, puerto) != puertos[-1]:
-                print(f"  -> [WARN] NVR {nvr['ip']} no respondió en {describir_protocolo(protocolo_key)}:{puerto}. Probando siguiente...")
+                pass # Try next port
             else:
-                print(f"  -> [ERROR] Fallo total al consultar canales en NVR {nvr['ip']}: {e}")
+                print(f"  -> [ERROR] Fallo al consultar NVR {nvr['ip']}: {e}")
+        finally:
+            if resp_info: resp_info.close()
+            if resp_cam: resp_cam.close()
+            session.close()
 
     return [], {
         "ip":                nvr['ip'],
@@ -676,15 +729,9 @@ def obtener_camaras_desde_nvrs(nvr_list, puertos, user, password, max_workers=5)
 
 
 def obtener_camaras_directas(camera_list):
-    """
-    Convierte el array 'camaras' del config (cámaras individuales, sin NVR)
-    al mismo formato interno que usan las cámaras extraídas de un NVR, para
-    que ambas listas se puedan combinar y procesar de forma unificada en la
-    Fase 2. No hace ninguna consulta de red acá: solo arma la estructura.
-    """
     camaras_directas = []
     for cam in camera_list:
-        ip = cam.get("ip")
+        ip = ip_valida(cam.get("ip"))
         if not ip:
             continue
         nombre = cam.get("nombre") or "N/A"
@@ -699,20 +746,23 @@ def obtener_camaras_directas(camera_list):
     return camaras_directas
 
 # ---------------------------------------------------------------------------
-# FASE 2: Extracción directa a cada cámara (Fallback ISAPI -> CGI -> PSIA)
+# FASE 2: Extracción directa a cada cámara
 # ---------------------------------------------------------------------------
 
-def intentar_conexion(ip, protocolo_key, puerto, user, password):
-    proto_real = "https" if protocolo_key.startswith("https") else "http"
-    session = requests.Session()
-    session.mount(f"{proto_real}://", ADAPTERS[protocolo_key])
-
-    # Función auxiliar para probar Digest Auth y, si rechaza, intentar Basic Auth
+def intentar_conexion(ip, protocolo_key, puerto, user, password, session, proto_real):
     def get_auth_robusto(url_test):
-        r = session.get(url_test, auth=HTTPDigestAuth(user, password), timeout=T_OUT, verify=False)
-        if r.status_code == 401:
-            r = session.get(url_test, auth=HTTPBasicAuth(user, password), timeout=T_OUT, verify=False)
-        return r
+        resp = session.get(url_test, auth=HTTPDigestAuth(user, password), timeout=T_OUT, verify=False, stream=True)
+        if resp.status_code == 401:
+            desafio = resp.headers.get("WWW-Authenticate", "").lower()
+            if "basic" in desafio or proto_real == "https":
+                resp.close()
+                resp = session.get(url_test, auth=HTTPBasicAuth(user, password), timeout=T_OUT, verify=False, stream=True)
+        
+        if resp.status_code == 401:
+            registrar_falla_auth()
+            resp.close()
+            raise PermissionError("401 Unauthorized")
+        return resp
 
     # 1er Intento: Hikvision (ISAPI)
     try:
@@ -722,7 +772,7 @@ def intentar_conexion(ip, protocolo_key, puerto, user, password):
     except requests.exceptions.RequestException:
         pass 
 
-    time.sleep(1.0) # Micro-descanso 
+    time.sleep(0.5) 
 
     # 2do Intento: Dahua (CGI API)
     try:
@@ -732,13 +782,12 @@ def intentar_conexion(ip, protocolo_key, puerto, user, password):
     except requests.exceptions.RequestException:
         pass
 
-    time.sleep(1.0)
+    time.sleep(0.5)
 
     # 3er Intento: Hikvision Reliquia (PSIA)
     try:
         response = get_auth_robusto(f"{proto_real}://{ip}:{puerto}/PSIA/System/deviceInfo")
         if response.status_code == 200:
-            # Si responde, lo tratamos como Hikvision porque la estructura XML es idéntica
             return response, "Hikvision" 
     except requests.exceptions.RequestException:
         pass
@@ -753,19 +802,33 @@ def procesar_camara(args):
     marca_detect = "N/A"
     protocolo_ok = None
     puerto_ok    = None
+    session      = None
 
     for protocolo_key, puerto in puertos:
+        if abortar_escaneo.is_set():
+            break
+
         try:
-            response, marca_detect = intentar_conexion(ip, protocolo_key, puerto, user, password)
+            proto_real = "https" if protocolo_key.startswith("https") else "http"
+            session = requests.Session()
+            session.trust_env = False
+            session.mount(f"{proto_real}://", ADAPTERS[protocolo_key])
+
+            response, marca_detect = intentar_conexion(ip, protocolo_key, puerto, user, password, session, proto_real)
             protocolo_ok = protocolo_key
             puerto_ok    = puerto
             etiqueta      = "(fallback)" if (protocolo_key, puerto) != puertos[0] else ""
             proto_display = describir_protocolo(protocolo_key)
             print(f"[OK] {ip} ({marca_detect}) → {proto_display}:{puerto} {etiqueta}".strip())
             break
+        except PermissionError:
+            break # 401 Unauthorized, no intentar más puertos
         except requests.exceptions.RequestException:
             if (protocolo_key, puerto) != puertos[-1]:
-                print(f"[WARN] {ip} no respondió en {describir_protocolo(protocolo_key)}:{puerto}. Probando siguiente...")
+                pass # Try next port
+            if session: session.close()
+        except Exception:
+            if session: session.close()
 
     camera_name       = cam_data.get("camera_name", "N/A")
     mac_address       = "N/A"
@@ -780,9 +843,7 @@ def procesar_camara(args):
         # --- PARSEO HIKVISION / PSIA (XML) ---
         if marca_detect == "Hikvision":
             try:
-                # Limpiamos el namespace sea cual sea (ISAPI o PSIA)
-                xml_info  = re.sub(' xmlns="[^"]+"', '', response.text)
-                root_info = ET.fromstring(xml_info)
+                root_info = leer_xml_seguro(response)
 
                 def texto(tag):
                     el = root_info.find(tag)
@@ -798,18 +859,20 @@ def procesar_camara(args):
                 
                 camera_name_real = texto('deviceName')
                 if camera_name_real is not None and camera_name_real != "N/A": 
-                    # PARCHE
                     camera_name = camera_name_real.replace("~N", "Ñ").replace("~n", "ñ")
                     
                 mac_address = texto('macAddress')
                 firmware    = texto('firmwareVersion')
             except Exception as e:
-                print(f"[ERROR XML] Fallo al leer datos Hikvision de {ip}: {e}")
+                pass
+            finally:
+                response.close()
 
         # --- PARSEO DAHUA (Texto Plano Clave=Valor) ---
         elif marca_detect == "Dahua":
             try:
-                texto_resp = response.text
+                texto_resp = response.raw.read(MAX_RESPONSE_BYTES, decode_content=True).decode('utf-8', errors='replace')
+                response.close()
 
                 def extraer_dahua(clave, texto):
                     match = re.search(rf"{clave}=(.*)", texto, re.IGNORECASE)
@@ -825,19 +888,21 @@ def procesar_camara(args):
                 proto_real = "https" if protocolo_ok.startswith("https") else "http"
 
                 def dahua_extra_request(url):
-                    r = requests.get(url, auth=HTTPDigestAuth(user, password), timeout=T_OUT, verify=False)
+                    r = session.get(url, auth=HTTPDigestAuth(user, password), timeout=T_OUT, verify=False, stream=True)
                     if r.status_code == 401:
-                        r = requests.get(url, auth=HTTPBasicAuth(user, password), timeout=T_OUT, verify=False)
+                        r.close()
+                        r = session.get(url, auth=HTTPBasicAuth(user, password), timeout=T_OUT, verify=False, stream=True)
                     return r
 
-                # Consulta exclusiva para Firmware
+                # Consulta exclusiva para Firmware (usando la MISMA sesión)
                 try:
                     url_fw = f"{proto_real}://{ip}:{puerto_ok}/cgi-bin/magicBox.cgi?action=getSoftwareVersion"
                     resp_fw = dahua_extra_request(url_fw)
                     if resp_fw.status_code == 200:
-                        fw_raw = extraer_dahua("version", resp_fw.text)
-                        if fw_raw != "N/A":
-                            firmware = fw_raw
+                        fw_text = resp_fw.raw.read(10240, decode_content=True).decode('utf-8', errors='replace')
+                        fw_raw = extraer_dahua("version", fw_text)
+                        if fw_raw != "N/A": firmware = fw_raw
+                    resp_fw.close()
                 except Exception:
                     pass
 
@@ -847,18 +912,22 @@ def procesar_camara(args):
                         url_mac = f"{proto_real}://{ip}:{puerto_ok}/cgi-bin/configManager.cgi?action=getConfig&name=Network"
                         resp_mac = dahua_extra_request(url_mac)
                         if resp_mac.status_code == 200:
-                            mac_net = extraer_dahua("PhysicalAddress", resp_mac.text)
-                            if mac_net != "N/A":
-                                mac_address = mac_net
+                            mac_text = resp_mac.raw.read(10240, decode_content=True).decode('utf-8', errors='replace')
+                            mac_net = extraer_dahua("PhysicalAddress", mac_text)
+                            if mac_net != "N/A": mac_address = mac_net
+                        resp_mac.close()
                     except Exception:
                         pass
-
             except Exception as e:
-                print(f"[ERROR CGI] Fallo al leer datos Dahua de {ip}: {e}")
+                pass
 
     else:
-        intentados = ", ".join(f"{describir_protocolo(p)}:{pt}" for p, pt in puertos)
-        print(f"[ERROR] {ip} no respondió en ningún puerto ({intentados}).")
+        if not abortar_escaneo.is_set():
+            intentados = ", ".join(f"{describir_protocolo(p)}:{pt}" for p, pt in puertos)
+            print(f"[ERROR] {ip} no respondió en ningún puerto ({intentados}).")
+
+    if session:
+        session.close()
 
     camara_ordenada = {
         "ip_address":        cam_data["ip_address"],
@@ -880,12 +949,6 @@ def procesar_camara(args):
 # ---------------------------------------------------------------------------
 
 def cargar_config_auto_repeticion(config_data=None):
-    """
-    Lee 'auto_repetir' e 'intervalo_horas' desde el JSON de configuración.
-    Si se le pasa 'config_data' ya cargado, lo reutiliza (no vuelve a leer el archivo).
-    Devuelve (auto_repetir: bool, intervalo_horas: float).
-    Si el JSON no existe o los valores son inválidos, devuelve (False, 24.0).
-    """
     cfg = config_data if config_data is not None else cargar_config_json()
     if not cfg:
         return False, 24.0
@@ -904,37 +967,21 @@ def cargar_config_auto_repeticion(config_data=None):
 
 
 def esperar_tecla_o_timeout(timeout_seg):
-    """
-    Espera hasta 'timeout_seg' segundos.
-    Devuelve:
-      - 'salir'   : si el usuario presionó 'q', 'Q' o la tecla ESC (cierra el script).
-      - 'repetir' : si el usuario presionó 'r', 'R', Enter o Espacio (fuerza escaneo ya).
-      - 'timeout' : si se cumplió el tiempo sin presionar teclas de salida.
-    """
     inicio = time.time()
     if os.name == "nt":
-        # --- Windows ---
         import msvcrt
         while True:
             if msvcrt.kbhit():
                 ch = msvcrt.getch()
-                # En Windows, ESC es b'\x1b'
-                if ch in (b'q', b'Q', b'\x1b'):
-                    return 'salir'
-                elif ch in (b'r', b'R', b'\r', b' '):
-                    return 'repetir'
-                else:
-                    # Si toca cualquier otra tecla, podés tratarlo como salir o ignorarlo
-                    return 'salir'
-            if time.time() - inicio >= timeout_seg:
-                return 'timeout'
+                if ch in (b'q', b'Q', b'\x1b'): return 'salir'
+                elif ch in (b'r', b'R', b'\r', b' '): return 'repetir'
+                else: return 'salir'
+            if time.time() - inicio >= timeout_seg: return 'timeout'
             time.sleep(0.1)
     else:
-        # --- Linux / macOS ---
         import select
         try:
-            import termios
-            import tty
+            import termios, tty
             fd = sys.stdin.fileno()
             modo_anterior = termios.tcgetattr(fd)
             try:
@@ -944,47 +991,41 @@ def esperar_tecla_o_timeout(timeout_seg):
                     rlist, _, _ = select.select([sys.stdin], [], [], min(0.2, tiempo_restante))
                     if rlist:
                         ch = sys.stdin.read(1)
-                        if ch.lower() == 'q' or ch == '\x1b':
-                            return 'salir'
-                        elif ch.lower() == 'r' or ch in ('\n', ' '):
-                            return 'repetir'
-                        else:
-                            return 'salir'
-                    if time.time() - inicio >= timeout_seg:
-                        return 'timeout'
+                        if ch.lower() == 'q' or ch == '\x1b': return 'salir'
+                        elif ch.lower() == 'r' or ch in ('\n', ' '): return 'repetir'
+                        else: return 'salir'
+                    if time.time() - inicio >= timeout_seg: return 'timeout'
             finally:
                 termios.tcsetattr(fd, termios.TCSADRAIN, modo_anterior)
         except Exception:
-            # Fallback para sesiones sin TTY interactivo (cron / background)
             rlist, _, _ = select.select([sys.stdin], [], [], timeout_seg)
             if rlist:
                 linea = sys.stdin.readline().strip().lower()
-                if linea in ('q', 'exit', 'quit'):
-                    return 'salir'
+                if linea in ('q', 'exit', 'quit'): return 'salir'
                 return 'repetir'
             return 'timeout'
 
-
 # ---------------------------------------------------------------------------
-# ALMACENAMIENTO DE RESULTADOS
+# ALMACENAMIENTO DE RESULTADOS ATÓMICO
 # ---------------------------------------------------------------------------
 
 def guardar_resultados(carpeta, nombre_json, nombre_log, nvrs_info, camaras_exitosas, camaras_fallidas, tipo_escaneo):
-    """
-    Crea 'carpeta' si no existe y guarda ahí el JSON de resultados y el log
-    de fallas. Puede lanzar OSError (permisos, unidad de red desconectada,
-    etc.) — queda a cargo de quien llama decidir qué hacer si eso pasa.
-    Devuelve (archivo_salida, archivo_log) con las rutas completas.
-    """
     os.makedirs(carpeta, exist_ok=True)
 
     archivo_salida = os.path.join(carpeta, nombre_json)
-    with open(archivo_salida, "w", encoding="utf-8") as f:
-        json.dump({"nvrs": nvrs_info, "camaras": camaras_exitosas}, f, indent=4, ensure_ascii=False)
-
+    archivo_tmp = archivo_salida + f".{int(time.time())}.tmp"
     archivo_log = os.path.join(carpeta, nombre_log)
+
+    # Escritura atómica
+    with open(archivo_tmp, "w", encoding="utf-8") as f:
+        json.dump({"nvrs": nvrs_info, "camaras": camaras_exitosas}, f, indent=4, ensure_ascii=False)
+    
+    os.replace(archivo_tmp, archivo_salida) # Reemplaza el json viejo de golpe
+
     with open(archivo_log, "w", encoding="utf-8") as f_log:
-        if tipo_escaneo == "1":
+        if abortar_escaneo.is_set():
+            f_log.write("=== ESCANEO ABORTADO ===\nSe detectaron múltiples bloqueos de autenticación (401). Revisá tus credenciales.")
+        elif tipo_escaneo == "1":
             f_log.write("=== LOG VACÍO ===\nAl ejecutar un Escaneo Básico (Solo NVRs), no se puede determinar qué cámaras están realmente offline en la red.")
         elif camaras_fallidas:
             f_log.write("=== CÁMARAS QUE NO RESPONDIERON AL ESCANEO DIRECTO ===\n")
@@ -1003,8 +1044,11 @@ def guardar_resultados(carpeta, nombre_json, nombre_log, nvrs_info, camaras_exit
 def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None,
                                 carpeta_salida_fija=None, nombre_json_fijo=None,
                                 nombre_log_fijo=None):
-    # Si ya se definió antes (en un ciclo previo de auto-repetición), no se vuelve
-    # a preguntar ni a leer del JSON: se respeta lo decidido al inicio del proceso.
+    
+    abortar_escaneo.clear()
+    global errores_auth_globales
+    errores_auth_globales = 0
+
     valor_repeticion_fallback = (
         (
             auto_repetir_fijo,
@@ -1089,13 +1133,20 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
                     except Exception as e:
                         print(f"[WARN] No se pudo guardar la clave: {e}")
 
+    # Cargar y validar IPs
     nvr_list = []
     if config_data and "nvrs" in config_data:
-        nvr_list = config_data["nvrs"]
+        for it in config_data["nvrs"]:
+            ip_val = ip_valida(it.get("ip"))
+            if ip_val: nvr_list.append({"ip": ip_val})
 
     camera_list = []
     if config_data and "camaras" in config_data:
-        camera_list = config_data["camaras"]
+        for it in config_data["camaras"]:
+            ip_val = ip_valida(it.get("ip"))
+            if ip_val:
+                it["ip"] = ip_val
+                camera_list.append(it)
 
     if not nvr_list and not camera_list:
         print(f"\n[INFO] No se encontró una lista de NVRs ni de cámaras.")
@@ -1112,10 +1163,10 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
             errores_ip = False
 
             for ip_str in ips_crudas:
-                try:
-                    ipaddress.ip_address(ip_str)
-                    nvr_list_temp.append({"ip": ip_str})
-                except ValueError:
+                ip_v = ip_valida(ip_str)
+                if ip_v:
+                    nvr_list_temp.append({"ip": ip_v})
+                else:
                     print(f"  [!] FORMATO INVÁLIDO: '{ip_str}' no es una IP real.")
                     errores_ip = True
 
@@ -1163,7 +1214,6 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
         max_workers = pedir_workers()
 
     if auto_repetir_fijo is not None:
-        # Ya se decidió en un ciclo anterior de esta misma ejecución: se respeta.
         auto_repetir    = auto_repetir_fijo
         intervalo_horas = intervalo_horas_fijo if intervalo_horas_fijo else 24.0
     elif usar_interactivo:
@@ -1172,7 +1222,6 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
         auto_repetir, intervalo_horas = cargar_config_auto_repeticion(config_data)
 
     if carpeta_salida_fija is not None:
-        # Ya se decidió en un ciclo anterior de esta misma ejecución: se respeta.
         carpeta_salida = carpeta_salida_fija
         nombre_json    = nombre_json_fijo
         nombre_log     = nombre_log_fijo
@@ -1182,6 +1231,10 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
         carpeta_salida, nombre_json, nombre_log = cargar_config_ruta_salida(config_data)
 
     camaras_base, nvrs_info = obtener_camaras_desde_nvrs(nvr_list, puertos, user, password, max_workers)
+
+    if abortar_escaneo.is_set():
+        print("\n[!] ESCANEO DE NVRs ABORTADO: Múltiples errores 401. Verificá tus credenciales.")
+        return valor_repeticion_fallback
 
     camaras_directas = obtener_camaras_directas(camera_list)
     if camaras_directas:
@@ -1212,6 +1265,9 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
         camaras_exitosas = [c for c in camaras_completas if c["protocolo_conexion"] != "Fallo/Offline"]
         camaras_fallidas = [c for c in camaras_completas if c["protocolo_conexion"] == "Fallo/Offline"]
 
+    if abortar_escaneo.is_set():
+        print("\n[!] ESCANEO DE FASE 2 ABORTADO: Se detectaron múltiples bloqueos de cuenta (401).")
+
     try:
         archivo_salida, archivo_log = guardar_resultados(
             carpeta_salida, nombre_json, nombre_log,
@@ -1231,7 +1287,9 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
     print(f"Total NVRs procesados                : {len(nvr_list)}")
     print(f"Total cámaras directas (config)      : {len(camaras_directas)}")
     print(f"Total canales/cámaras a procesar     : {len(camaras_base)}")
-    if tipo_escaneo == "2":
+    if abortar_escaneo.is_set():
+        print(f"ESTADO                               : INTERRUMPIDO (Fallos de Autenticación)")
+    elif tipo_escaneo == "2":
         print(f"Cámaras online (Responden Unicast)  : {len(camaras_exitosas)}")
         print(f"Cámaras offline (Log de errores)    : {len(camaras_fallidas)}")
     else:
@@ -1249,10 +1307,6 @@ if __name__ == "__main__":
         input("Presioná Enter para cerrar...")
         sys.exit(0)
 
-    # Estos valores se definen en el primer ciclo (leídos del JSON o, si el script
-    # corre en modo interactivo, preguntados por consola) y luego se mantienen
-    # fijos durante toda la vida del proceso, para no volver a preguntar en cada
-    # repetición automática.
     auto_repetir    = None
     intervalo_horas = None
     carpeta_salida  = None
@@ -1295,6 +1349,6 @@ if __name__ == "__main__":
         elif accion == 'repetir':
             print("\n[INFO] Re-ejecución manual solicitada. Iniciando escaneo...")
             print("=" * 40)
-        else:  # 'timeout'
+        else:  
             print("\n[INFO] Se cumplió el tiempo de espera programado. Reiniciando escaneo...")
             print("=" * 40)
