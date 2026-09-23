@@ -1061,14 +1061,15 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
         else (False, 24.0, CARPETA_DATOS_DEFAULT, ARCHIVO_JSON_DEFAULT, ARCHIVO_LOG_DEFAULT)
     )
 
-    config_data      = cargar_config_json()
-    usar_interactivo = (config_data is None)
+    config_data = cargar_config_json()
+    falta_json = (config_data is None)
 
     print("\n=========================================")
     print("             ESCANEO CCTV ISAPI           ")
     print("=========================================")
 
-    if usar_interactivo:
+    # Solo ofrecer la ayuda inicial si el archivo JSON ni siquiera existe
+    if falta_json:
         print(f"\n[INFO] No se detectó el archivo de configuración '{ARCHIVO_CONFIG}'.")
         ver_ayuda = input("  ¿Querés ver la documentación de uso antes de continuar? [s/n, Enter=n]: ").strip().lower()
         if ver_ayuda == 's':
@@ -1103,15 +1104,13 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
         if not user:
             print("[ERROR] El usuario no puede estar vacío. Saliendo.")
             return valor_repeticion_fallback
-        usar_interactivo = True
 
     # 3. Si no hay contraseña en el entorno ni en el JSON, buscarla con Keyring o manualmente
     if not password:
-        # Intento A: Leer de Keyring (solo si está instalado)
         if HAS_KEYRING:
-            password = keyring.get_password("CCTV_Daemon", user)
+            try: password = keyring.get_password("CCTV_Daemon", user)
+            except Exception: pass
 
-        # Intento B: Si Keyring falló o no está instalado, pedir a mano
         if not password:
             if HAS_KEYRING:
                 print(f"\n[INFO] No hay credenciales guardadas en el S.O. para '{user}'.")
@@ -1121,9 +1120,7 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
             if not password:
                 print("[ERROR] La contraseña no puede estar vacía. Saliendo.")
                 return valor_repeticion_fallback
-            usar_interactivo = True
 
-            # Preguntar para guardar en el S.O. (solo si Keyring está disponible)
             if HAS_KEYRING:
                 guardar = input(f"  ¿Querés guardar esta clave en el S.O. para la próxima? [s/n]: ").strip().lower()
                 if guardar == 's':
@@ -1149,7 +1146,7 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
                 camera_list.append(it)
 
     if not nvr_list and not camera_list:
-        print(f"\n[INFO] No se encontró una lista de NVRs ni de cámaras.")
+        print(f"\n[INFO] No se encontró una lista de NVRs ni de cámaras en la configuración.")
         while True:
             print("  Ingresá las IPs de los NVRs separadas por coma")
             ips_input = input("  -> Ejemplo [192.168.1.100, 192.168.1.101]: ").strip()
@@ -1175,8 +1172,6 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
             else:
                 nvr_list = nvr_list_temp
                 break
-                
-        usar_interactivo = True
 
     tipo_escaneo = None
     puertos      = None
@@ -1190,33 +1185,36 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
         "5": [("http", "80")]
     }
 
-    if not usar_interactivo:
+    # Intentar sacar parámetros operativos del JSON
+    if config_data:
         te = str(config_data.get("tipo_escaneo", "")).strip()
         op = str(config_data.get("opcion_puerto", "")).strip()
         mw = config_data.get("max_workers")
         
-        if te in ["1", "2"] and op in OPCIONES_PUERTOS and isinstance(mw, int) and 1 <= mw <= 50:
+        if te in ["1", "2"]:
             tipo_escaneo = te
-            puertos      = OPCIONES_PUERTOS[op]
-            max_workers  = mw
-            print(f"\n[INFO] Configuración cargada automáticamente desde '{ARCHIVO_CONFIG}'.")
-        else:
-            print(f"\n[WARN] Parámetros incompletos o inválidos en JSON. Pasando a modo manual...")
-            usar_interactivo = True
+        if op in OPCIONES_PUERTOS:
+            puertos = OPCIONES_PUERTOS[op]
+        if isinstance(mw, int) and 1 <= mw <= 50:
+            max_workers = mw
 
-    if usar_interactivo or tipo_escaneo is None:
+    # Pedir interactivamente SOLAMENTE lo que haya faltado en el JSON
+    if tipo_escaneo is None:
         tipo_escaneo = pedir_tipo_escaneo()
 
-    if usar_interactivo or puertos is None:
+    if puertos is None:
         puertos = pedir_puertos()
 
-    if usar_interactivo or max_workers is None:
+    if max_workers is None:
         max_workers = pedir_workers()
 
+    # Auto-Repetición y Rutas: 
+    # Si hay JSON (aunque falten claves), se asumen silenciosamente sus defaults.
+    # Solo se pide por consola si el JSON no existe.
     if auto_repetir_fijo is not None:
         auto_repetir    = auto_repetir_fijo
         intervalo_horas = intervalo_horas_fijo if intervalo_horas_fijo else 24.0
-    elif usar_interactivo:
+    elif falta_json:
         auto_repetir, intervalo_horas = pedir_auto_repeticion()
     else:
         auto_repetir, intervalo_horas = cargar_config_auto_repeticion(config_data)
@@ -1225,7 +1223,7 @@ def ejecutar_escaneo_unificado(auto_repetir_fijo=None, intervalo_horas_fijo=None
         carpeta_salida = carpeta_salida_fija
         nombre_json    = nombre_json_fijo
         nombre_log     = nombre_log_fijo
-    elif usar_interactivo:
+    elif falta_json:
         carpeta_salida, nombre_json, nombre_log = pedir_ruta_salida()
     else:
         carpeta_salida, nombre_json, nombre_log = cargar_config_ruta_salida(config_data)
