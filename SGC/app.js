@@ -396,6 +396,31 @@
             return { dispositivos, grabadores };
         }
 
+        // ── Lápidas: registro de eliminaciones { coleccion: { id: fechaISO } } ──────────
+        // Sin esto un borrado no se propaga por el Gist: el merge es aditivo y otro dispositivo
+        // que todavía tiene la entidad la vuelve a subir ("resucita").
+        const ELIM_COLS = ['dispositivos', 'grabadores', 'otros_prod'];
+        const ELIM_MAX_DIAS = 365; // pasado este tiempo la lápida se descarta
+
+        function eliminadosVacios() {
+            return { dispositivos: {}, grabadores: {}, otros_prod: {} };
+        }
+
+        function sanitizarEliminados(raw) {
+            const out = eliminadosVacios();
+            if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+            const limite = new Date(Date.now() - ELIM_MAX_DIAS * 86400000).toISOString();
+            ELIM_COLS.forEach(col => {
+                const src = raw[col];
+                if (!src || typeof src !== 'object' || Array.isArray(src)) return;
+                Object.entries(src).forEach(([id, ts]) => {
+                    if (!RE_ID.test(id) || typeof ts !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(ts) || ts < limite) return;
+                    out[col][id] = ts;
+                });
+            });
+            return out;
+        }
+
         function normalizarPiso(p) {
             if (!p || typeof p !== 'string') return '';
             const s = sanitize(p, 4).toUpperCase();
@@ -421,6 +446,7 @@
             get TIPOS() { return TIPOS; }, guardarTipos, cargarTipos,
             get edificios() { return _edificios; }, guardarEdificios, cargarEdificios,
             generarFirma, verificarFirma, sanitizarDisp, sanitizarGrab, sanitizarOtroProd, sanitizarDataTotal,
+            ELIM_COLS, eliminadosVacios, sanitizarEliminados,
             validarIP, validarIPv6, validarMAC, normalizarPiso,
             esc, esSerialPendiente
         };
@@ -922,7 +948,7 @@
     // ════════════════════════════════════════════════════════════════════════════
     const Store = (() => {
         const KEY = `${APP_KEY}:cctv_data_v1`;
-        const data = { dispositivos: [], grabadores: [], otros_prod: [] };
+        const data = { dispositivos: [], grabadores: [], otros_prod: [], eliminados: S.eliminadosVacios() };
 
         function _invalidarCaches() {
             api.cacheAsignaciones = null;
@@ -938,10 +964,12 @@
                 data.dispositivos = Array.isArray(d.dispositivos) ? d.dispositivos : [];
                 data.grabadores = Array.isArray(d.grabadores) ? d.grabadores : [];
                 data.otros_prod = Array.isArray(d.otros_prod) ? d.otros_prod : [];
+                data.eliminados = S.sanitizarEliminados(d.eliminados);
             } catch {
                 data.dispositivos = [];
                 data.grabadores = [];
                 data.otros_prod = [];
+                data.eliminados = S.eliminadosVacios();
             }
 
             // Migración: asignar updatedAt a entidades que aún no lo tienen.
@@ -985,10 +1013,18 @@
             });
         }
 
+        // Deja constancia de un borrado para que se propague por el Gist (ver lápidas en S)
+        function registrarEliminado(col, id) {
+            if (!id) return;
+            if (!data.eliminados) data.eliminados = S.eliminadosVacios();
+            data.eliminados[col][id] = new Date().toISOString();
+        }
+
         const api = {
             data,
             cargar,
             guardar,
+            registrarEliminado,
             sincronizarGrabadores,
             // Caches de derived data — se invalidan en cada Store.guardar()/Store.cargar()
             cacheAsignaciones: null,
@@ -1026,9 +1062,25 @@
         }
 
         function _aplicarEstado(e) {
+            const elimAntes = Store.data.eliminados || S.eliminadosVacios();
             Store.data.dispositivos = e.data.dispositivos;
             Store.data.grabadores = e.data.grabadores;
             Store.data.otros_prod = e.data.otros_prod || [];
+            Store.data.eliminados = S.sanitizarEliminados(e.data.eliminados);
+
+            // Deshacer/rehacer un borrado tiene que ganarle a la lápida que ya pudo llegar al Gist:
+            // lo que vuelve se marca como editado ahora; lo que se vuelve a borrar lleva lápida nueva.
+            const ahora = new Date().toISOString();
+            S.ELIM_COLS.forEach(col => {
+                Object.keys(elimAntes[col] || {}).forEach(id => {
+                    if (Store.data.eliminados[col][id]) return;
+                    const ent = (Store.data[col] || []).find(x => x.id === id);
+                    if (ent) ent.updatedAt = ahora;
+                });
+                Object.keys(Store.data.eliminados[col]).forEach(id => {
+                    if (!(elimAntes[col] || {})[id]) Store.data.eliminados[col][id] = ahora;
+                });
+            });
 
             Object.keys(S.TIPOS).forEach(k => delete S.TIPOS[k]);
             Object.assign(S.TIPOS, e.tipos);
@@ -1603,7 +1655,7 @@
             UI.cerrarGist();
         }
 
-        async function _generarPayload() {
+        async function _generarPayload(elimExtra = null) {
             const disps = Store.data.dispositivos.map(d => S.sanitizarDisp(d)).filter(Boolean);
             const grabs = Store.data.grabadores.map(g => S.sanitizarGrab(g)).filter(Boolean);
             const otros = (Store.data.otros_prod || []).map(S.sanitizarOtroProd).filter(Boolean);
@@ -1611,10 +1663,26 @@
             Object.entries(S.TIPOS).forEach(([k, v]) => {
                 if (!v.builtin) tiposCustom[k] = { label: v.label, emoji: v.emoji, ...(v.updatedAt ? { updatedAt: v.updatedAt } : {}) };
             });
+
+            // Lápidas locales + las que ya estén en el Gist (así una subida nunca pierde borrados que este dispositivo aún no conocía)
+            const elim = S.sanitizarEliminados(Store.data.eliminados);
+            if (elimExtra) {
+                S.ELIM_COLS.forEach(col => Object.entries(elimExtra[col] || {}).forEach(([id, ts]) => {
+                    if (!elim[col][id] || ts > elim[col][id]) elim[col][id] = ts;
+                }));
+            }
+            // Si la entidad existe y fue editada después del borrado, la lápida ya no corresponde
+            const porCol = { dispositivos: disps, grabadores: grabs, otros_prod: otros };
+            S.ELIM_COLS.forEach(col => porCol[col].forEach(e => {
+                const ts = elim[col][e.id];
+                if (ts && (e.updatedAt || '') > ts) delete elim[col][e.id];
+            }));
+
             const payload = {
                 dispositivos: disps,
                 grabadores: grabs,
                 otros_prod: otros,
+                eliminados: elim,
                 tiposCustom,
                 edificios: S.edificios.slice(),
                 version: S.SCHEMA_V,
@@ -1648,6 +1716,28 @@
             } catch { return null; }
         }
 
+        // Lápidas que ya están en el Gist (null si no se pudo leer)
+        async function _obtenerEliminadosRemotos(token, gistId) {
+            try {
+                const res = await fetch(`https://api.github.com/gists/${gistId}?_ts=${Date.now()}`, {
+                    headers: { Authorization: `token ${token}` }, cache: 'no-store'
+                });
+                if (!res.ok) return null;
+                const data = await res.json();
+                const file = data?.files?.[FILENAME];
+                if (!file) return null;
+                let contenido = file.content;
+                if (file.truncated) {
+                    const host = new URL(file.raw_url).hostname;
+                    if (!host.endsWith('.githubusercontent.com')) return null;
+                    const r2 = await fetch(`${file.raw_url}?_ts=${Date.now()}`, { cache: 'no-store' });
+                    contenido = await r2.text();
+                }
+                const parsed = S.safeParse(contenido);
+                return parsed && typeof parsed === 'object' ? S.sanitizarEliminados(parsed.eliminados) : null;
+            } catch { return null; }
+        }
+
         async function _ejecutarSubida(silencioso = false, forzar = false) {
             const token = _cfg.token;
             const gistId = _cfg.gistId;
@@ -1674,7 +1764,8 @@
             _setBusy(true);
             if (!silencioso) _setStatus('Subiendo…');
 
-            const payloadData = await _generarPayload();
+            const elimRemotas = gistId ? await _obtenerEliminadosRemotos(token, gistId) : null;
+            const payloadData = await _generarPayload(elimRemotas);
             const body = { files: { [FILENAME]: { content: JSON.stringify(payloadData, null, 2) } } };
 
             try {
@@ -1752,6 +1843,57 @@
                 return rem.updatedAt > loc.updatedAt;   // ISO string comparison
             }
 
+            // ── Eliminaciones (lápidas) ───────────────────────────────────────
+            // Un borrado hecho en otro dispositivo llega como lápida {id: fecha}. Gana sobre la copia local salvo que esa
+            // copia (o la remota) se haya editado después del borrado. También evita que una copia remota vieja
+            // "resucite" algo que se borró acá.
+            if (!Store.data.eliminados) Store.data.eliminados = S.eliminadosVacios();
+            const elim = Store.data.eliminados;
+            const elimRem = S.sanitizarEliminados(remoto.eliminados);
+            S.ELIM_COLS.forEach(col => Object.entries(elimRem[col]).forEach(([id, ts]) => {
+                if (!elim[col][id] || ts > elim[col][id]) elim[col][id] = ts;
+            }));
+            let cDispsDel = 0, cGrabsDel = 0, cOtrosDel = 0;
+
+            const _updRemoto = {};
+            S.ELIM_COLS.forEach(col => {
+                _updRemoto[col] = new Map((Array.isArray(remoto[col]) ? remoto[col] : []).filter(x => x && x.id).map(x => [x.id, x.updatedAt || '']));
+            });
+            const _eliminarLocales = (col, cat, labelFn) => {
+                const arr = Store.data[col];
+                if (!Array.isArray(arr)) return;
+                for (let i = arr.length - 1; i >= 0; i--) {
+                    const ent = arr[i];
+                    const ts = elim[col][ent.id];
+                    if (!ts) continue;
+                    // Editado después del borrado (acá o en el remoto): gana la edición y la lápida deja de valer
+                    if ((ent.updatedAt || '') > ts || (_updRemoto[col].get(ent.id) || '') > ts) { delete elim[col][ent.id]; continue; }
+                    arr.splice(i, 1);
+                    cambios.push({ cat, op: 'del', label: labelFn(ent) });
+                    if (col === 'dispositivos') {
+                        cDispsDel++;
+                        // Referencias colgantes al dispositivo eliminado
+                        Store.data.grabadores.forEach(g => {
+                            if (g.dispositivoId === ent.id) g.dispositivoId = null;
+                            (g.canales_data || []).forEach(c => { if (c.dispositivoId === ent.id) c.dispositivoId = ''; });
+                        });
+                        (Store.data.otros_prod || []).forEach(o => { if (o.dispositivoId === ent.id) o.dispositivoId = null; });
+                    } else if (col === 'grabadores') cGrabsDel++;
+                    else cOtrosDel++;
+                }
+            };
+            _eliminarLocales('dispositivos', 'disp', d => FormHelpers.labelDisp(d));
+            _eliminarLocales('grabadores', 'grab', g => g.descripcion || g.id);
+            _eliminarLocales('otros_prod', 'otro', o => o.descripcion || o.id);
+
+            // Entidad remota vs lápida: si sigue borrada no se agrega ni se actualiza; si se editó después, vuelve
+            const _permitidaPorLapida = (col, san) => {
+                const ts = elim[col][san.id];
+                if (!ts) return true;
+                if ((san.updatedAt || '') > ts) { delete elim[col][san.id]; return true; }
+                return false;
+            };
+
             const mapD = new Map(Store.data.dispositivos.map(d => [d.id, d]));
             const mapG = new Map(Store.data.grabadores.map(g => [g.id, g]));
             const mapO = new Map((Store.data.otros_prod || []).map(o => [o.id, o]));
@@ -1760,6 +1902,7 @@
             (remoto.dispositivos || []).forEach(d => {
                 const san = d._sanitized ? d : S.sanitizarDisp(d, remoto.tiposCustom || {});
                 if (!san) return;
+                if (!_permitidaPorLapida('dispositivos', san)) return;
                 if (!mapD.has(san.id)) {
                     Store.data.dispositivos.push(san); mapD.set(san.id, san); cDispsAdd++;
                     cambios.push({ cat: 'disp', op: 'add', label: FormHelpers.labelDisp(san), tipo: san.tipo });
@@ -1804,6 +1947,7 @@
             (remoto.grabadores || []).forEach(g => {
                 const san = g._sanitized ? g : S.sanitizarGrab(g);
                 if (!san) return;
+                if (!_permitidaPorLapida('grabadores', san)) return;
                 if (!mapG.has(san.id)) {
                     Store.data.grabadores.push(san); mapG.set(san.id, san); cGrabsAdd++;
                     cambios.push({ cat: 'grab', op: 'add', label: san.descripcion || san.id, tipo: san.tipo });
@@ -1877,6 +2021,7 @@
             (remoto.otros_prod || []).forEach(o => {
                 const san = o._sanitized ? o : S.sanitizarOtroProd(o);
                 if (!san) return;
+                if (!_permitidaPorLapida('otros_prod', san)) return;
 
                 if (!mapO.has(san.id)) {
                     if (!Store.data.otros_prod) Store.data.otros_prod = [];
@@ -1968,8 +2113,11 @@
                 }
             });
 
-            return { cDispsAdd, cDispsUpd, cGrabsAdd, cGrabsUpd, cOtrosAdd, cOtrosUpd, cUbicSugeridas, cUbicConflictos, cambios };
+            return { cDispsAdd, cDispsUpd, cDispsDel, cGrabsAdd, cGrabsUpd, cGrabsDel, cOtrosAdd, cOtrosUpd, cOtrosDel, cUbicSugeridas, cUbicConflictos, cambios };
         }
+
+        // Foto del estado para detectar novedades: se ignoran las lápidas (un cambio solo de lápidas no amerita avisar)
+        const _fotoData = () => JSON.stringify({ d: Store.data.dispositivos, g: Store.data.grabadores, o: Store.data.otros_prod });
 
         function _combinarDatosRemotos(remoto) {
             let cTipos = 0, cEdif = 0;
@@ -2026,6 +2174,7 @@
                 .map(g => S.sanitizarGrab(g)).filter(Boolean);
             Store.data.otros_prod = (remoto.otros_prod || [])
                 .map(o => S.sanitizarOtroProd(o)).filter(Boolean);
+            Store.data.eliminados = S.sanitizarEliminados(remoto.eliminados);
             Object.keys(S.TIPOS).forEach(k => { if (!S.TIPOS_BUILTIN[k]) delete S.TIPOS[k]; });
             if (remoto.tiposCustom && typeof remoto.tiposCustom === 'object') {
                 Object.entries(remoto.tiposCustom).forEach(([k, v]) => {
@@ -2057,6 +2206,7 @@
             const totalCambios = (resMerge.cDispsAdd || 0) + (resMerge.cDispsUpd || 0) + 
                                  (resMerge.cGrabsAdd || 0) + (resMerge.cGrabsUpd || 0) + 
                                  (resMerge.cOtrosAdd || 0) + (resMerge.cOtrosUpd || 0) + 
+                                 (resMerge.cDispsDel || 0) + (resMerge.cGrabsDel || 0) + (resMerge.cOtrosDel || 0) + 
                                  (resMerge.cTipos || 0) + (resMerge.cEdif || 0) +
                                  (resMerge.cUbicSugeridas || 0) + (resMerge.cUbicConflictos || 0);
             const hayCambiosEntrantes = totalCambios > 0;
@@ -2101,6 +2251,9 @@
                 if (resMerge.cGrabsUpd) chips.push(`<div class="gist-novedades-chip"><span class="gist-novedades-chip-label">Grabadores a actualizar</span><span class="gist-novedades-chip-count gist-novedades-chip-count--purple">~${resMerge.cGrabsUpd}</span></div>`);
                 if (resMerge.cOtrosAdd) chips.push(`<div class="gist-novedades-chip"><span class="gist-novedades-chip-label">Otros disp. nuevos</span><span class="gist-novedades-chip-count">+${resMerge.cOtrosAdd}</span></div>`);
                 if (resMerge.cOtrosUpd) chips.push(`<div class="gist-novedades-chip"><span class="gist-novedades-chip-label">Otros a actualizar</span><span class="gist-novedades-chip-count gist-novedades-chip-count--purple">~${resMerge.cOtrosUpd}</span></div>`);
+                if (resMerge.cDispsDel) chips.push(`<div class="gist-novedades-chip"><span class="gist-novedades-chip-label">Dispositivos eliminados</span><span class="gist-novedades-chip-count gist-novedades-chip-count--red">−${resMerge.cDispsDel}</span></div>`);
+                if (resMerge.cGrabsDel) chips.push(`<div class="gist-novedades-chip"><span class="gist-novedades-chip-label">Grabadores eliminados</span><span class="gist-novedades-chip-count gist-novedades-chip-count--red">−${resMerge.cGrabsDel}</span></div>`);
+                if (resMerge.cOtrosDel) chips.push(`<div class="gist-novedades-chip"><span class="gist-novedades-chip-label">Otros disp. eliminados</span><span class="gist-novedades-chip-count gist-novedades-chip-count--red">−${resMerge.cOtrosDel}</span></div>`);
                 if (resMerge.cTipos) chips.push(`<div class="gist-novedades-chip"><span class="gist-novedades-chip-label">Tipos Custom</span><span class="gist-novedades-chip-count">+${resMerge.cTipos}</span></div>`);
                 if (resMerge.cEdif) chips.push(`<div class="gist-novedades-chip"><span class="gist-novedades-chip-label">Edificios</span><span class="gist-novedades-chip-count">+${resMerge.cEdif}</span></div>`);
                 if (resMerge.cUbicSugeridas) chips.push(`<div class="gist-novedades-chip"><span class="gist-novedades-chip-label">Ubicaciones completadas</span><span class="gist-novedades-chip-count gist-novedades-chip-count--purple">~${resMerge.cUbicSugeridas}</span></div>`);
@@ -2143,6 +2296,9 @@
                     if (resMerge.cGrabsUpd) msgs.push(`~${resMerge.cGrabsUpd} grab`);
                     if (resMerge.cOtrosAdd) msgs.push(`+${resMerge.cOtrosAdd} otros`);
                     if (resMerge.cOtrosUpd) msgs.push(`~${resMerge.cOtrosUpd} otros`);
+                    if (resMerge.cDispsDel) msgs.push(`-${resMerge.cDispsDel} disp`);
+                    if (resMerge.cGrabsDel) msgs.push(`-${resMerge.cGrabsDel} grab`);
+                    if (resMerge.cOtrosDel) msgs.push(`-${resMerge.cOtrosDel} otros`);
                     if (resMerge.cTipos) msgs.push(`+${resMerge.cTipos} tipos`);
                     if (resMerge.cEdif) msgs.push(`+${resMerge.cEdif} edif`);
                     if (resMerge.cUbicSugeridas) msgs.push(`~${resMerge.cUbicSugeridas} ubic`);
@@ -2212,11 +2368,11 @@
                     const backupData = S.deepClone(Store.data);
                     const backupTipos = S.deepClone(S.TIPOS);
                     const backupEdif = [...S.edificios];
-                    const dataAntes = JSON.stringify(Store.data);
+                    const dataAntes = _fotoData();
                     const tiposAntes = JSON.stringify(S.TIPOS);
                     const edifAntes = JSON.stringify(S.edificios);
                     const resMerge = _combinarDatosRemotos(remoto);
-                    const huboCambios = (dataAntes !== JSON.stringify(Store.data) || tiposAntes !== JSON.stringify(S.TIPOS) || edifAntes !== JSON.stringify(S.edificios));
+                    const huboCambios = (dataAntes !== _fotoData() || tiposAntes !== JSON.stringify(S.TIPOS) || edifAntes !== JSON.stringify(S.edificios));
                     Object.assign(Store.data, backupData);
                     Object.keys(S.TIPOS).forEach(k => delete S.TIPOS[k]);
                     Object.assign(S.TIPOS, backupTipos);
@@ -2328,7 +2484,7 @@
                     esValida = await S.verificarFirma(remoto);
                 }
 
-                const dataStringAntes = JSON.stringify(Store.data);
+                const dataStringAntes = _fotoData();
                 const tiposStringAntes = JSON.stringify(S.TIPOS);
                 const edifStringAntes = JSON.stringify(S.edificios);
 
@@ -2338,7 +2494,7 @@
 
                 const resMerge = _combinarDatosRemotos(remoto);
 
-                const dataStringDespues = JSON.stringify(Store.data);
+                const dataStringDespues = _fotoData();
                 const tiposStringDespues = JSON.stringify(S.TIPOS);
                 const edifStringDespues = JSON.stringify(S.edificios);
 
@@ -2420,12 +2576,17 @@
                         badge.className = 'gist-detalle-badge-new';
                         badge.textContent = 'Nuevo';
                         header.appendChild(badge);
+                    } else if (items[0]?.op === 'del') {
+                        const badge = document.createElement('span');
+                        badge.className = 'gist-detalle-badge-del';
+                        badge.textContent = 'Eliminado';
+                        header.appendChild(badge);
                     }
 
                     bloque.appendChild(header);
 
                     items.forEach(c => {
-                        if (c.op === 'add') return;
+                        if (c.op === 'add' || c.op === 'del') return;
                         const fila = document.createElement('div');
                         fila.className = 'gist-detalle-fila';
 
@@ -4916,6 +5077,7 @@
             if (!ok) return;
             historial.empujar('Restablecer todos los datos');
             Store.data.dispositivos = []; Store.data.grabadores = []; Store.data.otros_prod = [];
+            Store.data.eliminados = S.eliminadosVacios(); // partir de cero: con lápidas nuevas no se podría volver a bajar el Gist
             Object.keys(S.TIPOS).forEach(k => { if (!S.TIPOS_BUILTIN[k]) delete S.TIPOS[k]; });
             S.guardarTipos();
             S.edificios.length = 0;
@@ -5540,13 +5702,6 @@
 
             EdicionState.actualizarBotonesEstado(d.estado || '');
 
-            const bloquearEstado = enProduccionComoGrab;
-            const btnEstado = document.getElementById('btn-estado-disp');
-            if (btnEstado) {
-                btnEstado.disabled = bloquearEstado;
-                btnEstado.title = bloquearEstado ? 'No se puede cambiar el estado: el dispositivo está en producción' : '';
-            }
-
             ModalLock.reset('modal-editar-disp');
             MM.abrirConPadre('modal-editar-disp');
             const btnCerrarDisp = document.querySelector('#modal-editar-disp .btn-cancel');
@@ -5643,11 +5798,20 @@
                     });
                 }
                 const otrosProdAsignados = (Store.data.otros_prod || []).filter(o => o.dispositivoId === EdicionState.edicion.dispId);
-                if (slotsAsignados.length > 0 || otrosProdAsignados.length > 0) {
+                // El propio activo puede ser un grabador en producción: al quedar inactivo también sale de Producción
+                const grabsAsignados = Store.data.grabadores.filter(g => g.dispositivoId === EdicionState.edicion.dispId);
+                if (slotsAsignados.length > 0 || otrosProdAsignados.length > 0 || grabsAsignados.length > 0) {
                     const LABELS = { averiado: 'Averiado', revisar: 'A revisar', desafectado: 'Desafectado', perdido: 'Perdido', descontinuado: 'Descontinuado' };
                     const partes = [];
                     if (slotsAsignados.length > 0) partes.push(slotsAsignados.map(({ grab, slot }) => `Canal ${slot.canal} de ${grab.descripcion}`).join(', '));
                     if (otrosProdAsignados.length > 0) partes.push(otrosProdAsignados.map(o => o.descripcion || 'Otro dispositivo').join(', '));
+                    if (grabsAsignados.length > 0) {
+                        partes.push(grabsAsignados.map(g => {
+                            const ocupados = g.canales_data.filter(c => c.dispositivoId).length;
+                            const extra = ocupados > 0 ? ` (sus ${ocupados} canal${ocupados === 1 ? '' : 'es'} ocupado${ocupados === 1 ? '' : 's'} quedarán libres)` : '';
+                            return `Grabador "${g.descripcion || 'Sin nombre'}" en producción${extra}`;
+                        }).join(', '));
+                    }
                     const msg = `Marcar como "${LABELS[EdicionState.edicion.estado]}" quitará este dispositivo de: ${partes.join(', ')}. ¿Confirmar?`;
                     const ok = await Notif.confirmarModal(msg, 'Guardar');
                     if (!ok) return;
@@ -5655,6 +5819,12 @@
                     slotsAsignados.forEach(({ slot }) => { slot.dispositivoId = ''; });
                     const idsAEliminar = new Set(otrosProdAsignados.map(o => o.id));
                     Store.data.otros_prod = Store.data.otros_prod.filter(o => !idsAEliminar.has(o.id));
+                    idsAEliminar.forEach(id => Store.registrarEliminado('otros_prod', id));
+                    if (grabsAsignados.length > 0) {
+                        const idsGrabAEliminar = new Set(grabsAsignados.map(g => g.id));
+                        Store.data.grabadores = Store.data.grabadores.filter(g => !idsGrabAEliminar.has(g.id));
+                        idsGrabAEliminar.forEach(id => Store.registrarEliminado('grabadores', id));
+                    }
 
                     if (slotsAsignados.length > 0) {
                         const { grab, slot } = slotsAsignados[0];
@@ -5773,8 +5943,11 @@
 
             historial.empujar('Eliminar dispositivo');
             if (grabAsoc) {
+                Store.data.grabadores.filter(g => g.dispositivoId === EdicionState.edicion.dispId)
+                    .forEach(g => Store.registrarEliminado('grabadores', g.id));
                 Store.data.grabadores = Store.data.grabadores.filter(g => g.dispositivoId !== EdicionState.edicion.dispId);
             }
+            Store.registrarEliminado('dispositivos', EdicionState.edicion.dispId);
             Store.data.dispositivos = Store.data.dispositivos.filter(x => x.id !== EdicionState.edicion.dispId);
             Store.guardar(); render(); MM.cerrarConPadre('modal-editar-disp'); EdicionState.edicion.dispId = null;
             Notif.toast('Dispositivo eliminado', 'success');
@@ -5958,6 +6131,7 @@
 
             historial.empujar('Eliminar grabador');
 
+            Store.registrarEliminado('grabadores', EdicionState.edicion.grabId);
             Store.data.grabadores = Store.data.grabadores.filter(x => x.id !== EdicionState.edicion.grabId);
             Store.guardar(); render(); MM.cerrarConPadre('modal-editar-grab'); EdicionState.edicion.grabId = null;
             Notif.toast('Grabador eliminado', 'success');
@@ -6586,6 +6760,7 @@
             if (!ok) return;
 
             historial.empujar('Quitar dispositivo de producción');
+            Store.registrarEliminado('otros_prod', EdicionState.edicion.otroProdId);
             Store.data.otros_prod = Store.data.otros_prod.filter(x => x.id !== EdicionState.edicion.otroProdId);
 
             Store.guardar(); render(); MM.cerrarConPadre('modal-editar-otro-prod');
@@ -6821,17 +6996,27 @@
                 Store.data.dispositivos = newDisps;
                 Store.data.grabadores = newGrabs;
                 Store.data.otros_prod = newOtros;
+                Store.data.eliminados = S.sanitizarEliminados(data.eliminados);
                 Notif.toast('Datos reemplazados correctamente', 'success');
             } else {
+                // Importar algo que estaba borrado acá es una decisión explícita: se descartan las lápidas locales de esos ids
+                const revividos = [];
+                [['dispositivos', newDisps], ['grabadores', newGrabs], ['otros_prod', newOtros]].forEach(([col, arr]) => arr.forEach(e => {
+                    if (Store.data.eliminados?.[col]?.[e.id]) { delete Store.data.eliminados[col][e.id]; revividos.push([col, e.id]); }
+                }));
                 // Reusar _combinarDatosRemotos pasando los datos ya sanitizados como si fuera un remoto
                 const pseudoRemoto = {
                     dispositivos: newDisps,
                     grabadores: newGrabs,
                     otros_prod: newOtros,
+                    eliminados: data.eliminados,
                     tiposCustom: {},   // ya aplicados arriba
                     edificios: [],     // ya aplicados arriba
                 };
                 const resMerge = GistSync._combinarEntidades(pseudoRemoto);
+                // Lo revivido se marca como editado ahora para que también le gane a la lápida que siga en el Gist
+                const ahoraImp = new Date().toISOString();
+                revividos.forEach(([col, id]) => { const ent = Store.data[col].find(x => x.id === id); if (ent) ent.updatedAt = ahoraImp; });
 
                 const msgs = [];
                 if (resMerge.cDispsAdd) msgs.push(`+${resMerge.cDispsAdd} disp`);
@@ -6840,6 +7025,9 @@
                 if (resMerge.cGrabsUpd) msgs.push(`~${resMerge.cGrabsUpd} grab`);
                 if (resMerge.cOtrosAdd) msgs.push(`+${resMerge.cOtrosAdd} otros`);
                 if (resMerge.cOtrosUpd) msgs.push(`~${resMerge.cOtrosUpd} otros`);
+                if (resMerge.cDispsDel) msgs.push(`-${resMerge.cDispsDel} disp`);
+                if (resMerge.cGrabsDel) msgs.push(`-${resMerge.cGrabsDel} grab`);
+                if (resMerge.cOtrosDel) msgs.push(`-${resMerge.cOtrosDel} otros`);
 
                 Notif.toast(msgs.length ? `Datos combinados (${msgs.join(', ')})` : 'Sin datos nuevos para combinar', msgs.length ? 'success' : 'info');
             }

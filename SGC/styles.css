@@ -2910,6 +2910,10 @@ button:disabled {
     color: var(--c-orange);
 }
 
+.gist-novedades-chip-count--red {
+    color: var(--c-red);
+}
+
 .gist-warn-altered {
     color: var(--c-orange);
     margin-top: var(--sp-2);
@@ -3759,6 +3763,15 @@ button:disabled {
     padding: .1em .45em;
     border-radius: 999px;
     background: var(--c-green);
+    color: #fff;
+    flex-shrink: 0;
+}
+.gist-detalle-badge-del {
+    font-size: .7rem;
+    font-weight: 700;
+    padding: .1em .45em;
+    border-radius: 999px;
+    background: var(--c-red);
     color: #fff;
     flex-shrink: 0;
 }
