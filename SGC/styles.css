@@ -3201,16 +3201,59 @@ button:disabled {
 
     .dash-resumen-grid {
         grid-template-columns: 1fr;
-        gap: var(--sp-4);
+        gap: var(--sp-3);
         min-height: auto;
+        padding: 0;
     }
 
     .dash-resumen-col-info {
         border-right: none;
         border-bottom: 1px solid var(--border);
         padding-right: 0;
-        padding-bottom: var(--sp-5);
+        padding-bottom: var(--sp-3);
         height: auto;
+    }
+
+    .dash-chip-main {
+        min-height: auto;
+        padding: var(--sp-3) var(--sp-4);
+        margin: 0;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        text-align: left;
+        gap: var(--sp-3);
+    }
+
+    .dash-chip-main .stat-chip-valor {
+        font-size: 1.6rem;
+        margin-bottom: 0;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    .dash-chip-main .stat-chip-label {
+        font-size: var(--fs-xs);
+        text-align: left;
+        line-height: 1.25;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .dash-chip-main .dash-chip-btn-group {
+        height: auto;
+        margin: 0 0 0 auto;
+        flex-direction: row;
+        align-items: center;
+        flex-shrink: 0;
+        gap: 0;
+    }
+
+    .dash-chip-main .stat-chip-volver {
+        margin-top: 0;
+        padding: 0.25rem 0.65rem;
+        font-size: 0.7rem;
+        white-space: nowrap;
     }
 
     .dashboard-grid {
