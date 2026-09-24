@@ -2403,6 +2403,13 @@ button:disabled {
     font-family: monospace;
 }
 
+.grab-popup-btn {
+    margin-top: 0.2rem;
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--c-gray-btn);
+    font-size: var(--fs-base);
+}
+
 .grab-popup-metric + .grab-popup-metric {
     margin-top: 0.3rem;
 }
@@ -3268,7 +3275,7 @@ button:disabled {
 
 @media (hover: hover) and (pointer: fine) {
 
-    :is(.btn-edit, .btn-delete, .btn-backup, .btn-cancel, .icon-btn):hover:not(:disabled),
+    :is(.btn-edit, .btn-delete, .btn-backup, .btn-cancel, .icon-btn, .grab-popup-btn):hover:not(:disabled),
     :is(.dispositivo-item, .canal-slot-lista, .stat-chip-tipo, .reporte-opcion, .gist-autosync-row, .dash-grab-item):hover {
         filter: var(--hover);
     }
