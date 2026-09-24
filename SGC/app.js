@@ -5286,12 +5286,14 @@
                 el.value = '';
                 el.classList.remove('error');
                 UI._renderEdificios();
+                // IDRInfra guarda por su cuenta (no pasa por S.guardarEdificios), así que hay que disparar el autosync acá
+                if (res.agregados.length) GistSync.subirAuto();
                 if (res.agregados.length && !res.duplicados.length) {
                     Notif.toast(res.agregados.length === 1 ? `Edificio "${res.agregados[0]}" agregado` : `${res.agregados.length} edificios agregados`, 'success');
                 } else if (res.agregados.length && res.duplicados.length) {
                     Notif.toast(`${res.agregados.length} agregado${res.agregados.length > 1 ? 's' : ''}, ${res.duplicados.length} duplicado${res.duplicados.length > 1 ? 's' : ''} omitido${res.duplicados.length > 1 ? 's' : ''}`, 'info');
                 } else {
-                    Notif.toast(duplicados.length === 1 ? `Ya existe "${duplicados[0]}"` : 'Todos ya existen', 'error');
+                    Notif.toast(res.duplicados.length === 1 ? `Ya existe "${res.duplicados[0]}"` : 'Todos ya existen', 'error');
                 }
                 return;
             }
@@ -5345,6 +5347,7 @@
             if (typeof IDRInfra !== 'undefined') {
                 IDRInfra.eliminarEdificio(nombre);
                 S.cargarEdificios();
+                GistSync.subirAuto(); // IDRInfra no pasa por S.guardarEdificios: se dispara el autosync a mano
             } else {
                 S.edificios.splice(idx, 1);
                 S.guardarEdificios();
