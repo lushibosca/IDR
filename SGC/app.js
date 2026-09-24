@@ -4047,8 +4047,9 @@
         try {
             const saved = JSON.parse(localStorage.getItem(KEY_EXPANDED) || 'null');
             if (saved && Array.isArray(saved.ids) && (Date.now() - saved.ts) < UNA_HORA) {
-                localStorage.setItem(KEY_EXPANDED, JSON.stringify({ ids: saved.ids, ts: Date.now() }));
-                return new Set(saved.ids);
+                const ids = saved.ids.slice(-1); // acordeón: un solo grabador abierto a la vez
+                localStorage.setItem(KEY_EXPANDED, JSON.stringify({ ids, ts: Date.now() }));
+                return new Set(ids);
             }
         } catch (_) { }
         localStorage.removeItem(KEY_EXPANDED);
@@ -5238,29 +5239,44 @@
             ActivosRender.renderActivos();
         },
 
+        // Acordeón: un solo grabador abierto a la vez. Al abrir uno se cierra el que estuviera abierto.
         toggleGrabColapse(id) {
-            if (_grabExpanded.has(id)) {
-                _grabExpanded.delete(id);
-            } else {
+            const aplicar = (gid, expandido) => {
+                const card = document.querySelector(`.nvr-card[data-grab-id="${CSS.escape(gid)}"]`);
+                if (!card) return;
+                card.classList.toggle('collapsed', !expandido);
+                card.querySelector('.nvr-canales-grid')?.classList.toggle('collapsed', !expandido);
+            };
+            const expandir = !_grabExpanded.has(id);
+            if (expandir) {
+                _grabExpanded.forEach(otro => aplicar(otro, false));
+                _grabExpanded.clear();
                 _grabExpanded.add(id);
+            } else {
+                _grabExpanded.delete(id);
             }
             localStorage.setItem(KEY_EXPANDED, JSON.stringify({ ids: [..._grabExpanded], ts: Date.now() }));
-            const card = document.querySelector(`.nvr-card[data-grab-id="${CSS.escape(id)}"]`);
-            const grid = card?.querySelector('.nvr-canales-grid');
-            if (!card || !grid) return;
-            const expandiendo = _grabExpanded.has(id);
-            card.classList.toggle('collapsed', !expandiendo);
-            grid.classList.toggle('collapsed', !expandiendo);
+            aplicar(id, expandir);
+
+            // Si al cerrarse el otro grabador (que estaba arriba) la tarjeta quedó bajo el header, la traemos a la vista
+            if (expandir) {
+                setTimeout(() => {
+                    const card = document.querySelector(`.nvr-card[data-grab-id="${CSS.escape(id)}"]`);
+                    if (card && card.getBoundingClientRect().top < 60) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 380);
+            }
         },
 
         // Lleva a Producción, expande el grabador si está colapsado y hace scroll hasta su tarjeta
         verCanalesDeGrabador(id) {
             UI.cambiarTab('produccion');
-            if (!_grabExpanded.has(id)) UI.toggleGrabColapse(id);
-            requestAnimationFrame(() => requestAnimationFrame(() => {
+            const debeExpandir = !_grabExpanded.has(id);
+            if (debeExpandir) UI.toggleGrabColapse(id);
+            // Si hay animación de colapso/expansión en curso, se espera a que termine para calcular bien el destino
+            setTimeout(() => {
                 document.querySelector(`.nvr-card[data-grab-id="${CSS.escape(id)}"]`)
                     ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }));
+            }, debeExpandir ? 380 : 50);
         },
 
         onDispTipoChange(prefijo) {
@@ -7406,25 +7422,9 @@
                     }
 
                     else if (headerNVR) {
-                        const grabs = document.querySelectorAll('.nvr-card');
-                        if (!grabs.length) return;
-
+                        // Acordeón: un solo grabador abierto a la vez, así que el long-press equivale al toggle normal
                         const card = headerNVR.closest('.nvr-card');
-                        const grabId = card.dataset.grabId;
-                        const estabaAbierto = _grabExpanded.has(grabId);
-                        const abrirTodos = !estabaAbierto;
-
-                        grabs.forEach(g => {
-                            const gid = g.dataset.grabId;
-                            const grid = g.querySelector('.nvr-canales-grid');
-                            if (abrirTodos) _grabExpanded.add(gid);
-                            else _grabExpanded.delete(gid);
-                            g.classList.toggle('collapsed', !abrirTodos);
-                            grid?.classList.toggle('collapsed', !abrirTodos);
-                        });
-
-                        localStorage.setItem(KEY_EXPANDED, JSON.stringify({ ids: [..._grabExpanded], ts: Date.now() }));
-                        Notif.toast(abrirTodos ? 'Todos los grabadores expandidos' : 'Todos los grabadores colapsados', 'info');
+                        if (card) UI.toggleGrabColapse(card.dataset.grabId);
                     }
                 }, 500);
             }
