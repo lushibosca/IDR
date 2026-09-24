@@ -8860,19 +8860,40 @@
         });
 
         const rackInputs = [
-            { rack: 'canal-rack', ed: 'canal-edificio' },
-            { rack: 'nuevo-grab-rack', ed: 'nuevo-grab-edificio' },
-            { rack: 'editar-grab-rack', ed: 'editar-grab-edificio' },
-            { rack: 'nuevo-otro-prod-rack', ed: 'nuevo-otro-prod-edificio' },
-            { rack: 'editar-otro-prod-rack', ed: 'editar-otro-prod-edificio' }
+            { rack: 'canal-rack', ed: 'canal-edificio', piso: 'canal-piso' },
+            { rack: 'nuevo-grab-rack', ed: 'nuevo-grab-edificio', piso: 'nuevo-grab-piso' },
+            { rack: 'editar-grab-rack', ed: 'editar-grab-edificio', piso: 'editar-grab-piso' },
+            { rack: 'nuevo-otro-prod-rack', ed: 'nuevo-otro-prod-edificio', piso: 'nuevo-otro-prod-piso' },
+            { rack: 'editar-otro-prod-rack', ed: 'editar-otro-prod-edificio', piso: 'editar-otro-prod-piso' }
         ];
 
-        rackInputs.forEach(({ rack, ed }) => {
+        const autocompletarDesdeRack = (rackVal, edId, pisoId) => {
+            if (!rackVal) return;
+            const match = IDRInfra.buscarRack(rackVal);
+            if (!match) return;
+            const elEd = document.getElementById(edId);
+            const elPiso = document.getElementById(pisoId);
+            if (elEd && !elEd.value && match.edificio) {
+                elEd.value = match.edificio;
+                elEd.dispatchEvent(new Event('change'));
+            }
+            if (elPiso && !elPiso.value && match.piso) {
+                elPiso.value = match.piso;
+            }
+        };
+
+        rackInputs.forEach(({ rack, ed, piso }) => {
             const elRack = document.getElementById(rack);
             if (elRack) {
                 elRack.addEventListener('focus', () => {
                     const edificio = document.getElementById(ed)?.value || '';
                     syncRacksDatalist(edificio);
+                });
+                elRack.addEventListener('input', () => {
+                    autocompletarDesdeRack(elRack.value, ed, piso);
+                });
+                elRack.addEventListener('change', () => {
+                    autocompletarDesdeRack(elRack.value, ed, piso);
                 });
             }
         });

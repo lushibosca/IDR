@@ -274,6 +274,19 @@ const IDRInfra = (() => {
         }
     }
 
+    function buscarRack(query) {
+        if (!query) return null;
+        const norm = String(query).trim().toLowerCase();
+        const racks = getRacks();
+        return racks.find(r => {
+            const num = r.numero ? `rack ${r.numero}`.toLowerCase() : '';
+            const rawNum = String(r.numero || '').toLowerCase();
+            const idf = String(r.identificador || '').toLowerCase();
+            const id = String(r.id || '').toLowerCase();
+            return (num && num === norm) || (rawNum && rawNum === norm) || (idf && idf === norm) || (id && id === norm);
+        }) || null;
+    }
+
     function poblarDatalistRacks(datalistElementOrId, edificio = '') {
         const dl = typeof datalistElementOrId === 'string' ? document.getElementById(datalistElementOrId) : datalistElementOrId;
         if (!dl) return;
@@ -287,9 +300,11 @@ const IDRInfra = (() => {
             opt.value = num;
 
             const partes = [];
+            if (!edificio && r.edificio) partes.push(r.edificio);
+            if (r.piso) partes.push(`Piso ${r.piso}`);
             if (r.marca || r.modelo) partes.push(`${r.marca || ''} ${r.modelo || ''}`.trim());
             if (r.unidades) partes.push(`${r.unidades}U`);
-            if (r.piso) partes.push(`Piso ${r.piso}`);
+            if (r.dependencia) partes.push(r.dependencia);
             if (partes.length) opt.label = partes.join(' · ');
 
             dl.appendChild(opt);
@@ -316,6 +331,7 @@ const IDRInfra = (() => {
         eliminarEdificio,
         combinarRemotos,
         getRacks,
+        buscarRack,
         poblarSelectEdificios,
         poblarDatalistRacks,
         onEdificiosChange(fn) {
