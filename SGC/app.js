@@ -3661,7 +3661,8 @@
     // todos los grupos se muestran abiertos para no esconder resultados, y se alternan libremente.
     function _toggleGrupoActivos(groupId) {
         const col = _activos.collapsed;
-        const card = document.querySelector(`.grupo-activos-card[data-grupo="${CSS.escape(groupId)}"]`);
+        const lista = document.getElementById('lista-dispositivos');
+        const card = lista.querySelector(`.grupo-activos-card[data-grupo="${CSS.escape(groupId)}"]`);
         if (!card) return;
         const enBusqueda = !!Busqueda.estadoColapsadoPrevio;
         const aplicar = (c, expandido) => {
@@ -3671,7 +3672,7 @@
         const expandir = col.has(groupId);
         if (expandir) {
             if (!enBusqueda) {
-                document.querySelectorAll('.grupo-activos-card[data-grupo]').forEach(otra => {
+                lista.querySelectorAll('.grupo-activos-card[data-grupo]').forEach(otra => {
                     if (otra === card) return;
                     col.add(otra.dataset.grupo);
                     aplicar(otra, false);
@@ -4335,7 +4336,7 @@
             const orden = ActivosRender.activos.orden;
             if (orden !== 'edificio-piso' && orden !== 'modelo-firmware') return;
             const col = ActivosRender.activos.pisosCollapsed;
-            const subs = document.querySelectorAll('.sub-grupo-piso[data-floor-key]');
+            const subs = document.getElementById('lista-dispositivos').querySelectorAll('.sub-grupo-piso[data-floor-key]');
             const expandir = [...subs].some(fp => col.has(fp.dataset.floorKey));
             subs.forEach(fp => {
                 const key = fp.dataset.floorKey;
@@ -4463,7 +4464,7 @@
                 // Modo acordeón: "expandir todo" no aplica a los grupos; solo se muestra en vistas de dos niveles (pisos / firmwares)
                 btn.classList.toggle('hidden', !esEdificioPiso);
                 if (esEdificioPiso) {
-                    const subs = document.querySelectorAll('.sub-grupo-piso[data-floor-key]');
+                    const subs = document.getElementById('lista-dispositivos').querySelectorAll('.sub-grupo-piso[data-floor-key]');
                     const hayColapsados = [...subs].some(fp => ActivosRender.activos.pisosCollapsed.has(fp.dataset.floorKey));
                     const nombre = ActivosRender.activos.orden === 'edificio-piso' ? 'pisos' : 'firmwares';
                     if (use) use.setAttribute('href', hayColapsados ? '#icon-expand-all' : '#icon-collapse-floors');
@@ -4693,6 +4694,13 @@
         });
     }
 
+    // Re-render de la lista de activos con la animación de mutación (agrupamiento, búsqueda y filtros).
+    // Durante ~220 ms el fantasma (clon del contenido viejo) convive en el DOM: por eso las consultas
+    // sobre la lista deben acotarse a #lista-dispositivos (el original) y no a todo el document.
+    function _renderActivosAnimado() {
+        return _animarMutacion(document.getElementById('lista-dispositivos'), () => ActivosRender.renderActivos());
+    }
+
     let _exportIpsModo = 'grabador'; // 'grabador' | 'modelo'
 
     const UI = {
@@ -4791,7 +4799,7 @@
             ActivosRender.activos.orden = orden;
             try { localStorage.setItem(LS.ACTIVOS_ORDEN, orden); } catch (_) { }
             // Mismo efecto de salida/entrada que el cambio de pestaña, para que el nuevo agrupamiento no aparezca de golpe
-            _animarMutacion(document.getElementById('lista-dispositivos'), () => ActivosRender.renderActivos());
+            _renderActivosAnimado();
         },
 
         toggleDropdownFiltros(e) {
@@ -4831,7 +4839,7 @@
             Busqueda.guardarBusqActivos();
             Busqueda.filtrosPrevios = null;
             Busqueda.sincFiltrosUI();
-            ActivosRender.renderActivos();
+            _renderActivosAnimado();
         },
 
         toggleTodosFiltros() {
@@ -4847,7 +4855,7 @@
             Busqueda.guardarBusqActivos();
             Busqueda.filtrosPrevios = null;
             Busqueda.sincFiltrosUI();
-            ActivosRender.renderActivos();
+            _renderActivosAnimado();
         },
 
         _restaurarFiltrosPrevios() {
@@ -5270,7 +5278,7 @@
                 });
             } else {
                 panelEntrante.classList.remove('hidden');
-                ActivosRender.renderActivos();
+                _renderActivosAnimado();
             }
             setTimeout(() => input?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 250);
         },
@@ -5299,7 +5307,7 @@
                     UI._restaurarFiltrosPrevios();
                 }
 
-                ActivosRender.renderActivos();
+                _renderActivosAnimado();
             }, 300);
         },
 
@@ -5315,7 +5323,7 @@
 
             Busqueda.restaurarColapsos();
             UI._restaurarFiltrosPrevios();
-            ActivosRender.renderActivos();
+            _renderActivosAnimado();
         },
 
         // Acordeón: un solo grabador abierto a la vez. Al abrir uno se cierra el que estuviera abierto.
