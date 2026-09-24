@@ -193,6 +193,9 @@ let state = { racks: [], edificios: [] };
 
 function guardar() {
     try {
+        if (typeof IDRInfra !== 'undefined') {
+            IDRInfra.setEdificios(state.edificios, false);
+        }
         localStorage.setItem(APP_KEY + 'state', JSON.stringify(state));
     } catch (_) {}
     GistSync.subirAuto();
@@ -207,21 +210,9 @@ function cargar() {
         }
     } catch (_) {}
 
-    // Lectura e incorporación automática de edificios de SGR
-    try {
-        const sgrEds = SGRBridge.obtenerEdificios();
-        if (sgrEds.length > 0) {
-            if (!Array.isArray(state.edificios)) state.edificios = [];
-            const set = new Set(state.edificios.map(e => e.toLowerCase()));
-            sgrEds.forEach(ed => {
-                if (!set.has(ed.toLowerCase())) {
-                    state.edificios.push(ed);
-                    set.add(ed.toLowerCase());
-                }
-            });
-            state.edificios.sort((a, b) => a.localeCompare(b, 'es'));
-        }
-    } catch (_) {}
+    if (typeof IDRInfra !== 'undefined') {
+        state.edificios = IDRInfra.getEdificios();
+    }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1118,6 +1109,7 @@ const SGRBridge = {
         }
     },
     obtenerEdificios() {
+        if (typeof IDRInfra !== 'undefined') return IDRInfra.getEdificios();
         const data = this.obtenerData();
         if (!data) return [];
         const set = new Set();
@@ -1134,6 +1126,7 @@ const SGRBridge = {
         return Array.from(set).sort((a, b) => a.localeCompare(b, 'es'));
     },
     obtenerRacks(edificio = '') {
+        if (typeof IDRInfra !== 'undefined') return IDRInfra.getRacks(edificio);
         const data = this.obtenerData();
         if (!data || !Array.isArray(data.racks)) return [];
         let list = data.racks.filter(r => r && (r.numero || r.identificador || r.marca));
@@ -1151,6 +1144,7 @@ const SGRBridge = {
 
 const GestorEdificios = (() => {
     function obtenerTodos() {
+        if (typeof IDRInfra !== 'undefined') return IDRInfra.getEdificios();
         const set = new Set();
         (state.edificios || []).forEach(e => { if (typeof e === 'string' && e.trim()) set.add(e.trim()); });
         (state.racks || []).forEach(r => { if (typeof r?.edificio === 'string' && r.edificio.trim()) set.add(r.edificio.trim()); });
@@ -1211,6 +1205,14 @@ const GestorEdificios = (() => {
     }
 
     function poblarSelect(selectId, valorActual = '', incluirOpcionTodos = false) {
+        if (typeof IDRInfra !== 'undefined') {
+            IDRInfra.poblarSelectEdificios(selectId, valorActual, {
+                incluirOpcionTodos,
+                textoTodos: 'Todos los edificios',
+                incluirVacio: !incluirOpcionTodos
+            });
+            return;
+        }
         const sel = document.getElementById(selectId);
         if (!sel) return;
         const todos = obtenerTodos();
@@ -1249,6 +1251,26 @@ const GestorEdificios = (() => {
             input.classList.add('error');
             setTimeout(() => input.classList.remove('error'), 1200);
             toast('Ingresá un nombre para el edificio', 'error');
+            return;
+        }
+
+        historial.empujar('Agregar edificio');
+
+        if (typeof IDRInfra !== 'undefined') {
+            const res = IDRInfra.agregarEdificio(raw);
+            state.edificios = res.total;
+            guardar();
+            actualizarFiltrosYSelects();
+            input.value = '';
+            input.classList.remove('error');
+            _renderLista();
+            if (res.agregados.length && !res.duplicados.length) {
+                toast(res.agregados.length === 1 ? `Edificio "${res.agregados[0]}" agregado` : `${res.agregados.length} edificios agregados`, 'success');
+            } else if (res.agregados.length && res.duplicados.length) {
+                toast(`${res.agregados.length} agregado${res.agregados.length > 1 ? 's' : ''}, ${res.duplicados.length} ya existía${res.duplicados.length > 1 ? 'n' : ''}`, 'info');
+            } else {
+                toast(res.duplicados.length === 1 ? `Ya existe "${res.duplicados[0]}"` : 'Todos ya existen', 'error');
+            }
             return;
         }
 
@@ -1324,11 +1346,28 @@ const GestorEdificios = (() => {
 
         confirmar('Eliminar edificio', msg, () => {
             historial.empujar(`Eliminar edificio ${ed}`);
-            state.edificios = (state.edificios || []).filter(e => e !== ed);
+            if (typeof IDRInfra !== 'undefined') {
+                IDRInfra.eliminarEdificio(ed);
+                state.edificios = IDRInfra.getEdificios();
+            } else {
+                state.edificios = (state.edificios || []).filter(e => e !== ed);
+            }
             guardar();
             _renderLista();
             actualizarFiltrosYSelects();
             toast(`Edificio "${ed}" eliminado`);
+        });
+    }
+
+    if (typeof IDRInfra !== 'undefined') {
+        IDRInfra.onEdificiosChange(() => {
+            state.edificios = IDRInfra.getEdificios();
+            _renderLista();
+            actualizarFiltrosYSelects();
+        });
+        IDRInfra.onRacksChange(() => {
+            _renderLista();
+            actualizarFiltrosYSelects();
         });
     }
 
@@ -2566,6 +2605,13 @@ const GistSync = (() => {
                         nuevos++;
                     }
                 });
+
+                let nuevosEdificios = 0;
+                if (typeof IDRInfra !== 'undefined' && Array.isArray(remoto.edificios)) {
+                    const resEds = IDRInfra.combinarRemotos(remoto.edificios);
+                    state.edificios = resEds.total;
+                    nuevosEdificios = resEds.nuevos;
+                }
 
                 guardar();
                 renderRacks();

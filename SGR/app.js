@@ -91,7 +91,12 @@ let state = { racks: [], edificios: [] };
 const CFG_DATA = APP_KEY + 'data';
 
 function guardar() {
-    try { localStorage.setItem(CFG_DATA, JSON.stringify(state)); } catch (_) { }
+    try {
+        if (typeof IDRInfra !== 'undefined') {
+            IDRInfra.setEdificios(state.edificios, false);
+        }
+        localStorage.setItem(CFG_DATA, JSON.stringify(state));
+    } catch (_) { }
     GistSync.subirAuto();
 }
 
@@ -100,6 +105,9 @@ function cargar() {
         const raw = parseSeguro(localStorage.getItem(CFG_DATA) || 'null');
         if (raw) { const limpio = sanitizarEstado(raw); if (limpio) state = limpio; }
     } catch (_) { }
+    if (typeof IDRInfra !== 'undefined') {
+        state.edificios = IDRInfra.getEdificios();
+    }
 }
 
 // Actualiza campos de un rack por id y persiste.
@@ -822,6 +830,7 @@ const GestorEdificios = (() => {
         const lista = document.getElementById('edificios-lista');
         if (!lista) return;
         lista.innerHTML = '';
+        if (typeof IDRInfra !== 'undefined') state.edificios = IDRInfra.getEdificios();
         const eds = state.edificios;
         if (!eds.length) {
             lista.innerHTML = '<div class="dash-empty-text dash-empty-text--sm-pad">Sin edificios declarados</div>';
@@ -845,6 +854,10 @@ const GestorEdificios = (() => {
     }
 
     function poblarSelect(selectId, valorActual) {
+        if (typeof IDRInfra !== 'undefined') {
+            IDRInfra.poblarSelectEdificios(selectId, valorActual);
+            return;
+        }
         const sel = document.getElementById(selectId);
         if (!sel) return;
         sel.innerHTML = '<option value="">— Sin edificio —</option>';
@@ -873,10 +886,29 @@ const GestorEdificios = (() => {
         const raw = input.value.trim();
         if (!raw) { input.classList.add('error'); setTimeout(() => input.classList.remove('error'), 1200); toast('Ingresá un nombre para el edificio', 'error'); return; }
 
+        historial.empujar('Agregar edificio');
+
+        if (typeof IDRInfra !== 'undefined') {
+            const res = IDRInfra.agregarEdificio(raw);
+            state.edificios = res.total;
+            guardar();
+            input.value = '';
+            input.classList.remove('error');
+            _renderLista();
+
+            if (res.agregados.length && !res.duplicados.length) {
+                toast(res.agregados.length === 1 ? `Edificio "${res.agregados[0]}" agregado` : `${res.agregados.length} edificios agregados`, 'success');
+            } else if (res.agregados.length && res.duplicados.length) {
+                toast(`${res.agregados.length} agregado${res.agregados.length > 1 ? 's' : ''}, ${res.duplicados.length} duplicado${res.duplicados.length > 1 ? 's' : ''} omitido${res.duplicados.length > 1 ? 's' : ''}`, 'info');
+            } else {
+                toast(res.duplicados.length === 1 ? `Ya existe "${res.duplicados[0]}"` : 'Todos ya existen', 'error');
+            }
+            return;
+        }
+
         const nombres = raw.split(',').map(n => n.trim().slice(0, 100)).filter(Boolean);
         if (!nombres.length) { input.classList.add('error'); return; }
 
-        historial.empujar('Agregar edificio');
         const agregados = [], duplicados = [];
         for (const nombre of nombres) {
             if (state.edificios.some(e => e.toLowerCase() === nombre.toLowerCase())) {
@@ -911,14 +943,30 @@ const GestorEdificios = (() => {
             : `¿Eliminar el edificio "${ed}"?`;
         confirmar('Eliminar edificio', msg, () => {
             historial.empujar('Eliminar edificio');
-            state.edificios.splice(idx, 1);
+            if (typeof IDRInfra !== 'undefined') {
+                IDRInfra.eliminarEdificio(ed);
+                state.edificios = IDRInfra.getEdificios();
+            } else {
+                state.edificios.splice(idx, 1);
+            }
             guardar();
             _renderLista();
             toast(`Edificio "${ed}" eliminado`);
         });
     }
 
-    return { abrir, cerrar, agregar, poblarSelect };
+    if (typeof IDRInfra !== 'undefined') {
+        IDRInfra.onEdificiosChange(() => {
+            state.edificios = IDRInfra.getEdificios();
+            _renderLista();
+            const cur1 = document.getElementById('servicio-edificio')?.value || '';
+            const cur2 = document.getElementById('editar-servicio-edificio')?.value || '';
+            poblarSelect('servicio-edificio', cur1);
+            poblarSelect('editar-servicio-edificio', cur2);
+        });
+    }
+
+    return { abrir, cerrar, agregar, poblarSelect, renderLista: _renderLista };
 })();
 
 // ═══════════════════════════════════════════════════════
@@ -2578,15 +2626,21 @@ const GistSync = (() => {
                         }
                     }
                 });
-                const edsExist = new Set(state.edificios.map(e => e.toLowerCase()));
-                (remoto.edificios || []).forEach(e => {
-                    if (!edsExist.has(e.toLowerCase())) {
-                        state.edificios.push(e);
-                        edsExist.add(e.toLowerCase());
-                        nuevosEdificios++;
-                    }
-                });
-                if (nuevosEdificios > 0) state.edificios.sort((a, b) => a.localeCompare(b, 'es'));
+                if (typeof IDRInfra !== 'undefined') {
+                    const resEds = IDRInfra.combinarRemotos(remoto.edificios);
+                    state.edificios = resEds.total;
+                    nuevosEdificios = resEds.nuevos;
+                } else {
+                    const edsExist = new Set(state.edificios.map(e => e.toLowerCase()));
+                    (remoto.edificios || []).forEach(e => {
+                        if (!edsExist.has(e.toLowerCase())) {
+                            state.edificios.push(e);
+                            edsExist.add(e.toLowerCase());
+                            nuevosEdificios++;
+                        }
+                    });
+                    if (nuevosEdificios > 0) state.edificios.sort((a, b) => a.localeCompare(b, 'es'));
+                }
                 if (nuevos === 0 && actualizados === 0 && nuevosEdificios === 0) {
                     _cfg.token = token; _cfg.gistId = gistId; _cfg.lastSync = new Date().toISOString(); _guardarCfg(); _setStatusSync();
                     toast('Sin cambios', 'info'); _setBusy(false); return;
@@ -2637,15 +2691,21 @@ const GistSync = (() => {
                         if (tsRemoto > tsLocal) { state.racks[idx] = r; actualizados++; }
                     }
                 });
-                const edsExist = new Set(state.edificios.map(e => e.toLowerCase()));
-                (remoto.edificios || []).forEach(e => {
-                    if (!edsExist.has(e.toLowerCase())) {
-                        state.edificios.push(e);
-                        edsExist.add(e.toLowerCase());
-                        nuevosEdificios++;
-                    }
-                });
-                if (nuevosEdificios > 0) state.edificios.sort((a, b) => a.localeCompare(b, 'es'));
+                if (typeof IDRInfra !== 'undefined') {
+                    const resEds = IDRInfra.combinarRemotos(remoto.edificios);
+                    state.edificios = resEds.total;
+                    nuevosEdificios = resEds.nuevos;
+                } else {
+                    const edsExist = new Set(state.edificios.map(e => e.toLowerCase()));
+                    (remoto.edificios || []).forEach(e => {
+                        if (!edsExist.has(e.toLowerCase())) {
+                            state.edificios.push(e);
+                            edsExist.add(e.toLowerCase());
+                            nuevosEdificios++;
+                        }
+                    });
+                    if (nuevosEdificios > 0) state.edificios.sort((a, b) => a.localeCompare(b, 'es'));
+                }
                 if (nuevos > 0 || actualizados > 0 || nuevosEdificios > 0) {
                     // No empuja al historial para no contaminar undo en el arranque
                     guardar(); renderTodo();

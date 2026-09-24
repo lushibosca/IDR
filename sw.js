@@ -1,5 +1,5 @@
-const CACHE_NAME = 'idr-suite-260923.2325';
-const RUNTIME_CACHE = 'idr-runtime-260923.2325';
+const CACHE_NAME = 'idr-suite-260923.2355';
+const RUNTIME_CACHE = 'idr-runtime-260923.2355';
 
 const PRECACHE_URLS = [
   // ── Launcher (Portada) ──
@@ -70,11 +70,15 @@ const PRECACHE_URLS = [
   './SGP/flash.js',
   './SGP/manifest.json',
   './SGP/styles.css',
+  './SGP/parser_planilla.js',
   './SGP/app.js',
   './SGP/icon.svg',
   './SGP/icons/icon-192.png',
   './SGP/icons/icon-512.png',
-  './SGP/icons/icon-1024.png'
+  './SGP/icons/icon-1024.png',
+
+  // ── Recursos Compartidos Suite ──
+  './shared/idr-infra.js'
 ];
 
 // Instalación
