@@ -3050,7 +3050,12 @@
                     <svg class="icon icon-line"><use href="#icon-external-link"/></svg>
                     Ver activo
                 </button>` : '';
-        return `<div class="grab-popup-titulo">${S.esc(datos.g.descripcion || '')}</div>${secciones}${btnActivo}`;
+        const btnCanales = `
+                <button class="grab-popup-btn" data-accion="ver-canales">
+                    <svg class="icon icon-line"><use href="#icon-server"/></svg>
+                    Ver canales
+                </button>`;
+        return `<div class="grab-popup-titulo">${S.esc(datos.g.descripcion || '')}</div>${secciones}${btnActivo}${btnCanales}`;
     }
 
     let _popupGrab = null;
@@ -3073,10 +3078,12 @@
         });
         _popupGrab = { popup, cerrar };
 
-        popup.querySelector('[data-accion="ver-activo"]')?.addEventListener('click', () => {
-            const dispId = datos.g.dispositivoId;
+        popup.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-accion]');
+            if (!btn) return;
             cerrar();
-            UI.abrirEditarDispositivo(dispId);
+            if (btn.dataset.accion === 'ver-activo') UI.abrirEditarDispositivo(datos.g.dispositivoId);
+            else if (btn.dataset.accion === 'ver-canales') UI.verCanalesDeGrabador(datos.g.id);
         });
     }
 
@@ -5244,6 +5251,16 @@
             const expandiendo = _grabExpanded.has(id);
             card.classList.toggle('collapsed', !expandiendo);
             grid.classList.toggle('collapsed', !expandiendo);
+        },
+
+        // Lleva a Producción, expande el grabador si está colapsado y hace scroll hasta su tarjeta
+        verCanalesDeGrabador(id) {
+            UI.cambiarTab('produccion');
+            if (!_grabExpanded.has(id)) UI.toggleGrabColapse(id);
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                document.querySelector(`.nvr-card[data-grab-id="${CSS.escape(id)}"]`)
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }));
         },
 
         onDispTipoChange(prefijo) {

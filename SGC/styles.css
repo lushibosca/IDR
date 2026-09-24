@@ -1596,6 +1596,7 @@ button:disabled {
     border-radius: var(--radius);
     margin-bottom: var(--sp-4);
     background: var(--bg-card);
+    scroll-margin-top: calc(56px + var(--sp-4));
 }
 
 .nvr-card-header {
