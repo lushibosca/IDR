@@ -2973,9 +2973,30 @@
         const pctOcupado = totalCanales > 0 ? Math.round((totalOcupados / totalCanales) * 100) : 0;
         const pctLibre = totalCanales > 0 ? (100 - pctOcupado) : 0;
 
+        const colorPorPct = (pct) => {
+            if (pct <= 35) return 'var(--c-green)';
+            if (pct <= 65) return 'var(--c-blue)';
+            if (pct <= 85) return 'var(--c-orange)';
+            return 'var(--c-red)';
+        };
+
+        const htmlAnillo = (pct, color, claseExtra = '', sub = '') => `
+                    <div class="dash-grab-ring ${claseExtra}" role="img" aria-label="${pct}% ocupado">
+                        <svg viewBox="0 0 100 100" aria-hidden="true">
+                            <circle class="dash-grab-ring-track" cx="50" cy="50" r="44" pathLength="100"></circle>
+                            <circle class="dash-grab-ring-fill" cx="50" cy="50" r="44" pathLength="100" data-color="${color}" data-pct-target="${pct}"></circle>
+                        </svg>
+                        <span class="dash-grab-ring-pct">
+                            <span class="dash-grab-ring-num" data-pct-target="${pct}">0%</span>
+                            ${sub ? `<span class="dash-grab-ring-sub">${sub}</span>` : ''}
+                        </span>
+                    </div>`;
+
         const htmlTotales = `
                 <div class="dash-grab-totales">
                     <div class="dash-grab-totales-title">Canales de grabación</div>
+                    <div class="dash-grab-resumen">
+                        ${htmlAnillo(pctOcupado, colorPorPct(pctOcupado), 'dash-grab-ring--lg', `${totalOcupados}/${totalCanales}`)}
                     <div class="dash-grab-grid">
                         <div class="dash-grab-col">
                             <div class="dash-grab-label">Capacidad Instalada</div>
@@ -2990,52 +3011,42 @@
                             <div class="dash-grab-val dash-grab-val--green">${totalLibres} <span class="dash-grab-val-sub">(${pctLibre}%)</span></div>
                         </div>
                     </div>
+                    </div>
                 </div>`;
 
         const grabDatos = grabs.map(g => {
             const ocup = g.canales_data.filter(c => c.dispositivoId).length;
             const libre = g.canales_n - ocup;
             const pct = Math.round((ocup / g.canales_n) * 100);
-            let colorBarra = 'var(--c-red)';
-            if (pct <= 35) colorBarra = 'var(--c-green)';
-            else if (pct <= 65) colorBarra = 'var(--c-blue)';
-            else if (pct <= 85) colorBarra = 'var(--c-orange)';
-            return { g, ocup, libre, pct, colorBarra };
+            return { g, ocup, libre, pct, colorBarra: colorPorPct(pct) };
         });
 
         const htmlLista = grabDatos.map(({ g, ocup, libre, pct, colorBarra }) => {
-            return `<div class="dash-grab-row">
-                    <div class="dash-grab-row-header">
-                        <span class="dash-grab-row-nombre">${S.esc(g.descripcion)}</span>                        
-                        ${g.ip ? `<span class="dash-grab-row-ip ip-copiable" data-copy="${S.esc(g.ip)}" title="Copiar IP">${S.esc(g.ip)}</span>` : `<span class="dash-grab-row-ip"></span>`}
-                    </div>
-                    <div class="dash-grab-row-stats">
-                        <span>${ocup}/${g.canales_n} ocupados · ${libre} libres</span>
-                        <span class="dash-grab-row-pct" data-pct-target="${pct}">0%</span>
-                    </div>
-                    <div class="dash-grab-barra">
-                        <div class="dash-grab-barra-fill" data-color="${colorBarra}" data-pct-target="${pct}"></div>
-                    </div>
+            return `<div class="dash-grab-item">
+                    ${htmlAnillo(pct, colorBarra)}
+                    <div class="dash-grab-item-nombre text-truncate" title="${S.esc(g.descripcion)}">${S.esc(g.descripcion)}</div>
+                    ${g.ip ? `<div class="dash-grab-item-ip text-truncate ip-copiable" data-copy="${S.esc(g.ip)}" title="Copiar IP">${S.esc(g.ip)}</div>` : ''}
+                    <div class="dash-grab-item-stats">${ocup}/${g.canales_n} · ${libre} libres</div>
                 </div>`;
         }).join('');
 
-        dashGrabadores.innerHTML = htmlTotales + htmlLista;
+        dashGrabadores.innerHTML = htmlTotales + `<div class="dash-grab-lista">${htmlLista}</div>`;
 
         requestAnimationFrame(() => {
-            // Primer frame: fijar width:0% y color para que la transición CSS tenga punto de partida
-            dashGrabadores.querySelectorAll('.dash-grab-barra-fill').forEach(fill => {
-                fill.style.width = '0%';
-                if (fill.dataset.color) fill.style.background = fill.dataset.color;
+            // Primer frame: fijar color y estado inicial (anillo vacío) para que la transición CSS tenga punto de partida
+            dashGrabadores.querySelectorAll('.dash-grab-ring-fill').forEach(fill => {
+                if (fill.dataset.color) fill.style.stroke = fill.dataset.color;
             });
 
             requestAnimationFrame(() => {
 
-                dashGrabadores.querySelectorAll('.dash-grab-barra-fill').forEach(fill => {
+                dashGrabadores.querySelectorAll('.dash-grab-ring-fill').forEach(fill => {
                     const target = parseInt(fill.dataset.pctTarget, 10) || 0;
-                    fill.style.width = target + '%';
+                    if (target > 0) fill.style.opacity = '1';
+                    fill.style.strokeDashoffset = String(100 - target);
                 });
 
-                dashGrabadores.querySelectorAll('.dash-grab-row-pct').forEach(span => {
+                dashGrabadores.querySelectorAll('.dash-grab-ring-num').forEach(span => {
                     const target = parseInt(span.dataset.pctTarget, 10) || 0;
                     if (target === 0) { span.textContent = '0%'; return; }
                     const duration = 900;
@@ -5715,8 +5726,7 @@
             } else {
                 input.value = '';
             }
-            document.getElementById('canal-disp-dropdown').classList.add('hidden');
-            EdicionState.edicion.canalDispHighlight = -1;
+            UI._cerrarDispPortal();
 
             ModalLock.reset('modal-canal');
             MM.abrirConPadre('modal-canal');
@@ -5734,11 +5744,63 @@
             btnVerActivo.classList.toggle('hidden', !slot?.dispositivoId);
         },
 
+        // ── PORTAL FLOTANTE DE DISPOSITIVOS ASIGNADOS (Estilo SGI: escapa del modal) ──
+        _getDispPortal() {
+            let el = document.getElementById('disp-suggestions-portal');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'disp-suggestions-portal';
+                el.className = 'combobox-dropdown combobox-portal hidden';
+                document.body.appendChild(el);
+            }
+            return el;
+        },
+
+        _cerrarDispPortal() {
+            const portal = document.getElementById('disp-suggestions-portal');
+            if (portal) {
+                portal.classList.add('hidden');
+                portal.innerHTML = '';
+                portal.removeAttribute('data-active-input');
+                portal.removeAttribute('data-prefijo');
+            }
+            EdicionState.edicion.canalDispHighlight = -1;
+        },
+
+        _posicionarDispPortal(inputEl, portal) {
+            if (!inputEl || !portal) return;
+            const r = inputEl.getBoundingClientRect();
+            const espacioAbajo = window.innerHeight - r.bottom;
+            const espacioArriba = r.top;
+            const maxH = 260;
+
+            portal.style.position = 'fixed';
+            portal.style.left = r.left + 'px';
+            portal.style.width = r.width + 'px';
+            portal.style.right = 'auto';
+            portal.style.zIndex = '99999';
+
+            if (espacioAbajo < 140 && espacioArriba > espacioAbajo) {
+                portal.style.bottom = (window.innerHeight - r.top + 4) + 'px';
+                portal.style.top = 'auto';
+                portal.style.maxHeight = Math.min(maxH, espacioArriba - 16) + 'px';
+            } else {
+                portal.style.top = (r.bottom + 4) + 'px';
+                portal.style.bottom = 'auto';
+                portal.style.maxHeight = Math.min(maxH, Math.max(120, espacioAbajo - 16)) + 'px';
+            }
+        },
+
         _canalDispFiltrar() {
-            document.getElementById('canal-disp-input').classList.remove('error');
-            const query = document.getElementById('canal-disp-input').value.trim().toLowerCase();
-            const dd = document.getElementById('canal-disp-dropdown');
+            const input = document.getElementById('canal-disp-input');
             const hidden = document.getElementById('sel-canal-dispositivo');
+            if (!input) return;
+
+            input.classList.remove('error');
+            const query = input.value.trim().toLowerCase();
+            const portal = UI._getDispPortal();
+            portal.dataset.activeInput = 'canal-disp-input';
+            portal.dataset.tipo = 'canal';
 
             if (!query) hidden.value = '';
 
@@ -5755,8 +5817,9 @@
                 : candidatos;
 
             if (!filtrados.length && query) {
-                dd.innerHTML = `<div class="canal-disp-item canal-disp-item-vaciobtn">Sin resultados</div>`;
-                dd.classList.remove('hidden');
+                portal.innerHTML = `<div class="canal-disp-item canal-disp-item-vaciobtn">Sin resultados</div>`;
+                UI._posicionarDispPortal(input, portal);
+                portal.classList.remove('hidden');
                 EdicionState.edicion.canalDispHighlight = -1;
                 return;
             }
@@ -5789,11 +5852,12 @@
                         </div>`);
             });
 
-            dd.innerHTML = items.join('');
-            dd.classList.remove('hidden');
+            portal.innerHTML = items.join('');
+            UI._posicionarDispPortal(input, portal);
+            portal.classList.remove('hidden');
             EdicionState.edicion.canalDispHighlight = -1;
 
-            dd.querySelectorAll('.canal-disp-item:not(.ocupado)').forEach(el => {
+            portal.querySelectorAll('.canal-disp-item:not(.ocupado)').forEach(el => {
                 el.addEventListener('mousedown', e => {
                     e.preventDefault();
                     UI._canalDispSeleccionar(el.dataset.id, el.dataset.mac);
@@ -5804,8 +5868,7 @@
         _canalDispSeleccionar(id, mac) {
             document.getElementById('sel-canal-dispositivo').value = id || '';
             document.getElementById('canal-disp-input').value = id ? (mac || id) : '';
-            document.getElementById('canal-disp-dropdown').classList.add('hidden');
-            EdicionState.edicion.canalDispHighlight = -1;
+            UI._cerrarDispPortal();
             const btn = document.getElementById('btn-ver-activo-canal');
             if (btn) btn.classList.toggle('hidden', !id);
             if (id) UI._autocompletarUbicacion('canal', id, { grabId: EdicionState.edicion.canalGrabId, canal: EdicionState.edicion.canalN });
@@ -5828,9 +5891,15 @@
         },
 
         _canalDispKeydown(e) {
-            const dd = document.getElementById('canal-disp-dropdown');
-            if (dd.classList.contains('hidden')) return;
-            const items = [...dd.querySelectorAll('.canal-disp-item:not(.ocupado)')];
+            const portal = document.getElementById('disp-suggestions-portal');
+            if (!portal || portal.classList.contains('hidden') || portal.dataset.activeInput !== 'canal-disp-input') {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    UI._canalDispFiltrar();
+                }
+                return;
+            }
+            const items = [...portal.querySelectorAll('.canal-disp-item:not(.ocupado)')];
             if (!items.length) return;
 
             if (e.key === 'ArrowDown') {
@@ -5841,14 +5910,13 @@
                 EdicionState.edicion.canalDispHighlight = Math.max(EdicionState.edicion.canalDispHighlight - 1, 0);
             } else if (e.key === 'Enter') {
                 e.preventDefault();
-                if (EdicionState.edicion.canalDispHighlight >= 0) {
+                if (EdicionState.edicion.canalDispHighlight >= 0 && EdicionState.edicion.canalDispHighlight < items.length) {
                     const el = items[EdicionState.edicion.canalDispHighlight];
                     UI._canalDispSeleccionar(el.dataset.id, el.dataset.mac);
                 }
                 return;
-            } else if (e.key === 'Escape') {
-                dd.classList.add('hidden');
-                EdicionState.edicion.canalDispHighlight = -1;
+            } else if (e.key === 'Escape' || e.key === 'Tab') {
+                UI._cerrarDispPortal();
                 return;
             } else { return; }
 
@@ -6073,7 +6141,7 @@
             document.getElementById(`sel-${prefijo}-dispositivo`).value = '';
             document.getElementById(`${prefijo}-disp-input`).value = '';
             document.getElementById(`${prefijo}-disp-input`).classList.remove('error');
-            document.getElementById(`${prefijo}-disp-dropdown`).classList.add('hidden');
+            UI._cerrarDispPortal();
         },
 
         abrirNuevoOtroProd() {
@@ -6093,6 +6161,7 @@
         },
 
         cerrarNuevoOtroProd() {
+            UI._cerrarDispPortal();
             MM.cerrarConPadre('modal-nuevo-otro-prod');
         },
 
@@ -6121,7 +6190,7 @@
             } else {
                 input.value = '';
             }
-            document.getElementById(`${prefijo}-disp-dropdown`).classList.add('hidden');
+            UI._cerrarDispPortal();
             document.getElementById('btn-ver-activo-otro-prod').classList.toggle('hidden', !o.dispositivoId);
 
             const grabs = Store.data.grabadores;
@@ -6149,6 +6218,7 @@
         },
 
         cerrarEditarOtroProd() {
+            UI._cerrarDispPortal();
             EdicionState.edicion.otroProdId = null;
             EdicionState.edicion.snapshotOtroProd = null;
             EdicionState.edicion.otroProdDesdeDispId = null;
@@ -6241,8 +6311,12 @@
         _otroProdDispFiltrar(prefijo) {
             const input = document.getElementById(`${prefijo}-disp-input`);
             const hidden = document.getElementById(`sel-${prefijo}-dispositivo`);
-            const dd = document.getElementById(`${prefijo}-disp-dropdown`);
+            if (!input) return;
+
             input.classList.remove('error');
+            const portal = UI._getDispPortal();
+            portal.dataset.activeInput = `${prefijo}-disp-input`;
+            portal.dataset.prefijo = prefijo;
 
             const query = input.value.trim().toLowerCase();
             if (!query) hidden.value = '';
@@ -6253,8 +6327,11 @@
             }) : candidatos;
 
             if (!filtrados.length && query) {
-                dd.innerHTML = `<div class="canal-disp-item canal-disp-item-vaciobtn">Sin resultados</div>`;
-                dd.classList.remove('hidden'); return;
+                portal.innerHTML = `<div class="canal-disp-item canal-disp-item-vaciobtn">Sin resultados</div>`;
+                UI._posicionarDispPortal(input, portal);
+                portal.classList.remove('hidden');
+                EdicionState.edicion.canalDispHighlight = -1;
+                return;
             }
 
             const ESTADO_LABELS_DISP = { averiado: 'averiado', revisar: 'a revisar', desafectado: 'desafectado', perdido: 'perdido', descontinuado: 'descontinuado' };
@@ -6271,10 +6348,12 @@
                         </div>`;
             });
 
-            dd.innerHTML = items.join('');
-            dd.classList.remove('hidden');
+            portal.innerHTML = items.join('');
+            UI._posicionarDispPortal(input, portal);
+            portal.classList.remove('hidden');
+            EdicionState.edicion.canalDispHighlight = -1;
 
-            dd.querySelectorAll('.canal-disp-item:not(.ocupado)').forEach(el => {
+            portal.querySelectorAll('.canal-disp-item:not(.ocupado)').forEach(el => {
                 el.addEventListener('mousedown', e => {
                     e.preventDefault();
                     UI._otroProdDispSeleccionar(el.dataset.id, el.dataset.mac, prefijo);
@@ -6285,15 +6364,21 @@
         _otroProdDispSeleccionar(id, mac, prefijo) {
             document.getElementById(`sel-${prefijo}-dispositivo`).value = id || '';
             document.getElementById(`${prefijo}-disp-input`).value = id ? (mac || id) : '';
-            document.getElementById(`${prefijo}-disp-dropdown`).classList.add('hidden');
-            if (prefijo === 'editar-otro-prod') document.getElementById('btn-ver-activo-otro-prod').classList.remove('hidden');
+            UI._cerrarDispPortal();
+            if (prefijo === 'editar-otro-prod') document.getElementById('btn-ver-activo-otro-prod')?.classList.remove('hidden');
             if (id) UI._autocompletarUbicacion(prefijo, id, { otroProdId: EdicionState.edicion.otroProdId });
         },
 
         _otroProdDispKeydown(e, prefijo) {
-            const dd = document.getElementById(`${prefijo}-disp-dropdown`);
-            if (dd.classList.contains('hidden')) return;
-            const items = [...dd.querySelectorAll('.canal-disp-item:not(.ocupado)')];
+            const portal = document.getElementById('disp-suggestions-portal');
+            if (!portal || portal.classList.contains('hidden') || portal.dataset.activeInput !== `${prefijo}-disp-input`) {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    UI._otroProdDispFiltrar(prefijo);
+                }
+                return;
+            }
+            const items = [...portal.querySelectorAll('.canal-disp-item:not(.ocupado)')];
             if (!items.length) return;
 
             if (e.key === 'ArrowDown') {
@@ -6302,17 +6387,20 @@
                 e.preventDefault(); EdicionState.edicion.canalDispHighlight = Math.max(EdicionState.edicion.canalDispHighlight - 1, 0);
             } else if (e.key === 'Enter') {
                 e.preventDefault();
-                if (EdicionState.edicion.canalDispHighlight >= 0) {
+                if (EdicionState.edicion.canalDispHighlight >= 0 && EdicionState.edicion.canalDispHighlight < items.length) {
                     const el = items[EdicionState.edicion.canalDispHighlight];
                     UI._otroProdDispSeleccionar(el.dataset.id, el.dataset.mac, prefijo);
                 }
                 return;
-            } else if (e.key === 'Escape') {
-                dd.classList.add('hidden'); EdicionState.edicion.canalDispHighlight = -1; return;
+            } else if (e.key === 'Escape' || e.key === 'Tab') {
+                UI._cerrarDispPortal();
+                return;
             } else { return; }
 
             items.forEach((el, i) => el.classList.toggle('highlighted', i === EdicionState.edicion.canalDispHighlight));
-            if (EdicionState.edicion.canalDispHighlight >= 0) items[EdicionState.edicion.canalDispHighlight].scrollIntoView({ block: 'nearest' });
+            if (EdicionState.edicion.canalDispHighlight >= 0 && items[EdicionState.edicion.canalDispHighlight]) {
+                items[EdicionState.edicion.canalDispHighlight].scrollIntoView({ block: 'nearest' });
+            }
         },
 
         verActivoDesdeOtroProd() {
@@ -6935,24 +7023,16 @@
 
     document.addEventListener('mousedown', e => {
 
-        const cbCanal = document.getElementById('canal-disp-combobox');
-        if (cbCanal && !cbCanal.contains(e.target)) {
-            document.getElementById('canal-disp-dropdown').classList.add('hidden');
-            EdicionState.edicion.canalDispHighlight = -1;
-        }
-
-        const cbNuevoOtro = document.querySelector('#modal-nuevo-otro-prod .combobox-wrap');
-        if (cbNuevoOtro && !cbNuevoOtro.contains(e.target)) {
-            const ddNuevoOtro = document.getElementById('nuevo-otro-prod-disp-dropdown');
-            if (ddNuevoOtro) ddNuevoOtro.classList.add('hidden');
-            EdicionState.edicion.canalDispHighlight = -1;
-        }
-
-        const cbEditarOtro = document.querySelector('#modal-editar-otro-prod .combobox-wrap');
-        if (cbEditarOtro && !cbEditarOtro.contains(e.target)) {
-            const ddEditarOtro = document.getElementById('editar-otro-prod-disp-dropdown');
-            if (ddEditarOtro) ddEditarOtro.classList.add('hidden');
-            EdicionState.edicion.canalDispHighlight = -1;
+        const dispPortal = document.getElementById('disp-suggestions-portal');
+        if (dispPortal && !dispPortal.classList.contains('hidden')) {
+            const activeInputId = dispPortal.dataset.activeInput;
+            const input = activeInputId ? document.getElementById(activeInputId) : null;
+            if (!dispPortal.contains(e.target) && e.target !== input) {
+                const r = dispPortal.getBoundingClientRect();
+                if (!(e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom)) {
+                    UI._cerrarDispPortal();
+                }
+            }
         }
 
         const wrapActivos = document.getElementById('btn-vista-activos-wrap');
@@ -8538,6 +8618,10 @@
         // Modal nuevo otro-prod
         on('nuevo-otro-prod-disp-input', 'input', () => UI._otroProdDispFiltrar('nuevo-otro-prod'));
         on('nuevo-otro-prod-disp-input', 'focus', () => UI._otroProdDispFiltrar('nuevo-otro-prod'));
+        on('nuevo-otro-prod-disp-input', 'click', () => {
+            const portal = document.getElementById('disp-suggestions-portal');
+            if (!portal || portal.classList.contains('hidden')) UI._otroProdDispFiltrar('nuevo-otro-prod');
+        });
         on('nuevo-otro-prod-disp-input', 'keydown', (e) => UI._otroProdDispKeydown(e, 'nuevo-otro-prod'));
         on('nuevo-otro-prod-piso', 'input', () => UI._pisoFiltrar(document.getElementById('nuevo-otro-prod-piso')));
         document.querySelector('#modal-nuevo-otro-prod .btn-edit')
@@ -8548,6 +8632,10 @@
         // Modal editar otro-prod
         on('editar-otro-prod-disp-input', 'input', () => UI._otroProdDispFiltrar('editar-otro-prod'));
         on('editar-otro-prod-disp-input', 'focus', () => UI._otroProdDispFiltrar('editar-otro-prod'));
+        on('editar-otro-prod-disp-input', 'click', () => {
+            const portal = document.getElementById('disp-suggestions-portal');
+            if (!portal || portal.classList.contains('hidden')) UI._otroProdDispFiltrar('editar-otro-prod');
+        });
         on('editar-otro-prod-disp-input', 'keydown', (e) => UI._otroProdDispKeydown(e, 'editar-otro-prod'));
         on('btn-ver-activo-otro-prod', 'click', () => UI.verActivoDesdeOtroProd());
         on('editar-otro-prod-piso', 'input', () => UI._pisoFiltrar(document.getElementById('editar-otro-prod-piso')));
@@ -8608,6 +8696,10 @@
         // Modal canal
         on('canal-disp-input', 'input', () => UI._canalDispFiltrar());
         on('canal-disp-input', 'focus', () => UI._canalDispFiltrar());
+        on('canal-disp-input', 'click', () => {
+            const portal = document.getElementById('disp-suggestions-portal');
+            if (!portal || portal.classList.contains('hidden')) UI._canalDispFiltrar();
+        });
         on('canal-disp-input', 'keydown', (e) => UI._canalDispKeydown(e));
         on('btn-ver-activo-canal', 'click', () => UI.verActivoDesdeCanal());
         on('canal-piso', 'input', () => UI._pisoFiltrar(document.getElementById('canal-piso')));
@@ -9147,13 +9239,17 @@
         // Cerrar al hacer scroll dentro del modal o ventana (igual que en SGI)
         // pero NO cerrar si el scroll ocurre dentro del propio portal
         document.addEventListener('scroll', e => {
-            const portal = document.getElementById('rack-suggestions-portal');
-            if (portal && portal.contains(e.target)) return;
-            cerrarRackPortal();
+            const rPortal = document.getElementById('rack-suggestions-portal');
+            if (!rPortal || !rPortal.contains(e.target)) cerrarRackPortal();
+            const dPortal = document.getElementById('disp-suggestions-portal');
+            if (!dPortal || !dPortal.contains(e.target)) UI._cerrarDispPortal();
         }, true);
 
         // Cerrar al redimensionar la ventana
-        window.addEventListener('resize', cerrarRackPortal);
+        window.addEventListener('resize', () => {
+            cerrarRackPortal();
+            UI._cerrarDispPortal();
+        });
 
         // Si cambia la base de racks en otra pestaña
         IDRInfra.onRacksChange(() => {
