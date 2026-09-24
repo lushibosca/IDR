@@ -3098,10 +3098,16 @@ kbd {
 }
 
 .menu-modulo-item:hover,
+.menu-modulo-item:focus,
 .menu-modulo-item:focus-visible {
     background: var(--input-bg, rgba(0, 0, 0, 0.05));
     filter: var(--hover);
     outline: none;
+}
+
+.menu-modulo-item:focus,
+.menu-modulo-item:focus-visible {
+    box-shadow: inset 0 0 0 1.5px var(--accent, #3b82f6);
 }
 
 .menu-modulo-item:active {

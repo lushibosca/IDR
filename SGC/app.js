@@ -7928,22 +7928,37 @@
         document.body.appendChild(menu);
 
         let isOpen = false;
+        const items = Array.from(menu.querySelectorAll('.menu-modulo-item'));
 
-        function abrirMenu() {
+        function enfocarItem(index) {
+            if (items.length === 0) return;
+            const idx = ((index % items.length) + items.length) % items.length;
+            items[idx].focus();
+        }
+
+        function abrirMenu(enfocar = false) {
             isOpen = true;
             overlay.classList.add('open');
             menu.classList.add('open');
+            if (enfocar) {
+                const idx = items.findIndex(el => el.classList.contains('es-actual'));
+                enfocarItem(idx !== -1 ? idx : 0);
+            }
         }
 
         function cerrarMenu() {
+            if (!isOpen) return;
             isOpen = false;
             overlay.classList.remove('open');
             menu.classList.remove('open');
+            if (menu.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
         }
 
-        function toggleMenu() {
+        function toggleMenu(enfocar = false) {
             if (isOpen) cerrarMenu();
-            else abrirMenu();
+            else abrirMenu(enfocar);
         }
 
         overlay.addEventListener('click', cerrarMenu);
@@ -7954,7 +7969,69 @@
         });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && isOpen) cerrarMenu();
+            // Atajo global: Ctrl + Flecha Abajo abre el menú rápido
+            if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowDown') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!isOpen) {
+                    abrirMenu(true);
+                } else {
+                    const current = items.indexOf(document.activeElement);
+                    if (current === -1) {
+                        const actualIdx = items.findIndex(el => el.classList.contains('es-actual'));
+                        enfocarItem(actualIdx !== -1 ? (actualIdx + 1) : 0);
+                    } else {
+                        enfocarItem(current + 1);
+                    }
+                }
+                return;
+            }
+
+            // Atajos cuando el menú rápido está abierto
+            if (isOpen) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    cerrarMenu();
+                    return;
+                }
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const current = items.indexOf(document.activeElement);
+                    if (current === -1) {
+                        const actualIdx = items.findIndex(el => el.classList.contains('es-actual'));
+                        enfocarItem(actualIdx !== -1 ? (actualIdx + 1) : 0);
+                    } else {
+                        enfocarItem(current + 1);
+                    }
+                    return;
+                }
+
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const current = items.indexOf(document.activeElement);
+                    if (current === -1) {
+                        const actualIdx = items.findIndex(el => el.classList.contains('es-actual'));
+                        enfocarItem(actualIdx !== -1 ? (actualIdx - 1) : (items.length - 1));
+                    } else {
+                        enfocarItem(current - 1);
+                    }
+                    return;
+                }
+
+                if (e.key === 'Enter') {
+                    const focused = document.activeElement;
+                    if (items.includes(focused)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        focused.click();
+                        return;
+                    }
+                }
+            }
         });
 
         // Vincular EXCLUSIVAMENTE al label (título principal y título de pestaña al scroll)
