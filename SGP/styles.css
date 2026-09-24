@@ -213,7 +213,7 @@ label {
     background: var(--bg-header);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-bottom: var(--border-w) solid transparent;
+    border-bottom: 3px solid rgba(235, 119, 52, 1);
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -223,7 +223,6 @@ label {
 }
 
 .header.scrolled {
-    border-color: var(--border);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
 }
 
@@ -2037,8 +2036,8 @@ label {
 }
 
 .menu-modulo-icon.c-racks {
-    background: rgba(139, 92, 246, 0.14);
-    color: #8b5cf6;
+    background: rgba(220, 53, 69, 0.14);
+    color: #dc3545;
 }
 
 .menu-modulo-icon.c-patcheras {

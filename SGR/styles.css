@@ -190,6 +190,7 @@ body.modal-open {
     padding: 0 0.75rem;
     height: 56px;
     box-shadow: var(--shadow);
+    border-bottom: 3px solid rgba(220, 53, 69, 1);
     position: sticky;
     top: 0;
     z-index: 90;
@@ -3141,8 +3142,8 @@ kbd {
 }
 
 .menu-modulo-icon.c-racks {
-    background: rgba(139, 92, 246, 0.14);
-    color: #8b5cf6;
+    background: rgba(220, 53, 69, 0.14);
+    color: #dc3545;
 }
 
 .menu-modulo-icon.c-patcheras {
