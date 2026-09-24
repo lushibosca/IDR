@@ -3405,25 +3405,6 @@
         _detenerToggleCanalesGrab();
         _dash.grabModoActual = 'uso';
 
-        // Si ya existen elementos montados, sincronizarlos con el modo inicial 'uso'
-        const container = document.getElementById('dash-grabadores');
-        if (container) {
-            container.querySelectorAll('.dash-grab-item .dash-grab-ring-fill').forEach(fill => {
-                const pct = parseInt(fill.dataset.pctUso ?? fill.dataset.pctTarget, 10) || 0;
-                const color = fill.dataset.colorUso || fill.dataset.color;
-                if (color) fill.style.stroke = color;
-                fill.style.opacity = pct > 0 ? '1' : '0';
-                fill.style.strokeDashoffset = String(100 - pct);
-            });
-            container.querySelectorAll('.dash-grab-ring-pct--toggle').forEach(el => {
-                const num = el.querySelector('.dash-grab-num-toggle');
-                const sub = el.querySelector('.dash-grab-sub-toggle');
-                if (num) num.textContent = (num.dataset.valUso ?? '0') + '%';
-                if (sub) sub.textContent = 'USO';
-                el.classList.remove('is-changing');
-            });
-        }
-
         _dash.grabToggleInterval = setInterval(() => {
             const container = document.getElementById('dash-grabadores');
             if (!container || !container.isConnected || (typeof EdicionState !== 'undefined' && EdicionState.tabActual !== 'dashboard')) {
@@ -3432,7 +3413,7 @@
             }
             if (document.hidden) return;
             _toggleModoCanalesGrab();
-        }, 3500);
+        }, 5000);
     }
 
     function _detenerToggleCanalesGrab() {
