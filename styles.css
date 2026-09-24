@@ -319,7 +319,9 @@ html.dark-mode .bg-layer.bg-dark {
     transition: transform 0.3s ease;
 }
 
-.app-card:hover .app-icon-wrapper {
+.app-card:hover .app-icon-wrapper,
+.app-card:focus .app-icon-wrapper,
+.app-card:focus-visible .app-icon-wrapper {
     transform: scale(1.05);
 }
 
@@ -362,6 +364,7 @@ html.dark-mode .bg-layer.bg-dark {
 
 /* --- Modificamos el hover de la tarjeta (Modo Claro) --- */
 .app-card:hover,
+.app-card:focus,
 .app-card:focus-visible {
     transform: scale(1.01);
     border-color: var(--theme-color);
@@ -370,6 +373,7 @@ html.dark-mode .bg-layer.bg-dark {
 
 /* --- Resplandor potenciado (Modo Oscuro) --- */
 html.dark-mode .app-card:hover,
+html.dark-mode .app-card:focus,
 html.dark-mode .app-card:focus-visible {
     border-color: var(--theme-color);
     box-shadow: 0 12px 25px var(--theme-bg), 0 0 8px var(--theme-color), 0 0 20px var(--theme-bg);

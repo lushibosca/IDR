@@ -248,6 +248,118 @@
         });
     }
 
+    // --- LÓGICA DE NAVEGACIÓN CON TECLADO (DESKTOP) ---
+    function setupKeyboardNavigation() {
+        const getCards = () => Array.from(document.querySelectorAll('.app-card:not(.disabled)'));
+        const isDesktop = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches || window.innerWidth >= 768;
+
+        function getGridColumns(cards) {
+            if (cards.length < 2) return 1;
+            const firstTop = cards[0].offsetTop;
+            let cols = 0;
+            for (const c of cards) {
+                if (Math.abs(c.offsetTop - firstTop) < 15) cols++;
+                else break;
+            }
+            return Math.max(1, cols);
+        }
+
+        // Foco inicial automático al cargar la página en desktop
+        if (isDesktop()) {
+            const cards = getCards();
+            if (cards.length > 0) {
+                setTimeout(() => {
+                    if (!document.activeElement || document.activeElement === document.body) {
+                        cards[0].focus();
+                    }
+                }, 60);
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            // Evitar interferir con combinaciones que usen Ctrl, Alt o Meta
+            if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+            const cards = getCards();
+            if (cards.length === 0) return;
+
+            const active = document.activeElement;
+            const currentIndex = cards.indexOf(active);
+            const cols = getGridColumns(cards);
+            const hasMultipleRows = cols < cards.length;
+
+            switch (e.key) {
+                case 'ArrowRight': {
+                    e.preventDefault();
+                    if (currentIndex === -1) {
+                        cards[0].focus();
+                    } else {
+                        const next = (currentIndex + 1) % cards.length;
+                        cards[next].focus();
+                    }
+                    break;
+                }
+                case 'ArrowLeft': {
+                    e.preventDefault();
+                    if (currentIndex === -1) {
+                        cards[cards.length - 1].focus();
+                    } else {
+                        const prev = (currentIndex - 1 + cards.length) % cards.length;
+                        cards[prev].focus();
+                    }
+                    break;
+                }
+                case 'ArrowDown': {
+                    e.preventDefault();
+                    if (currentIndex === -1) {
+                        cards[0].focus();
+                    } else if (!hasMultipleRows) {
+                        // En 1 fila, avanza a la siguiente tarjeta
+                        const next = (currentIndex + 1) % cards.length;
+                        cards[next].focus();
+                    } else {
+                        // En grid multi-fila, baja a la misma columna en la siguiente fila
+                        let target = currentIndex + cols;
+                        if (target >= cards.length) {
+                            target = currentIndex % cols;
+                            if (target >= cards.length) target = 0;
+                        }
+                        cards[target].focus();
+                    }
+                    break;
+                }
+                case 'ArrowUp': {
+                    e.preventDefault();
+                    if (currentIndex === -1) {
+                        cards[cards.length - 1].focus();
+                    } else if (!hasMultipleRows) {
+                        // En 1 fila, retrocede a la tarjeta anterior
+                        const prev = (currentIndex - 1 + cards.length) % cards.length;
+                        cards[prev].focus();
+                    } else {
+                        // En grid multi-fila, sube a la misma columna en la fila previa
+                        let target = currentIndex - cols;
+                        if (target < 0) {
+                            const colIndex = currentIndex % cols;
+                            const totalRows = Math.ceil(cards.length / cols);
+                            target = (totalRows - 1) * cols + colIndex;
+                            if (target >= cards.length) target -= cols;
+                        }
+                        cards[target].focus();
+                    }
+                    break;
+                }
+                case ' ': {
+                    if (currentIndex !== -1) {
+                        e.preventDefault();
+                        cards[currentIndex].click();
+                    }
+                    break;
+                }
+            }
+        });
+    }
+
     // --- MANEJO DE CACHÉ DE NAVEGACIÓN (Bugfix Firefox) ---
     window.addEventListener('pageshow', (event) => {
         // event.persisted es true si la página se restauró desde la caché (botón "Atrás")
@@ -268,6 +380,14 @@
                 bgBackdrop.classList.remove('exiting');
                 void bgBackdrop.offsetWidth;
             }
+
+            // Re-enfocar en desktop tras restaurar
+            if (window.matchMedia('(hover: hover) and (pointer: fine)').matches || window.innerWidth >= 768) {
+                const activeCards = Array.from(document.querySelectorAll('.app-card:not(.disabled)'));
+                if (activeCards.length > 0) {
+                    setTimeout(() => activeCards[0].focus(), 50);
+                }
+            }
         }
     });
 
@@ -285,7 +405,8 @@
         }
 
         setupPWA();
-        setupNavigation(); // Llamamos a la nueva función aquí
+        setupNavigation();
+        setupKeyboardNavigation();
     }
 
     if (document.readyState === 'loading') {
