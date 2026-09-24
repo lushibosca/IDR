@@ -2356,8 +2356,8 @@ button:disabled {
 }
 
 .grab-popup {
-    min-width: 160px;
-    max-width: 240px;
+    min-width: 180px;
+    max-width: 280px;
     gap: 0.3rem;
 }
 
@@ -2367,21 +2367,40 @@ button:disabled {
     color: var(--text-main);
 }
 
+.grab-popup-seccion {
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.grab-popup-sep {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 10px 0;
+}
+
 .grab-popup-metric {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--sp-4);
     font-size: var(--fs-base);
 }
 
-.grab-popup-metric span {
+.grab-popup-metric > span {
     color: var(--text-muted);
 }
 
 .grab-popup-metric strong {
     color: var(--text-main);
-    white-space: nowrap;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.grab-popup-mono {
+    font-family: monospace;
 }
 
 .grab-popup-metric + .grab-popup-metric {

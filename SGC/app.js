@@ -3006,12 +3006,44 @@
         return { popup, cerrar };
     }
 
-    // Filas del popup de un grabador. Para sumar datos nuevos: agregar { label, valor } al array.
-    function _filasDetalleGrab({ g, ocup, libre }) {
+    // Secciones del popup de un grabador. Para sumar datos: agregar { label, valor } a una sección
+    // (o una sección nueva). `valor` puede ser string o array de strings (una línea por elemento).
+    // Los valores vacíos o ausentes no se muestran; una sección sin filas tampoco.
+    // Firmware y patrimonio viven en el dispositivo vinculado (g.dispositivoId).
+    function _seccionesDetalleGrab({ g, ocup, libre }) {
+        const disp = g.dispositivoId ? Store.data.dispositivos.find(d => d.id === g.dispositivoId) : null;
+        const macs = (g.mac || disp?.mac || '').split(',').map(m => m.trim()).filter(Boolean);
         return [
-            { label: 'Canales ocupados', valor: `${ocup}/${g.canales_n}` },
-            { label: 'Canales libres', valor: String(libre) }
+            {
+                titulo: '', filas: [
+                    { label: 'Capacidad', valor: String(g.canales_n) },
+                    { label: 'Usados', valor: String(ocup) },
+                    { label: 'Disponible', valor: String(libre) }
+                ]
+            },
+            {
+                titulo: '', filas: [
+                    { label: 'Modelo', valor: g.modelo || disp?.modelo },
+                    { label: 'MAC', valor: macs, mono: true },
+                    { label: 'Firmware', valor: disp?.firmware },
+                    { label: 'Patrimonio', valor: disp?.patrimonio }
+                ]
+            }
         ];
+    }
+
+    const _tieneValor = v => Array.isArray(v) ? v.length > 0 : (v !== undefined && v !== null && String(v).trim() !== '');
+
+    function _htmlPopupGrab(datos) {
+        const secciones = _seccionesDetalleGrab(datos)
+            .map(sec => ({ ...sec, filas: sec.filas.filter(f => _tieneValor(f.valor)) }))
+            .filter(sec => sec.filas.length > 0)
+            .map(sec => `<div class="grab-popup-seccion">${S.esc(sec.titulo)}</div>` + sec.filas.map(f => {
+                const valores = Array.isArray(f.valor) ? f.valor : [f.valor];
+                return `<div class="grab-popup-metric"><span>${S.esc(f.label)}</span><strong${f.mono ? ' class="grab-popup-mono"' : ''}>${valores.map(v => `<div>${S.esc(String(v))}</div>`).join('')}</strong></div>`;
+            }).join(''))
+            .join('<hr class="grab-popup-sep">');
+        return `<div class="grab-popup-titulo">${S.esc(datos.g.descripcion || '')}</div>${secciones}`;
     }
 
     let _popupGrab = null;
@@ -3023,13 +3055,10 @@
         if (!datos) return;
         if (_popupGrab) _popupGrab.cerrar();
 
-        const filasHtml = _filasDetalleGrab(datos).map(f =>
-            `<div class="grab-popup-metric"><span>${S.esc(f.label)}</span><strong>${S.esc(f.valor)}</strong></div>`
-        ).join('');
         _popupGrab = _crearPopupFlotante({
             className: 'grab-popup',
             dataset: { grabId: id },
-            html: `<div class="grab-popup-titulo">${S.esc(datos.g.descripcion || '')}</div>${filasHtml}`,
+            html: _htmlPopupGrab(datos),
             anchor: item,
             selectorTrigger: '.dash-grab-item',
             esMismoTrigger: el => el.dataset.grabId === id,
