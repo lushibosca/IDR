@@ -7449,6 +7449,10 @@
         let _pressTimer;
         let _longPressFired = false;
 
+        // Toast único para el long-press de expandir/colapsar (grupos y subgrupos: pisos / firmwares)
+        const _toastTodosLosGrupos = (expandidos) =>
+            Notif.toast(expandidos ? 'Todos los grupos expandidos' : 'Todos los grupos colapsados', 'info');
+
         function handlePressStart(e) {
 
             if (e.target.closest('button')) return;
@@ -7488,7 +7492,7 @@
                         });
 
                         if (_guardarColapsados) ActivosRender.guardarColapsados();
-                        Notif.toast(abrirTodos ? 'Todos los grupos expandidos' : 'Todos los grupos colapsados', 'info');
+                        _toastTodosLosGrupos(abrirTodos);
                     }
 
                     else if (headerPiso) {
@@ -7510,7 +7514,7 @@
                         });
 
                         if (_guardarColapsados) ActivosRender.guardarColapsados();
-                        Notif.toast(abrirTodos ? 'Todos los pisos expandidos' : 'Todos los pisos colapsados', 'info');
+                        _toastTodosLosGrupos(abrirTodos);
                     }
 
                     else if (headerNVR) {
