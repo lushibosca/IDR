@@ -2499,6 +2499,7 @@
         l2VistaEdificio: false,   // en getL2Html de cámaras: false=forma, true=edificios
         l2EdificioAbierto: null,  // edificio expandido en nivel 3 (vista edificios)
         l2EdificioAbiertoPrevio: null, // <-- NUEVA VARIABLE AGREGADA
+        valoresAnimados: false,   // el conteo gradual de la tarjeta Infraestructura se hace una sola vez
     };
 
     function _setCamarasVista(vista) {
@@ -2628,6 +2629,36 @@
     function _asignarIndicesChips(panel) {
         panel.querySelectorAll('.stat-chip').forEach((chip, idx) => {
             chip.style.setProperty('--i', idx + 1);
+        });
+    }
+
+    // Cuenta gradual de 0 → target (ease-out cúbico, 900 ms). Compartida por los aros de grabadores y los valores de Infraestructura.
+    function _contarHasta(el, target, sufijo = '', duracion = 900) {
+        const inicio = performance.now();
+        function tick(ahora) {
+            const progreso = Math.min((ahora - inicio) / duracion, 1);
+            el.textContent = Math.round((1 - Math.pow(1 - progreso, 3)) * target) + sufijo;
+            if (progreso < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+    }
+
+    // Conteo gradual de los valores de la tarjeta Infraestructura, igual que los aros de grabadores.
+    // Se hace una sola vez, la primera vez que la tarjeta se ve: si se repitiera en cada render, al navegar entre
+    // niveles los números del panel que sale volverían a 0. Con el dashboard oculto (otra pestaña) se difiere
+    // hasta que se muestre (ver cambiarTab).
+    function _animarValoresInfra() {
+        if (_dash.valoresAnimados) return;
+        const contenedor = document.getElementById('dash-disp-tree');
+        if (!contenedor || contenedor.offsetHeight === 0) return;
+        _dash.valoresAnimados = true;
+        contenedor.querySelectorAll('.stat-chip-valor').forEach(el => {
+            const txt = el.textContent.trim();
+            if (!/^\d+$/.test(txt)) return;
+            const target = parseInt(txt, 10);
+            if (target === 0) return;
+            el.textContent = '0';
+            _contarHasta(el, target);
         });
     }
 
@@ -2920,7 +2951,9 @@
         if (Dash.state.renderResumenTimeout) { clearTimeout(Dash.state.renderResumenTimeout); Dash.state.renderResumenTimeout = null; contenedor.style.height = ''; contenedor.style.transition = ''; }
 
         if (_dash.tipoAbiertoPrevio === _dash.tipoAbierto && _dash.estadoAbiertoPrevio === _dash.estadoAbierto && _dash.l2EdificioAbiertoPrevio === _dash.l2EdificioAbierto && !esPrimeraCarga) {
-            panelIzq.innerHTML = htmlIzq; panelDer.innerHTML = htmlDer; _asignarIndicesChips(panelIzq); _asignarIndicesChips(panelDer); return;
+            panelIzq.innerHTML = htmlIzq; panelDer.innerHTML = htmlDer; _asignarIndicesChips(panelIzq); _asignarIndicesChips(panelDer);
+            _animarValoresInfra();
+            return;
         }
 
         _dash.tipoAbiertoPrevio = _dash.tipoAbierto;
@@ -2931,6 +2964,7 @@
         panelIzq.style.height = ''; panelIzq.style.overflow = ''; panelDer.style.height = ''; panelDer.style.overflow = '';
         panelIzq.innerHTML = htmlIzq; panelDer.innerHTML = htmlDer; _asignarIndicesChips(panelIzq); _asignarIndicesChips(panelDer);
         void contenedor.offsetHeight;
+        _animarValoresInfra();
 
         const panelActivo = enDetalle ? panelDer : panelIzq;
         const alturaObjetivo = panelActivo.offsetHeight;
@@ -3195,16 +3229,7 @@
                 dashGrabadores.querySelectorAll('.dash-grab-ring-num').forEach(span => {
                     const target = parseInt(span.dataset.pctTarget, 10) || 0;
                     if (target === 0) { span.textContent = '0%'; return; }
-                    const duration = 900;
-                    const start = performance.now();
-                    function tick(now) {
-                        const elapsed = now - start;
-                        const progress = Math.min(elapsed / duration, 1);
-                        const eased = 1 - Math.pow(1 - progress, 3);
-                        span.textContent = Math.round(eased * target) + '%';
-                        if (progress < 1) requestAnimationFrame(tick);
-                    }
-                    requestAnimationFrame(tick);
+                    _contarHasta(span, target, '%');
                 });
             });
         });
@@ -5229,6 +5254,9 @@
             } else {
                 if (panelEntrante) panelEntrante.classList.remove('hidden');
             }
+
+            // Si la app abrió en otra pestaña, el conteo de Infraestructura se hace la primera vez que se muestra el dashboard
+            if (tab === 'dashboard') requestAnimationFrame(_animarValoresInfra);
         },
 
         irAActivosConFiltro(tipo, estado, forma, edificio, piso) {
