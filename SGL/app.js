@@ -2214,6 +2214,7 @@ const UI = (function () {
                 localStorage.removeItem(`${APP_KEY}_data_v1`);
                 localStorage.removeItem(`${APP_KEY}_holidays_v1`);
                 localStorage.removeItem(`${APP_KEY}_areas_v1`);
+                GistSync.desactivarAuto();
                 location.reload();
             }
         );
@@ -2895,6 +2896,15 @@ const GistSync = (function () {
         _debounceTimer = setTimeout(() => { if (!_subiendo) _ejecutarSubida(true); }, DEBOUNCE_MS);
     }
 
+    function desactivarAuto() {
+        if (!_cfg.auto) return;
+        _cfg.auto = false;
+        _guardarCfg();
+        clearTimeout(_debounceTimer);
+        _debounceTimer = null;
+        document.getElementById('gist-autosync-toggle')?.classList.remove('on');
+    }
+
     // ── BAJAR ────────────────────────────────────────────
     async function bajar() {
         const token = document.getElementById('gist-token')?.value.trim() || _cfg.token;
@@ -3028,7 +3038,7 @@ const GistSync = (function () {
         _actualizarBotonesConfig();
     }
 
-    return { init, subir, subirAuto, bajar, guardarConfig, toggleToken, toggleAuto, poblarModal, verificarAlAbrir, actualizarBotonesConfig: _actualizarBotonesConfig };
+    return { init, subir, subirAuto, desactivarAuto, bajar, guardarConfig, toggleToken, toggleAuto, poblarModal, verificarAlAbrir, actualizarBotonesConfig: _actualizarBotonesConfig };
 })();
 
 // --- CONTEXT MENU MODULE ---

@@ -1257,6 +1257,7 @@ function restablecerDatos() {
             state.movimientos = [];
             state.categorias = [];
             state.herramientas = [];
+            GistSync.desactivarAuto();
             guardar();
             historial.refrescarTodo();
             toast('Datos restablecidos');
@@ -3599,6 +3600,15 @@ const GistSync = (() => {
         }, DEBOUNCE_MS);
     }
 
+    function desactivarAuto() {
+        if (!_cfg.auto) return;
+        _cfg.auto = false;
+        _guardarCfg();
+        clearTimeout(_debounceTimer);
+        _debounceTimer = null;
+        document.getElementById('gist-autosync-toggle')?.classList.remove('on');
+    }
+
     async function bajar() {
         const token = document.getElementById('gist-token')?.value.trim() || _cfg.token;
         const gistId = document.getElementById('gist-id')?.value.trim() || _cfg.gistId;
@@ -3794,7 +3804,7 @@ const GistSync = (() => {
         }, 3000);
     }
 
-    return { subir, bajar, subirAuto, verificarAlAbrir, toggleToken, toggleAuto, guardarConfig, poblarModal, init, actualizarBotonesAjustes: _actualizarBotonesAjustes };
+    return { subir, bajar, subirAuto, desactivarAuto, verificarAlAbrir, toggleToken, toggleAuto, guardarConfig, poblarModal, init, actualizarBotonesAjustes: _actualizarBotonesAjustes };
 })();
 
 // ═══════════════════════════════════════════════════════

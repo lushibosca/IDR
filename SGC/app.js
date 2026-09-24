@@ -1693,29 +1693,6 @@
             return payload;
         }
 
-        // ── Guardia anti-vaciado ─────────────────────────────────────────────────
-        // Compara el conteo local de dispositivos contra el remoto antes de subir.
-        // Si el local tiene MENOS dispositivos que el remoto (situación post-reset),
-        // muestra un diálogo de advertencia y aborta la subida automática.
-        // Umbral: el remoto debe tener al menos MIN_REMOTE_DISPS dispositivos
-        // y el local debe tener al menos RATIO_MIN * remoto para subir sin alerta.
-        const _GUARD_MIN_REMOTE = 1;   // sólo actúa si el gist tiene ≥ 1 dispositivo
-        const _GUARD_RATIO_MIN = 0.5; // local < 50 % del remoto → bloquea
-
-        async function _contarDispositivosRemoto(token, gistId) {
-            try {
-                const res = await fetch(`https://api.github.com/gists/${gistId}?_ts=${Date.now()}`, {
-                    headers: { Authorization: `token ${token}` }
-                });
-                if (!res.ok) return null;
-                const data = await res.json();
-                const raw = data?.files?.[FILENAME]?.content;
-                if (!raw) return 0;
-                const parsed = S.safeParse(raw);
-                return Array.isArray(parsed?.dispositivos) ? parsed.dispositivos.length : 0;
-            } catch { return null; }
-        }
-
         // Lápidas que ya están en el Gist (null si no se pudo leer)
         async function _obtenerEliminadosRemotos(token, gistId) {
             try {
@@ -1738,27 +1715,13 @@
             } catch { return null; }
         }
 
-        async function _ejecutarSubida(silencioso = false, forzar = false) {
+        async function _ejecutarSubida(silencioso = false) {
             const token = _cfg.token;
             const gistId = _cfg.gistId;
             if (!token) { if (!silencioso) Notif.toast('Ingresá el token primero', 'error'); return; }
             if (gistId && !RE_GIST_ID.test(gistId)) {
                 if (!silencioso) Notif.toast('Gist ID inválido', 'error');
                 return;
-            }
-
-            // ── Guardia anti-vaciado: sólo en subidas automáticas (silenciosas) ──
-            if (silencioso && !forzar && gistId) {
-                const localCount = (Store.data.dispositivos || []).length;
-                const remoteCount = await _contarDispositivosRemoto(token, gistId);
-
-                if (remoteCount !== null
-                    && remoteCount >= _GUARD_MIN_REMOTE
-                    && localCount < remoteCount * _GUARD_RATIO_MIN) {
-
-                    Notif.toast(`Autosync bloqueado: el Gist remoto tiene ${remoteCount} dispositivos pero localmente hay ${localCount}. Bajá el Gist antes de subir.`, 'warning');
-                    return; // ← aborta la subida
-                }
             }
 
             _setBusy(true);
@@ -1809,7 +1772,7 @@
             }
         }
 
-        function subir() { _ejecutarSubida(false, true); }  // manual: siempre forzada
+        function subir() { _ejecutarSubida(false); }
 
         function subirAuto() {
             if (!_cfg.auto || !_cfg.token) return;
@@ -1817,6 +1780,15 @@
             _debounceTimer = setTimeout(() => {
                 if (!_subiendo) _ejecutarSubida(true);
             }, DEBOUNCE_MS);
+        }
+
+        function desactivarAuto() {
+            if (!_cfg.auto) return;
+            _cfg.auto = false;
+            _guardarCfg();
+            clearTimeout(_debounceTimer);
+            _debounceTimer = null;
+            document.getElementById('gist-autosync-toggle')?.classList.remove('on');
         }
 
         function _combinarEntidades(remoto) {
@@ -2626,7 +2598,7 @@
             MM.abrirConPadre('modal-gist-detalle');
         }
 
-        return { subir, bajar, subirAuto, verificarAlAbrir, toggleToken, toggleAuto, guardarConfig, poblarModal, init, actualizarBotonesAjustes: _actualizarBotonesAjustes, _generarPayload, _combinarEntidades };
+        return { subir, bajar, subirAuto, desactivarAuto, verificarAlAbrir, toggleToken, toggleAuto, guardarConfig, poblarModal, init, actualizarBotonesAjustes: _actualizarBotonesAjustes, _generarPayload, _combinarEntidades };
     })();
 
 
@@ -5081,6 +5053,7 @@
             Object.keys(S.TIPOS).forEach(k => { if (!S.TIPOS_BUILTIN[k]) delete S.TIPOS[k]; });
             S.guardarTipos();
             S.edificios.length = 0;
+            GistSync.desactivarAuto();
             S.guardarEdificios();
             Store.guardar();
             render();

@@ -2005,6 +2005,7 @@ function restablecerDatos() {
             historial.empujar('Restablecer todos los datos');
             state.racks = [];
             state.edificios = [];
+            GistSync.desactivarAuto();
             guardar();
             actualizarFiltrosYSelects();
             renderRacks();
@@ -2550,6 +2551,15 @@ const GistSync = (() => {
         }, DEBOUNCE_MS);
     }
 
+    function desactivarAuto() {
+        if (!_cfg.auto) return;
+        _cfg.auto = false;
+        _guardarCfg();
+        clearTimeout(_debounceTimer);
+        _debounceTimer = null;
+        document.getElementById('gist-autosync-toggle')?.classList.remove('on');
+    }
+
     async function bajar() {
         const token = document.getElementById('gist-token')?.value.trim() || _cfg.token;
         const gistId = document.getElementById('gist-id')?.value.trim() || _cfg.gistId;
@@ -2739,6 +2749,7 @@ const GistSync = (() => {
         subir,
         bajar,
         subirAuto,
+        desactivarAuto,
         verificarAlAbrir,
         toggleToken,
         toggleAuto,
