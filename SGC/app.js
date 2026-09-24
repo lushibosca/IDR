@@ -2957,8 +2957,89 @@
         }
     }
 
+    // ── Popup flotante (patrón Horarios: UICore._crearPopupFlotante) ─────────
+    // Se ancla debajo del elemento disparador (o arriba si no entra) y se cierra
+    // al hacer clic fuera, al hacer scroll o al volver a tocar el mismo disparador.
+    function _posicionarPopup(popup, anchor) {
+        const rect = anchor.getBoundingClientRect();
+        const margin = 8;
+        requestAnimationFrame(() => {
+            const pw = popup.offsetWidth, ph = popup.offsetHeight;
+            let top = rect.bottom + 12;
+            let left = rect.left + (rect.width / 2) - (pw / 2);
+            if (left + pw > window.innerWidth - margin) left = window.innerWidth - pw - margin;
+            if (left < margin) left = margin;
+            if (top + ph > window.innerHeight - margin) top = rect.top - ph - 12;
+            if (top < margin) top = margin;
+            popup.style.top = `${top}px`;
+            popup.style.left = `${left}px`;
+            popup.style.visibility = '';
+            setTimeout(() => popup.classList.add('listo'), 350);
+        });
+    }
+
+    function _crearPopupFlotante({ className, dataset = {}, html, anchor, selectorTrigger, esMismoTrigger, alCerrar }) {
+        const popup = document.createElement('div');
+        popup.className = `popup-flotante ${className}`;
+        Object.entries(dataset).forEach(([k, v]) => { popup.dataset[k] = v; });
+        popup.innerHTML = html;
+        popup.style.visibility = 'hidden';
+        document.body.appendChild(popup);
+
+        const cerrar = () => {
+            popup.remove();
+            if (alCerrar) alCerrar();
+            document.removeEventListener('click', onClick, true);
+            document.removeEventListener('scroll', cerrar, true);
+        };
+        const onClick = (e) => {
+            const trigger = e.target.closest(selectorTrigger);
+            if (trigger && esMismoTrigger(trigger)) return;
+            if (!popup.contains(e.target)) cerrar();
+        };
+        setTimeout(() => {
+            document.addEventListener('click', onClick, { capture: true, passive: true });
+            document.addEventListener('scroll', cerrar, { capture: true, passive: true });
+        }, 10);
+
+        _posicionarPopup(popup, anchor);
+        return { popup, cerrar };
+    }
+
+    // Filas del popup de un grabador. Para sumar datos nuevos: agregar { label, valor } al array.
+    function _filasDetalleGrab({ g, ocup, libre }) {
+        return [
+            { label: 'Canales ocupados', valor: `${ocup}/${g.canales_n}` },
+            { label: 'Canales libres', valor: String(libre) }
+        ];
+    }
+
+    let _popupGrab = null;
+
+    function _togglePopupGrab(item, grabDatos) {
+        const id = item.dataset.grabId;
+        if (_popupGrab && _popupGrab.popup.dataset.grabId === id) { _popupGrab.cerrar(); return; }
+        const datos = grabDatos.find(d => String(d.g.id) === id);
+        if (!datos) return;
+        if (_popupGrab) _popupGrab.cerrar();
+
+        const filasHtml = _filasDetalleGrab(datos).map(f =>
+            `<div class="grab-popup-metric"><span>${S.esc(f.label)}</span><strong>${S.esc(f.valor)}</strong></div>`
+        ).join('');
+        _popupGrab = _crearPopupFlotante({
+            className: 'grab-popup',
+            dataset: { grabId: id },
+            html: `<div class="grab-popup-titulo">${S.esc(datos.g.descripcion || '')}</div>${filasHtml}`,
+            anchor: item,
+            selectorTrigger: '.dash-grab-item',
+            esMismoTrigger: el => el.dataset.grabId === id,
+            alCerrar: () => { _popupGrab = null; }
+        });
+    }
+
     function _renderResumenGrabadores(grabs) {
         const dashGrabadores = document.getElementById('dash-grabadores');
+        if (_popupGrab) _popupGrab.cerrar();
         if (grabs.length === 0) {
             dashGrabadores.innerHTML = `<div class="dash-empty-text">Sin grabadores en producción</div>`;
             return;
@@ -3022,15 +3103,27 @@
         });
 
         const htmlLista = grabDatos.map(({ g, ocup, libre, pct, colorBarra }) => {
-            return `<div class="dash-grab-item">
+            return `<div class="dash-grab-item" data-grab-id="${S.esc(String(g.id))}" role="button" tabindex="0" aria-haspopup="true">
                     ${htmlAnillo(pct, colorBarra)}
                     <div class="dash-grab-item-nombre text-truncate" title="${S.esc(g.descripcion)}">${S.esc(g.descripcion)}</div>
                     ${g.ip ? `<div class="dash-grab-item-ip text-truncate ip-copiable" data-copy="${S.esc(g.ip)}" title="Copiar IP">${S.esc(g.ip)}</div>` : ''}
-                    <div class="dash-grab-item-stats">${ocup}/${g.canales_n} · ${libre} libres</div>
                 </div>`;
         }).join('');
 
         dashGrabadores.innerHTML = htmlTotales + `<div class="dash-grab-lista">${htmlLista}</div>`;
+
+        dashGrabadores.onclick = (e) => {
+            if (e.target.closest('.ip-copiable')) return;
+            const item = e.target.closest('.dash-grab-item');
+            if (item) _togglePopupGrab(item, grabDatos);
+        };
+        dashGrabadores.onkeydown = (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const item = e.target.closest('.dash-grab-item');
+            if (!item || e.target !== item) return;
+            e.preventDefault();
+            _togglePopupGrab(item, grabDatos);
+        };
 
         requestAnimationFrame(() => {
             // Primer frame: fijar color y estado inicial (anillo vacío) para que la transición CSS tenga punto de partida
