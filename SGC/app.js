@@ -4790,7 +4790,8 @@
             if (ActivosRender.activos.orden === orden) return;
             ActivosRender.activos.orden = orden;
             try { localStorage.setItem(LS.ACTIVOS_ORDEN, orden); } catch (_) { }
-            ActivosRender.renderActivos();
+            // Mismo efecto de salida/entrada que el cambio de pestaña, para que el nuevo agrupamiento no aparezca de golpe
+            _animarMutacion(document.getElementById('lista-dispositivos'), () => ActivosRender.renderActivos());
         },
 
         toggleDropdownFiltros(e) {
