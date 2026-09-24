@@ -1536,6 +1536,7 @@ button:disabled {
 
 .grupo-activos-card {
     margin-bottom: var(--sp-4);
+    scroll-margin-top: calc(56px + var(--sp-4));
 }
 
 .grupo-activos-header {

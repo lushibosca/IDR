@@ -2543,6 +2543,8 @@
             }
             return new Set();
         })(),
+        // Acordeón: grupo que el usuario dejó abierto (solo se usa fuera de búsquedas)
+        abierto: null,
     };
 
     // (UI state props se añaden directamente al objeto UI abajo)
@@ -2575,6 +2577,7 @@
             if (chevron) chevron.classList.add('nvr-chevron--collapsed');
         }
         if (_guardarColapsados) _guardarColapsados();
+        Busqueda.actualizarBtnExpandir();
     };
 
     function _estadosDeDisps(dispsDelTipo, idsEnProd) {
@@ -3653,22 +3656,58 @@
         }).join('');
     }
 
+    // Acordeón (igual que en la tarjeta de grabadores): un solo grupo abierto a la vez.
+    // Excepción: mientras hay una búsqueda o un filtro desde el dashboard (Busqueda.estadoColapsadoPrevio)
+    // todos los grupos se muestran abiertos para no esconder resultados, y se alternan libremente.
     function _toggleGrupoActivos(groupId) {
         const col = _activos.collapsed;
         const card = document.querySelector(`.grupo-activos-card[data-grupo="${CSS.escape(groupId)}"]`);
         if (!card) return;
-        const grid = card.querySelector(':scope > .activos-grid-transition');
-        const chevron = card.querySelector(':scope > .grupo-activos-header .nvr-chevron');
-        if (col.has(groupId)) {
+        const enBusqueda = !!Busqueda.estadoColapsadoPrevio;
+        const aplicar = (c, expandido) => {
+            c.querySelector(':scope > .activos-grid-transition')?.classList.toggle('collapsed', !expandido);
+            c.querySelector(':scope > .grupo-activos-header .nvr-chevron')?.classList.toggle('nvr-chevron--collapsed', !expandido);
+        };
+        const expandir = col.has(groupId);
+        if (expandir) {
+            if (!enBusqueda) {
+                document.querySelectorAll('.grupo-activos-card[data-grupo]').forEach(otra => {
+                    if (otra === card) return;
+                    col.add(otra.dataset.grupo);
+                    aplicar(otra, false);
+                });
+                _activos.abierto = groupId;
+            }
             col.delete(groupId);
-            grid?.classList.remove('collapsed');
-            if (chevron) chevron.classList.remove('nvr-chevron--collapsed');
         } else {
             col.add(groupId);
-            grid?.classList.add('collapsed');
-            if (chevron) chevron.classList.add('nvr-chevron--collapsed');
+            if (!enBusqueda && _activos.abierto === groupId) _activos.abierto = null;
         }
+        aplicar(card, expandir);
         if (_guardarColapsados) _guardarColapsados();
+
+        // Si al cerrarse el otro grupo (que estaba arriba) la tarjeta quedó bajo el header, la traemos a la vista
+        if (expandir && !enBusqueda) {
+            setTimeout(() => {
+                const c = document.querySelector(`.grupo-activos-card[data-grupo="${CSS.escape(groupId)}"]`);
+                if (c && c.getBoundingClientRect().top < 60) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 380);
+        }
+    }
+
+    // Deja como máximo un grupo abierto al renderizar (estado guardado viejo, grupos nuevos que aparecen, etc.).
+    // Si hay más de uno abierto se conserva el que el usuario dejó abierto; si no se sabe cuál, se cierran todos.
+    function _aplicarAcordeonActivos(labels) {
+        const col = _activos.collapsed;
+        const abiertos = labels.filter(l => !col.has(l));
+        if (abiertos.length > 1) {
+            const conservar = abiertos.includes(_activos.abierto) ? _activos.abierto : null;
+            labels.forEach(l => { if (l !== conservar) col.add(l); });
+            _activos.abierto = conservar;
+            if (_guardarColapsados) _guardarColapsados();
+        } else {
+            _activos.abierto = abiertos.length ? abiertos[0] : null;
+        }
     }
 
 
@@ -3767,6 +3806,9 @@
             (grupos[gLabel] || (grupos[gLabel] = [])).push(d);
         });
 
+        // Acordeón: un solo grupo abierto (salvo durante búsqueda / filtro del dashboard)
+        if (!Busqueda.estadoColapsadoPrevio) _aplicarAcordeonActivos(Object.keys(grupos));
+
         // activos-grid-transition CSS movido a styles.css (CSP: sin unsafe-inline)
         let html = ``;
 
@@ -3792,6 +3834,7 @@
         });
 
         lista.innerHTML = html;
+        Busqueda.actualizarBtnExpandir(); // ya con el DOM nuevo (el estado del botón depende de los subgrupos renderizados)
 
         if (!lista._delegRegistrada) {
             lista._delegRegistrada = true;
@@ -4287,13 +4330,33 @@
             ActivosRender.activos.pisosCollapsed.clear();
         }
 
+        // Modo acordeón (sin búsqueda): expande o colapsa todos los subgrupos (pisos / firmwares) de las vistas de dos niveles
+        function _toggleSubgrupos() {
+            const orden = ActivosRender.activos.orden;
+            if (orden !== 'edificio-piso' && orden !== 'modelo-firmware') return;
+            const col = ActivosRender.activos.pisosCollapsed;
+            const subs = document.querySelectorAll('.sub-grupo-piso[data-floor-key]');
+            const expandir = [...subs].some(fp => col.has(fp.dataset.floorKey));
+            subs.forEach(fp => {
+                const key = fp.dataset.floorKey;
+                if (expandir) col.delete(key); else col.add(key);
+                fp.querySelector(':scope > .activos-grid-transition')?.classList.toggle('collapsed', !expandir);
+                fp.querySelector(':scope > .grupo-piso-header .nvr-chevron')?.classList.toggle('nvr-chevron--collapsed', !expandir);
+            });
+            api.pisosOcultosConEdificios = false;
+        }
+
         function toggleExpandirTodo() {
             if (!ActivosRender.activos.collapsed) ActivosRender.activos.collapsed = new Set();
             if (!ActivosRender.activos.pisosCollapsed) ActivosRender.activos.pisosCollapsed = new Set();
 
             const esEdificioPiso = ActivosRender.activos.orden === 'edificio-piso' || ActivosRender.activos.orden === 'modelo-firmware';
 
-            if (esEdificioPiso) {
+            if (!estadoColapsadoPrevio) {
+                // Modo acordeón (sin búsqueda): los grupos se abren de a uno, así que el botón solo
+                // actúa sobre los subgrupos (pisos / firmwares) de las vistas de dos niveles.
+                _toggleSubgrupos();
+            } else if (esEdificioPiso) {
                 // Triple toggle: 0=todo expandido → 1=edificios colapsados → 2=pisos colapsados → 0
                 const hayEdificiosColapsados = ActivosRender.activos.collapsed.size > 0;
                 const hayPisosColapsados = ActivosRender.activos.pisosCollapsed.size > 0;
@@ -4395,6 +4458,21 @@
             if (!btn) return;
             const use = btn.querySelector('use');
             const esEdificioPiso = ActivosRender.activos.orden === 'edificio-piso' || ActivosRender.activos.orden === 'modelo-firmware';
+
+            if (!estadoColapsadoPrevio) {
+                // Modo acordeón: "expandir todo" no aplica a los grupos; solo se muestra en vistas de dos niveles (pisos / firmwares)
+                btn.classList.toggle('hidden', !esEdificioPiso);
+                if (esEdificioPiso) {
+                    const subs = document.querySelectorAll('.sub-grupo-piso[data-floor-key]');
+                    const hayColapsados = [...subs].some(fp => ActivosRender.activos.pisosCollapsed.has(fp.dataset.floorKey));
+                    const nombre = ActivosRender.activos.orden === 'edificio-piso' ? 'pisos' : 'firmwares';
+                    if (use) use.setAttribute('href', hayColapsados ? '#icon-expand-all' : '#icon-collapse-floors');
+                    btn.title = `${hayColapsados ? 'Expandir' : 'Colapsar'} ${nombre}`;
+                }
+                return;
+            }
+            btn.classList.remove('hidden');
+
             const hayEdificiosColapsados = ActivosRender.activos.collapsed && ActivosRender.activos.collapsed.size > 0;
             const hayPisosColapsados = ActivosRender.activos.pisosCollapsed && ActivosRender.activos.pisosCollapsed.size > 0;
 
@@ -7379,6 +7457,11 @@
                     if (navigator.vibrate) navigator.vibrate(50);
 
                     if (headerActivos) {
+                        // Acordeón (sin búsqueda): un solo grupo abierto a la vez, así que el long-press equivale al toggle normal
+                        if (!Busqueda.estadoColapsadoPrevio) {
+                            _toggleGrupoActivos(headerActivos.dataset.toggleGrupo);
+                            return;
+                        }
                         const grupos = document.querySelectorAll('.grupo-activos-card');
                         if (!grupos.length) return;
 
