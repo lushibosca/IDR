@@ -2315,6 +2315,12 @@ button:disabled {
     max-width: 100%;
     font-weight: 700;
     font-size: var(--fs-lg);
+    margin-bottom: var(--sp-2);
+}
+
+/* El nombre va arriba del aro y la IP debajo: el aire entre aro e IP lo da la IP (así no sobra espacio si no tiene) */
+.dash-grab-item .dash-grab-ring {
+    margin-bottom: 0;
 }
 
 .dash-grab-item-ip {
@@ -2322,6 +2328,7 @@ button:disabled {
     font-size: var(--fs-sm);
     color: var(--text-muted);
     font-family: monospace;
+    margin-top: var(--sp-2);
 }
 
 .dash-grab-item {

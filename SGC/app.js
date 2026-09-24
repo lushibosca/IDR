@@ -3157,8 +3157,8 @@
 
         const htmlLista = grabDatos.map(({ g, ocup, libre, pct, colorBarra }) => {
             return `<div class="dash-grab-item" data-grab-id="${S.esc(String(g.id))}" role="button" tabindex="0" aria-haspopup="true">
-                    ${htmlAnillo(pct, colorBarra)}
                     <div class="dash-grab-item-nombre text-truncate" title="${S.esc(g.descripcion)}">${S.esc(g.descripcion)}</div>
+                    ${htmlAnillo(pct, colorBarra)}
                     ${g.ip ? `<div class="dash-grab-item-ip text-truncate ip-copiable" data-copy="${S.esc(g.ip)}" title="Copiar IP">${S.esc(g.ip)}</div>` : ''}
                 </div>`;
         }).join('');
