@@ -2260,8 +2260,8 @@ button:disabled {
     stroke-dasharray: 100 100;
     stroke-dashoffset: 100;
     opacity: 0;
-    transition: stroke-dashoffset 0.9s cubic-bezier(0.25, 1, 0.5, 1);
-    will-change: stroke-dashoffset;
+    transition: stroke-dashoffset 0.9s cubic-bezier(0.25, 1, 0.5, 1), stroke 0.4s ease, opacity 0.3s ease;
+    will-change: stroke-dashoffset, stroke;
 }
 
 .dash-grab-ring-pct {
@@ -2285,6 +2285,33 @@ button:disabled {
     font-size: var(--fs-xs);
     color: var(--text-muted);
     margin-top: 2px;
+}
+
+/* ── Toggle de porcentaje / uso / libre en anillos de grabadores individuales ── */
+.dash-grab-ring-pct--toggle {
+    transition: opacity 0.22s ease, transform 0.22s ease;
+    will-change: opacity, transform;
+}
+
+.dash-grab-ring-pct--toggle.is-changing {
+    opacity: 0;
+    transform: scale(0.82);
+}
+
+.dash-grab-ring-pct--toggle .dash-grab-num-toggle {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text-main);
+}
+
+.dash-grab-sub-toggle {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 2px;
+    color: var(--text-muted);
 }
 
 .dash-grab-ring--lg {

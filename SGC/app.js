@@ -2633,6 +2633,8 @@
         l2EdificioAbierto: null,  // edificio expandido en nivel 3 (vista edificios)
         l2EdificioAbiertoPrevio: null, // <-- NUEVA VARIABLE AGREGADA
         valoresAnimados: false,   // el conteo gradual de la tarjeta Infraestructura se hace una sola vez
+        grabToggleInterval: null,
+        grabModoActual: 'uso',
     };
 
     function _setCamarasVista(vista) {
@@ -3260,6 +3262,7 @@
     function _renderResumenGrabadores(grabs) {
         const dashGrabadores = document.getElementById('dash-grabadores');
         if (_popupGrab) _popupGrab.cerrar();
+        _detenerToggleCanalesGrab();
         if (grabs.length === 0) {
             dashGrabadores.innerHTML = `<div class="dash-empty-text">Sin grabadores en producción</div>`;
             return;
@@ -3293,6 +3296,24 @@
                         </span>
                     </div>`;
 
+        const htmlAnilloGrabador = (pct, color, ocup, libre, pctLibre) => `
+                    <div class="dash-grab-ring" role="img" aria-label="${pct}% ocupado (${pctLibre}% libre, ${ocup}/${ocup + libre} canales)" title="${pct}% ocupado (${pctLibre}% libre - ${ocup} en uso / ${libre} libres)">
+                        <svg viewBox="0 0 100 100" aria-hidden="true">
+                            <circle class="dash-grab-ring-track" cx="50" cy="50" r="44" pathLength="100"></circle>
+                            <circle class="dash-grab-ring-fill" cx="50" cy="50" r="44" pathLength="100"
+                                data-color="${color}"
+                                data-color-uso="${color}"
+                                data-color-libre="var(--c-green)"
+                                data-pct-target="${pct}"
+                                data-pct-uso="${pct}"
+                                data-pct-libre="${pctLibre}"></circle>
+                        </svg>
+                        <span class="dash-grab-ring-pct dash-grab-ring-pct--toggle">
+                            <span class="dash-grab-ring-num dash-grab-num-toggle" data-val-uso="${pct}" data-val-libre="${pctLibre}">0%</span>
+                            <span class="dash-grab-ring-sub dash-grab-sub-toggle">USO</span>
+                        </span>
+                    </div>`;
+
         const htmlTotales = `
                 <div class="dash-grab-totales">
                     <div class="dash-grab-totales-title">Canales de grabación</div>
@@ -3318,14 +3339,15 @@
         const grabDatos = grabs.map(g => {
             const ocup = g.canales_data.filter(c => c.dispositivoId).length;
             const libre = g.canales_n - ocup;
-            const pct = Math.round((ocup / g.canales_n) * 100);
-            return { g, ocup, libre, pct, colorBarra: colorPorPct(pct) };
+            const pct = g.canales_n > 0 ? Math.round((ocup / g.canales_n) * 100) : 0;
+            const pctLibre = g.canales_n > 0 ? (100 - pct) : 0;
+            return { g, ocup, libre, pct, pctLibre, colorBarra: colorPorPct(pct) };
         });
 
-        const htmlLista = grabDatos.map(({ g, ocup, libre, pct, colorBarra }) => {
+        const htmlLista = grabDatos.map(({ g, ocup, libre, pct, pctLibre, colorBarra }) => {
             return `<div class="dash-grab-item" data-grab-id="${S.esc(String(g.id))}" role="button" tabindex="0" aria-haspopup="true">
                     <div class="dash-grab-item-nombre text-truncate" title="${S.esc(g.descripcion)}">${S.esc(g.descripcion)}</div>
-                    ${htmlAnillo(pct, colorBarra)}
+                    ${htmlAnilloGrabador(pct, colorBarra, ocup, libre, pctLibre)}
                     ${g.ip ? `<div class="dash-grab-item-ip text-truncate ip-copiable" data-copy="${S.esc(g.ip)}" title="Copiar IP">${S.esc(g.ip)}</div>` : ''}
                 </div>`;
         }).join('');
@@ -3348,24 +3370,121 @@
         requestAnimationFrame(() => {
             // Primer frame: fijar color y estado inicial (anillo vacío) para que la transición CSS tenga punto de partida
             dashGrabadores.querySelectorAll('.dash-grab-ring-fill').forEach(fill => {
-                if (fill.dataset.color) fill.style.stroke = fill.dataset.color;
+                const c = fill.dataset.colorUso || fill.dataset.color;
+                if (c) fill.style.stroke = c;
             });
 
             requestAnimationFrame(() => {
-
                 dashGrabadores.querySelectorAll('.dash-grab-ring-fill').forEach(fill => {
-                    const target = parseInt(fill.dataset.pctTarget, 10) || 0;
+                    const target = parseInt(fill.dataset.pctUso ?? fill.dataset.pctTarget, 10) || 0;
                     if (target > 0) fill.style.opacity = '1';
                     fill.style.strokeDashoffset = String(100 - target);
                 });
 
-                dashGrabadores.querySelectorAll('.dash-grab-ring-num').forEach(span => {
-                    const target = parseInt(span.dataset.pctTarget, 10) || 0;
-                    if (target === 0) { span.textContent = '0%'; return; }
-                    _contarHasta(span, target, '%');
+                // Animación del anillo de totales (en %)
+                const totalNum = dashGrabadores.querySelector('.dash-grab-ring--lg .dash-grab-ring-num');
+                if (totalNum) {
+                    const target = parseInt(totalNum.dataset.pctTarget, 10) || 0;
+                    if (target === 0) totalNum.textContent = '0%';
+                    else _contarHasta(totalNum, target, '%');
+                }
+
+                // Animación inicial de los grabadores (en porcentaje con %)
+                dashGrabadores.querySelectorAll('.dash-grab-num-toggle').forEach(span => {
+                    const target = parseInt(span.dataset.valUso, 10) || 0;
+                    if (target === 0) span.textContent = '0%';
+                    else _contarHasta(span, target, '%');
                 });
             });
         });
+
+        _iniciarToggleCanalesGrab();
+    }
+
+    function _iniciarToggleCanalesGrab() {
+        _detenerToggleCanalesGrab();
+        _dash.grabModoActual = 'uso';
+
+        // Si ya existen elementos montados, sincronizarlos con el modo inicial 'uso'
+        const container = document.getElementById('dash-grabadores');
+        if (container) {
+            container.querySelectorAll('.dash-grab-item .dash-grab-ring-fill').forEach(fill => {
+                const pct = parseInt(fill.dataset.pctUso ?? fill.dataset.pctTarget, 10) || 0;
+                const color = fill.dataset.colorUso || fill.dataset.color;
+                if (color) fill.style.stroke = color;
+                fill.style.opacity = pct > 0 ? '1' : '0';
+                fill.style.strokeDashoffset = String(100 - pct);
+            });
+            container.querySelectorAll('.dash-grab-ring-pct--toggle').forEach(el => {
+                const num = el.querySelector('.dash-grab-num-toggle');
+                const sub = el.querySelector('.dash-grab-sub-toggle');
+                if (num) num.textContent = (num.dataset.valUso ?? '0') + '%';
+                if (sub) sub.textContent = 'USO';
+                el.classList.remove('is-changing');
+            });
+        }
+
+        _dash.grabToggleInterval = setInterval(() => {
+            const container = document.getElementById('dash-grabadores');
+            if (!container || !container.isConnected || (typeof EdicionState !== 'undefined' && EdicionState.tabActual !== 'dashboard')) {
+                _detenerToggleCanalesGrab();
+                return;
+            }
+            if (document.hidden) return;
+            _toggleModoCanalesGrab();
+        }, 3500);
+    }
+
+    function _detenerToggleCanalesGrab() {
+        if (_dash.grabToggleInterval) {
+            clearInterval(_dash.grabToggleInterval);
+            _dash.grabToggleInterval = null;
+        }
+    }
+
+    function _toggleModoCanalesGrab(nuevoModo) {
+        const container = document.getElementById('dash-grabadores');
+        if (!container) return;
+
+        const toggles = container.querySelectorAll('.dash-grab-ring-pct--toggle');
+        if (toggles.length === 0) return;
+
+        if (nuevoModo) {
+            _dash.grabModoActual = nuevoModo;
+        } else {
+            _dash.grabModoActual = (_dash.grabModoActual === 'uso') ? 'libre' : 'uso';
+        }
+
+        const modo = _dash.grabModoActual;
+
+        // Actualizar barra circular SVG (color y valor representado)
+        container.querySelectorAll('.dash-grab-item .dash-grab-ring-fill').forEach(fill => {
+            const pct = parseInt(modo === 'uso' ? fill.dataset.pctUso : fill.dataset.pctLibre, 10) || 0;
+            const color = modo === 'uso' ? fill.dataset.colorUso : (fill.dataset.colorLibre || 'var(--c-green)');
+            if (color) fill.style.stroke = color;
+            fill.style.opacity = pct > 0 ? '1' : '0';
+            fill.style.strokeDashoffset = String(100 - pct);
+        });
+
+        toggles.forEach(el => el.classList.add('is-changing'));
+
+        setTimeout(() => {
+            toggles.forEach(el => {
+                if (!el.isConnected) return;
+                const num = el.querySelector('.dash-grab-num-toggle');
+                const sub = el.querySelector('.dash-grab-sub-toggle');
+                if (!num || !sub) return;
+
+                if (modo === 'uso') {
+                    num.textContent = (num.dataset.valUso ?? '0') + '%';
+                    sub.textContent = 'USO';
+                } else {
+                    num.textContent = (num.dataset.valLibre ?? '0') + '%';
+                    sub.textContent = 'LIBRE';
+                }
+                el.classList.remove('is-changing');
+            });
+        }, 220);
     }
 
     function _toggleEdificio(rowEl) {
@@ -3879,6 +3998,9 @@
         toggleTipoDetalle: _toggleTipoDetalle,
         toggleEstadoDetalle: _toggleEstadoDetalle,
         toggleEdificio: _toggleEdificio,
+        iniciarToggleCanalesGrab: _iniciarToggleCanalesGrab,
+        detenerToggleCanalesGrab: _detenerToggleCanalesGrab,
+        toggleModoCanalesGrab: _toggleModoCanalesGrab,
     };
 
     function renderActivos() {
@@ -5394,7 +5516,12 @@
             }
 
             // Si la app abrió en otra pestaña, el conteo de Infraestructura se hace la primera vez que se muestra el dashboard
-            if (tab === 'dashboard') requestAnimationFrame(_animarValoresInfra);
+            if (tab === 'dashboard') {
+                requestAnimationFrame(_animarValoresInfra);
+                Dash.iniciarToggleCanalesGrab?.();
+            } else {
+                Dash.detenerToggleCanalesGrab?.();
+            }
         },
 
         irAActivosConFiltro(tipo, estado, forma, edificio, piso) {
