@@ -1354,10 +1354,6 @@
             optAgregar.textContent = '＋ Agregar edificio…';
             sel.appendChild(optAgregar);
 
-            if (typeof IDRInfra !== 'undefined') {
-                IDRInfra.poblarDatalistRacks('sgr-racks-datalist', seleccionado || '');
-            }
-
             requestAnimationFrame(() => { _validarEstadoPiso(); });
 
             sel.onchange = function () {
@@ -1371,9 +1367,6 @@
                     UI.abrirEdificios(origen);
                 } else {
                     seleccionado = sel.value;
-                }
-                if (typeof IDRInfra !== 'undefined') {
-                    IDRInfra.poblarDatalistRacks('sgr-racks-datalist', sel.value);
                 }
                 _validarEstadoPiso();
             };
@@ -8845,56 +8838,330 @@
             UI._renderEdificios();
         });
 
-        const syncRacksDatalist = (edificio = '') => {
-            IDRInfra.poblarDatalistRacks('sgr-racks-datalist', edificio);
-        };
-
-        IDRInfra.onRacksChange(() => {
-            const ed = document.getElementById('canal-edificio')?.value
-                || document.getElementById('nuevo-grab-edificio')?.value
-                || document.getElementById('editar-grab-edificio')?.value
-                || document.getElementById('nuevo-otro-prod-edificio')?.value
-                || document.getElementById('editar-otro-prod-edificio')?.value
-                || '';
-            syncRacksDatalist(ed);
-        });
-
-        const rackInputs = [
-            { rack: 'canal-rack', ed: 'canal-edificio', piso: 'canal-piso' },
-            { rack: 'nuevo-grab-rack', ed: 'nuevo-grab-edificio', piso: 'nuevo-grab-piso' },
-            { rack: 'editar-grab-rack', ed: 'editar-grab-edificio', piso: 'editar-grab-piso' },
-            { rack: 'nuevo-otro-prod-rack', ed: 'nuevo-otro-prod-edificio', piso: 'nuevo-otro-prod-piso' },
-            { rack: 'editar-otro-prod-rack', ed: 'editar-otro-prod-edificio', piso: 'editar-otro-prod-piso' }
+        // ── RACK COMBOBOX (Portal flotante estilo SGI: escapa del overflow y transform del modal) ──
+        const RACK_CONFIGS = [
+            { inputId: 'canal-rack', edId: 'canal-edificio', pisoId: 'canal-piso' },
+            { inputId: 'nuevo-grab-rack', edId: 'nuevo-grab-edificio', pisoId: 'nuevo-grab-piso' },
+            { inputId: 'editar-grab-rack', edId: 'editar-grab-edificio', pisoId: 'editar-grab-piso' },
+            { inputId: 'nuevo-otro-prod-rack', edId: 'nuevo-otro-prod-edificio', pisoId: 'nuevo-otro-prod-piso' },
+            { inputId: 'editar-otro-prod-rack', edId: 'editar-otro-prod-edificio', pisoId: 'editar-otro-prod-piso' }
         ];
 
-        const autocompletarDesdeRack = (rackVal, edId, pisoId) => {
-            if (!rackVal) return;
-            const match = IDRInfra.buscarRack(rackVal);
-            if (!match) return;
-            const elEd = document.getElementById(edId);
-            const elPiso = document.getElementById(pisoId);
-            if (elEd && !elEd.value && match.edificio) {
-                elEd.value = match.edificio;
-                elEd.dispatchEvent(new Event('change'));
-            }
-            if (elPiso && !elPiso.value && match.piso) {
-                elPiso.value = match.piso;
-            }
-        };
+        const rackComboboxState = { highlight: -1 };
 
-        rackInputs.forEach(({ rack, ed, piso }) => {
-            const elRack = document.getElementById(rack);
+        function _getRackPortal() {
+            let el = document.getElementById('rack-suggestions-portal');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'rack-suggestions-portal';
+                el.className = 'combobox-dropdown combobox-portal hidden';
+                document.body.appendChild(el);
+            }
+            return el;
+        }
+
+        function cerrarRackPortal() {
+            const portal = document.getElementById('rack-suggestions-portal');
+            if (portal) {
+                portal.classList.add('hidden');
+                portal.innerHTML = '';
+                portal.removeAttribute('data-active-input');
+            }
+            rackComboboxState.highlight = -1;
+        }
+
+        function posicionarRackPortal(inputEl, portal) {
+            if (!inputEl || !portal) return;
+            const r = inputEl.getBoundingClientRect();
+            const espacioAbajo = window.innerHeight - r.bottom;
+            const espacioArriba = r.top;
+            const maxH = 240;
+
+            portal.style.position = 'fixed';
+            portal.style.left = r.left + 'px';
+            portal.style.width = r.width + 'px';
+            portal.style.right = 'auto';
+            portal.style.zIndex = '99999';
+
+            // Si abajo hay muy poco espacio (< 140px) y arriba hay más espacio, abrir hacia arriba
+            if (espacioAbajo < 140 && espacioArriba > espacioAbajo) {
+                portal.style.bottom = (window.innerHeight - r.top + 4) + 'px';
+                portal.style.top = 'auto';
+                portal.style.maxHeight = Math.min(maxH, espacioArriba - 16) + 'px';
+            } else {
+                portal.style.top = (r.bottom + 4) + 'px';
+                portal.style.bottom = 'auto';
+                portal.style.maxHeight = Math.min(maxH, Math.max(120, espacioAbajo - 16)) + 'px';
+            }
+        }
+
+        function formatearNombreRack(r) {
+            if (!r) return '';
+            if (r.numero) {
+                const num = String(r.numero).trim();
+                return /^rack\b/i.test(num) ? num : `Rack ${num}`;
+            }
+            return r.identificador || (r.id ? `Rack ${r.id.slice(0, 6)}` : 'Rack');
+        }
+
+        function formatearSubRack(r) {
+            const partes = [];
+            if (r.edificio) partes.push(r.edificio);
+            if (r.piso) partes.push(`Piso ${r.piso}`);
+            if (r.dependencia) partes.push(r.dependencia);
+            const mm = [r.marca, r.modelo].filter(Boolean).join(' ').trim();
+            if (mm) partes.push(mm);
+            return partes.join(' · ');
+        }
+
+        function renderRackDropdown(cfg) {
+            const input = document.getElementById(cfg.inputId);
+            if (!input) return;
+
+            const portal = _getRackPortal();
+            portal.dataset.activeInput = cfg.inputId;
+
+            const query = (input.value || '').trim().toLowerCase();
+            const edificio = document.getElementById(cfg.edId)?.value || '';
+
+            // Regla de negocio: sólo mostrar racks en servicio
+            let candidatos = IDRInfra.getRacks(edificio, { soloEnServicio: true });
+
+            if (query && candidatos.length === 0 && edificio) {
+                candidatos = IDRInfra.getRacks('', { soloEnServicio: true });
+            }
+
+            let filtrados = candidatos;
+            if (query) {
+                filtrados = candidatos.filter(r => {
+                    const nombre = formatearNombreRack(r).toLowerCase();
+                    const num = String(r.numero || '').toLowerCase();
+                    const idf = String(r.identificador || '').toLowerCase();
+                    const ed = String(r.edificio || '').toLowerCase();
+                    const dep = String(r.dependencia || '').toLowerCase();
+                    const piso = String(r.piso || '').toLowerCase();
+                    const marca = String(r.marca || '').toLowerCase();
+                    const mod = String(r.modelo || '').toLowerCase();
+                    const pat = String(r.patrimonio || '').toLowerCase();
+                    const u = r.unidades ? `${r.unidades}u` : '';
+                    const haystack = `${nombre} ${num} ${idf} ${ed} ${dep} ${piso} ${marca} ${mod} ${pat} ${u}`;
+                    return haystack.includes(query);
+                });
+
+                if (filtrados.length === 0 && edificio) {
+                    const todos = IDRInfra.getRacks('', { soloEnServicio: true });
+                    filtrados = todos.filter(r => {
+                        const nombre = formatearNombreRack(r).toLowerCase();
+                        const num = String(r.numero || '').toLowerCase();
+                        const idf = String(r.identificador || '').toLowerCase();
+                        const ed = String(r.edificio || '').toLowerCase();
+                        const dep = String(r.dependencia || '').toLowerCase();
+                        const piso = String(r.piso || '').toLowerCase();
+                        const marca = String(r.marca || '').toLowerCase();
+                        const mod = String(r.modelo || '').toLowerCase();
+                        const pat = String(r.patrimonio || '').toLowerCase();
+                        const u = r.unidades ? `${r.unidades}u` : '';
+                        const haystack = `${nombre} ${num} ${idf} ${ed} ${dep} ${piso} ${marca} ${mod} ${pat} ${u}`;
+                        return haystack.includes(query);
+                    });
+                }
+            }
+
+            if (!filtrados.length && query) {
+                portal.innerHTML = '<div class="canal-disp-item canal-disp-item-vaciobtn">Sin resultados</div>';
+                posicionarRackPortal(input, portal);
+                portal.classList.remove('hidden');
+                rackComboboxState.highlight = -1;
+                return;
+            }
+
+            const items = [];
+            items.push('<div class="canal-disp-item canal-disp-item-vaciobtn" data-val="" data-idx="0">— Vacío / Sin rack —</div>');
+
+            filtrados.forEach((r, idx) => {
+                const nombre = formatearNombreRack(r);
+                const sub = formatearSubRack(r);
+                const uTag = r.unidades ? ` <span class="estado-tag">(${r.unidades}U)</span>` : '';
+                const patTag = r.patrimonio ? ` <span class="estado-tag" title="Patrimonio">(#${S.esc(r.patrimonio)})</span>` : '';
+
+                items.push(`
+                    <div class="canal-disp-item" data-val="${S.esc(nombre)}" data-rack-id="${S.esc(r.id || '')}" data-idx="${idx + 1}">
+                        <div class="canal-disp-item-mac">
+                            <svg class="icon icon-line icon--sm" style="margin-right: 6px; vertical-align: middle;"><use href="#icon-rack"></use></svg>
+                            ${S.esc(nombre)}${uTag}${patTag}
+                        </div>
+                        ${sub ? `<div class="canal-disp-item-sub">${S.esc(sub)}</div>` : ''}
+                    </div>
+                `);
+            });
+
+            portal.innerHTML = items.join('');
+            posicionarRackPortal(input, portal);
+            portal.classList.remove('hidden');
+            rackComboboxState.highlight = -1;
+
+            portal.querySelectorAll('.canal-disp-item').forEach(el => {
+                el.addEventListener('mousedown', e => {
+                    e.preventDefault();
+                    seleccionarRack(cfg, el.dataset.val, el.dataset.rackId);
+                });
+            });
+        }
+
+        function seleccionarRack(cfg, valor, rackId) {
+            const input = document.getElementById(cfg.inputId);
+            if (input) {
+                input.value = valor || '';
+                input.classList.remove('error');
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            cerrarRackPortal();
+
+            if (valor) {
+                let match = null;
+                if (rackId) {
+                    const racks = IDRInfra.getRacks('', { soloEnServicio: true });
+                    match = racks.find(r => r.id === rackId);
+                }
+                if (!match) {
+                    match = IDRInfra.buscarRack(valor);
+                }
+                if (match) {
+                    const elEd = document.getElementById(cfg.edId);
+                    const elPiso = document.getElementById(cfg.pisoId);
+                    if (elEd && match.edificio && (!elEd.value || elEd.value !== match.edificio)) {
+                        elEd.value = match.edificio;
+                        elEd.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    if (elPiso && match.piso && !elPiso.value) {
+                        elPiso.value = match.piso;
+                        elPiso.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+            }
+        }
+
+        function onRackKeydown(cfg, e) {
+            const portal = document.getElementById('rack-suggestions-portal');
+            if (!portal || portal.classList.contains('hidden')) {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    renderRackDropdown(cfg);
+                }
+                return;
+            }
+
+            if (portal.dataset.activeInput !== cfg.inputId) return;
+
+            const items = [...portal.querySelectorAll('.canal-disp-item')];
+            if (!items.length) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                rackComboboxState.highlight = Math.min(rackComboboxState.highlight + 1, items.length - 1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                rackComboboxState.highlight = Math.max(rackComboboxState.highlight - 1, 0);
+            } else if (e.key === 'Enter') {
+                if (rackComboboxState.highlight >= 0 && rackComboboxState.highlight < items.length) {
+                    e.preventDefault();
+                    const el = items[rackComboboxState.highlight];
+                    seleccionarRack(cfg, el.dataset.val, el.dataset.rackId);
+                }
+                return;
+            } else if (e.key === 'Escape' || e.key === 'Tab') {
+                cerrarRackPortal();
+                return;
+            } else {
+                return;
+            }
+
+            items.forEach((el, i) => el.classList.toggle('highlighted', i === rackComboboxState.highlight));
+            if (rackComboboxState.highlight >= 0 && items[rackComboboxState.highlight]) {
+                items[rackComboboxState.highlight].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        RACK_CONFIGS.forEach(cfg => {
+            const elRack = document.getElementById(cfg.inputId);
+            const elEd = document.getElementById(cfg.edId);
+
             if (elRack) {
-                elRack.addEventListener('focus', () => {
-                    const edificio = document.getElementById(ed)?.value || '';
-                    syncRacksDatalist(edificio);
+                elRack.addEventListener('focus', () => renderRackDropdown(cfg));
+                elRack.addEventListener('input', () => renderRackDropdown(cfg));
+                elRack.addEventListener('click', () => {
+                    const portal = document.getElementById('rack-suggestions-portal');
+                    if (!portal || portal.classList.contains('hidden')) {
+                        renderRackDropdown(cfg);
+                    }
                 });
-                elRack.addEventListener('input', () => {
-                    autocompletarDesdeRack(elRack.value, ed, piso);
-                });
+                elRack.addEventListener('keydown', e => onRackKeydown(cfg, e));
+
+                // Al tipear manualmente y hacer blur / change
                 elRack.addEventListener('change', () => {
-                    autocompletarDesdeRack(elRack.value, ed, piso);
+                    const val = elRack.value.trim();
+                    if (!val) return;
+                    const match = IDRInfra.buscarRack(val);
+                    if (!match) return;
+                    const elEdificio = document.getElementById(cfg.edId);
+                    const elPiso = document.getElementById(cfg.pisoId);
+                    if (elEdificio && !elEdificio.value && match.edificio) {
+                        elEdificio.value = match.edificio;
+                        elEdificio.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    if (elPiso && !elPiso.value && match.piso) {
+                        elPiso.value = match.piso;
+                        elPiso.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
                 });
+            }
+
+            if (elEd) {
+                elEd.addEventListener('change', () => {
+                    const portal = document.getElementById('rack-suggestions-portal');
+                    if (portal && !portal.classList.contains('hidden') && portal.dataset.activeInput === cfg.inputId) {
+                        renderRackDropdown(cfg);
+                    }
+                });
+            }
+        });
+
+        // Click fuera para cerrar el portal de sugerencias de racks
+        document.addEventListener('mousedown', e => {
+            const portal = document.getElementById('rack-suggestions-portal');
+            if (!portal || portal.classList.contains('hidden')) return;
+
+            const activeInputId = portal.dataset.activeInput;
+            const input = activeInputId ? document.getElementById(activeInputId) : null;
+
+            if (portal.contains(e.target) || e.target === input) return;
+
+            // Evitar cerrar si el click cayó sobre la barra de scroll nativa del portal
+            const r = portal.getBoundingClientRect();
+            if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) return;
+
+            cerrarRackPortal();
+        });
+
+        // Cerrar al hacer scroll dentro del modal o ventana (igual que en SGI)
+        // pero NO cerrar si el scroll ocurre dentro del propio portal
+        document.addEventListener('scroll', e => {
+            const portal = document.getElementById('rack-suggestions-portal');
+            if (portal && portal.contains(e.target)) return;
+            cerrarRackPortal();
+        }, true);
+
+        // Cerrar al redimensionar la ventana
+        window.addEventListener('resize', cerrarRackPortal);
+
+        // Si cambia la base de racks en otra pestaña
+        IDRInfra.onRacksChange(() => {
+            const portal = document.getElementById('rack-suggestions-portal');
+            if (portal && !portal.classList.contains('hidden')) {
+                const activeId = portal.dataset.activeInput;
+                const cfg = RACK_CONFIGS.find(c => c.inputId === activeId);
+                if (cfg) renderRackDropdown(cfg);
             }
         });
     }

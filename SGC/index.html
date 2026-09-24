@@ -1083,7 +1083,9 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Rack</label>
-                        <input type="text" id="nuevo-otro-prod-rack" placeholder="Ej: Rack-02" maxlength="40" list="sgr-racks-datalist">
+                        <div class="combobox-wrap">
+                            <input type="text" id="nuevo-otro-prod-rack" placeholder="Ej: Rack-02" maxlength="40" autocomplete="off" spellcheck="false">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Puerto</label>
@@ -1157,7 +1159,9 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Rack</label>
-                        <input type="text" id="editar-otro-prod-rack" placeholder="Ej: Rack-02" maxlength="40" list="sgr-racks-datalist">
+                        <div class="combobox-wrap">
+                            <input type="text" id="editar-otro-prod-rack" placeholder="Ej: Rack-02" maxlength="40" autocomplete="off" spellcheck="false">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Puerto</label>
@@ -1439,7 +1443,9 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Rack</label>
-                        <input type="text" id="nuevo-grab-rack" placeholder="Ej: Rack Principal" maxlength="40" list="sgr-racks-datalist">
+                        <div class="combobox-wrap">
+                            <input type="text" id="nuevo-grab-rack" placeholder="Ej: Rack Principal" maxlength="40" autocomplete="off" spellcheck="false">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Puerto</label>
@@ -1517,7 +1523,9 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Rack</label>
-                        <input type="text" id="editar-grab-rack" placeholder="Ej: Rack Principal" maxlength="40" list="sgr-racks-datalist">
+                        <div class="combobox-wrap">
+                            <input type="text" id="editar-grab-rack" placeholder="Ej: Rack Principal" maxlength="40" autocomplete="off" spellcheck="false">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Puerto</label>
@@ -1624,7 +1632,9 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Rack</label>
-                        <input type="text" id="canal-rack" placeholder="Ej: Rack-02" maxlength="40" list="sgr-racks-datalist">
+                        <div class="combobox-wrap">
+                            <input type="text" id="canal-rack" placeholder="Ej: Rack-02" maxlength="40" autocomplete="off" spellcheck="false">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Puerto</label>
@@ -1946,7 +1956,8 @@
         </div>
     </div>
 
-    <datalist id="sgr-racks-datalist"></datalist>
+    <!-- Portal flotante de sugerencias de Racks (escapa del overflow y transform del modal estilo SGI) -->
+    <div id="rack-suggestions-portal" class="combobox-dropdown combobox-portal hidden"></div>
 
 </body>
 

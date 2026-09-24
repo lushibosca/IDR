@@ -1798,6 +1798,18 @@ button:disabled {
     z-index: 200;
 }
 
+/* ── Portal flotante para sugerencias (estilo SGI: escapa del overflow y transform del modal) ── */
+.combobox-portal {
+    position: fixed !important;
+    top: auto;
+    left: auto;
+    right: auto;
+    z-index: 99999 !important;
+    max-height: 240px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 1px rgba(0, 0, 0, 0.2);
+    margin: 0 !important;
+}
+
 .canal-disp-item {
     padding: var(--sp-3) var(--sp-4);
     cursor: pointer;
@@ -1836,6 +1848,13 @@ button:disabled {
 .canal-disp-item-mac {
     font-weight: 600;
     color: var(--text-main);
+}
+
+.canal-disp-item-mac .estado-tag {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    margin-left: var(--sp-1);
 }
 
 .canal-disp-item-sub {

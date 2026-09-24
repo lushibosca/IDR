@@ -192,7 +192,7 @@ const IDRInfra = (() => {
     }
 
     // ── 3. RACKS (Lectura desde SGR) ──────────────────────────
-    function getRacks(edificio = '') {
+    function getRacks(edificio = '', { soloEnServicio = true } = {}) {
         try {
             const raw = localStorage.getItem(KEY_SGR);
             if (!raw) return [];
@@ -200,6 +200,9 @@ const IDRInfra = (() => {
             if (!data || !Array.isArray(data.racks)) return [];
 
             let list = data.racks.filter(r => r && (r.numero || r.identificador || r.marca || r.id));
+            if (soloEnServicio) {
+                list = list.filter(r => r.estado === 'servicio');
+            }
             if (edificio) {
                 const edNorm = edificio.trim().toLowerCase();
                 list = list.filter(r => (r.edificio || '').trim().toLowerCase() === edNorm);

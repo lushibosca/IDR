@@ -1129,7 +1129,7 @@ const SGRBridge = {
         if (typeof IDRInfra !== 'undefined') return IDRInfra.getRacks(edificio);
         const data = this.obtenerData();
         if (!data || !Array.isArray(data.racks)) return [];
-        let list = data.racks.filter(r => r && (r.numero || r.identificador || r.marca));
+        let list = data.racks.filter(r => r && (r.numero || r.identificador || r.marca) && r.estado === 'servicio');
         if (edificio) {
             const edNorm = edificio.trim().toLowerCase();
             list = list.filter(r => (r.edificio || '').trim().toLowerCase() === edNorm);
