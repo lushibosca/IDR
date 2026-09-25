@@ -469,14 +469,26 @@ function _flushToast() {
     if (!el) return;
     el.textContent = _tCurrent.msg;
     el.className = `toast show ${_tCurrent.tipo}`;
-    setTimeout(() => {
+    
+    let timeoutId;
+    let closeTimeoutId;
+    
+    const closeToast = () => {
+        el.removeEventListener('click', closeToast);
+        clearTimeout(timeoutId);
         el.classList.remove('show');
-        setTimeout(() => {
+        closeTimeoutId = setTimeout(() => {
             el.className = 'toast';
             _tBusy = false;
             _tCurrent = null;
             _flushToast();
         }, 300);
+    };
+
+    el.addEventListener('click', closeToast);
+    
+    timeoutId = setTimeout(() => {
+        closeToast();
     }, 2600);
 }
 
