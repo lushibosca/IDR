@@ -2272,6 +2272,30 @@ function _getGrupos(racks, agrupacion = _agrupInv) {
         }).map(k => ({ titulo: k, racks: porU[k].racks }));
     }
 
+    if (agrupacion === 'rango') {
+        const porRango = {};
+        racks.forEach(r => {
+            const numStr = (r.numero || '').replace(/\D/g, '');
+            let key = 'Sin número';
+            let sortVal = Infinity;
+            if (numStr) {
+                const n = parseInt(numStr, 10);
+                const block = Math.floor(n / 100);
+                let start = block * 100;
+                if (start === 0) start = 1;
+                let end = block * 100 + 99;
+                key = `Racks ${start} al ${end}`;
+                sortVal = start;
+            }
+            if (!porRango[key]) porRango[key] = { sortVal, racks: [] };
+            porRango[key].racks.push(r);
+        });
+        return Object.keys(porRango).sort((a, b) => porRango[a].sortVal - porRango[b].sortVal).map(k => ({
+            titulo: k,
+            racks: porRango[k].racks
+        }));
+    }
+
     return null;
 }
 
@@ -3458,6 +3482,7 @@ function _initBindings() {
             <button class="inv-vista-opt" data-agrup="patrimonio">Patrimonio</button>
             <button class="inv-vista-opt" data-agrup="estado">Estado</button>
             <button class="inv-vista-opt" data-agrup="edificio">Edificio</button>
+            <button class="inv-vista-opt" data-agrup="rango">Rango numérico</button>
             <button class="inv-vista-opt" data-agrup="unidades">Unidades</button>
         `;
         // Mover al body para evitar clipping del card
@@ -3550,6 +3575,7 @@ function _initBindings() {
             <p class="inv-vista-label">Agrupar por</p>
             <button class="inv-vista-opt" data-agrup="ninguno">Sin agrupar</button>
             <button class="inv-vista-opt" data-agrup="edificio">Edificio</button>
+            <button class="inv-vista-opt" data-agrup="rango">Rango numérico</button>
         `;
         // Mover al body para evitar clipping del card
         document.body.appendChild(vistaMenuServ);

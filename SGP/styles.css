@@ -24,21 +24,21 @@
     /* Acento y colores semánticos */
     --accent: #ea580c; /* Naranja SGP */
     --accent-hover: #c2410c;
-    --c-blue: rgba(26, 111, 212, 0.85);
-    --c-green: rgba(32, 168, 120, 0.85);
-    --c-red: rgba(210, 60, 60, 0.85);
-    --c-orange: rgba(234, 88, 12, 0.85);
-    --c-yellow: rgba(210, 175, 30, 0.85);
-    --c-gray: rgba(130, 140, 160, 0.85);
-    --c-purple: rgba(120, 70, 200, 0.85);
-    --c-teal: rgba(20, 160, 160, 0.85);
+    --c-blue: rgba(76, 114, 172, 0.8);
+    --c-green: rgba(76, 172, 140, 0.8);
+    --c-red: rgba(172, 90, 76, 0.8);
+    --c-orange: rgba(210, 120, 50, 0.8);
+    --c-yellow: rgba(172, 155, 76, 0.8); /* Equivalente a gold en otros modulos */
+    --c-gray: rgba(130, 140, 160, 0.85); /* Keep if it was used */
+    --c-purple: rgba(129, 76, 172, 0.8);
+    --c-teal: rgba(56, 163, 165, 0.8);
 
     /* Fondos semánticos */
-    --c-blue-bg: rgba(26, 111, 212, 0.10);
-    --c-green-bg: rgba(32, 168, 120, 0.10);
-    --c-red-bg: rgba(210, 60, 60, 0.10);
-    --c-orange-bg: rgba(234, 88, 12, 0.12);
-    --c-gray-btn: #e4e8f2;
+    --c-blue-bg: rgba(76, 114, 172, 0.12);
+    --c-green-bg: rgba(76, 172, 140, 0.12);
+    --c-red-bg: rgba(172, 90, 76, 0.12);
+    --c-orange-bg: rgba(210, 120, 50, 0.12);
+    --c-gray-btn: #e8ebf3;
     --bg-toast: #1a1d23;
 
     /* Sombras y radios */
