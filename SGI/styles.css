@@ -72,9 +72,14 @@
             --tab-fs: 0.85rem;
             --tab-fw: 600;
             --tab-padding: 0.55rem 0.6rem;
+
+            --bg-overlay: rgba(245, 246, 250, 0.72);
+            --bg-blur: 6px;
         }
 
-        html.dark-mode body {
+        html.dark-mode,
+        html.dark-mode body,
+        body.dark-mode {
             --bg-body: #131314;
             --bg-card: #1e1f20;
             --bg-header: #131314f6;
@@ -85,8 +90,106 @@
             --input-bg: #313333;
             --c-gray-btn: #313333;
             --bg-toast: #2a2e3a;
+            --bg-overlay: rgba(19, 19, 20, 0.78);
             --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             --hover: brightness(1.2);
+        }
+
+        /* ════ FONDO DINÁMICO CON OVERLAY Y DESENFOQUE ════ */
+        .bg-backdrop {
+            position: fixed;
+            top: -24px;
+            left: -24px;
+            right: -24px;
+            bottom: -24px;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+            animation: bgFadeIn 0.5s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+        }
+
+        .bg-layer {
+            position: absolute;
+            inset: 0;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            filter: blur(var(--bg-blur));
+            transform: scale(1.05);
+            transition: opacity 0.4s ease;
+            will-change: opacity, transform;
+            animation: bgZoom 0.5s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+        }
+
+        .bg-layer.bg-light {
+            background-image: url('../img/SGI-light.jpeg');
+            opacity: 1;
+        }
+
+        .bg-layer.bg-dark {
+            background-image: url('../img/SGI-dark.jpeg');
+            opacity: 0;
+        }
+
+        html.dark-mode .bg-layer.bg-light,
+        body.dark-mode .bg-layer.bg-light {
+            opacity: 0;
+        }
+
+        html.dark-mode .bg-layer.bg-dark,
+        body.dark-mode .bg-layer.bg-dark {
+            opacity: 1;
+        }
+
+        .bg-overlay {
+            position: absolute;
+            inset: 0;
+            background: var(--bg-overlay);
+            transition: background-color 0.4s ease;
+        }
+
+        .bg-backdrop.exiting {
+            animation: bgFadeOut 0.25s cubic-bezier(0.25, 1, 0.5, 1) both;
+            pointer-events: none;
+        }
+
+        @keyframes bgFadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes bgFadeOut {
+            from {
+                opacity: 1;
+                transform: scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: scale(1.04);
+            }
+        }
+
+        @keyframes bgZoom {
+            from {
+                transform: scale(1);
+            }
+            to {
+                transform: scale(1.05);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bg-backdrop,
+            .bg-backdrop.exiting,
+            .bg-layer,
+            .bg-overlay {
+                animation: none;
+                transition: none;
+            }
         }
 
         /* ════════════════════════════════════════════════════
@@ -102,14 +205,16 @@
 
         html {
             scrollbar-gutter: stable;
+            background-color: var(--bg-body);
         }
 
         body {
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-body);
+            background-color: transparent;
             color: var(--text-main);
-            transition: background 0.3s ease, color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease;
             min-height: 100vh;
+            position: relative;
         }
 
         body.modal-open {

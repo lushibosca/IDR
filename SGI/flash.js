@@ -1,7 +1,7 @@
 (function () { 
     try { 
         // Leemos la clave exacta que usa app.js
-        if (localStorage.getItem('SGI_dark') === '1') { 
+        if (localStorage.getItem('IDR_dark') === '1') { 
             // Aplicamos al <html> porque el <body> aún no cargó
             document.documentElement.classList.add('dark-mode'); 
         } 

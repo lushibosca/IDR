@@ -906,7 +906,7 @@ function toggleDarkMode() {
             iconUse.setAttribute('href', dark ? '#icon-sun' : '#icon-moon');
         }
     }
-    try { localStorage.setItem('SGI_dark', dark ? '1' : '0'); } catch (_) { }
+    try { localStorage.setItem('IDR_dark', dark ? '1' : '0'); } catch (_) { }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -4535,7 +4535,7 @@ function _initMenuModulos(moduloActual) {
 
     // dark mode
     try {
-        if (localStorage.getItem('SGI_dark') === '1') {
+        if (localStorage.getItem('IDR_dark') === '1') {
             // Cambiar document.body por document.documentElement
             document.documentElement.classList.add('dark-mode');
             const btnDark = document.getElementById('btn-dark-mode');

@@ -521,7 +521,7 @@ function toggleDarkMode() {
         iconModal.setAttribute('href', dark ? '#icon-sun' : '#icon-moon');
     }
     try {
-        localStorage.setItem(APP_KEY + 'dark', dark ? '1' : '0');
+        localStorage.setItem('IDR_dark', dark ? '1' : '0');
     } catch (_) {}
 }
 
@@ -2768,7 +2768,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Dark mode icon sync
     try {
-        if (localStorage.getItem(APP_KEY + 'dark') === '1') {
+        if (localStorage.getItem('IDR_dark') === '1') {
             const btn = document.getElementById('btn-dark-mode');
             if (btn) {
                 btn.title = 'Modo claro';

@@ -5018,7 +5018,7 @@
         alternarTema() {
             document.body.classList.remove('dark-mode');
             const oscuro = document.documentElement.classList.toggle('dark-mode');
-            localStorage.setItem(LS.TEMA, String(oscuro));
+            localStorage.setItem('IDR_dark', oscuro ? '1' : '0');
             const use = document.querySelector('#icono-tema use');
             if (use) use.setAttribute('href', oscuro ? '#icon-sun' : '#icon-moon');
         },

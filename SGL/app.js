@@ -1854,7 +1854,7 @@ const UI = (function () {
     function toggleTheme() {
         document.body.classList.toggle('dark-mode');
         const isD = document.body.classList.contains('dark-mode');
-        localStorage.setItem(`${APP_KEY}_dark`, isD ? 'dark' : 'light');
+        localStorage.setItem('IDR_dark', isD ? '1' : '0');
         const icon = document.getElementById('theme-icon'), label = document.getElementById('theme-label');
         if (icon) icon.innerHTML = `<use href="#icon-${isD ? 'sun' : 'moon'}"/>`;
         if (label) label.textContent = isD ? 'Modo claro' : 'Modo oscuro';
@@ -3260,8 +3260,8 @@ window.addEventListener('DOMContentLoaded', () => {
         } catch (_) { }
     });
 
-    const saved = localStorage.getItem(`${APP_KEY}_dark`);
-    if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    const saved = localStorage.getItem('IDR_dark');
+    if (saved === '1' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.body.classList.add('dark-mode');
         if (document.getElementById('theme-icon')) document.getElementById('theme-icon').innerHTML = '<use href="#icon-sun"/>';
         if (document.getElementById('theme-label')) document.getElementById('theme-label').textContent = 'Modo claro';
