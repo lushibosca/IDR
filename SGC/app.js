@@ -466,6 +466,10 @@
         let _enAlternanciaHaciaAtras = false;
         let _mdDown = false;
 
+        // Modal(es) actualmente abiertos — evita repetir el selector '.modal.show' en cada llamador
+        const _modalActual = () => document.querySelector('.modal.show');
+        const _modalesAbiertos = () => Array.from(document.querySelectorAll('.modal.show'));
+
         // ── Focus trap ──────────────────────────────────────────
         const FOCUSABLE = [
             'a[href]', 'button:not([disabled])', 'input:not([disabled])',
@@ -536,7 +540,7 @@
             }
 
             _navegandoHaciaAtras = true;
-            const abiertos = Array.from(document.querySelectorAll('.modal.show'));
+            const abiertos = _modalesAbiertos();
             if (abiertos.length > 0) {
                 const topModal = abiertos[abiertos.length - 1];
                 _ejecutarAccionCierre(topModal.id);
@@ -603,7 +607,7 @@
             }
             modal.classList.remove('show');
 
-            if (document.querySelectorAll('.modal.show').length === 0) {
+            if (_modalesAbiertos().length === 0) {
                 document.body.classList.remove('modal-open');
             }
 
@@ -640,7 +644,7 @@
         }
 
         function abrirConPadre(modalId, setupFn = null) {
-            const modalAbierto = document.querySelector('.modal.show');
+            const modalAbierto = _modalActual();
             const padre = (modalAbierto && modalAbierto.id !== modalId) ? modalAbierto.id : null;
             if (typeof setupFn === 'function') setupFn();
             if (padre) {
@@ -660,7 +664,7 @@
         }
 
         function cerrarTodos() {
-            document.querySelectorAll('.modal.show').forEach(modal => {
+            _modalesAbiertos().forEach(modal => {
                 delete _accionesVolver[modal.id];
                 modal.classList.remove('show');
                 modal.removeEventListener('mousedown', _onMD);
@@ -672,7 +676,7 @@
         }
 
         function cerrarTop() {
-            const abiertos = Array.from(document.querySelectorAll('.modal.show'));
+            const abiertos = _modalesAbiertos();
             if (!abiertos.length) return;
             const topModal = abiertos[abiertos.length - 1];
             _ejecutarAccionCierre(topModal.id);
@@ -702,7 +706,8 @@
             ejecutarAccionCierre: _ejecutarAccionCierre,
             getPadre: (id) => _padres[id] || null,
             setPadre: (id, padreId) => { if (id && padreId) _padres[id] = padreId; },
-            nav
+            nav,
+            modalActual: _modalActual
         };
     })();
 
@@ -812,7 +817,7 @@
         // ── Modal confirmar ───────────────────────────────────────────────────
         function confirmarModal(texto, labelOk = 'Eliminar', opciones = {}) {
             return new Promise(resolve => {
-                const modalPadre = document.querySelector('.modal.show');
+                const modalPadre = MM.modalActual();
                 const modalPadreId = modalPadre ? modalPadre.id : null;
 
                 document.getElementById('modal-confirmar-texto').textContent = texto;
@@ -883,7 +888,7 @@
         // onElegir(idx): se llama con el índice elegido.
         // onCancelar(): se llama al cancelar (Escape o botón) — debe reabrir el modal padre.
         function pickerModal(titulo, opciones, onElegir, onCancelar) {
-            const modalPadre = document.querySelector('.modal.show');
+            const modalPadre = MM.modalActual();
             const modalPadreId = modalPadre ? modalPadre.id : null;
 
             document.getElementById('modal-picker-titulo').textContent = titulo;
@@ -996,7 +1001,7 @@
         }
 
         function sincronizarGrabadores(dispId) {
-            const disp = data.dispositivos.find(d => d.id === dispId);
+            const disp = dispById(dispId);
             if (!disp) return;
             data.grabadores.forEach((g, i) => {
                 if (g.dispositivoId !== dispId) return;
@@ -1020,12 +1025,20 @@
             data.eliminados[col][id] = new Date().toISOString();
         }
 
+        // Lookups de entidad por id — evitan repetir el .find(...) suelto en cada módulo
+        const dispById = id => data.dispositivos.find(d => d.id === id) || null;
+        const grabById = id => data.grabadores.find(g => g.id === id) || null;
+        const grabByDispId = dispId => data.grabadores.find(g => g.dispositivoId === dispId) || null;
+
         const api = {
             data,
             cargar,
             guardar,
             registrarEliminado,
             sincronizarGrabadores,
+            dispById,
+            grabById,
+            grabByDispId,
             // Caches de derived data — se invalidan en cada Store.guardar()/Store.cargar()
             cacheAsignaciones: null,
             cacheDupMacs: null,
@@ -1133,7 +1146,7 @@
 
         if (e.key === 'Escape') {
 
-            if (document.querySelector('.modal.show')) {
+            if (MM.modalActual()) {
                 MM.cerrarTop();
                 return;
             }
@@ -1305,7 +1318,7 @@
         // Retorna true si el dispositivo con ese id tiene un estado inactivo en Store.data
         function esDispInactivo(dispId) {
             if (!dispId) return false;
-            const d = Store.data.dispositivos.find(x => x.id === dispId);
+            const d = Store.dispById(dispId);
             return d ? ESTADOS_INACTIVOS.includes(d.estado) : false;
         }
 
@@ -1430,7 +1443,7 @@
             // grabador como dispositivo, y "otros dispositivos"), excluyendo lo que ya pertenece
             // al grabador que se está editando (para no bloquear su propio dispositivo asignado).
             const enUso = _calcIdsEnProd();
-            const grabActual = Store.data.grabadores.find(g => g.id === EdicionState.edicion.grabId);
+            const grabActual = Store.grabById(EdicionState.edicion.grabId);
             if (grabActual?.dispositivoId) enUso.delete(grabActual.dispositivoId);
             sel.innerHTML = '<option value="">Seleccionar…</option>';
             Store.data.dispositivos
@@ -1804,7 +1817,7 @@
 
             function _getDispLabelForMerge(id) {
                 if (!id) return '';
-                const d = Store.data.dispositivos.find(x => x.id === id) || (remoto.dispositivos || []).find(x => x.id === id);
+                const d = Store.dispById(id) || (remoto.dispositivos || []).find(x => x.id === id);
                 return d ? FormHelpers.labelDisp(d) : id;
             }
 
@@ -2694,14 +2707,20 @@
         }
     };
 
+    // Localiza el grid de transición y el chevron dentro de un contenedor de "activos"
+    // (piso o grupo). Evita repetir los mismos selectores :scope > ... en cada toggle.
+    const _gridTransitionDe = (el) => el.querySelector(':scope > .activos-grid-transition');
+    const _chevronPisoDe = (el) => el.querySelector(':scope > .grupo-piso-header .nvr-chevron');
+    const _chevronGrupoDe = (el) => el.querySelector(':scope > .grupo-activos-header .nvr-chevron, :scope > .nvr-chevron');
+
     function _togglePisoActivos(floorKey) {
         const col = _activos.pisosCollapsed;
         Busqueda.pisosOcultosConEdificios = false;
         const floorContainer = document.querySelector(`.sub-grupo-piso[data-floor-key="${CSS.escape(floorKey)}"]`);
         if (!floorContainer) return;
 
-        const grid = floorContainer.querySelector(':scope > .activos-grid-transition');
-        const chevron = floorContainer.querySelector(':scope > .grupo-piso-header .nvr-chevron');
+        const grid = _gridTransitionDe(floorContainer);
+        const chevron = _chevronPisoDe(floorContainer);
 
         if (col.has(floorKey)) {
             col.delete(floorKey);
@@ -2730,6 +2749,15 @@
         return res;
     }
 
+    // Re-renderiza el panel de resumen general con los datos actuales del Store.
+    // Compartido por los toggles del dashboard que solo cambian estado de UI local.
+    function _refrescarResumenGeneral() {
+        const disps = Store.data.dispositivos;
+        const grabs = Store.data.grabadores;
+        const idsEnProd = _calcIdsEnProd();
+        _renderResumenGeneral(disps, grabs, idsEnProd);
+    }
+
     function _toggleTipoDetalle(tipoKey) {
         if (_dash.tipoAbierto !== tipoKey) {
             _dash.estadoAbierto = null;
@@ -2738,10 +2766,7 @@
         }
         _dash.tipoAbierto = _dash.tipoAbierto === tipoKey ? null : tipoKey;
 
-        const disps = Store.data.dispositivos;
-        const grabs = Store.data.grabadores;
-        const idsEnProd = _calcIdsEnProd();
-        _renderResumenGeneral(disps, grabs, idsEnProd);
+        _refrescarResumenGeneral();
     };
 
     function _toggleEstadoDetalle(estadoKey) {
@@ -2753,10 +2778,7 @@
             _dash.l2EdificioAbierto = null;
         }
 
-        const disps = Store.data.dispositivos;
-        const grabs = Store.data.grabadores;
-        const idsEnProd = _calcIdsEnProd();
-        _renderResumenGeneral(disps, grabs, idsEnProd);
+        _refrescarResumenGeneral();
     };
 
 
@@ -3182,7 +3204,7 @@
     // (o una sección nueva). `valor` puede ser string o array de strings (una línea por elemento).
     // Los valores vacíos o ausentes no se muestran; una sección sin filas tampoco.
     // Firmware y patrimonio viven en el dispositivo vinculado (g.dispositivoId).
-    const _dispDeGrab = (g) => g.dispositivoId ? Store.data.dispositivos.find(d => d.id === g.dispositivoId) || null : null;
+    const _dispDeGrab = (g) => Store.dispById(g.dispositivoId);
 
     function _seccionesDetalleGrab({ g, ocup, libre }) {
         const disp = _dispDeGrab(g);
@@ -3924,8 +3946,8 @@
         if (!card) return;
         const enBusqueda = !!Busqueda.estadoColapsadoPrevio;
         const aplicar = (c, expandido) => {
-            c.querySelector(':scope > .activos-grid-transition')?.classList.toggle('collapsed', !expandido);
-            c.querySelector(':scope > .grupo-activos-header .nvr-chevron')?.classList.toggle('nvr-chevron--collapsed', !expandido);
+            _gridTransitionDe(c)?.classList.toggle('collapsed', !expandido);
+            _chevronGrupoDe(c)?.classList.toggle('nvr-chevron--collapsed', !expandido);
         };
         const expandir = col.has(groupId);
         if (expandir) {
@@ -4129,7 +4151,7 @@
 
             lista.innerHTML = grabs.map(g => {
                 const canalesHtml = g.canales_data.map(c => {
-                    const disp = c.dispositivoId ? Store.data.dispositivos.find(d => d.id === c.dispositivoId) : null;
+                    const disp = Store.dispById(c.dispositivoId);
 
                     if (disp) {
                         const tituloCanal = c.descripcion || disp.mac || disp.serial || '—';
@@ -4246,10 +4268,10 @@
 
         // Clonamos y ordenamos alfabéticamente la lista de otros dispositivos
         const otros = [...(Store.data.otros_prod || [])].sort((a, b) => {
-            const dispA = a.dispositivoId ? Store.data.dispositivos.find(d => d.id === a.dispositivoId) : null;
+            const dispA = Store.dispById(a.dispositivoId);
             const descA = a.descripcion || (dispA ? (dispA.mac || dispA.serial || 'zzz') : 'zzz');
 
-            const dispB = b.dispositivoId ? Store.data.dispositivos.find(d => d.id === b.dispositivoId) : null;
+            const dispB = Store.dispById(b.dispositivoId);
             const descB = b.descripcion || (dispB ? (dispB.mac || dispB.serial || 'zzz') : 'zzz');
 
             return descA.localeCompare(descB, undefined, { numeric: true, sensitivity: 'base' });
@@ -4258,7 +4280,7 @@
             listaOtros.innerHTML = `<div class="dash-empty-text dash-empty-text--center">Sin otros dispositivos en producción</div>`;
         } else {
             const itemsHtml = otros.map(o => {
-                const disp = o.dispositivoId ? Store.data.dispositivos.find(d => d.id === o.dispositivoId) : null;
+                const disp = Store.dispById(o.dispositivoId);
                 const tc = disp ? (S.TIPOS[disp.tipo] || { emoji: '📦' }) : { emoji: '❓' };
                 const desc = o.descripcion || (disp ? (disp.mac || disp.serial || 'Sin descripción') : 'Sin dispositivo asignado');
                 const p = o.ip || '';
@@ -4512,7 +4534,7 @@
             const macCounts = {};
             function _contarMac(dispId) {
                 if (!dispId) return;
-                const d = Store.data.dispositivos.find(x => x.id === dispId);
+                const d = Store.dispById(dispId);
                 if (d && d.mac) {
                     d.mac.split(',').forEach(m => {
                         const k = m.trim().toUpperCase();
@@ -4602,8 +4624,8 @@
             subs.forEach(fp => {
                 const key = fp.dataset.floorKey;
                 if (expandir) col.delete(key); else col.add(key);
-                fp.querySelector(':scope > .activos-grid-transition')?.classList.toggle('collapsed', !expandir);
-                fp.querySelector(':scope > .grupo-piso-header .nvr-chevron')?.classList.toggle('nvr-chevron--collapsed', !expandir);
+                _gridTransitionDe(fp)?.classList.toggle('collapsed', !expandir);
+                _chevronPisoDe(fp)?.classList.toggle('nvr-chevron--collapsed', !expandir);
             });
             api.pisosOcultosConEdificios = false;
         }
@@ -4627,8 +4649,8 @@
                     // Estado 0 → Estado 1: colapsar edificios y pisos
                     document.querySelectorAll('.sub-grupo-piso[data-floor-key]').forEach(fp => {
                         const floorKey = fp.dataset.floorKey;
-                        const grid = fp.querySelector(':scope > .activos-grid-transition');
-                        const chevron = fp.querySelector(':scope > .grupo-piso-header .nvr-chevron');
+                        const grid = _gridTransitionDe(fp);
+                        const chevron = _chevronPisoDe(fp);
                         if (!grid) return;
                         ActivosRender.activos.pisosCollapsed.add(floorKey);
                         grid.classList.add('collapsed');
@@ -4637,8 +4659,8 @@
                     api.pisosOcultosConEdificios = true;
                     document.querySelectorAll('.grupo-activos-card[data-grupo]').forEach(card => {
                         const groupId = card.dataset.grupo;
-                        const grid = card.querySelector(':scope > .activos-grid-transition');
-                        const chevron = card.querySelector(':scope > .grupo-activos-header .nvr-chevron, :scope > .nvr-chevron');
+                        const grid = _gridTransitionDe(card);
+                        const chevron = _chevronGrupoDe(card);
                         if (!grid) return;
                         ActivosRender.activos.collapsed.add(groupId);
                         grid.classList.add('collapsed');
@@ -4649,8 +4671,8 @@
                     api.pisosOcultosConEdificios = false;
                     ActivosRender.activos.collapsed.clear();
                     document.querySelectorAll('.grupo-activos-card[data-grupo]').forEach(card => {
-                        const grid = card.querySelector(':scope > .activos-grid-transition');
-                        const chevron = card.querySelector(':scope > .grupo-activos-header .nvr-chevron, :scope > .nvr-chevron');
+                        const grid = _gridTransitionDe(card);
+                        const chevron = _chevronGrupoDe(card);
                         if (!grid) return;
                         grid.classList.remove('collapsed');
                         if (chevron) chevron.classList.remove('nvr-chevron--collapsed');
@@ -4658,8 +4680,8 @@
                     if (!hayPisosColapsados) {
                         document.querySelectorAll('.sub-grupo-piso[data-floor-key]').forEach(fp => {
                             const floorKey = fp.dataset.floorKey;
-                            const grid = fp.querySelector(':scope > .activos-grid-transition');
-                            const chevron = fp.querySelector(':scope > .grupo-piso-header .nvr-chevron');
+                            const grid = _gridTransitionDe(fp);
+                            const chevron = _chevronPisoDe(fp);
                             if (!grid) return;
                             ActivosRender.activos.pisosCollapsed.add(floorKey);
                             grid.classList.add('collapsed');
@@ -4672,15 +4694,15 @@
                     ActivosRender.activos.collapsed.clear();
                     ActivosRender.activos.pisosCollapsed.clear();
                     document.querySelectorAll('.grupo-activos-card[data-grupo]').forEach(card => {
-                        const grid = card.querySelector(':scope > .activos-grid-transition');
-                        const chevron = card.querySelector(':scope > .grupo-activos-header .nvr-chevron, :scope > .nvr-chevron');
+                        const grid = _gridTransitionDe(card);
+                        const chevron = _chevronGrupoDe(card);
                         if (!grid) return;
                         grid.classList.remove('collapsed');
                         if (chevron) chevron.classList.remove('nvr-chevron--collapsed');
                     });
                     document.querySelectorAll('.sub-grupo-piso[data-floor-key]').forEach(fp => {
-                        const grid = fp.querySelector(':scope > .activos-grid-transition');
-                        const chevron = fp.querySelector(':scope > .grupo-piso-header .nvr-chevron');
+                        const grid = _gridTransitionDe(fp);
+                        const chevron = _chevronPisoDe(fp);
                         if (!grid) return;
                         grid.classList.remove('collapsed');
                         if (chevron) chevron.classList.remove('nvr-chevron--collapsed');
@@ -4692,8 +4714,8 @@
                 if (hayColapsados) {
                     ActivosRender.activos.collapsed.clear();
                     document.querySelectorAll('.grupo-activos-card[data-grupo]').forEach(card => {
-                        const grid = card.querySelector(':scope > .activos-grid-transition');
-                        const chevron = card.querySelector(':scope > .grupo-activos-header .nvr-chevron, :scope > .nvr-chevron');
+                        const grid = _gridTransitionDe(card);
+                        const chevron = _chevronGrupoDe(card);
                         if (!grid) return;
                         grid.classList.remove('collapsed');
                         if (chevron) chevron.classList.remove('nvr-chevron--collapsed');
@@ -4701,8 +4723,8 @@
                 } else {
                     document.querySelectorAll('.grupo-activos-card[data-grupo]').forEach(card => {
                         const groupId = card.dataset.grupo;
-                        const grid = card.querySelector(':scope > .activos-grid-transition');
-                        const chevron = card.querySelector(':scope > .grupo-activos-header .nvr-chevron, :scope > .nvr-chevron');
+                        const grid = _gridTransitionDe(card);
+                        const chevron = _chevronGrupoDe(card);
                         if (!grid) return;
                         ActivosRender.activos.collapsed.add(groupId);
                         grid.classList.add('collapsed');
@@ -4963,6 +4985,33 @@
     }
 
     let _exportIpsModo = 'grabador'; // 'grabador' | 'modelo'
+
+    // Marca/desmarca todos los checkboxes que matchean `selector` y actualiza el label
+    // del botón "Seleccionar/Deseleccionar todo" identificado por `btnId`.
+    // Compartido entre el reporte de agrupamiento y la exportación de IPs.
+    function _toggleTodosCheckboxes(selector, btnId) {
+        const checkboxes = document.querySelectorAll(selector);
+        if (checkboxes.length === 0) return;
+
+        const todasSeleccionadas = Array.from(checkboxes).every(chk => chk.checked);
+        const nuevoEstado = !todasSeleccionadas;
+
+        checkboxes.forEach(chk => chk.checked = nuevoEstado);
+
+        const btn = document.getElementById(btnId);
+        if (btn) btn.textContent = nuevoEstado ? 'Deseleccionar todo' : 'Seleccionar todo';
+    }
+
+    // Sincroniza el label del botón "Seleccionar/Deseleccionar todo" con el estado
+    // actual de los checkboxes (usado tras un cambio manual de un checkbox individual).
+    function _actualizarBtnToggleCheckboxes(selector, btnId) {
+        const checkboxes = document.querySelectorAll(selector);
+        const btn = document.getElementById(btnId);
+        if (!btn || checkboxes.length === 0) return;
+
+        const todasSeleccionadas = Array.from(checkboxes).every(chk => chk.checked);
+        btn.textContent = todasSeleccionadas ? 'Deseleccionar todo' : 'Seleccionar todo';
+    }
 
     const UI = {
 
@@ -5700,7 +5749,7 @@
         },
 
         abrirEditarDispositivo(id) {
-            const d = Store.data.dispositivos.find(x => x.id === id); if (!d) return;
+            const d = Store.dispById(id); if (!d) return;
             EdicionState.edicion.dispId = id;
             const prefijo = 'editar-disp';
             FormHelpers.poblarSelectTipo(prefijo, d.tipo);
@@ -5719,7 +5768,7 @@
             document.getElementById(`${prefijo}-canales-group`).classList.toggle('hidden', !esGrab);
             document.getElementById(`${prefijo}-canales`).value = d.canales || 16;
 
-            const grabAsociado = esGrab ? Store.data.grabadores.find(g => g.dispositivoId === id) : null;
+            const grabAsociado = esGrab ? Store.grabByDispId(id) : null;
             const canalesOcupados = grabAsociado
                 ? grabAsociado.canales_data.filter(c => c.dispositivoId).length
                 : 0;
@@ -5827,8 +5876,8 @@
                 return;
             }
 
-            const dispActual = Store.data.dispositivos.find(x => x.id === EdicionState.edicion.dispId);
-            const grabAsociado = dispActual ? Store.data.grabadores.find(g => g.dispositivoId === EdicionState.edicion.dispId) : null;
+            const dispActual = Store.dispById(EdicionState.edicion.dispId);
+            const grabAsociado = dispActual ? Store.grabByDispId(EdicionState.edicion.dispId) : null;
             if (grabAsociado) {
                 const canalesOcupados = grabAsociado.canales_data.filter(c => c.dispositivoId).length;
                 if (tipo !== dispActual.tipo) {
@@ -6001,15 +6050,15 @@
 
         verGrabadorDesdeDispositivo() {
             if (!EdicionState.edicion.dispId) return;
-            const grab = Store.data.grabadores.find(g => g.dispositivoId === EdicionState.edicion.dispId);
+            const grab = Store.grabByDispId(EdicionState.edicion.dispId);
             if (!grab) return;
             UI.abrirEditarGrabador(grab.id);
         },
 
         async eliminarDispositivo() {
             if (!EdicionState.edicion.dispId) return;
-            const d = Store.data.dispositivos.find(x => x.id === EdicionState.edicion.dispId);
-            const grabAsoc = Store.data.grabadores.find(g => g.dispositivoId === EdicionState.edicion.dispId);
+            const d = Store.dispById(EdicionState.edicion.dispId);
+            const grabAsoc = Store.grabByDispId(EdicionState.edicion.dispId);
             if (grabAsoc) {
                 const ocupados = grabAsoc.canales_data.filter(c => c.dispositivoId).length;
                 if (ocupados > 0) {
@@ -6057,7 +6106,7 @@
             const dispId = document.getElementById(`${prefijo}-dispositivo-id`).value;
             if (!FormHelpers.validarCampoIP(`${prefijo}-ip`)) return;
 
-            const disp = Store.data.dispositivos.find(x => x.id === dispId);
+            const disp = Store.dispById(dispId);
             if (!disp) { Notif.toast('Dispositivo no encontrado', 'error'); return; }
 
             historial.empujar('Agregar grabador');
@@ -6080,7 +6129,7 @@
         },
 
         abrirEditarGrabador(id) {
-            const g = Store.data.grabadores.find(x => x.id === id); if (!g) return;
+            const g = Store.grabById(id); if (!g) return;
             EdicionState.edicion.grabId = id;
             const prefijo = 'editar-grab';
             document.getElementById(`${prefijo}-nombre`).value = g.descripcion;
@@ -6110,7 +6159,7 @@
         async desasignarCanalesGrabador() {
             const grabId = EdicionState.edicion.grabId;
             if (!grabId) return;
-            const g = Store.data.grabadores.find(x => x.id === grabId);
+            const g = Store.grabById(grabId);
             if (!g) return;
             const ocupados = g.canales_data.filter(c => c.dispositivoId).length;
             if (!ocupados) { Notif.toast('El grabador no tiene canales asignados', 'info'); return; }
@@ -6158,10 +6207,10 @@
             const dispId = document.getElementById(`${prefijo}-dispositivo-id`).value;
             if (!FormHelpers.validarCampoIP(`${prefijo}-ip`)) return;
 
-            const disp = Store.data.dispositivos.find(x => x.id === dispId);
+            const disp = Store.dispById(dispId);
             if (!disp) { Notif.toast('Dispositivo no encontrado', 'error'); return; }
 
-            const grabActual = Store.data.grabadores.find(x => x.id === EdicionState.edicion.grabId);
+            const grabActual = Store.grabById(EdicionState.edicion.grabId);
             if (grabActual) {
                 const maxCanalOcupado = grabActual.canales_data
                     .filter(c => c.dispositivoId)
@@ -6204,7 +6253,7 @@
 
         async eliminarGrabador() {
             if (!EdicionState.edicion.grabId) return;
-            const g = Store.data.grabadores.find(x => x.id === EdicionState.edicion.grabId);
+            const g = Store.grabById(EdicionState.edicion.grabId);
             const ocupados = g ? g.canales_data.filter(c => c.dispositivoId).length : 0;
             const avisoExtra = ocupados > 0
                 ? `\n¡Atención! Tiene ${ocupados} canal${ocupados === 1 ? '' : 'es'} ocupado${ocupados === 1 ? '' : 's'}. Las cámaras quedarán libres.`
@@ -6238,7 +6287,7 @@
             EdicionState.edicion.canalGrabId = grabId;
             EdicionState.edicion.canalN = nCanal;
             EdicionState.edicion.canalDesdeDispId = desdeDispId || null;
-            const g = Store.data.grabadores.find(x => x.id === grabId); if (!g) return;
+            const g = Store.grabById(grabId); if (!g) return;
             const slot = g.canales_data.find(c => c.canal === nCanal);
 
             document.getElementById('modal-canal-titulo').textContent = `Canal ${nCanal} — ${g.descripcion}`;
@@ -6263,7 +6312,7 @@
             const input = document.getElementById('canal-disp-input');
             hiddenSel.value = slot?.dispositivoId || '';
             if (slot?.dispositivoId) {
-                const d = Store.data.dispositivos.find(x => x.id === slot.dispositivoId);
+                const d = Store.dispById(slot.dispositivoId);
                 input.value = d ? (d.mac || d.serial || d.id) : '';
             } else {
                 input.value = '';
@@ -6569,7 +6618,7 @@
         },
 
         async guardarAsignacionCanal() {
-            const g = Store.data.grabadores.find(x => x.id === EdicionState.edicion.canalGrabId); if (!g) return;
+            const g = Store.grabById(EdicionState.edicion.canalGrabId); if (!g) return;
             const slot = g.canales_data.find(c => c.canal === EdicionState.edicion.canalN); if (!slot) return;
 
             const dispInput = document.getElementById('canal-disp-input');
@@ -6581,7 +6630,7 @@
                 return;
             }
             if (dispId) {
-                const d = Store.data.dispositivos.find(x => x.id === dispId);
+                const d = Store.dispById(dispId);
                 const expectedText = d ? (d.mac || d.serial || d.id) : '';
                 if (!d || textoInput !== expectedText) {
                     document.getElementById('sel-canal-dispositivo').value = '';
@@ -6727,7 +6776,7 @@
 
             hiddenSel.value = o.dispositivoId || '';
             if (o.dispositivoId) {
-                const d = Store.data.dispositivos.find(x => x.id === o.dispositivoId);
+                const d = Store.dispById(o.dispositivoId);
                 input.value = d ? (d.mac || d.serial || d.id) : '';
             } else {
                 input.value = '';
@@ -7359,27 +7408,11 @@
         },
 
         toggleCheckboxesReporte() {
-            const checkboxes = document.querySelectorAll('.chk-grupo-rpt');
-            if (checkboxes.length === 0) return;
-
-            // Verificamos si TODAS están marcadas actualmente
-            const todasSeleccionadas = Array.from(checkboxes).every(chk => chk.checked);
-            const nuevoEstado = !todasSeleccionadas; // Si están todas, desmarcamos. Si falta alguna, marcamos todas.
-
-            checkboxes.forEach(chk => chk.checked = nuevoEstado);
-
-            const btn = document.getElementById('btn-toggle-chk-reporte');
-            if (btn) btn.textContent = nuevoEstado ? 'Deseleccionar todo' : 'Seleccionar todo';
+            _toggleTodosCheckboxes('.chk-grupo-rpt', 'btn-toggle-chk-reporte');
         },
 
         actualizarBtnToggleReporte() {
-            const checkboxes = document.querySelectorAll('.chk-grupo-rpt');
-            const btn = document.getElementById('btn-toggle-chk-reporte');
-            if (!btn || checkboxes.length === 0) return;
-
-            // Si el usuario marca/desmarca manualmente, actualizamos el texto del botón
-            const todasSeleccionadas = Array.from(checkboxes).every(chk => chk.checked);
-            btn.textContent = todasSeleccionadas ? 'Deseleccionar todo' : 'Seleccionar todo';
+            _actualizarBtnToggleCheckboxes('.chk-grupo-rpt', 'btn-toggle-chk-reporte');
         },
 
         abrirExportarIps() {
@@ -7546,25 +7579,11 @@
         },
 
         toggleCheckboxesExportarIps() {
-            const checkboxes = document.querySelectorAll('.chk-exportar-ips:not(:disabled)');
-            if (checkboxes.length === 0) return;
-
-            const todasSeleccionadas = Array.from(checkboxes).every(chk => chk.checked);
-            const nuevoEstado = !todasSeleccionadas;
-
-            checkboxes.forEach(chk => chk.checked = nuevoEstado);
-
-            const btn = document.getElementById('btn-toggle-chk-exportar-ips');
-            if (btn) btn.textContent = nuevoEstado ? 'Deseleccionar todo' : 'Seleccionar todo';
+            _toggleTodosCheckboxes('.chk-exportar-ips:not(:disabled)', 'btn-toggle-chk-exportar-ips');
         },
 
         actualizarBtnToggleExportarIps() {
-            const checkboxes = document.querySelectorAll('.chk-exportar-ips:not(:disabled)');
-            const btn = document.getElementById('btn-toggle-chk-exportar-ips');
-            if (!btn || checkboxes.length === 0) return;
-
-            const todasSeleccionadas = Array.from(checkboxes).every(chk => chk.checked);
-            btn.textContent = todasSeleccionadas ? 'Deseleccionar todo' : 'Seleccionar todo';
+            _actualizarBtnToggleCheckboxes('.chk-exportar-ips:not(:disabled)', 'btn-toggle-chk-exportar-ips');
         },
     };
 
@@ -7656,7 +7675,7 @@
         const modalAbierto = document.body.classList.contains('modal-open');
 
         if (e.key === 'Enter' && modalAbierto && tag !== 'TEXTAREA' && tag !== 'BUTTON') {
-            const modal = document.querySelector('.modal.show');
+            const modal = MM.modalActual();
             if (modal) {
                 const accion = {
                     'modal-nuevo-disp': () => UI.guardarNuevoDispositivo(),
@@ -7785,8 +7804,8 @@
                         grupos.forEach(g => {
                             if (abrirTodos) ActivosRender.activos.collapsed.delete(g.dataset.grupo);
                             else ActivosRender.activos.collapsed.add(g.dataset.grupo);
-                            const grid = g.querySelector(':scope > .activos-grid-transition');
-                            const chevron = g.querySelector(':scope > .grupo-activos-header .nvr-chevron, :scope > .nvr-chevron');
+                            const grid = _gridTransitionDe(g);
+                            const chevron = _chevronGrupoDe(g);
                             grid?.classList.toggle('collapsed', !abrirTodos);
                             chevron?.classList.toggle('nvr-chevron--collapsed', !abrirTodos);
                         });
@@ -7807,8 +7826,8 @@
                         pisos.forEach(p => {
                             if (abrirTodos) ActivosRender.activos.pisosCollapsed.delete(p.dataset.floorKey);
                             else ActivosRender.activos.pisosCollapsed.add(p.dataset.floorKey);
-                            const grid = p.querySelector(':scope > .activos-grid-transition');
-                            const chevron = p.querySelector(':scope > .grupo-piso-header .nvr-chevron');
+                            const grid = _gridTransitionDe(p);
+                            const chevron = _chevronPisoDe(p);
                             grid?.classList.toggle('collapsed', !abrirTodos);
                             chevron?.classList.toggle('nvr-chevron--collapsed', !abrirTodos);
                         });
@@ -9555,6 +9574,26 @@
             return partes.join(' · ');
         }
 
+        // Filtra una lista de racks por texto libre contra nombre, número, edificio,
+        // dependencia, piso, marca, modelo y patrimonio. Compartido por renderRackDropdown
+        // para el filtro normal y el fallback "buscar en todos los edificios".
+        function _racksQueMatchean(candidatos, query) {
+            return candidatos.filter(r => {
+                const nombre = formatearNombreRack(r).toLowerCase();
+                const num = String(r.numero || '').toLowerCase();
+                const idf = String(r.identificador || '').toLowerCase();
+                const ed = String(r.edificio || '').toLowerCase();
+                const dep = String(r.dependencia || '').toLowerCase();
+                const piso = String(r.piso || '').toLowerCase();
+                const marca = String(r.marca || '').toLowerCase();
+                const mod = String(r.modelo || '').toLowerCase();
+                const pat = String(r.patrimonio || '').toLowerCase();
+                const u = r.unidades ? `${r.unidades}u` : '';
+                const haystack = `${nombre} ${num} ${idf} ${ed} ${dep} ${piso} ${marca} ${mod} ${pat} ${u}`;
+                return haystack.includes(query);
+            });
+        }
+
         function renderRackDropdown(cfg) {
             const input = document.getElementById(cfg.inputId);
             if (!input) return;
@@ -9574,37 +9613,11 @@
 
             let filtrados = candidatos;
             if (query) {
-                filtrados = candidatos.filter(r => {
-                    const nombre = formatearNombreRack(r).toLowerCase();
-                    const num = String(r.numero || '').toLowerCase();
-                    const idf = String(r.identificador || '').toLowerCase();
-                    const ed = String(r.edificio || '').toLowerCase();
-                    const dep = String(r.dependencia || '').toLowerCase();
-                    const piso = String(r.piso || '').toLowerCase();
-                    const marca = String(r.marca || '').toLowerCase();
-                    const mod = String(r.modelo || '').toLowerCase();
-                    const pat = String(r.patrimonio || '').toLowerCase();
-                    const u = r.unidades ? `${r.unidades}u` : '';
-                    const haystack = `${nombre} ${num} ${idf} ${ed} ${dep} ${piso} ${marca} ${mod} ${pat} ${u}`;
-                    return haystack.includes(query);
-                });
+                filtrados = _racksQueMatchean(candidatos, query);
 
                 if (filtrados.length === 0 && edificio) {
                     const todos = IDRInfra.getRacks('', { soloEnServicio: true });
-                    filtrados = todos.filter(r => {
-                        const nombre = formatearNombreRack(r).toLowerCase();
-                        const num = String(r.numero || '').toLowerCase();
-                        const idf = String(r.identificador || '').toLowerCase();
-                        const ed = String(r.edificio || '').toLowerCase();
-                        const dep = String(r.dependencia || '').toLowerCase();
-                        const piso = String(r.piso || '').toLowerCase();
-                        const marca = String(r.marca || '').toLowerCase();
-                        const mod = String(r.modelo || '').toLowerCase();
-                        const pat = String(r.patrimonio || '').toLowerCase();
-                        const u = r.unidades ? `${r.unidades}u` : '';
-                        const haystack = `${nombre} ${num} ${idf} ${ed} ${dep} ${piso} ${marca} ${mod} ${pat} ${u}`;
-                        return haystack.includes(query);
-                    });
+                    filtrados = _racksQueMatchean(todos, query);
                 }
             }
 
