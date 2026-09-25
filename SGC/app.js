@@ -985,6 +985,24 @@
             data.dispositivos.forEach(d => { if (!d.updatedAt) { d.updatedAt = _tsMig; _migrado = true; } });
             data.grabadores.forEach(g => { if (!g.updatedAt) { g.updatedAt = _tsMig; _migrado = true; } });
             (data.otros_prod || []).forEach(o => { if (!o.updatedAt) { o.updatedAt = _tsMig; _migrado = true; } });
+
+            // Migración 2: Limpiar estados inactivos (ej. descontinuado) en cámaras que están en producción
+            const idsEnProd = new Set();
+            data.grabadores.forEach(g => {
+                if (g.dispositivoId) idsEnProd.add(g.dispositivoId);
+                g.canales_data.forEach(c => { if (c.dispositivoId) idsEnProd.add(c.dispositivoId); });
+            });
+            data.otros_prod.forEach(o => {
+                if (o.dispositivoId) idsEnProd.add(o.dispositivoId);
+            });
+            data.dispositivos.forEach(d => {
+                if (d.estado && idsEnProd.has(d.id)) {
+                    d.estado = '';
+                    d.updatedAt = _tsMig;
+                    _migrado = true;
+                }
+            });
+
             if (_migrado) { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (_) { } }
 
             _invalidarCaches();
@@ -8393,7 +8411,14 @@
 
                     const macKey = (cam.mac_address || '').trim().toLowerCase();
                     if (macKey && dispPorMAC[macKey]) {
-                        slot.dispositivoId = dispPorMAC[macKey].id;
+                        const d = dispPorMAC[macKey];
+                        slot.dispositivoId = d.id;
+                        
+                        if (d.estado) {
+                            d.estado = '';
+                            d.updatedAt = S.fechaISO();
+                        }
+
                         // El parseador no trae edificio/piso/rack/puerto (el script de escaneo no
                         // los conoce). Si este dispositivo ya está asignado en otro lado con esos
                         // datos cargados, los copiamos automáticamente para no tener que cargarlos
