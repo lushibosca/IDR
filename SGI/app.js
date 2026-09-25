@@ -1619,9 +1619,35 @@ const UI = {
         // Si NO fue un long press, lo tratamos como un click normal
         if (!UI._mesLongPressed) {
             const mg = el.parentElement;
+            const abrioAhora = !mg.classList.contains('open');
+
+            if (abrioAhora) {
+                // Acordeón: cerrar los demás meses abiertos
+                document.querySelectorAll('.mes-group.open, .month-group.open').forEach(otro => {
+                    if (otro !== mg) {
+                        otro.classList.remove('open');
+                        const oTxt = otro.querySelector('span')?.textContent?.trim() || '';
+                        const oPartes = oTxt.split(' ');
+                        if (oPartes.length === 2) {
+                            const oMesIdx = NOMBRES_MESES.indexOf(oPartes[0]);
+                            const oAnioTxt = oPartes[1];
+                            if (oMesIdx >= 0 && oAnioTxt) {
+                                const oMesKey = String(oMesIdx + 1).padStart(2, '0');
+                                _histSetColapso(`mes-${oAnioTxt}-${oMesKey}`, false);
+                            }
+                        }
+                    }
+                });
+            }
+
             mg.classList.toggle('open');
-            const abrioAhora = mg.classList.contains('open');
-            if (abrioAhora) _cargarMesLazy(mg);
+            if (abrioAhora) {
+                _cargarMesLazy(mg);
+                setTimeout(() => {
+                    if (mg.getBoundingClientRect().top < 60) mg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 380);
+            }
+
             // Persistimos el estado: el texto del span es "Enero 2024" etc.
             const txt = el.querySelector('span')?.textContent?.trim() || '';
             const partes = txt.split(' ');
@@ -2704,14 +2730,47 @@ document.addEventListener('click', e => {
     const ys = e.target.closest('.year-summary');
     if (ys) {
         const yg = ys.parentElement;
+        const anioOpen = !yg.classList.contains('open');
+
+        if (anioOpen) {
+            // Acordeón: cerrar los demás años abiertos
+            document.querySelectorAll('.year-group.open').forEach(otro => {
+                if (otro !== yg) {
+                    otro.classList.remove('open');
+                    const oAnioTxt = otro.querySelector('.year-summary-inner')?.textContent?.trim().replace(/\D/g, '');
+                    if (oAnioTxt) _histSetColapso(`anio-${oAnioTxt}`, false);
+                    
+                    // También cerramos sus meses
+                    otro.querySelectorAll('.month-group, .mes-group').forEach(mg => {
+                        mg.classList.remove('open');
+                        const span = mg.querySelector('.mes-separador span')?.textContent?.trim() || '';
+                        const partes = span.split(' ');
+                        if (partes.length === 2) {
+                            const mesIdx = NOMBRES_MESES.indexOf(partes[0]);
+                            if (mesIdx >= 0 && oAnioTxt) {
+                                const mesKey = String(mesIdx + 1).padStart(2, '0');
+                                _histSetColapso(`mes-${oAnioTxt}-${mesKey}`, false);
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
         yg.classList.toggle('open');
-        const anioOpen = yg.classList.contains('open');
+        
+        if (anioOpen) {
+            setTimeout(() => {
+                if (yg.getBoundingClientRect().top < 60) yg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 380);
+        }
+
         const anioTxt = yg.querySelector('.year-summary-inner')?.textContent?.trim().replace(/\D/g, '');
         if (anioTxt) {
             _histSetColapso(`anio-${anioTxt}`, anioOpen);
             // Al cerrar el año, cerramos también todos sus meses
             if (!anioOpen) {
-                yg.querySelectorAll('.month-group').forEach(mg => {
+                yg.querySelectorAll('.month-group, .mes-group').forEach(mg => {
                     mg.classList.remove('open');
                     const span = mg.querySelector('.mes-separador span')?.textContent?.trim() || '';
                     const partes = span.split(' ');

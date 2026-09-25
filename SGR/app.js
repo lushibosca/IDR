@@ -1893,6 +1893,18 @@ function _renderResumenListaEdificios(contenedor, edificios, enServicio, totalSe
             const ed = tr.dataset.edificio;
             const open = !tr.classList.contains('open');
 
+            if (open) {
+                // Acordeón: cerrar los demás
+                contenedor.querySelectorAll('.resumen-fila-header.open').forEach(otro => {
+                    if (otro !== tr) {
+                        otro.classList.remove('open');
+                        _resumenAbiertos.delete(otro.dataset.edificio);
+                        const d = otro.nextElementSibling;
+                        d?.querySelector(':scope > td > .resumen-detalle-grid')?.classList.remove('expanded');
+                    }
+                });
+            }
+
             tr.classList.toggle('open', open);
             if (open) _resumenAbiertos.add(ed); else _resumenAbiertos.delete(ed);
             _guardarResumenAbiertos();
@@ -1900,6 +1912,12 @@ function _renderResumenListaEdificios(contenedor, edificios, enServicio, totalSe
             const detalle = tr.nextElementSibling;
             const grid = detalle?.querySelector(':scope > td > .resumen-detalle-grid');
             grid?.classList.toggle('expanded', open);
+
+            if (open) {
+                setTimeout(() => {
+                    if (tr.getBoundingClientRect().top < 60) tr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 380);
+            }
         });
     });
 
@@ -3763,7 +3781,35 @@ function _initBindings() {
                 return;
             }
 
-            setGroupState(header, !header.classList.contains('open'));
+            const isSub = header.classList.contains('inv-grupo-tr-sub');
+            const open = !header.classList.contains('open');
+
+            if (open) {
+                // Acordeón: cerrar hermanos
+                const selector = isSub ? '.inv-grupo-tr-sub.open' : '.inv-grupo-tr-header.open:not(.inv-grupo-tr-sub)';
+                wrap.querySelectorAll(selector).forEach(otro => {
+                    if (otro !== header) {
+                        setGroupState(otro, false);
+                        // Si cerramos un grupo principal, cerramos también sus sub-grupos
+                        if (!isSub) {
+                            let next = otro.nextElementSibling;
+                            while (next && next.classList.contains('inv-grupo-tr-sub')) {
+                                setGroupState(next, false);
+                                next = next.nextElementSibling;
+                            }
+                        }
+                    }
+                });
+            }
+
+            setGroupState(header, open);
+            
+            if (open) {
+                setTimeout(() => {
+                    if (header.getBoundingClientRect().top < 60) header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 380);
+            }
+            
             guardarGruposAbiertos(); 
         });
     });

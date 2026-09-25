@@ -1408,7 +1408,25 @@ function actualizarFiltrosYSelects() {
 function toggleRack(rackId) {
     const rack = state.racks.find(r => r.id === rackId);
     if (!rack) return;
-    rack.abierto = !rack.abierto;
+    
+    const abrir = !rack.abierto;
+
+    if (abrir) {
+        // Acordeón: cerrar los demás racks abiertos
+        state.racks.forEach(otro => {
+            if (otro.id !== rackId && otro.abierto) {
+                otro.abierto = false;
+                const oH = document.getElementById(`rheader-${otro.id}`);
+                const oB = document.getElementById(`rbody-${otro.id}`);
+                const oBtn = oH?.querySelector('button[data-action="toggle-rack"]');
+                if (oH) oH.classList.remove('open');
+                if (oB) oB.classList.remove('open');
+                if (oBtn) oBtn.title = 'Expandir';
+            }
+        });
+    }
+
+    rack.abierto = abrir;
     guardar();
 
     const header = document.getElementById(`rheader-${rackId}`);
@@ -1423,6 +1441,15 @@ function toggleRack(rackId) {
         if (content && !content.firstElementChild) {
             content.innerHTML = _renderRackBodyContent(rack);
         }
+
+        setTimeout(() => {
+            const card = document.getElementById(`rcard-${rackId}`);
+            if (card && card.getBoundingClientRect().top < 60) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else if (header && header.getBoundingClientRect().top < 60) {
+                header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 380);
     } else {
         if (header) header.classList.remove('open');
         if (body) body.classList.remove('open');
