@@ -1384,12 +1384,13 @@ input[type="file"].hidden {
     pointer-events: none;
     position: fixed;
     inset: 0;
-    background: var(--bg-overlay);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 200;
     align-items: center;
     justify-content: center;
     padding: 0.75rem;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     transition: opacity var(--t-modal), visibility var(--t-modal);
 }
 
@@ -3125,7 +3126,9 @@ kbd {
     position: fixed;
     inset: 0;
     z-index: 9998;
-    background: rgba(0, 0, 0, 0.35);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.18s ease;

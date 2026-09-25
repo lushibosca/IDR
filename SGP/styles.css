@@ -1191,9 +1191,9 @@ label {
 .modal {
     position: fixed;
     inset: 0;
-    background: var(--bg-overlay);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     z-index: 200;
     display: flex;
     align-items: center;
@@ -2020,7 +2020,9 @@ label {
     position: fixed;
     inset: 0;
     z-index: 9998;
-    background: rgba(0, 0, 0, 0.35);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.18s ease;
