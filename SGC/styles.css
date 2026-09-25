@@ -1897,7 +1897,7 @@ button:disabled {
     left: 0;
     right: 0;
     background: var(--bg-card);
-    border: 1px solid var(--border);
+    border: 1px solid var(--text-muted);
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow);
     max-height: 300px;
@@ -2478,7 +2478,7 @@ button:disabled {
     position: fixed;
     z-index: 90;
     background: var(--bg-card);
-    border: 1px solid var(--border);
+    border: 1px solid var(--text-muted);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     padding: var(--sp-4) var(--sp-5);

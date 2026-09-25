@@ -3043,6 +3043,10 @@ kbd {
     border-bottom: var(--border-w) solid var(--border);
 }
 
+.resumen-fila-header td {
+    border-bottom: none;
+}
+
 .resumen-fila:last-child td {
     border-bottom: none;
 }
