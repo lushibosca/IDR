@@ -127,6 +127,16 @@ const IDRInfra = (() => {
         return limpia;
     }
 
+    const KEY_EDIFICIOS_ELIMINADOS = 'IDR_edificios_eliminados';
+
+    function getEliminadosLocales() {
+        return new Set(_parseSeguro(localStorage.getItem(KEY_EDIFICIOS_ELIMINADOS), []));
+    }
+
+    function _guardarEliminadosLocales(setEliminados) {
+        try { localStorage.setItem(KEY_EDIFICIOS_ELIMINADOS, JSON.stringify([...setEliminados])); } catch (_) { }
+    }
+
     function agregarEdificio(nombreOStringConComas) {
         if (!nombreOStringConComas) return { agregados: [], duplicados: [], total: getEdificios() };
         const partes = (typeof nombreOStringConComas === 'string' ? nombreOStringConComas.split(',') : [nombreOStringConComas])
@@ -135,8 +145,10 @@ const IDRInfra = (() => {
 
         const actuales = getEdificios();
         const existentesMap = new Map(actuales.map(e => [e.toLowerCase(), e]));
+        const eliminados = getEliminadosLocales();
         const agregados = [];
         const duplicados = [];
+        let modificoEliminados = false;
 
         partes.forEach(p => {
             const norm = p.toLowerCase();
@@ -147,10 +159,17 @@ const IDRInfra = (() => {
                 actuales.push(p);
                 agregados.push(p);
             }
+            if (eliminados.has(norm)) {
+                eliminados.delete(norm);
+                modificoEliminados = true;
+            }
         });
 
         if (agregados.length) {
             setEdificios(actuales);
+        }
+        if (modificoEliminados) {
+            _guardarEliminadosLocales(eliminados);
         }
 
         return { agregados, duplicados, total: getEdificios() };
@@ -163,6 +182,9 @@ const IDRInfra = (() => {
         const filtrados = actuales.filter(e => e.trim().toLowerCase() !== norm);
         if (filtrados.length !== actuales.length) {
             setEdificios(filtrados);
+            const eliminados = getEliminadosLocales();
+            eliminados.add(norm);
+            _guardarEliminadosLocales(eliminados);
             return true;
         }
         return false;
@@ -172,14 +194,17 @@ const IDRInfra = (() => {
         if (!Array.isArray(remotoEdificios)) return { nuevos: 0, total: getEdificios() };
         const actuales = getEdificios();
         const existentes = new Set(actuales.map(e => e.trim().toLowerCase()));
+        const eliminados = getEliminadosLocales();
         let nuevos = 0;
 
         remotoEdificios.forEach(e => {
             if (typeof e === 'string' && e.trim()) {
                 const lim = e.trim().slice(0, 100);
-                if (!existentes.has(lim.toLowerCase())) {
+                const norm = lim.toLowerCase();
+                // Si no existe localmente, pero TAMPOCO está en el registro de eliminados, se agrega
+                if (!existentes.has(norm) && !eliminados.has(norm)) {
                     actuales.push(lim);
-                    existentes.add(lim.toLowerCase());
+                    existentes.add(norm);
                     nuevos++;
                 }
             }
