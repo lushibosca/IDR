@@ -1560,6 +1560,8 @@
         const FILENAME = 'cctv_data.json';
         const DEBOUNCE_MS = 3000;
         const RE_GIST_ID = /^[a-f0-9]{20,40}$/i;
+        // Único host permitido para raw_url (debe coincidir con connect-src de la CSP en index.html)
+        const RAW_HOST = 'gist.githubusercontent.com';
 
         let _cfg = { token: '', gistId: '', lastSync: null, auto: false };
         let _debounceTimer = null;
@@ -1749,26 +1751,26 @@
             return payload;
         }
 
-        // Lápidas que ya están en el Gist (null si no se pudo leer)
+        // Lápidas que ya están en el Gist. Lanza si no se pudo leer (red / HTTP): en ese caso no hay que
+        // subir, porque se perderían borrados hechos en otro equipo y esas entidades "resucitarían".
+        // Si el archivo todavía no existe o no tiene un JSON válido, no hay lápidas que preservar.
         async function _obtenerEliminadosRemotos(token, gistId) {
-            try {
-                const res = await fetch(`https://api.github.com/gists/${gistId}?_ts=${Date.now()}`, {
-                    headers: { Authorization: `token ${token}` }, cache: 'no-store'
-                });
-                if (!res.ok) return null;
-                const data = await res.json();
-                const file = data?.files?.[FILENAME];
-                if (!file) return null;
-                let contenido = file.content;
-                if (file.truncated) {
-                    const host = new URL(file.raw_url).hostname;
-                    if (!host.endsWith('.githubusercontent.com')) return null;
-                    const r2 = await fetch(`${file.raw_url}?_ts=${Date.now()}`, { cache: 'no-store' });
-                    contenido = await r2.text();
-                }
-                const parsed = S.safeParse(contenido);
-                return parsed && typeof parsed === 'object' ? S.sanitizarEliminados(parsed.eliminados) : null;
-            } catch { return null; }
+            const res = await fetch(`https://api.github.com/gists/${gistId}?_ts=${Date.now()}`, {
+                headers: { Authorization: `token ${token}` }, cache: 'no-store'
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status} al leer el Gist`);
+            const data = await res.json();
+            const file = data?.files?.[FILENAME];
+            if (!file) return S.eliminadosVacios();
+            let contenido = file.content;
+            if (file.truncated) {
+                if (new URL(file.raw_url).hostname !== RAW_HOST) throw new Error('raw_url inválida');
+                const r2 = await fetch(`${file.raw_url}?_ts=${Date.now()}`, { cache: 'no-store' });
+                if (!r2.ok) throw new Error(`HTTP ${r2.status} al leer el Gist`);
+                contenido = await r2.text();
+            }
+            const parsed = S.safeParse(contenido);
+            return S.sanitizarEliminados(parsed && typeof parsed === 'object' ? parsed.eliminados : null);
         }
 
         async function _ejecutarSubida(silencioso = false) {
@@ -1783,11 +1785,13 @@
             _setBusy(true);
             if (!silencioso) _setStatus('Subiendo…');
 
-            const elimRemotas = gistId ? await _obtenerEliminadosRemotos(token, gistId) : null;
-            const payloadData = await _generarPayload(elimRemotas);
-            const body = { files: { [FILENAME]: { content: JSON.stringify(payloadData, null, 2) } } };
-
+            // Todo dentro del try: si algo falla antes del fetch (lectura de lápidas, crypto.subtle
+            // no disponible fuera de https, etc.) el finally libera los botones igual.
             try {
+                const elimRemotas = gistId ? await _obtenerEliminadosRemotos(token, gistId) : null;
+                const payloadData = await _generarPayload(elimRemotas);
+                const body = { files: { [FILENAME]: { content: JSON.stringify(payloadData, null, 2) } } };
+
                 let res, data;
                 if (gistId) {
                     res = await fetch(`https://api.github.com/gists/${gistId}`, {
@@ -2404,8 +2408,9 @@
                 let contenido = file.content;
                 if (file.truncated) {
                     const rawOrigin = new URL(file.raw_url).hostname;
-                    if (!rawOrigin.endsWith('.githubusercontent.com')) throw new Error('raw_url inválida');
+                    if (rawOrigin !== RAW_HOST) throw new Error('raw_url inválida');
                     const r2 = await fetch(`${file.raw_url}?_ts=${Date.now()}`, { cache: 'no-store' });
+                    if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
                     contenido = await r2.text();
                 }
 
@@ -2504,9 +2509,10 @@
                 let contenido = file.content;
                 if (file.truncated) {
                     const rawOrigin = new URL(file.raw_url).hostname;
-                    if (!rawOrigin.endsWith('.githubusercontent.com')) return;
+                    if (rawOrigin !== RAW_HOST) return;
 
                     const r2 = await fetch(`${file.raw_url}?_ts=${Date.now()}`, { cache: 'no-store' });
+                    if (!r2.ok) return;
                     contenido = await r2.text();
                 }
 
