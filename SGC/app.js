@@ -110,6 +110,15 @@
             return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
         }
 
+        // updatedAt siempre en ISO UTC (toISOString): se compara como string en el merge.
+        // Convierte el formato viejo "YYYY-MM-DD HH:MM" (hora local) que dejaban los parseadores.
+        function normalizarTs(ts) {
+            if (typeof ts !== 'string' || !ts) return '';
+            if (!RE_FECHA.test(ts)) return ts;
+            const d = new Date(ts.replace(' ', 'T'));
+            return isNaN(d) ? '' : d.toISOString();
+        }
+
         function deepClone(o) {
             try { return structuredClone(o); }
             catch { return JSON.parse(JSON.stringify(o)); }
@@ -172,18 +181,32 @@
         };
 
         const KEY_TIPOS = `${APP_KEY}:cctv_tipos_custom`;
+        const RE_TIPO_KEY = /^[a-z0-9_]{1,100}$/;
         let TIPOS = { ...TIPOS_BUILTIN };
+
+        // Tipo personalizado saneado a partir de datos no confiables (localStorage, Gist, import).
+        // Devuelve null si la clave o el label no son válidos.
+        function sanitizarTipoCustom(k, v) {
+            if (TIPOS_BUILTIN[k] || !RE_TIPO_KEY.test(k)) return null;
+            if (!v || typeof v !== 'object' || typeof v.label !== 'string') return null;
+            const label = sanitize(v.label, 50);
+            if (!label) return null;
+            const emoji = (typeof v.emoji === 'string' && sanitize(v.emoji, 10)) || '📦';
+            const tipo = { label, emoji, badge: 'badge-otro', dot: 'var(--c-gold)', builtin: false };
+            const ts = normalizarTs(v.updatedAt);
+            if (ts) tipo.updatedAt = ts;
+            return tipo;
+        }
 
         function cargarTipos() {
             try {
                 const raw = localStorage.getItem(KEY_TIPOS);
                 if (!raw) return;
                 const custom = safeParse(raw);
-                if (typeof custom !== 'object' || Array.isArray(custom)) return;
+                if (!custom || typeof custom !== 'object' || Array.isArray(custom)) return;
                 Object.entries(custom).forEach(([k, v]) => {
-                    if (TIPOS_BUILTIN[k]) return;
-                    if (typeof v.label !== 'string' || typeof v.emoji !== 'string') return;
-                    TIPOS[k] = { label: sanitize(v.label, 50), emoji: sanitize(v.emoji, 10), badge: 'badge-otro', dot: 'var(--c-gold)', builtin: false };
+                    const tipo = sanitizarTipoCustom(k, v);
+                    if (tipo) TIPOS[k] = tipo;
                 });
             } catch { }
         }
@@ -191,7 +214,7 @@
         function guardarTipos() {
             const custom = {};
             Object.entries(TIPOS).forEach(([k, v]) => {
-                if (!v.builtin) custom[k] = { label: v.label, emoji: v.emoji };
+                if (!v.builtin) custom[k] = { label: v.label, emoji: v.emoji, ...(v.updatedAt ? { updatedAt: v.updatedAt } : {}) };
             });
             localStorage.setItem(KEY_TIPOS, JSON.stringify(custom));
         }
@@ -282,7 +305,7 @@
             const id = _strSeguro(d.id, 32);
             if (!id || !RE_ID.test(id)) return null;
 
-            const tipo = (TIPOS[d.tipo] || extraTipos[d.tipo]) ? d.tipo : 'otro';
+            const tipo = (TIPOS[d.tipo] || (extraTipos[d.tipo] && RE_TIPO_KEY.test(d.tipo))) ? d.tipo : 'otro';
             const ESTADOS = ['', 'averiado', 'revisar', 'desafectado', 'perdido', 'descontinuado'];
 
             const obj = {
@@ -306,7 +329,7 @@
                 const c = parseInt(d.canales);
                 obj.canales = Number.isFinite(c) && c >= 1 && c <= 256 ? c : 16;
             }
-            if (d.updatedAt && typeof d.updatedAt === 'string') obj.updatedAt = d.updatedAt;
+            if (normalizarTs(d.updatedAt)) obj.updatedAt = normalizarTs(d.updatedAt);
             return obj;
         }
 
@@ -358,7 +381,7 @@
                 canales_n: n,
                 canales_data: slots,
             };
-            if (g.updatedAt && typeof g.updatedAt === 'string') grabObj.updatedAt = g.updatedAt;
+            if (normalizarTs(g.updatedAt)) grabObj.updatedAt = normalizarTs(g.updatedAt);
             return grabObj;
         }
 
@@ -378,7 +401,7 @@
                 puerto: sanitize(o.puerto || '', 10),
                 comentarios: sanitize(o.comentarios || '', 300),
             };
-            if (o.updatedAt && typeof o.updatedAt === 'string') otroObj.updatedAt = o.updatedAt;
+            if (normalizarTs(o.updatedAt)) otroObj.updatedAt = normalizarTs(o.updatedAt);
             return otroObj;
         }
 
@@ -442,8 +465,8 @@
         }
 
         return {
-            sanitize, genId, fechaISO, deepClone, safeParse, MAX_JSON, SCHEMA_V, TIPOS_BUILTIN,
-            get TIPOS() { return TIPOS; }, guardarTipos, cargarTipos,
+            sanitize, genId, fechaISO, normalizarTs, deepClone, safeParse, MAX_JSON, SCHEMA_V, TIPOS_BUILTIN,
+            get TIPOS() { return TIPOS; }, guardarTipos, cargarTipos, sanitizarTipoCustom,
             get edificios() { return _edificios; }, guardarEdificios, cargarEdificios,
             generarFirma, verificarFirma, sanitizarDisp, sanitizarGrab, sanitizarOtroProd, sanitizarDataTotal,
             ELIM_COLS, eliminadosVacios, sanitizarEliminados,
@@ -982,9 +1005,11 @@
             // pero cualquier entidad remota con timestamp posterior seguirá ganando.
             let _migrado = false;
             const _tsMig = new Date().toISOString();
-            data.dispositivos.forEach(d => { if (!d.updatedAt) { d.updatedAt = _tsMig; _migrado = true; } });
-            data.grabadores.forEach(g => { if (!g.updatedAt) { g.updatedAt = _tsMig; _migrado = true; } });
-            (data.otros_prod || []).forEach(o => { if (!o.updatedAt) { o.updatedAt = _tsMig; _migrado = true; } });
+            // También normaliza el formato viejo "YYYY-MM-DD HH:MM" que dejaban los parseadores a ISO UTC.
+            [data.dispositivos, data.grabadores, data.otros_prod || []].forEach(arr => arr.forEach(e => {
+                const ts = S.normalizarTs(e.updatedAt) || _tsMig;
+                if (ts !== e.updatedAt) { e.updatedAt = ts; _migrado = true; }
+            }));
 
             // Migración 2: Limpiar estados inactivos (ej. descontinuado) en cámaras que están en producción
             const idsEnProd = new Set();
@@ -1914,7 +1939,7 @@
                     if (_remoteMasNuevo(loc, san)) {
                         // Remoto más nuevo: sobreescribir campos editables preservando el id
                         const camposDisp = ['tipo', 'estado', 'marca', 'modelo', 'serial', 'mac',
-                            'patrimonio', 'firmware', 'forma', 'canales', 'updatedAt'];
+                            'patrimonio', 'firmware', 'forma', 'canales', 'comentario', 'updatedAt'];
                         const antes = {}, despues = {};
                         camposDisp.forEach(k => {
                             if (san[k] !== undefined && san[k] !== loc[k]) {
@@ -2122,32 +2147,32 @@
         // Foto del estado para detectar novedades: se ignoran las lápidas (un cambio solo de lápidas no amerita avisar)
         const _fotoData = () => JSON.stringify({ d: Store.data.dispositivos, g: Store.data.grabadores, o: Store.data.otros_prod });
 
-        function _combinarDatosRemotos(remoto) {
+        // persistir=false: sólo calcula/aplica en memoria (vista previa). No guarda tipos ni edificios
+        // ni toca IDRInfra, y por lo tanto tampoco dispara el autosync (ver _simularMerge).
+        function _combinarDatosRemotos(remoto, { persistir = true } = {}) {
             let cTipos = 0, cEdif = 0;
 
             const res = _combinarEntidades(remoto);
 
-            if (remoto.tiposCustom && typeof remoto.tiposCustom === 'object') {
+            if (remoto.tiposCustom && typeof remoto.tiposCustom === 'object' && !Array.isArray(remoto.tiposCustom)) {
                 Object.entries(remoto.tiposCustom).forEach(([k, v]) => {
-                    if (S.TIPOS_BUILTIN[k]) return;
-                    if (!v?.label) return;
+                    const rem = S.sanitizarTipoCustom(k, v);
+                    if (!rem) return;
                     const locTipo = S.TIPOS[k];
-                    const remMasNuevo = v.updatedAt && (!locTipo?.updatedAt || v.updatedAt > locTipo.updatedAt);
                     if (!locTipo) {
-                        // Tipo nuevo
-                        S.TIPOS[k] = { label: v.label, emoji: v.emoji || '📦', badge: 'badge-otro', dot: 'var(--c-gold)', builtin: false, ...(v.updatedAt ? { updatedAt: v.updatedAt } : {}) };
+                        S.TIPOS[k] = rem;
                         cTipos++;
-                    } else if (remMasNuevo) {
+                    } else if (rem.updatedAt && (!locTipo.updatedAt || rem.updatedAt > locTipo.updatedAt)) {
                         // Tipo existente pero el remoto es más nuevo: actualizar label/emoji
-                        S.TIPOS[k] = { ...locTipo, label: v.label, emoji: v.emoji || locTipo.emoji, ...(v.updatedAt ? { updatedAt: v.updatedAt } : {}) };
+                        S.TIPOS[k] = { ...locTipo, label: rem.label, emoji: rem.emoji, updatedAt: rem.updatedAt };
                         cTipos++;
                     }
                 });
-                if (cTipos > 0) S.guardarTipos();
+                if (cTipos > 0 && persistir) S.guardarTipos();
             }
 
             if (Array.isArray(remoto.edificios)) {
-                if (typeof IDRInfra !== 'undefined') {
+                if (persistir && typeof IDRInfra !== 'undefined') {
                     const resEds = IDRInfra.combinarRemotos(remoto.edificios);
                     cEdif = resEds.nuevos;
                     S.cargarEdificios();
@@ -2163,11 +2188,36 @@
                             }
                         }
                     });
-                    if (cEdif > 0) S.guardarEdificios();
+                    if (cEdif > 0 && persistir) S.guardarEdificios();
                 }
             }
 
             return { ...res, cTipos, cEdif, cambios: res.cambios || [] };
+        }
+
+        // Combina en memoria para saber qué traería el remoto y restaura el estado local.
+        // No persiste nada: antes guardaba tipos/edificios y disparaba un autosync que subía
+        // el estado local al Gist mientras el modal de novedades seguía abierto.
+        function _simularMerge(remoto) {
+            const backupData = S.deepClone(Store.data);
+            const backupTipos = S.deepClone(S.TIPOS);
+            const backupEdif = [...S.edificios];
+            const dataAntes = _fotoData();
+            const tiposAntes = JSON.stringify(S.TIPOS);
+            const edifAntes = JSON.stringify(S.edificios);
+            let resMerge, huboCambios;
+            try {
+                resMerge = _combinarDatosRemotos(remoto, { persistir: false });
+                huboCambios = dataAntes !== _fotoData() || tiposAntes !== JSON.stringify(S.TIPOS) || edifAntes !== JSON.stringify(S.edificios);
+            } finally {
+                Object.assign(Store.data, backupData);
+                Object.keys(S.TIPOS).forEach(k => delete S.TIPOS[k]);
+                Object.assign(S.TIPOS, backupTipos);
+                S.edificios.length = 0;
+                S.edificios.push(...backupEdif);
+                Store.cacheAsignaciones = Store.cacheDupMacs = Store.cacheDupPatrimonios = null;
+            }
+            return { resMerge, huboCambios };
         }
 
         function _reemplazarConRemoto(remoto) {
@@ -2179,11 +2229,10 @@
                 .map(o => S.sanitizarOtroProd(o)).filter(Boolean);
             Store.data.eliminados = S.sanitizarEliminados(remoto.eliminados);
             Object.keys(S.TIPOS).forEach(k => { if (!S.TIPOS_BUILTIN[k]) delete S.TIPOS[k]; });
-            if (remoto.tiposCustom && typeof remoto.tiposCustom === 'object') {
+            if (remoto.tiposCustom && typeof remoto.tiposCustom === 'object' && !Array.isArray(remoto.tiposCustom)) {
                 Object.entries(remoto.tiposCustom).forEach(([k, v]) => {
-                    if (!S.TIPOS_BUILTIN[k] && v?.label) {
-                        S.TIPOS[k] = { label: v.label, emoji: v.emoji || '📦', badge: 'badge-otro', dot: 'var(--c-gold)', builtin: false, ...(v.updatedAt ? { updatedAt: v.updatedAt } : {}) };
-                    }
+                    const tipo = S.sanitizarTipoCustom(k, v);
+                    if (tipo) S.TIPOS[k] = tipo;
                 });
                 S.guardarTipos();
             }
@@ -2367,25 +2416,8 @@
                 let esValida = true;
                 if (tieneFirmaRemota) esValida = await S.verificarFirma(remoto);
 
-                const _simularMerge = () => {
-                    const backupData = S.deepClone(Store.data);
-                    const backupTipos = S.deepClone(S.TIPOS);
-                    const backupEdif = [...S.edificios];
-                    const dataAntes = _fotoData();
-                    const tiposAntes = JSON.stringify(S.TIPOS);
-                    const edifAntes = JSON.stringify(S.edificios);
-                    const resMerge = _combinarDatosRemotos(remoto);
-                    const huboCambios = (dataAntes !== _fotoData() || tiposAntes !== JSON.stringify(S.TIPOS) || edifAntes !== JSON.stringify(S.edificios));
-                    Object.assign(Store.data, backupData);
-                    Object.keys(S.TIPOS).forEach(k => delete S.TIPOS[k]);
-                    Object.assign(S.TIPOS, backupTipos);
-                    S.edificios.length = 0;
-                    S.edificios.push(...backupEdif);
-                    return { resMerge, huboCambios };
-                };
-
                 const _abrirNovedades = async () => {
-                    const { resMerge } = _simularMerge();
+                    const { resMerge } = _simularMerge(remoto);
                     _cfg.token = token; _cfg.gistId = gistId;
                     _guardarCfg();
                     
@@ -2487,27 +2519,7 @@
                     esValida = await S.verificarFirma(remoto);
                 }
 
-                const dataStringAntes = _fotoData();
-                const tiposStringAntes = JSON.stringify(S.TIPOS);
-                const edifStringAntes = JSON.stringify(S.edificios);
-
-                const backupData = S.deepClone(Store.data);
-                const backupTipos = S.deepClone(S.TIPOS);
-                const backupEdif = [...S.edificios];
-
-                const resMerge = _combinarDatosRemotos(remoto);
-
-                const dataStringDespues = _fotoData();
-                const tiposStringDespues = JSON.stringify(S.TIPOS);
-                const edifStringDespues = JSON.stringify(S.edificios);
-
-                const huboCambios = (dataStringAntes !== dataStringDespues || tiposStringAntes !== tiposStringDespues || edifStringAntes !== edifStringDespues);
-
-                Object.assign(Store.data, backupData);
-                Object.keys(S.TIPOS).forEach(k => delete S.TIPOS[k]);
-                Object.assign(S.TIPOS, backupTipos);
-                S.edificios.length = 0;
-                S.edificios.push(...backupEdif);
+                const { resMerge, huboCambios } = _simularMerge(remoto);
 
                 if (!huboCambios) return;
 
@@ -2533,7 +2545,7 @@
             };
             const CAMPO_LABEL = {
                 marca: 'Marca', modelo: 'Modelo', serial: 'Serial', mac: 'MAC',
-                patrimonio: 'Patrimonio', firmware: 'Firmware', forma: 'Forma', estado: 'Estado',
+                patrimonio: 'Patrimonio', firmware: 'Firmware', forma: 'Forma', estado: 'Estado', comentario: 'Comentario',
                 ip: 'IP', edificio: 'Edificio', piso: 'Piso', rack: 'Rack', puerto: 'Puerto',
                 comentarios: 'Comentarios', descripcion: 'Descripción', dispositivoId: 'Disp. asignado',
                 'edificio/piso/rack/puerto': 'Ubicación',
@@ -2882,9 +2894,9 @@
                 const tc = S.TIPOS[tipoKey];
                 const n = disps.filter(d => d.tipo === tipoKey).length;
                 chipsHtml += `
-                    <div class="stat-chip stat-chip-tipo" data-action="toggle-tipo" data-tipo="${tipoKey}">
+                    <div class="stat-chip stat-chip-tipo" data-action="toggle-tipo" data-tipo="${S.esc(tipoKey)}">
                         <div class="stat-chip-valor">${n}</div>
-                        <div class="stat-chip-label">${tc.emoji} ${(tc.label + (tipoKey === 'camara' ? 's' : '')).toUpperCase()}</div>
+                        <div class="stat-chip-label">${S.esc(tc.emoji)} ${S.esc((tc.label + (tipoKey === 'camara' ? 's' : '')).toUpperCase())}</div>
                         <span class="stat-chip-arrow">▶</span>
                     </div>`;
             });
@@ -2905,9 +2917,9 @@
                 const tc = S.TIPOS[tipoKey];
                 const n = disps.filter(d => d.tipo === tipoKey).length;
                 chipsHtml += `
-                    <div class="stat-chip stat-chip-tipo" data-action="toggle-tipo" data-tipo="${tipoKey}">
+                    <div class="stat-chip stat-chip-tipo" data-action="toggle-tipo" data-tipo="${S.esc(tipoKey)}">
                         <div class="stat-chip-valor">${n}</div>
-                        <div class="stat-chip-label">${tc.emoji} ${tc.label.toUpperCase()}</div>
+                        <div class="stat-chip-label">${S.esc(tc.emoji)} ${S.esc(tc.label.toUpperCase())}</div>
                         <span class="stat-chip-arrow">▶</span>
                     </div>`;
             });
@@ -2926,9 +2938,9 @@
             const tc = esGrupoServidores ? { emoji: '🖥️', label: 'Servidores' } : S.TIPOS[tipo];
 
             const chipSeleccionado = `
-                <div class="dash-chip-main clickable" data-action="toggle-tipo" data-tipo="${tipo}">
+                <div class="dash-chip-main clickable" data-action="toggle-tipo" data-tipo="${S.esc(tipo)}">
                     <div class="stat-chip-valor">${dispsFiltrados.length}</div>
-                    <div class="stat-chip-label">${tc.emoji} ${tc.label.toUpperCase()}</div>
+                    <div class="stat-chip-label">${S.esc(tc.emoji)} ${S.esc(tc.label.toUpperCase())}</div>
                     <div class="dash-chip-btn-group"><div class="stat-chip-volver dash-chip-btn">◀ VOLVER</div></div>
                 </div>`;
 
@@ -2936,7 +2948,7 @@
 
             const chipsEstado = ESTADOS_DEF.map(e => {
                 const n = est[e.key];
-                const action = n > 0 ? (tieneNivel2 ? `data-action="toggle-estado" data-estado="${e.key}"` : `data-action="ir-activos" data-tipo="${tipo}" data-estado="${e.key}"`) : `data-action="stop"`;
+                const action = n > 0 ? (tieneNivel2 ? `data-action="toggle-estado" data-estado="${e.key}"` : `data-action="ir-activos" data-tipo="${S.esc(tipo)}" data-estado="${e.key}"`) : `data-action="stop"`;
                 const clase = n > 0 ? "stat-chip stat-chip-tipo" : "stat-chip";
                 return `
                     <div class="${clase}" ${action}>
@@ -2974,7 +2986,7 @@
                     return `
                         <div class="stat-chip stat-chip-tipo" data-action="ir-activos" data-tipo="${tKey}" data-estado="${estado}">
                             <div class="stat-chip-valor">${n}</div>
-                            <div class="stat-chip-label">${S.TIPOS[tKey].emoji} ${S.TIPOS[tKey].label.toUpperCase()}</div>
+                            <div class="stat-chip-label">${S.esc(S.TIPOS[tKey].emoji)} ${S.esc(S.TIPOS[tKey].label.toUpperCase())}</div>
                         </div>`;
                 }).join('');
             } else {
@@ -3842,10 +3854,10 @@
     // El fallback se maneja desde JS (event delegation) para cumplir con la CSP sin unsafe-inline.
     function _buildDeviceImgHtml(modelo, forma, tipo, emoji) {
         const src = _getDeviceImageSrc(modelo, forma, tipo);
-        if (!src) return `<span class="disp-thumb-emoji">${emoji}</span>`;
+        if (!src) return `<span class="disp-thumb-emoji">${S.esc(emoji)}</span>`;
         const srcJpg = src.replace(/\.png$/, '.jpg');
         return `<img class="disp-thumb" src="${src}" alt=""
-            data-src-jpg="${srcJpg}" data-emoji="${emoji}"
+            data-src-jpg="${srcJpg}" data-emoji="${S.esc(emoji)}"
             loading="lazy">`;
     }
 
@@ -3886,7 +3898,7 @@
         return `<div class="dispositivo-item tipo-${S.esc(d.tipo)} estado-${estadoEfectivo} anim-in" data-disp-id="${S.esc(d.id)}">
                     <div class="disp-thumb-wrap">${thumbHtml}</div>
                     <div class="dispositivo-info">
-                        <div class="dispositivo-nombre">${tipoBadgeLabel}<span class="sep-muted">-</span>${S.esc(titulo)} </div>
+                        <div class="dispositivo-nombre">${S.esc(tipoBadgeLabel)}<span class="sep-muted">-</span>${S.esc(titulo)} </div>
                         <div class="dispositivo-meta">${d.modelo ? `<span>${S.esc(d.modelo)}</span>` : ''}</div>
                         ${linea3Parts.length ? `<div class="disp-linea3">${linea3Parts.join(' · ')}</div>` : ''}
                     </div>${derechaHtml}</div>`;
@@ -4305,9 +4317,9 @@
                 return `
                         <div class="dispositivo-item anim-in" data-otro-id="${S.esc(o.id)}">
                             <div class="dispositivo-info">
-                                <div class="dispositivo-nombre">${tc.emoji} ${S.esc(desc)}</div>
+                                <div class="dispositivo-nombre">${S.esc(tc.emoji)} ${S.esc(desc)}</div>
                                 <div class="dispositivo-meta">
-                                    ${disp ? `<span class="badge badge-otro">${S.TIPOS[disp.tipo]?.label?.toUpperCase() || disp.tipo.toUpperCase()}</span>` : ''}
+                                    ${disp ? `<span class="badge badge-otro">${S.esc(S.TIPOS[disp.tipo]?.label?.toUpperCase() || disp.tipo.toUpperCase())}</span>` : ''}
                                     ${disp && disp.modelo ? `<span>${S.esc(disp.modelo)}</span>` : ''}
                                 </div>
                             </div>
@@ -5470,9 +5482,9 @@
             const nombre = S.edificios[idx];
             if (!nombre) return;
 
-            const enCanales = (Store.data?.canales || []).filter(c => c.edificio === nombre).length;
-            const enGrabadores = (Store.data?.grabadores || []).filter(g => g.edificio === nombre).length;
-            const enOtros = (Store.data?.otrosProd || []).filter(o => o.edificio === nombre).length;
+            const enCanales = Store.data.grabadores.reduce((n, g) => n + g.canales_data.filter(c => c.edificio === nombre).length, 0);
+            const enGrabadores = Store.data.grabadores.filter(g => g.edificio === nombre).length;
+            const enOtros = (Store.data.otros_prod || []).filter(o => o.edificio === nombre).length;
             const totalUso = enCanales + enGrabadores + enOtros;
 
             const partes = [];
@@ -5934,7 +5946,8 @@
                 comentario: FormHelpers.v(prefijo, 'comentario'),
             };
 
-            const obj = S.sanitizarDisp({ ...base, id: EdicionState.edicion.dispId, mac: macs[0] || '' });
+            // Conserva todas las MACs del activo (antes se guardaba sólo la primera y se perdían las demás)
+            const obj = S.sanitizarDisp({ ...base, id: EdicionState.edicion.dispId, mac: macs.join(',') });
             const nuevoSnap = FormHelpers.snapDisp(obj);
             const huboCambios = JSON.stringify(nuevoSnap) !== JSON.stringify(EdicionState.edicion.snapshotDisp);
             if (!huboCambios) { Notif.toast('Sin cambios', 'info'); MM.cerrarConPadre('modal-editar-disp'); EdicionState.edicion.dispId = null; EdicionState.edicion.snapshotDisp = null; return; }
@@ -6456,7 +6469,7 @@
                         ? `title="No disponible: ${estadoInactivo}"`
                         : '';
                 items.push(`<div class="canal-disp-item${deshabilitado ? ' ocupado' : ''}" data-id="${S.esc(d.id)}" data-mac="${S.esc(d.mac || d.serial || '')}" data-idx="${i + 1}" ${titleAttr}>
-                            <div class="canal-disp-item-mac">${tipo?.emoji || ''} ${mac}${etiqueta}</div>
+                            <div class="canal-disp-item-mac">${S.esc(tipo?.emoji || '')} ${mac}${etiqueta}</div>
                             ${sub ? `<div class="canal-disp-item-sub">${S.esc(sub)}</div>` : ''}
                         </div>`);
             });
@@ -6547,7 +6560,8 @@
         _macFiltrar(input, e) {
             if (!input) return;
             const raw = input.value;
-            if (/^sin/i.test(raw.trim())) return;
+            // Lista de varias MACs: no se reformatea (el formateo deja una sola MAC de 12 dígitos)
+            if (/^sin/i.test(raw.trim()) || raw.includes(',')) return;
 
             let isDeleting = false;
             if (e?.inputType) {
@@ -6953,7 +6967,7 @@
                 const sub = [d.forma ? d.forma.replace(/-/g, ' ') : '', d.modelo].filter(Boolean).join(' · ');
 
                 return `<div class="canal-disp-item${deshabilitado ? ' ocupado' : ''}" data-id="${S.esc(d.id)}" data-mac="${S.esc(d.mac || d.serial || '')}">
-                            <div class="canal-disp-item-mac">${S.TIPOS[d.tipo]?.emoji || ''} ${S.esc(d.mac || d.serial || d.id)}${etiqueta}</div>
+                            <div class="canal-disp-item-mac">${S.esc(S.TIPOS[d.tipo]?.emoji || '')} ${S.esc(d.mac || d.serial || d.id)}${etiqueta}</div>
                             ${sub ? `<div class="canal-disp-item-sub">${S.esc(sub)}</div>` : ''}
                         </div>`;
             });
@@ -7109,17 +7123,11 @@
 
             if (data.tiposCustom && typeof data.tiposCustom === 'object' && !Array.isArray(data.tiposCustom)) {
                 Object.entries(data.tiposCustom).forEach(([k, v]) => {
-                    if (S.TIPOS_BUILTIN[k]) return;
-                    if (typeof v?.label !== 'string' || !v.label) return;
-                    if (modo === 'replace') {
-                        S.TIPOS[k] = { label: v.label, emoji: v.emoji || '📦', badge: 'badge-otro', dot: 'var(--c-gold)', builtin: false, ...(v.updatedAt ? { updatedAt: v.updatedAt } : {}) };
-                    } else {
-                        const locTipo = S.TIPOS[k];
-                        const remMasNuevo = v.updatedAt && (!locTipo?.updatedAt || v.updatedAt > locTipo.updatedAt);
-                        if (!locTipo || remMasNuevo) {
-                            S.TIPOS[k] = { label: v.label, emoji: v.emoji || '📦', badge: 'badge-otro', dot: 'var(--c-gold)', builtin: false, ...(v.updatedAt ? { updatedAt: v.updatedAt } : {}) };
-                        }
-                    }
+                    const tipo = S.sanitizarTipoCustom(k, v);
+                    if (!tipo) return;
+                    const locTipo = S.TIPOS[k];
+                    const remMasNuevo = tipo.updatedAt && (!locTipo?.updatedAt || tipo.updatedAt > locTipo.updatedAt);
+                    if (modo === 'replace' || !locTipo || remMasNuevo) S.TIPOS[k] = tipo;
                 });
                 S.guardarTipos();
             }
@@ -8387,7 +8395,7 @@
                         ip: nvrData?.ip || '',
                         dispositivoId: dispId,
                         canales_n: canalesN,
-                        updatedAt: S.fechaISO(),
+                        updatedAt: new Date().toISOString(),
                     });
                     if (!grab) return;
                     grabadores.push(grab);
@@ -8416,7 +8424,7 @@
                         
                         if (d.estado) {
                             d.estado = '';
-                            d.updatedAt = S.fechaISO();
+                            d.updatedAt = new Date().toISOString();
                         }
 
                         // El parseador no trae edificio/piso/rack/puerto (el script de escaneo no
@@ -8455,7 +8463,7 @@
                         }
                     });
                 }
-                grab.updatedAt = S.fechaISO();
+                grab.updatedAt = new Date().toISOString();
             });
 
             if (totalCambios === 0 && totalLimpiados === 0 && totalCreados === 0) { Notif.toast('No se realizaron cambios', 'info'); return; }
@@ -8518,7 +8526,7 @@
 
         function _crearNuevosDisp(lista) {
             historial.empujar('Parseador de canales: agregar dispositivos sin match');
-            const ahora = S.fechaISO();
+            const ahora = new Date().toISOString();
             lista.forEach(cam => {
                 const nuevo = S.sanitizarDisp({
                     id: S.genId(),
@@ -8892,8 +8900,11 @@
                 .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;').replace(/'/g, '&#39;'));
 
+            // Forma canónica AA:BB:CC:DD:EE:FF sin importar separadores (":", "-", ninguno) ni mayúsculas
             function _normMAC(mac) {
-                return (mac || '').trim().toUpperCase();
+                const raw = (mac || '').trim().toUpperCase();
+                const hex = raw.replace(/[^0-9A-F]/g, '');
+                return hex.length === 12 ? hex.match(/../g).join(':') : raw;
             }
 
             function _buildLookup(data) {
@@ -8917,32 +8928,30 @@
 
             function _calcularCambios() {
                 const actualizaciones = [];
-                const macUsadas = new Set();
+                const macsExistentes = new Set();
 
                 Store.data.dispositivos.forEach(disp => {
-                    const mac = _normMAC(disp.mac);
+                    // Un activo puede tener varias MACs separadas por coma: matchea con cualquiera
+                    const macsDisp = (disp.mac || '').split(/[,;\s]+/).map(_normMAC).filter(Boolean);
+                    macsDisp.forEach(m => macsExistentes.add(m));
+                    const mac = macsDisp.find(m => _lookup[m]);
                     if (!mac) return;
                     const src = _lookup[mac];
-                    if (!src) return;
-                    macUsadas.add(mac);
 
+                    // Un valor vacío en el archivo significa "el scanner no lo pudo leer", no "borrar":
+                    // nunca se pisa un dato cargado con vacío.
                     const campos = [];
-                    if (src.serial !== (disp.serial || '')) campos.push({ campo: 'serial', viejo: disp.serial || '', nuevo: src.serial });
-                    if (src.firmware !== (disp.firmware || '')) campos.push({ campo: 'firmware', viejo: disp.firmware || '', nuevo: src.firmware });
-                    if (src.modelo !== (disp.modelo || '')) campos.push({ campo: 'modelo', viejo: disp.modelo || '', nuevo: src.modelo });
+                    ['serial', 'firmware', 'modelo'].forEach(campo => {
+                        const actual = disp[campo] || '';
+                        if (src[campo] && src[campo] !== actual) campos.push({ campo, viejo: actual, nuevo: src[campo] });
+                    });
                     if (campos.length) actualizaciones.push({ disp, src, campos });
                 });
 
-                // Nuevos: MACs en online que no matchean ningún dispositivo existente
-                const nuevos = [];
-                Object.entries(_lookup).forEach(([mac, src]) => {
-                    if (macUsadas.has(mac)) return;
-                    // verificar que tampoco aparezca como MAC secundaria
-                    const yaExiste = Store.data.dispositivos.some(d => {
-                        return (d.mac || '').split(/[,;\s]+/).some(m => _normMAC(m) === mac);
-                    });
-                    if (!yaExiste) nuevos.push({ mac, src });
-                });
+                // Nuevos: MACs en online que no matchean ningún dispositivo existente (ni como MAC secundaria)
+                const nuevos = Object.entries(_lookup)
+                    .filter(([mac]) => !macsExistentes.has(mac))
+                    .map(([mac, src]) => ({ mac, src }));
 
                 return { actualizaciones, nuevos };
             }
@@ -9069,7 +9078,7 @@
                 }
 
                 historial.empujar('Parseador de datos: actualizar dispositivos');
-                const ahora = S.fechaISO();
+                const ahora = new Date().toISOString();
 
                 // Actualizar existentes
                 actualizaciones.forEach(({ disp, campos }) => {
