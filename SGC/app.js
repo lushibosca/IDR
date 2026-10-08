@@ -1566,6 +1566,7 @@
         let _cfg = { token: '', gistId: '', lastSync: null, auto: false };
         let _debounceTimer = null;
         let _subiendo = false;
+        let _subidaPendiente = false; // hubo cambios mientras se subía: volver a subir al terminar
 
         function _cargarCfg() {
             try { const c = S.safeParse(localStorage.getItem(CFG_KEY) || 'null'); if (c) _cfg = { ..._cfg, ...c }; } catch (_) { }
@@ -1751,17 +1752,17 @@
             return payload;
         }
 
-        // Lápidas que ya están en el Gist. Lanza si no se pudo leer (red / HTTP): en ese caso no hay que
-        // subir, porque se perderían borrados hechos en otro equipo y esas entidades "resucitarían".
-        // Si el archivo todavía no existe o no tiene un JSON válido, no hay lápidas que preservar.
-        async function _obtenerEliminadosRemotos(token, gistId) {
-            const res = await fetch(`https://api.github.com/gists/${gistId}?_ts=${Date.now()}`, {
-                headers: { Authorization: `token ${token}` }, cache: 'no-store'
-            });
+        // Lee el archivo de datos del Gist. Lanza si no se pudo leer (red / HTTP / raw_url inválida).
+        // Devuelve { remoto, updatedAt }: remoto es el JSON parseado (null si el archivo no existe o no es
+        // un objeto JSON válido) y updatedAt es el updated_at del Gist, que identifica la versión remota.
+        async function _leerGist(token, gistId) {
+            const headers = token ? { Authorization: `token ${token}` } : {};
+            const res = await fetch(`https://api.github.com/gists/${gistId}?_ts=${Date.now()}`, { headers, cache: 'no-store' });
             if (!res.ok) throw new Error(`HTTP ${res.status} al leer el Gist`);
             const data = await res.json();
+            const updatedAt = data?.updated_at || null;
             const file = data?.files?.[FILENAME];
-            if (!file) return S.eliminadosVacios();
+            if (!file) return { remoto: null, updatedAt };
             let contenido = file.content;
             if (file.truncated) {
                 if (new URL(file.raw_url).hostname !== RAW_HOST) throw new Error('raw_url inválida');
@@ -1770,7 +1771,49 @@
                 contenido = await r2.text();
             }
             const parsed = S.safeParse(contenido);
-            return S.sanitizarEliminados(parsed && typeof parsed === 'object' ? parsed.eliminados : null);
+            return { remoto: parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null, updatedAt };
+        }
+
+        // Resumen corto de un merge para toasts ("+2 disp, ~1 grab, …")
+        function _resumenMerge(r) {
+            const msgs = [];
+            if (r.cDispsAdd) msgs.push(`+${r.cDispsAdd} disp`);
+            if (r.cDispsUpd) msgs.push(`~${r.cDispsUpd} disp`);
+            if (r.cGrabsAdd) msgs.push(`+${r.cGrabsAdd} grab`);
+            if (r.cGrabsUpd) msgs.push(`~${r.cGrabsUpd} grab`);
+            if (r.cOtrosAdd) msgs.push(`+${r.cOtrosAdd} otros`);
+            if (r.cOtrosUpd) msgs.push(`~${r.cOtrosUpd} otros`);
+            if (r.cDispsDel) msgs.push(`-${r.cDispsDel} disp`);
+            if (r.cGrabsDel) msgs.push(`-${r.cGrabsDel} grab`);
+            if (r.cOtrosDel) msgs.push(`-${r.cOtrosDel} otros`);
+            if (r.cTipos) msgs.push(`+${r.cTipos} tipos`);
+            if (r.cEdif) msgs.push(`+${r.cEdif} edif`);
+            if (r.cUbicSugeridas) msgs.push(`~${r.cUbicSugeridas} ubic`);
+            if (r.cUbicConflictos) msgs.push(`⚠ ${r.cUbicConflictos} conflicto${r.cUbicConflictos !== 1 ? 's' : ''} ubic`);
+            return msgs;
+        }
+
+        // Otro equipo subió al Gist desde la última sincronización de este: antes de subir se incorporan
+        // sus cambios (merge por timestamps + lápidas), si no la subida los pisaría. Devuelve false si
+        // no hay que subir. Un Gist sin firma o con firma inválida no se combina en automático.
+        async function _incorporarRemotoAntesDeSubir(remoto, silencioso) {
+            const esValida = !!remoto.hash && await S.verificarFirma(remoto);
+            if (!esValida) {
+                if (silencioso) {
+                    _setStatus('Error: el Gist fue modificado fuera de la app. Bajalo y revisalo antes de subir.');
+                    return false;
+                }
+                return Notif.confirmarModal('El Gist fue modificado fuera de la app (firma ausente o inválida) y no se puede combinar automáticamente. Si subís ahora se reemplaza con tus datos locales. ¿Subir de todas formas?', 'Subir');
+            }
+            const { resMerge, huboCambios } = _simularMerge(remoto);
+            if (!huboCambios) return true;
+            historial.empujar('Combinar cambios del Gist antes de subir');
+            _combinarDatosRemotos(remoto);
+            Store.guardar();
+            clearTimeout(_debounceTimer); // ya estamos subiendo: no hace falta otra subida por este guardado
+            render();
+            Notif.toast(`Se incorporaron cambios del Gist antes de subir (${_resumenMerge(resMerge).join(', ')})`, 'info', 5000);
+            return true;
         }
 
         async function _ejecutarSubida(silencioso = false) {
@@ -1781,14 +1824,28 @@
                 if (!silencioso) Notif.toast('Gist ID inválido', 'error');
                 return;
             }
+            if (_subiendo) {
+                // Nunca dos subidas a la vez: la segunda se hace al terminar la actual
+                _subidaPendiente = true;
+                if (!silencioso) Notif.toast('Hay una subida en curso, se vuelve a subir al terminar', 'info');
+                return;
+            }
 
             _setBusy(true);
             if (!silencioso) _setStatus('Subiendo…');
 
-            // Todo dentro del try: si algo falla antes del fetch (lectura de lápidas, crypto.subtle
+            // Todo dentro del try: si algo falla antes del fetch (lectura del Gist, crypto.subtle
             // no disponible fuera de https, etc.) el finally libera los botones igual.
             try {
-                const elimRemotas = gistId ? await _obtenerEliminadosRemotos(token, gistId) : null;
+                let elimRemotas = null;
+                if (gistId) {
+                    // Si no se puede leer el Gist no se sube: se perderían cambios y borrados de otros equipos
+                    const { remoto, updatedAt } = await _leerGist(token, gistId);
+                    if (remoto && updatedAt !== _cfg.remoteUpdatedAt) {
+                        if (!(await _incorporarRemotoAntesDeSubir(remoto, silencioso))) return;
+                    }
+                    elimRemotas = S.sanitizarEliminados(remoto?.eliminados);
+                }
                 const payloadData = await _generarPayload(elimRemotas);
                 const body = { files: { [FILENAME]: { content: JSON.stringify(payloadData, null, 2) } } };
 
@@ -1819,6 +1876,8 @@
                     _actualizarLinkBtn();
                 }
 
+                // Versión remota que este equipo ya conoce (la que acaba de escribir)
+                _cfg.remoteUpdatedAt = data.updated_at || null;
                 _cfg.lastSync = new Date().toISOString();
                 _guardarCfg();
                 _setStatusSync();
@@ -1829,6 +1888,7 @@
                 if (!silencioso) Notif.toast(`Error al subir: ${err.message}`, 'error');
             } finally {
                 _setBusy(false);
+                if (_subidaPendiente) { _subidaPendiente = false; subirAuto(); }
             }
         }
 
@@ -1837,9 +1897,7 @@
         function subirAuto() {
             if (!_cfg.auto || !_cfg.token) return;
             clearTimeout(_debounceTimer);
-            _debounceTimer = setTimeout(() => {
-                if (!_subiendo) _ejecutarSubida(true);
-            }, DEBOUNCE_MS);
+            _debounceTimer = setTimeout(() => _ejecutarSubida(true), DEBOUNCE_MS);
         }
 
         function desactivarAuto() {
@@ -1868,12 +1926,44 @@
                 return d ? FormHelpers.labelDisp(d) : id;
             }
 
-            // Compara timestamps: retorna true si el remoto es más nuevo
-            function _remoteMasNuevo(loc, rem) {
-                if (!rem.updatedAt) return false;       // remoto sin ts → fallback aditivo
-                if (!loc.updatedAt) return true;        // local sin ts → remoto gana
-                return rem.updatedAt > loc.updatedAt;   // ISO string comparison
+            // Cómo combinar una entidad que existe en ambos lados:
+            //  'sobrescribir' → el remoto es más nuevo: gana en todos los campos que difieran.
+            //  'rellenar'     → el remoto no tiene timestamp (datos viejos): sólo completa campos vacíos.
+            //  null           → el local es igual o más nuevo: gana el local y no se toca nada.
+            // Antes, con el local más nuevo igual se rellenaban los vacíos con el valor remoto (más viejo),
+            // lo que revertía campos vaciados a propósito (p. ej. quitar el estado "averiado").
+            function _modoMerge(loc, rem) {
+                if (!rem.updatedAt) return 'rellenar';
+                if (!loc.updatedAt || rem.updatedAt > loc.updatedAt) return 'sobrescribir';
+                return null;
             }
+
+            const _vacio = v => v === undefined || v === null || v === '';
+
+            // Copia en `loc` los `campos` de `rem` según el modo, registrando cada cambio para el modal
+            // de detalle. '' y null se consideran iguales (evita falsos cambios en dispositivoId).
+            // chequearInactivo: no asigna un dispositivo que localmente está averiado/perdido/etc.
+            function _mergeCampos(loc, rem, campos, modo, { cat, label, chequearInactivo = false }) {
+                let cambio = false;
+                campos.forEach(k => {
+                    if (rem[k] === undefined) return;
+                    const aplicar = modo === 'rellenar'
+                        ? _vacio(loc[k]) && !_vacio(rem[k])
+                        : (loc[k] ?? '') !== (rem[k] ?? '');
+                    if (!aplicar) return;
+                    if (k === 'dispositivoId' && chequearInactivo && FormHelpers.esDispInactivo(rem[k])) return;
+                    const fmt = v => k === 'dispositivoId' ? _getDispLabelForMerge(v) : (v ?? '');
+                    cambios.push({ cat, op: 'upd', label, campo: k, antes: fmt(loc[k]), despues: fmt(rem[k]) });
+                    loc[k] = rem[k];
+                    cambio = true;
+                });
+                return cambio;
+            }
+
+            const CAMPOS_DISP = ['tipo', 'estado', 'marca', 'modelo', 'serial', 'mac', 'patrimonio', 'firmware', 'forma', 'canales', 'comentario'];
+            const CAMPOS_GRAB = ['descripcion', 'marca', 'modelo', 'ip', 'edificio', 'piso', 'rack', 'puerto', 'mac', 'comentarios', 'dispositivoId'];
+            const CAMPOS_CANAL = ['dispositivoId', 'descripcion', 'ip', 'puerto', 'edificio', 'piso', 'rack', 'comentarios'];
+            const CAMPOS_OTRO = ['dispositivoId', 'descripcion', 'ip', 'edificio', 'piso', 'rack', 'puerto', 'comentarios'];
 
             // ── Eliminaciones (lápidas) ───────────────────────────────────────
             // Un borrado hecho en otro dispositivo llega como lápida {id: fecha}. Gana sobre la copia local salvo que esa
@@ -1938,40 +2028,15 @@
                 if (!mapD.has(san.id)) {
                     Store.data.dispositivos.push(san); mapD.set(san.id, san); cDispsAdd++;
                     cambios.push({ cat: 'disp', op: 'add', label: FormHelpers.labelDisp(san), tipo: san.tipo });
-                } else {
-                    const loc = mapD.get(san.id);
-                    if (_remoteMasNuevo(loc, san)) {
-                        // Remoto más nuevo: sobreescribir campos editables preservando el id
-                        const camposDisp = ['tipo', 'estado', 'marca', 'modelo', 'serial', 'mac',
-                            'patrimonio', 'firmware', 'forma', 'canales', 'comentario', 'updatedAt'];
-                        const antes = {}, despues = {};
-                        camposDisp.forEach(k => {
-                            if (san[k] !== undefined && san[k] !== loc[k]) {
-                                antes[k] = loc[k]; despues[k] = san[k];
-                                loc[k] = san[k];
-                            }
-                        });
-                        if (Object.keys(antes).length) {
-                            cambios.push({
-                                cat: 'disp', op: 'upd', label: FormHelpers.labelDisp(loc),
-                                campo: Object.keys(antes).join(', '),
-                                antes: Object.values(antes).join(' / '),
-                                despues: Object.values(despues).join(' / ')
-                            });
-                            cDispsUpd++;
-                        }
-                    } else {
-                        // Fallback aditivo: solo rellena campos vacíos (sin timestamp o local más nuevo)
-                        let updated = false;
-                        const labelDisp = FormHelpers.labelDisp(loc); // fijo antes de mutar, para agrupar bien en el modal de detalle
-                        ['marca', 'modelo', 'serial', 'mac', 'patrimonio', 'firmware', 'forma', 'estado'].forEach(k => {
-                            if (!loc[k] && san[k]) {
-                                cambios.push({ cat: 'disp', op: 'upd', label: labelDisp, campo: k, antes: loc[k] || '', despues: san[k] });
-                                loc[k] = san[k]; updated = true;
-                            }
-                        });
-                        if (updated) cDispsUpd++;
-                    }
+                    return;
+                }
+                const loc = mapD.get(san.id);
+                const modo = _modoMerge(loc, san);
+                if (!modo) return;
+                const label = FormHelpers.labelDisp(loc); // fijo antes de mutar, para agrupar bien en el modal de detalle
+                if (_mergeCampos(loc, san, CAMPOS_DISP, modo, { cat: 'disp', label })) {
+                    if (modo === 'sobrescribir') loc.updatedAt = san.updatedAt;
+                    cDispsUpd++;
                 }
             });
 
@@ -1984,68 +2049,22 @@
                     Store.data.grabadores.push(san); mapG.set(san.id, san); cGrabsAdd++;
                     cambios.push({ cat: 'grab', op: 'add', label: san.descripcion || san.id, tipo: san.tipo });
                     (san.canales_data || []).forEach(c => { if (c.dispositivoId) idsTocados.add(c.dispositivoId); });
-                } else {
-                    const loc = mapG.get(san.id);
-                    let updated = false;
-                    if (_remoteMasNuevo(loc, san)) {
-                        // Remoto más nuevo: sobreescribir campos del grabador
-                        const labelGrab = loc.descripcion || loc.id; // fijo antes de mutar, para agrupar bien en el modal de detalle
-                        const camposGrab = ['descripcion', 'marca', 'modelo', 'ip', 'edificio',
-                            'piso', 'rack', 'puerto', 'mac', 'comentarios', 'dispositivoId', 'updatedAt'];
-                        camposGrab.forEach(k => {
-                            if (san[k] !== undefined && san[k] !== loc[k]) {
-                                const valAntes = k === 'dispositivoId' ? _getDispLabelForMerge(loc[k]) : (loc[k] || '');
-                                const valDespues = k === 'dispositivoId' ? _getDispLabelForMerge(san[k]) : san[k];
-                                cambios.push({ cat: 'grab', op: 'upd', label: labelGrab, campo: k, antes: valAntes, despues: valDespues });
-                                loc[k] = san[k]; updated = true;
-                            }
-                        });
-                        // Sobreescribir canales completos
-                        san.canales_data.forEach(cRem => {
-                            const cLoc = loc.canales_data.find(c => c.canal === cRem.canal);
-                            if (!cLoc) return;
-                            ['dispositivoId', 'descripcion', 'ip', 'puerto', 'edificio', 'piso', 'rack', 'comentarios'].forEach(k => {
-                                if (k === 'dispositivoId' && FormHelpers.esDispInactivo(cRem.dispositivoId)) return;
-                                if (cRem[k] !== cLoc[k]) {
-                                    const valAntes = k === 'dispositivoId' ? _getDispLabelForMerge(cLoc[k]) : (cLoc[k] || '');
-                                    const valDespues = k === 'dispositivoId' ? _getDispLabelForMerge(cRem[k]) : (cRem[k] || '');
-                                    cambios.push({ cat: 'canal', op: 'upd', label: `${labelGrab} › Canal ${cRem.canal}`, campo: k, antes: valAntes, despues: valDespues });
-                                    cLoc[k] = cRem[k]; updated = true;
-                                }
-                            });
-                            if (cLoc.dispositivoId) idsTocados.add(cLoc.dispositivoId);
-                        });
-                    } else {
-                        // Fallback aditivo
-                        const labelGrab = loc.descripcion || loc.id; // fijo antes de mutar, para agrupar bien en el modal de detalle
-                        ['marca', 'modelo', 'ip', 'edificio', 'piso', 'rack', 'puerto', 'mac', 'comentarios', 'dispositivoId'].forEach(k => {
-                            if (!loc[k] && san[k]) {
-                                const valAntes = k === 'dispositivoId' ? _getDispLabelForMerge(loc[k]) : (loc[k] || '');
-                                const valDespues = k === 'dispositivoId' ? _getDispLabelForMerge(san[k]) : san[k];
-                                cambios.push({ cat: 'grab', op: 'upd', label: labelGrab, campo: k, antes: valAntes, despues: valDespues });
-                                loc[k] = san[k]; updated = true;
-                            }
-                        });
-                        san.canales_data.forEach(cRem => {
-                            const cLoc = loc.canales_data.find(c => c.canal === cRem.canal);
-                            if (cLoc) {
-                                if (!cLoc.dispositivoId && cRem.dispositivoId) {
-                                    if (!FormHelpers.esDispInactivo(cRem.dispositivoId)) {
-                                        cambios.push({ cat: 'canal', op: 'upd', label: `${labelGrab} › Canal ${cRem.canal}`, campo: 'dispositivoId', antes: '', despues: _getDispLabelForMerge(cRem.dispositivoId) });
-                                        cLoc.dispositivoId = cRem.dispositivoId; updated = true;
-                                    }
-                                }
-                                ['descripcion', 'ip', 'puerto', 'edificio', 'piso', 'rack', 'comentarios'].forEach(k => {
-                                    if (!cLoc[k] && cRem[k]) {
-                                        cambios.push({ cat: 'canal', op: 'upd', label: `${labelGrab} › Canal ${cRem.canal}`, campo: k, antes: cLoc[k] || '', despues: cRem[k] });
-                                        cLoc[k] = cRem[k]; updated = true;
-                                    }
-                                });
-                                if (cLoc.dispositivoId) idsTocados.add(cLoc.dispositivoId);
-                            }
-                        });
-                    }
-                    if (updated) cGrabsUpd++;
+                    return;
+                }
+                const loc = mapG.get(san.id);
+                const modo = _modoMerge(loc, san);
+                if (!modo) return;
+                const labelGrab = loc.descripcion || loc.id; // fijo antes de mutar, para agrupar bien en el modal de detalle
+                let updated = _mergeCampos(loc, san, CAMPOS_GRAB, modo, { cat: 'grab', label: labelGrab });
+                san.canales_data.forEach(cRem => {
+                    const cLoc = loc.canales_data.find(c => c.canal === cRem.canal);
+                    if (!cLoc) return;
+                    if (_mergeCampos(cLoc, cRem, CAMPOS_CANAL, modo, { cat: 'canal', label: `${labelGrab} › Canal ${cRem.canal}`, chequearInactivo: true })) updated = true;
+                    if (cLoc.dispositivoId) idsTocados.add(cLoc.dispositivoId);
+                });
+                if (updated) {
+                    if (modo === 'sobrescribir') loc.updatedAt = san.updatedAt;
+                    cGrabsUpd++;
                 }
             });
 
@@ -2054,43 +2073,23 @@
                 const san = o._sanitized ? o : S.sanitizarOtroProd(o);
                 if (!san) return;
                 if (!_permitidaPorLapida('otros_prod', san)) return;
-
                 if (!mapO.has(san.id)) {
                     if (!Store.data.otros_prod) Store.data.otros_prod = [];
                     if (san.dispositivoId && FormHelpers.esDispInactivo(san.dispositivoId)) return;
                     Store.data.otros_prod.push(san); mapO.set(san.id, san); cOtrosAdd++;
                     cambios.push({ cat: 'otro', op: 'add', label: san.descripcion || san.id });
                     if (san.dispositivoId) idsTocados.add(san.dispositivoId);
-                } else {
-                    const loc = mapO.get(san.id);
-                    let updated = false;
-                    const labelOtro = loc.descripcion || loc.id; // fijo antes de mutar, para agrupar bien en el modal de detalle
-                    if (_remoteMasNuevo(loc, san)) {
-                        const camposOtro = ['dispositivoId', 'descripcion', 'ip', 'edificio',
-                            'piso', 'rack', 'puerto', 'comentarios', 'updatedAt'];
-                        camposOtro.forEach(k => {
-                            if (san[k] !== undefined && san[k] !== loc[k]) {
-                                if (k === 'dispositivoId' && FormHelpers.esDispInactivo(san[k])) return;
-                                const va = k === 'dispositivoId' ? _getDispLabelForMerge(loc[k]) : (loc[k] || '');
-                                const vd = k === 'dispositivoId' ? _getDispLabelForMerge(san[k]) : (san[k] || '');
-                                if (k !== 'updatedAt') cambios.push({ cat: 'otro', op: 'upd', label: labelOtro, campo: k, antes: va, despues: vd });
-                                loc[k] = san[k]; updated = true;
-                            }
-                        });
-                    } else {
-                        ['dispositivoId', 'descripcion', 'ip', 'edificio', 'piso', 'rack', 'puerto', 'comentarios'].forEach(k => {
-                            if (!loc[k] && san[k]) {
-                                if (k === 'dispositivoId' && FormHelpers.esDispInactivo(san[k])) return;
-                                const va = k === 'dispositivoId' ? _getDispLabelForMerge(loc[k]) : (loc[k] || '');
-                                const vd = k === 'dispositivoId' ? _getDispLabelForMerge(san[k]) : san[k];
-                                cambios.push({ cat: 'otro', op: 'upd', label: labelOtro, campo: k, antes: va, despues: vd });
-                                loc[k] = san[k]; updated = true;
-                            }
-                        });
-                    }
-                    if (loc.dispositivoId) idsTocados.add(loc.dispositivoId);
-                    if (updated) cOtrosUpd++;
+                    return;
                 }
+                const loc = mapO.get(san.id);
+                const modo = _modoMerge(loc, san);
+                if (!modo) return;
+                const labelOtro = loc.descripcion || loc.id; // fijo antes de mutar, para agrupar bien en el modal de detalle
+                if (_mergeCampos(loc, san, CAMPOS_OTRO, modo, { cat: 'otro', label: labelOtro, chequearInactivo: true })) {
+                    if (modo === 'sobrescribir') loc.updatedAt = san.updatedAt;
+                    cOtrosUpd++;
+                }
+                if (loc.dispositivoId) idsTocados.add(loc.dispositivoId);
             });
 
             // ── Reconciliación de ubicaciones ────────────────────────────────
@@ -2148,9 +2147,6 @@
             return { cDispsAdd, cDispsUpd, cDispsDel, cGrabsAdd, cGrabsUpd, cGrabsDel, cOtrosAdd, cOtrosUpd, cOtrosDel, cUbicSugeridas, cUbicConflictos, cambios };
         }
 
-        // Foto del estado para detectar novedades: se ignoran las lápidas (un cambio solo de lápidas no amerita avisar)
-        const _fotoData = () => JSON.stringify({ d: Store.data.dispositivos, g: Store.data.grabadores, o: Store.data.otros_prod });
-
         // persistir=false: sólo calcula/aplica en memoria (vista previa). No guarda tipos ni edificios
         // ni toca IDRInfra, y por lo tanto tampoco dispara el autosync (ver _simularMerge).
         function _combinarDatosRemotos(remoto, { persistir = true } = {}) {
@@ -2206,13 +2202,12 @@
             const backupData = S.deepClone(Store.data);
             const backupTipos = S.deepClone(S.TIPOS);
             const backupEdif = [...S.edificios];
-            const dataAntes = _fotoData();
-            const tiposAntes = JSON.stringify(S.TIPOS);
-            const edifAntes = JSON.stringify(S.edificios);
             let resMerge, huboCambios;
             try {
                 resMerge = _combinarDatosRemotos(remoto, { persistir: false });
-                huboCambios = dataAntes !== _fotoData() || tiposAntes !== JSON.stringify(S.TIPOS) || edifAntes !== JSON.stringify(S.edificios);
+                // Hay novedades si el merge registró algún cambio visible (un cambio sólo de lápidas
+                // o sólo de updatedAt no amerita avisar)
+                huboCambios = resMerge.cambios.length > 0 || resMerge.cTipos > 0 || resMerge.cEdif > 0;
             } finally {
                 Object.assign(Store.data, backupData);
                 Object.keys(S.TIPOS).forEach(k => delete S.TIPOS[k]);
@@ -2257,7 +2252,8 @@
             }
         }
 
-        function _mostrarNovedades(remoto, esValida, resMerge, origen, sonIdenticos = false) {
+        // remoteUpdatedAt: versión del Gist que se está mostrando; al aplicarla, este equipo pasa a conocerla
+        function _mostrarNovedades(remoto, esValida, resMerge, origen, sonIdenticos = false, remoteUpdatedAt = null) {
             // 1. Calculamos si realmente hay algún cambio entrante desde el Gist hacia la PC
             const totalCambios = (resMerge.cDispsAdd || 0) + (resMerge.cDispsUpd || 0) + 
                                  (resMerge.cGrabsAdd || 0) + (resMerge.cGrabsUpd || 0) + 
@@ -2337,28 +2333,16 @@
                     ? (esValida ? 'Reemplazar con datos del Gist' : 'Reemplazar con datos del Gist (Forzado)')
                     : (esValida ? 'Bajar novedades desde Gist' : 'Bajar novedades desde Gist (Forzado)'));
                 if (modo === 'reemplazar') { _reemplazarConRemoto(remoto); } else { _combinarDatosRemotos(remoto); }
-                Store.guardar(); render();
                 _cfg.lastSync = new Date().toISOString();
+                if (remoteUpdatedAt) _cfg.remoteUpdatedAt = remoteUpdatedAt;
                 _guardarCfg(); _setStatusSync();
+                Store.guardar(); render();
                 MM.cerrar('modal-gist-novedades');
-                const msgs = [];
                 if (modo === 'reemplazar') {
-                    msgs.push(`${Store.data.dispositivos.length} disp`, `${Store.data.grabadores.length} grab`);
+                    const msgs = [`${Store.data.dispositivos.length} disp`, `${Store.data.grabadores.length} grab`];
                     Notif.toast(esValida ? `Datos reemplazados (${msgs.join(', ')})` : `Datos reemplazados — firma inválida (${msgs.join(', ')})`, esValida ? 'success' : 'info');
                 } else {
-                    if (resMerge.cDispsAdd) msgs.push(`+${resMerge.cDispsAdd} disp`);
-                    if (resMerge.cDispsUpd) msgs.push(`~${resMerge.cDispsUpd} disp`);
-                    if (resMerge.cGrabsAdd) msgs.push(`+${resMerge.cGrabsAdd} grab`);
-                    if (resMerge.cGrabsUpd) msgs.push(`~${resMerge.cGrabsUpd} grab`);
-                    if (resMerge.cOtrosAdd) msgs.push(`+${resMerge.cOtrosAdd} otros`);
-                    if (resMerge.cOtrosUpd) msgs.push(`~${resMerge.cOtrosUpd} otros`);
-                    if (resMerge.cDispsDel) msgs.push(`-${resMerge.cDispsDel} disp`);
-                    if (resMerge.cGrabsDel) msgs.push(`-${resMerge.cGrabsDel} grab`);
-                    if (resMerge.cOtrosDel) msgs.push(`-${resMerge.cOtrosDel} otros`);
-                    if (resMerge.cTipos) msgs.push(`+${resMerge.cTipos} tipos`);
-                    if (resMerge.cEdif) msgs.push(`+${resMerge.cEdif} edif`);
-                    if (resMerge.cUbicSugeridas) msgs.push(`~${resMerge.cUbicSugeridas} ubic`);
-                    if (resMerge.cUbicConflictos) msgs.push(`⚠ ${resMerge.cUbicConflictos} conflicto${resMerge.cUbicConflictos !== 1 ? 's' : ''} ubic`);
+                    const msgs = _resumenMerge(resMerge);
                     Notif.toast(esValida ? `Datos combinados (${msgs.join(', ')})` : `Datos alterados combinados (${msgs.join(', ')})`, esValida ? 'success' : 'info');
                 }
                 _setBusy(false);
@@ -2394,36 +2378,18 @@
             _setStatus('Bajando…');
 
             try {
-                const headers = {};
-                if (token) headers['Authorization'] = `token ${token}`;
-
-                const url = `https://api.github.com/gists/${gistId}?_ts=${Date.now()}`;
-                const res = await fetch(url, { headers, cache: 'no-store' });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
-
-                const file = data.files?.[FILENAME];
-                if (!file) throw new Error(`No se encontró "${FILENAME}" en el Gist`);
-
-                let contenido = file.content;
-                if (file.truncated) {
-                    const rawOrigin = new URL(file.raw_url).hostname;
-                    if (rawOrigin !== RAW_HOST) throw new Error('raw_url inválida');
-                    const r2 = await fetch(`${file.raw_url}?_ts=${Date.now()}`, { cache: 'no-store' });
-                    if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
-                    contenido = await r2.text();
-                }
-
-                const remoto = S.safeParse(contenido);
-                if (!remoto || typeof remoto !== 'object') throw new Error('Formato inválido');
+                const { remoto, updatedAt } = await _leerGist(token, gistId);
+                if (!remoto) throw new Error(`No se encontró "${FILENAME}" en el Gist o su formato es inválido`);
 
                 const tieneFirmaRemota = !!remoto.hash;
                 let esValida = true;
                 if (tieneFirmaRemota) esValida = await S.verificarFirma(remoto);
 
                 const _abrirNovedades = async () => {
-                    const { resMerge } = _simularMerge(remoto);
+                    const { resMerge, huboCambios } = _simularMerge(remoto);
                     _cfg.token = token; _cfg.gistId = gistId;
+                    // Si el Gist no trae nada nuevo, este equipo ya conoce esa versión
+                    if (!huboCambios) _cfg.remoteUpdatedAt = updatedAt;
                     _guardarCfg();
                     
                     // Comparamos las firmas criptográficas reales para saber si son 100% idénticos
@@ -2432,7 +2398,7 @@
 
                     _setBusy(false);
                     MM.cerrar('modal-gist');
-                    _mostrarNovedades(remoto, esValida, resMerge, 'manual', sonIdenticos);
+                    _mostrarNovedades(remoto, esValida, resMerge, 'manual', sonIdenticos, updatedAt);
                 };
 
                 if (!tieneFirmaRemota) {
@@ -2493,30 +2459,7 @@
             await new Promise(resolve => setTimeout(resolve, DEBOUNCE_MS));
             _spinStart();
             try {
-                const headers = {};
-                if (_cfg.token) {
-                    headers['Authorization'] = `token ${_cfg.token}`;
-                }
-
-                const url = `https://api.github.com/gists/${_cfg.gistId}?_ts=${Date.now()}`;
-                const res = await fetch(url, { headers, cache: 'no-store' });
-                if (!res.ok) return;
-
-                const data = await res.json();
-                const file = data.files?.[FILENAME];
-                if (!file) return;
-
-                let contenido = file.content;
-                if (file.truncated) {
-                    const rawOrigin = new URL(file.raw_url).hostname;
-                    if (rawOrigin !== RAW_HOST) return;
-
-                    const r2 = await fetch(`${file.raw_url}?_ts=${Date.now()}`, { cache: 'no-store' });
-                    if (!r2.ok) return;
-                    contenido = await r2.text();
-                }
-
-                const remoto = S.safeParse(contenido);
+                const { remoto, updatedAt } = await _leerGist(_cfg.token, _cfg.gistId);
                 if (!remoto) return;
 
                 const tieneFirmaRemota = !!remoto.hash;
@@ -2527,9 +2470,14 @@
 
                 const { resMerge, huboCambios } = _simularMerge(remoto);
 
-                if (!huboCambios) return;
+                if (!huboCambios) {
+                    // Nada nuevo en el Gist: la próxima subida no necesita combinar
+                    _cfg.remoteUpdatedAt = updatedAt;
+                    _guardarCfg();
+                    return;
+                }
 
-                _mostrarNovedades(remoto, esValida, resMerge, 'auto');
+                _mostrarNovedades(remoto, esValida, resMerge, 'auto', false, updatedAt);
 
             } catch (_) {
             } finally {
@@ -2647,7 +2595,7 @@
             MM.abrirConPadre('modal-gist-detalle');
         }
 
-        return { subir, bajar, subirAuto, desactivarAuto, verificarAlAbrir, toggleToken, toggleAuto, guardarConfig, poblarModal, init, actualizarBotonesAjustes: _actualizarBotonesAjustes, _generarPayload, _combinarEntidades };
+        return { subir, bajar, subirAuto, desactivarAuto, verificarAlAbrir, toggleToken, toggleAuto, guardarConfig, poblarModal, init, actualizarBotonesAjustes: _actualizarBotonesAjustes, _generarPayload, _combinarEntidades, _resumenMerge };
     })();
 
 
@@ -7183,17 +7131,7 @@
                 const ahoraImp = new Date().toISOString();
                 revividos.forEach(([col, id]) => { const ent = Store.data[col].find(x => x.id === id); if (ent) ent.updatedAt = ahoraImp; });
 
-                const msgs = [];
-                if (resMerge.cDispsAdd) msgs.push(`+${resMerge.cDispsAdd} disp`);
-                if (resMerge.cDispsUpd) msgs.push(`~${resMerge.cDispsUpd} disp`);
-                if (resMerge.cGrabsAdd) msgs.push(`+${resMerge.cGrabsAdd} grab`);
-                if (resMerge.cGrabsUpd) msgs.push(`~${resMerge.cGrabsUpd} grab`);
-                if (resMerge.cOtrosAdd) msgs.push(`+${resMerge.cOtrosAdd} otros`);
-                if (resMerge.cOtrosUpd) msgs.push(`~${resMerge.cOtrosUpd} otros`);
-                if (resMerge.cDispsDel) msgs.push(`-${resMerge.cDispsDel} disp`);
-                if (resMerge.cGrabsDel) msgs.push(`-${resMerge.cGrabsDel} grab`);
-                if (resMerge.cOtrosDel) msgs.push(`-${resMerge.cOtrosDel} otros`);
-
+                const msgs = GistSync._resumenMerge(resMerge);
                 Notif.toast(msgs.length ? `Datos combinados (${msgs.join(', ')})` : 'Sin datos nuevos para combinar', msgs.length ? 'success' : 'info');
             }
 
