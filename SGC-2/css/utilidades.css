@@ -1,0 +1,712 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* utilidades.css: Utilidades (d-*, m/p-*, text-*, bg-*...) y sus variantes de la app. Última capa: ganan por orden. */
+
+@layer utilidades {
+    /* ───  */
+
+    .sticky-top {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0;
+        z-index: var(--capa-pegajosa);
+    }
+
+    .text-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .align-middle {
+        vertical-align: middle;
+    }
+
+    .opacity-0 {
+        opacity: 0;
+    }
+
+    .opacity-50 {
+        opacity: .5;
+    }
+
+    .opacity-75 {
+        opacity: .75;
+    }
+
+    .d-inline-block {
+        display: inline-block;
+    }
+
+    .d-block {
+        display: block;
+    }
+
+    .d-flex {
+        display: flex;
+    }
+
+    .d-inline-flex {
+        display: inline-flex;
+    }
+
+    .d-none {
+        display: none;
+    }
+
+    /* Ocupa su lugar pero no se ve (el tilde de una casilla sin marcar en los menús) */
+    .invisible {
+        visibility: hidden;
+    }
+
+    .shadow {
+        box-shadow: var(--sombra-media);
+    }
+
+    .shadow-sm {
+        box-shadow: var(--sombra-baja);
+    }
+
+    .shadow-lg {
+        box-shadow: var(--sombra-alta);
+    }
+
+    .position-relative {
+        position: relative;
+    }
+
+    .position-absolute {
+        position: absolute;
+    }
+
+    .position-fixed {
+        position: fixed;
+    }
+
+    .border {
+        border: var(--ui-border-width) var(--ui-border-style) var(--ui-border-color);
+    }
+
+    .border-0 {
+        border: 0;
+    }
+
+    .border-top {
+        border-top: var(--ui-border-width) var(--ui-border-style) var(--ui-border-color);
+    }
+
+    .border-bottom {
+        border-bottom: var(--ui-border-width) var(--ui-border-style) var(--ui-border-color);
+    }
+
+    .border-start {
+        border-left: var(--ui-border-width) var(--ui-border-style) var(--ui-border-color);
+    }
+
+    .border-secondary-subtle {
+        border-color: rgba(0, 0, 0, 0.12);
+    }
+
+    .border-info-subtle {
+        border-color: var(--ui-info-border-subtle);
+    }
+
+    .w-100 {
+        width: 100%;
+    }
+
+    .w-auto {
+        width: auto;
+    }
+
+    .h-100 {
+        height: 100%;
+    }
+
+    .flex-column {
+        flex-direction: column;
+    }
+
+    .flex-grow-1 {
+        flex-grow: 1;
+    }
+
+    .flex-shrink-0 {
+        flex-shrink: 0;
+    }
+
+    .flex-wrap {
+        flex-wrap: wrap;
+    }
+
+    .justify-content-end {
+        justify-content: flex-end;
+    }
+
+    .justify-content-center {
+        justify-content: center;
+    }
+
+    .justify-content-between {
+        justify-content: space-between;
+    }
+
+    .align-items-start {
+        align-items: flex-start;
+    }
+
+    .align-items-end {
+        align-items: flex-end;
+    }
+
+    .align-items-center {
+        align-items: center;
+    }
+
+    .m-0 {
+        margin: 0;
+    }
+
+    .mx-3 {
+        margin-right: 1rem;
+        margin-left: 1rem;
+    }
+
+    .my-0 {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .mt-1 {
+        margin-top: .25rem;
+    }
+
+    .mt-2 {
+        margin-top: .5rem;
+    }
+
+    .mt-3 {
+        margin-top: 1rem;
+    }
+
+    .mt-4 {
+        margin-top: 1.5rem;
+    }
+
+    .me-1 {
+        margin-right: .25rem;
+    }
+
+    .me-2 {
+        margin-right: .5rem;
+    }
+
+    .me-3 {
+        margin-right: 1rem;
+    }
+
+    .me-auto {
+        margin-right: auto;
+    }
+
+    .mb-0 {
+        margin-bottom: 0;
+    }
+
+    .mb-1 {
+        margin-bottom: .25rem;
+    }
+
+    .mb-2 {
+        margin-bottom: .5rem;
+    }
+
+    .mb-3 {
+        margin-bottom: 1rem;
+    }
+
+    .mb-4 {
+        margin-bottom: 1.5rem;
+    }
+
+    .ms-1 {
+        margin-left: .25rem;
+    }
+
+    .ms-2 {
+        margin-left: .5rem;
+    }
+
+    .p-0 {
+        padding: 0;
+    }
+
+    .p-2 {
+        padding: .5rem;
+    }
+
+    .p-3 {
+        padding: 1rem;
+    }
+
+    .p-4 {
+        padding: 1.5rem;
+    }
+
+    .px-2 {
+        padding-right: .5rem;
+        padding-left: .5rem;
+    }
+
+    .px-3 {
+        padding-right: 1rem;
+        padding-left: 1rem;
+    }
+
+    .px-4 {
+        padding-right: 1.5rem;
+        padding-left: 1.5rem;
+    }
+
+    .py-0 {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .py-1 {
+        padding-top: .25rem;
+        padding-bottom: .25rem;
+    }
+
+    .py-2 {
+        padding-top: .5rem;
+        padding-bottom: .5rem;
+    }
+
+    .py-3 {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .py-4 {
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
+
+    .pt-1 {
+        padding-top: .25rem;
+    }
+
+    .pb-1 {
+        padding-bottom: .25rem;
+    }
+
+    .pb-2 {
+        padding-bottom: .5rem;
+    }
+
+    .pb-3 {
+        padding-bottom: 1rem;
+    }
+
+    .ps-2 {
+        padding-left: .5rem;
+    }
+
+    .ps-3 {
+        padding-left: 1rem;
+    }
+
+    .gap-1 {
+        gap: .25rem;
+    }
+
+    .gap-2 {
+        gap: .5rem;
+    }
+
+    .gap-3 {
+        gap: 1rem;
+    }
+
+    .font-monospace {
+        font-family: var(--ui-font-monospace);
+    }
+
+    .fs-1 {
+        font-size: calc(1.375rem + 1.5vw);
+    }
+
+    .fs-3 {
+        font-size: calc(1.3rem + .6vw);
+    }
+
+    .fs-4 {
+        font-size: calc(1.275rem + .3vw);
+    }
+
+    .fs-6 {
+        font-size: var(--texto-base);
+    }
+
+    .fw-normal {
+        font-weight: 400;
+    }
+
+    .fw-medium {
+        font-weight: 500;
+    }
+
+    .fw-semibold {
+        font-weight: 600;
+    }
+
+    .fw-bold {
+        font-weight: 700;
+    }
+
+    .lh-1 {
+        line-height: 1;
+    }
+
+    .text-start {
+        text-align: left;
+    }
+
+    .text-end {
+        text-align: right;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .text-uppercase {
+        text-transform: uppercase;
+    }
+
+    .text-nowrap {
+        white-space: nowrap;
+    }
+
+    .text-break {
+        word-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .text-primary {
+        --ui-text-opacity: 1;
+        color: var(--color-blue);
+    }
+
+    .text-secondary {
+        --ui-text-opacity: 1;
+        color: var(--color-texto-suave);
+    }
+
+    .text-success {
+        --ui-text-opacity: 1;
+        color: var(--color-green);
+    }
+
+    .text-info {
+        --ui-text-opacity: 1;
+        color: rgba(var(--ui-info-rgb), var(--ui-text-opacity));
+    }
+
+    .text-warning {
+        --ui-text-opacity: 1;
+    }
+
+    .text-danger {
+        --ui-text-opacity: 1;
+        color: var(--color-red);
+    }
+
+    .text-muted {
+        --ui-text-opacity: 1;
+        color: var(--ui-secondary-color);
+    }
+
+    .text-main {
+        color: var(--color-texto);
+    }
+
+    .bg-primary {
+        --ui-bg-opacity: 1;
+        background-color: rgba(var(--ui-primary-rgb), var(--ui-bg-opacity));
+    }
+
+    .bg-secondary {
+        --ui-bg-opacity: 1;
+        background-color: rgba(var(--ui-secondary-rgb), var(--ui-bg-opacity));
+    }
+
+    .bg-success {
+        --ui-bg-opacity: 1;
+        background-color: rgba(var(--ui-success-rgb), var(--ui-bg-opacity));
+    }
+
+    .bg-info {
+        --ui-bg-opacity: 1;
+        background-color: rgba(var(--ui-info-rgb), var(--ui-bg-opacity));
+    }
+
+    .bg-purple {
+        background-color: var(--color-purple);
+    }
+
+    .bg-warning {
+        --ui-bg-opacity: 1;
+        background-color: rgba(var(--ui-warning-rgb), var(--ui-bg-opacity));
+    }
+
+    .bg-danger {
+        --ui-bg-opacity: 1;
+        background-color: rgba(var(--ui-danger-rgb), var(--ui-bg-opacity));
+    }
+
+    .bg-dark {
+        --ui-bg-opacity: 1;
+        background-color: rgba(var(--ui-dark-rgb), var(--ui-bg-opacity));
+    }
+
+    .bg-body-tertiary {
+        --ui-bg-opacity: 1;
+        background-color: rgba(var(--ui-tertiary-bg-rgb), var(--ui-bg-opacity));
+    }
+
+    .bg-opacity-10 {
+        --ui-bg-opacity: 0.1;
+    }
+
+    .bg-opacity-25 {
+        --ui-bg-opacity: 0.25;
+    }
+
+    /* Sobre un fondo de color lleno (no el tenue de bg-opacity-*), el texto va con el -on de ese color en cada tema
+       (claro: blanco; oscuro: el tono oscuro del mismo color). Sin text-white/text-dark al lado. */
+    .bg-primary:not([class*="bg-opacity"]) {
+        --ui-badge-color: var(--color-blue-on);
+        color: var(--color-blue-on);
+    }
+
+    .bg-info:not([class*="bg-opacity"]) {
+        --ui-badge-color: var(--color-blue-on);
+        color: var(--color-blue-on);
+    }
+
+    .bg-success:not([class*="bg-opacity"]) {
+        --ui-badge-color: var(--color-green-on);
+        color: var(--color-green-on);
+    }
+
+    .bg-purple:not([class*="bg-opacity"]) {
+        --ui-badge-color: var(--color-purple-on);
+        color: var(--color-purple-on);
+    }
+
+    .bg-warning:not([class*="bg-opacity"]) {
+        --ui-badge-color: var(--color-yellow-on);
+        color: var(--color-yellow-on);
+    }
+
+    .bg-danger:not([class*="bg-opacity"]) {
+        --ui-badge-color: var(--color-red-on);
+        color: var(--color-red-on);
+    }
+
+    .modal-header.bg-secondary {                        /* gris lleno: el texto, del color de la tarjeta */
+        color: var(--bg-card);
+    }
+
+    .modal-header.bg-secondary .btn-close,
+    .bg-primary:not([class*="bg-opacity"]) .btn-close,
+    .bg-info:not([class*="bg-opacity"]) .btn-close,
+    .bg-purple:not([class*="bg-opacity"]) .btn-close,
+    .bg-success:not([class*="bg-opacity"]) .btn-close,
+    .bg-warning:not([class*="bg-opacity"]) .btn-close,
+    .bg-danger:not([class*="bg-opacity"]) .btn-close {
+        filter: var(--btn-close-sobre-color);
+    }
+
+    .bg-primary-subtle {
+        background-color: var(--ui-primary-bg-subtle);
+    }
+
+    .bg-info-subtle {
+        background-color: var(--ui-info-bg-subtle);
+    }
+
+    .bg-light-subtle {
+        background-color: var(--ui-light-bg-subtle);
+    }
+
+    .bg-dark-subtle {
+        background-color: var(--ui-dark-bg-subtle);
+    }
+
+    .rounded {
+        border-radius: var(--ui-border-radius);
+    }
+
+    .rounded-pill {
+        border-radius: var(--ui-border-radius-pill);
+    }
+
+    @media (min-width: 768px) {
+        .p-md-4 {
+            padding: 1.5rem;
+        }
+    }
+
+    @media (min-width: 1200px) {
+        .fs-1 {
+            font-size: 2.5rem;
+        }
+
+        .fs-3 {
+            font-size: 1.75rem;
+        }
+
+        .fs-4 {
+            font-size: var(--texto-xl);
+        }
+    }
+
+    /* ─── Insignias de coincidencia de búsqueda en el panel lateral */
+
+    .sidebar-search-badge.d-none {
+        display: none;
+    }
+
+    /* ─── Acordeón Producción / Cámaras: Disposición SGC en 2 columnas */
+
+    .canal-ch-badge.bg-primary {
+        background-color: var(--color-blue);
+        color: var(--color-blue-on);
+    }
+
+    .canal-ch-badge.canal-ch-badge-multi {
+        background-color: var(--canal-multi-bg);
+        color: #ffffff;
+    }
+
+    /* ─── Suavizado de Colores Funcionales en Modo Claro (Google Material / Gemini Light) */
+
+    .text-warning,
+    .text-warning-emphasis {
+        color: var(--color-yellow);
+    }
+
+    /* ─── Badges de Estado Sutiles en Modo Claro */
+
+    .bg-success-subtle {
+        background-color: var(--green-08);
+    }
+
+    .bg-danger-subtle {
+        background-color: var(--red-08);
+    }
+
+    .bg-warning-subtle {
+        background-color: var(--orange-12);
+    }
+
+    .bg-secondary-subtle {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    [data-tema="dark"] .bg-secondary-subtle {
+        background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    [data-tema="dark"] .border-secondary-subtle {
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    /* ─── Badges de color (caído, sin grabación...): fondo SÓLIDO, el de `.bg-danger` / `.bg-warning` y su texto -on (arriba).
+       Solo el gris de los contadores queda atenuado. */
+
+    .badge.bg-secondary {
+        background-color: color-mix(in srgb, var(--color-texto) 7%, transparent);
+        color: var(--color-texto-suave);
+        border: 1px solid color-mix(in srgb, var(--color-texto) 12%, transparent);
+    }
+
+    /* ─── Select propio a lo ancho de su contenido (formularios.css) */
+
+    .custom-select-wrapper.w-auto {
+        display: inline-block;
+        width: auto;
+    }
+
+    /* ─── Reemplazos de estilos inline */
+
+    .inset-0 {
+        inset: 0;
+    }
+
+    .tracking-wide {
+        letter-spacing: 0.05em;
+    }
+
+    .tracking-titulo {
+        letter-spacing: 0.04em;
+    }
+
+    .cursor-ayuda {
+        cursor: help;
+    }
+
+    .disp-etiqueta-abrible{
+        cursor: pointer;
+    }
+
+    .copy-cell,
+    td.stock-ubicacion {
+        cursor: pointer;
+    }
+
+    /* ─── Selección de texto: apagada en toda la página (base.css) y encendida SOLO donde se copia algo. `.seleccionable` es
+       el aviso en el HTML o el JS: valores de equipos (IP, MAC, serie, firmware...), logs, resultados de consultas y el
+       modelo del popup. Aparte: `.copy-cell` (valores con doble clic para copiar), los campos de entrada
+       (formularios.css), los mensajes (alertas.css) y el toast (toast.css). Títulos, etiquetas, filas, KPI y menús no. */
+
+    .seleccionable,
+    .copy-cell {
+        -webkit-user-select: text;
+        user-select: text;
+    }
+
+    /* ─── Un hijo flex con texto truncable (.text-truncate) necesita poder achicarse por debajo de su contenid */
+
+    .min-w-0 {
+        min-width: 0;
+    }
+
+    /* ─── Vista móvil (< 768 px): solo Estado, Activos y Producción, en tarjetas. Lo que lleva a Auditoría o a la lista no se ve */
+
+    @media (max-width: 767.98px) {
+        .solo-escritorio.solo-escritorio {          /* doble clase: gana a los `display` de cada componente sin !important */
+            display: none;
+        }
+    }
+}
+
+/* ─── Menos movimiento (menú de ajustes > «Reducir movimiento», `data-movimiento="reducido"` en <html>). Va FUERA de las
+   capas a propósito: una regla sin capa le gana a todas las capas sin `!important`, y así apaga animaciones y transiciones
+   de todo el CSS sin repetir cada regla (las `@media (prefers-reduced-motion)` de cada componente son el pedido del sistema).
+   El spinner sigue girando (más lento: spinner.css) porque indica que algo carga. */
+
+html[data-movimiento="reducido"],
+html[data-movimiento="reducido"] *:not(.spinner-border),
+html[data-movimiento="reducido"] *:not(.spinner-border)::before,
+html[data-movimiento="reducido"] *:not(.spinner-border)::after {
+    animation: none;
+    transition: none;
+    scroll-behavior: auto;
+}

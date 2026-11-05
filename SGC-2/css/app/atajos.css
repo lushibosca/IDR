@@ -1,0 +1,180 @@
+/* app/atajos.css: App, modal de ayuda del sistema y atajos del menú ⚙ (atajos.js). */
+
+@layer app {
+    /* tamaño fijo: no se achica ni se agranda según los resultados del filtro */
+    #modal-atajos .modal-content {
+        height: min(44rem, 88vh);
+    }
+
+    /* ─── Buscador de atajos anclado */
+    .ayuda-buscar-sticky {
+        position: sticky;
+        top: 0;
+        background-color: var(--bg-card);
+        padding-top: var(--esp-1);
+        padding-bottom: var(--esp-2);
+        z-index: 2;
+    }
+
+    /* ─── Tarjetas de descripción de secciones */
+    .ayuda-seccion-card {
+        padding: var(--esp-3);
+        margin-bottom: var(--esp-3);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radio-medio);
+        background-color: var(--bg-main);
+    }
+
+    .ayuda-seccion-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--esp-2);
+    }
+
+    .ayuda-seccion-titulo {
+        font-size: var(--texto-base);
+        font-weight: 700;
+        color: var(--color-texto);
+    }
+
+    .ayuda-seccion-desc {
+        font-size: var(--texto-sm);
+        color: var(--color-texto-suave);
+        margin-bottom: var(--esp-2);
+    }
+
+    .ayuda-seccion-items {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: var(--esp-2);
+        font-size: var(--texto-xs);
+        color: var(--color-texto-suave);
+    }
+
+    .ayuda-seccion-item {
+        padding: var(--esp-2);
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radio-chico);
+    }
+
+    .ayuda-seccion-item strong {
+        color: var(--color-texto);
+    }
+
+    /* ─── Tabla de comodines y operadores de búsqueda */
+    .ayuda-tabla-comodines {
+        font-size: var(--texto-sm);
+        margin-bottom: var(--esp-3);
+        border: 1px solid var(--border-color);
+    }
+
+    .ayuda-tabla-comodines th {
+        font-weight: 600;
+        color: var(--color-texto);
+        background-color: var(--bg-main);
+        white-space: nowrap;
+    }
+
+    .ayuda-tabla-comodines td {
+        vertical-align: middle;
+        color: var(--color-texto);
+    }
+
+    .ayuda-code {
+        padding: 0.15rem 0.4rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radio-chico);
+        background-color: var(--bg-main);
+        color: var(--color-blue);
+        font-family: var(--ui-font-monospace);
+        font-size: var(--texto-xs);
+        white-space: nowrap;
+    }
+
+    .ayuda-nota {
+        padding: var(--esp-3);
+        border: 1px solid var(--border-color);
+        border-left: 4px solid var(--color-blue);
+        border-radius: var(--radio-medio);
+        background-color: var(--bg-main);
+        font-size: var(--texto-sm);
+        color: var(--color-texto-suave);
+    }
+
+    /* ─── Filas de atajos */
+    .atajos-seccion + .atajos-seccion {
+        margin-top: 1.25rem;
+    }
+
+    .atajos-titulo {
+        margin-bottom: var(--esp-2);
+        font-size: var(--texto-xs);
+        letter-spacing: 0.05em;
+    }
+
+    .atajos-grupo {
+        margin-bottom: var(--esp-3);
+    }
+
+    .atajos-donde {
+        margin-bottom: var(--esp-1);
+        font-size: var(--texto-sm);
+        font-weight: 700;
+    }
+
+    .atajo-fila {
+        display: flex;
+        align-items: baseline;
+        gap: var(--esp-3);
+        padding: 0.2rem 0;
+        font-size: var(--texto-sm);
+    }
+
+    .atajo-claves {
+        flex: 0 0 15rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--esp-1);
+    }
+
+    .atajo-tecla {
+        padding: 0.1rem 0.4rem;
+        border: 1px solid var(--border-color);
+        border-bottom-width: 2px;
+        border-radius: var(--radio-chico);
+        background-color: var(--bg-main);
+        color: var(--color-texto);
+        font-family: var(--ui-font-monospace);
+        font-size: var(--texto-xs);
+        white-space: nowrap;
+    }
+
+    .atajo-mas {
+        color: var(--color-texto-suave);
+        font-size: var(--texto-xs);
+    }
+
+    .atajo-gesto {
+        font-weight: 600;
+        color: var(--color-blue);
+    }
+
+    .atajo-accion {
+        flex: 1 1 auto;
+        color: var(--color-texto-suave);
+    }
+
+    @media (max-width: 575.98px) {
+        .atajo-fila {
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .atajo-claves {
+            flex-basis: auto;
+        }
+    }
+}

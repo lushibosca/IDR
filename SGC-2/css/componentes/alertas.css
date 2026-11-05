@@ -1,0 +1,87 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* componentes/alertas.css: Componente alertas: lo de Bootstrap y el aspecto de la app en una sola definición. */
+
+@layer componentes {
+    /* ─── Alertas */
+
+    .alert {
+        -webkit-user-select: text;
+        user-select: text;
+        --ui-alert-padding-x: 1rem;
+        --ui-alert-padding-y: 1rem;
+        --ui-alert-margin-bottom: 1rem;
+        --ui-alert-border: var(--ui-border-width) solid var(--ui-alert-border-color);
+        --ui-alert-border-radius: var(--ui-border-radius);
+        position: relative;
+        padding: var(--ui-alert-padding-y) var(--ui-alert-padding-x);
+        margin-bottom: var(--ui-alert-margin-bottom);
+        color: var(--ui-alert-color);
+        background-color: var(--ui-alert-bg);
+        border: var(--ui-alert-border);
+        border-radius: var(--ui-alert-border-radius);
+    }
+
+    .alert-info {
+        --ui-alert-color: var(--ui-info-text-emphasis);
+        --ui-alert-bg: var(--ui-info-bg-subtle);
+        --ui-alert-border-color: var(--ui-info-border-subtle);
+    }
+
+    .alert-warning {
+        --ui-alert-color: var(--ui-warning-text-emphasis);
+        --ui-alert-bg: var(--ui-warning-bg-subtle);
+        --ui-alert-border-color: var(--ui-warning-border-subtle);
+    }
+
+    .alert-danger {
+        --ui-alert-color: var(--ui-danger-text-emphasis);
+        --ui-alert-bg: var(--ui-danger-bg-subtle);
+        --ui-alert-border-color: var(--ui-danger-border-subtle);
+    }
+
+    @keyframes progress-bar-stripes {
+        0% {
+        background-position-x: 1rem
+        }
+    }
+
+    /* ─── Banners Bootstrap en Modo Claro */
+
+    .alert.alert-warning {
+        background-color: var(--orange-06);
+        border-color: var(--orange-22);
+        color: var(--color-texto);
+    }
+
+    .alert.alert-warning i {
+        color: var(--color-yellow);
+    }
+
+    .alert.alert-danger {
+        background-color: var(--red-06);
+        border-color: var(--red-22);
+        color: var(--color-texto);
+    }
+
+    .alert.alert-danger i {
+        color: var(--color-red);
+    }
+
+    /* ─── Banners Bootstrap (Alerta de scan y datos desactualizados) */
+
+    [data-tema="dark"] .alert.alert-warning {
+        background-color: var(--yellow-06);
+        border-color: var(--yellow-22);
+        color: var(--color-texto);
+    }
+
+    [data-tema="dark"] .alert.alert-danger {
+        background-color: var(--red-06);
+        border-color: var(--red-22);
+        color: var(--color-texto);
+    }
+}

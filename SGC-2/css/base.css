@@ -1,0 +1,388 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* base.css: Reset y tipografía por elemento (html, body, títulos, enlaces, formularios nativos). */
+
+@layer base {
+    /* ─── Scrollbar: UNO solo en toda la app (referencia: el modal «Datos del dispositivo»). Nadie lo redefine. */
+
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-color) transparent;
+    }
+
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: var(--border-color);
+        border-radius: var(--radio-chico);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--color-texto-suave);
+    }
+
+    /* ─── ui-base.css: Variables (:root y tema oscuro), reset/tipografía base ("reboot") e imágenes: solo lo q */
+
+    [data-tema=dark] {
+        color-scheme: dark;
+        --ui-body-color-rgb: 173, 181, 189;
+        --ui-body-bg-rgb: 33, 37, 41;
+        --ui-emphasis-color: #fff;
+        --ui-emphasis-color-rgb: 255, 255, 255;
+        --ui-tertiary-bg-rgb: 43, 48, 53;
+        --ui-heading-color: inherit;
+        --ui-border-color-translucent: var(--blanco-15);
+    }
+
+    *,
+    ::after,
+    ::before {
+        box-sizing: border-box;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        :root {
+            scroll-behavior: smooth;
+        }
+    }
+
+    body {
+        margin: 0;
+        font-size: var(--ui-body-font-size);
+        font-weight: var(--ui-body-font-weight);
+        line-height: var(--ui-body-line-height);
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+        font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: var(--bg-main);
+        color: var(--color-texto);
+    }
+
+    hr {
+        margin: var(--esp-4) 0;
+        color: inherit;
+        border: 0;
+        border-top: var(--ui-border-width) solid;
+        opacity: .25;
+    }
+
+    .h1,
+    .h2,
+    .h6,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        margin-top: 0;
+        margin-bottom: var(--esp-2);
+        font-weight: 500;
+        line-height: 1.2;
+        color: var(--ui-heading-color);
+    }
+
+    @media (min-width: 1200px) {
+        .h1,
+        h1 {
+            font-size: 2.5rem;
+        }
+    }
+
+    .h2,
+    h2 {
+        font-size: calc(1.325rem + .9vw);
+    }
+
+    @media (min-width: 1200px) {
+        .h2,
+        h2 {
+            font-size: 2rem;
+        }
+    }
+
+    h3 {
+        font-size: calc(1.3rem + .6vw);
+    }
+
+    @media (min-width: 1200px) {
+        h3 {
+            font-size: 1.75rem;
+        }
+    }
+
+    h4 {
+        font-size: calc(1.275rem + .3vw);
+    }
+
+    @media (min-width: 1200px) {
+        h4 {
+            font-size: var(--texto-xl);
+        }
+    }
+
+    h5 {
+        font-size: var(--texto-lg);
+    }
+
+    .h6,
+    h6 {
+        font-size: var(--texto-base);
+    }
+
+    p {
+        margin-top: 0;
+        margin-bottom: var(--esp-4);
+    }
+
+    ol,
+    ul {
+        padding-left: var(--esp-8);
+        margin-top: 0;
+        margin-bottom: var(--esp-4);
+    }
+
+    ol ol,
+    ol ul,
+    ul ol,
+    ul ul {
+        margin-bottom: 0;
+    }
+
+    b,
+    strong {
+        font-weight: bolder;
+    }
+
+    .small,
+    small {
+        font-size: .875em;
+    }
+
+    a {
+        color: rgba(var(--ui-link-color-rgb), var(--ui-link-opacity, 1));
+        text-decoration: underline;
+    }
+
+    a:hover {
+        --ui-link-color-rgb: var(--ui-link-hover-color-rgb);
+    }
+
+    a:not([href]):not([class]),
+    a:not([href]):not([class]):hover {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    code {
+        font-family: var(--ui-font-monospace);
+        font-size: .875em;
+        color: var(--ui-code-color);
+        word-wrap: break-word;
+    }
+
+    a>code {
+        color: inherit;
+    }
+
+    img,
+    svg {
+        vertical-align: middle;
+    }
+
+    table {
+        caption-side: bottom;
+        border-collapse: collapse;
+    }
+
+    caption {
+        padding-top: var(--esp-2);
+        padding-bottom: var(--esp-2);
+        color: var(--ui-secondary-color);
+        text-align: left;
+    }
+
+    th {
+        text-align: inherit;
+        text-align: -webkit-match-parent;
+    }
+
+    tbody,
+    td,
+    tfoot,
+    th,
+    thead,
+    tr {
+        border-color: inherit;
+        border-style: solid;
+        border-width: 0;
+    }
+
+    label {
+        display: inline-block;
+    }
+
+    button {
+        border-radius: 0;
+    }
+
+    button:focus:not(:focus-visible) {
+        outline: 0;
+    }
+
+    button,
+    input,
+    optgroup,
+    select,
+    textarea {
+        margin: 0;
+        font-family: inherit;
+        font-size: inherit;
+        line-height: inherit;
+    }
+
+    button,
+    select {
+        text-transform: none;
+    }
+
+    select {
+        word-wrap: normal;
+    }
+
+    select:disabled {
+        opacity: 1;
+    }
+
+    [list]:not([type=date]):not([type=datetime-local]):not([type=month]):not([type=week]):not([type=time])::-webkit-calendar-picker-indicator {
+        display: none;
+    }
+
+    [type=button],
+    [type=reset],
+    [type=submit],
+    button {
+        -webkit-appearance: button;
+    }
+
+    [type=button]:not(:disabled),
+    [type=reset]:not(:disabled),
+    [type=submit]:not(:disabled),
+    button:not(:disabled) {
+        cursor: pointer;
+    }
+
+    ::-moz-focus-inner {
+        padding: 0;
+        border-style: none;
+    }
+
+    textarea {
+        resize: vertical;
+    }
+
+    fieldset {
+        min-width: 0;
+        padding: 0;
+        margin: 0;
+        border: 0;
+    }
+
+    legend {
+        float: left;
+        width: 100%;
+        padding: 0;
+        margin-bottom: var(--esp-2);
+        font-size: calc(1.275rem + .3vw);
+        line-height: inherit;
+    }
+
+    @media (min-width: 1200px) {
+        legend {
+            font-size: var(--texto-xl);
+        }
+    }
+
+    legend+* {
+        clear: left;
+    }
+
+    ::-webkit-datetime-edit-day-field,
+    ::-webkit-datetime-edit-fields-wrapper,
+    ::-webkit-datetime-edit-hour-field,
+    ::-webkit-datetime-edit-minute,
+    ::-webkit-datetime-edit-month-field,
+    ::-webkit-datetime-edit-text,
+    ::-webkit-datetime-edit-year-field {
+        padding: 0;
+    }
+
+    ::-webkit-inner-spin-button {
+        height: auto;
+    }
+
+    [type=search] {
+        outline-offset: -2px;
+        -webkit-appearance: textfield;
+    }
+
+    ::-webkit-search-decoration {
+        -webkit-appearance: none;
+    }
+
+    ::-webkit-color-swatch-wrapper {
+        padding: 0;
+    }
+
+    ::-webkit-file-upload-button {
+        font: inherit;
+        -webkit-appearance: button;
+    }
+
+    ::file-selector-button {
+        font: inherit;
+        -webkit-appearance: button;
+    }
+
+    [hidden] {
+        display: none;
+    }
+
+    .list-unstyled {
+        padding-left: 0;
+        list-style: none;
+    }
+
+    /* ─── variables de tema oscuro (Paleta Google Gemini Desktop / Material 3 Dark) */
+
+    html {
+        background-color: var(--bg-main);
+        scrollbar-gutter: stable;
+    }
+
+    /* ─── El lugar de la barra de scroll queda SIEMPRE reservado (antes: `body { overflow-y: scroll }`; los do */
+
+    body.modal-open {
+        overflow: hidden;
+    }
+
+    /* ─── El fondo del modal (.modal-backdrop, negro al 50 %) no llega a la franja reservada para la barra: se */
+
+    html.ui-modal-abierto {
+        --franja-modal: color-mix(in srgb, var(--bg-main) 50%, #000);
+        background-color: var(--franja-modal);
+        scrollbar-color: var(--franja-modal) var(--franja-modal);
+    }
+}

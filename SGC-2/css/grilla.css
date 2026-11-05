@@ -1,0 +1,109 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* grilla.css: Contenedores y columnas (row, col-*, g-*). */
+
+@layer grilla {
+    /* ─── ui-grilla.css: Contenedores y grilla (row, col-*, g-*): solo las clases que usa el front. */
+
+    .container-fluid {
+        --ui-gutter-x: 1.5rem;
+        --ui-gutter-y: 0;
+        width: 100%;
+        padding-right: calc(var(--ui-gutter-x) * .5);
+        padding-left: calc(var(--ui-gutter-x) * .5);
+        margin-right: auto;
+        margin-left: auto;
+    }
+
+    .row {
+        --ui-gutter-x: 1.5rem;
+        --ui-gutter-y: 0;
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: calc(-1 * var(--ui-gutter-y));
+        margin-right: calc(-.5 * var(--ui-gutter-x));
+        margin-left: calc(-.5 * var(--ui-gutter-x));
+    }
+
+    .row>* {
+        flex-shrink: 0;
+        width: 100%;
+        max-width: 100%;
+        padding-right: calc(var(--ui-gutter-x) * .5);
+        padding-left: calc(var(--ui-gutter-x) * .5);
+        margin-top: var(--ui-gutter-y);
+    }
+
+    .col-12 {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+
+    .g-2 {
+        --ui-gutter-x: 0.5rem;
+        --ui-gutter-y: 0.5rem;
+    }
+
+    .g-3 {
+        --ui-gutter-x: 1rem;
+        --ui-gutter-y: 1rem;
+    }
+
+    .g-4 {
+        --ui-gutter-x: 1.5rem;
+        --ui-gutter-y: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+        .col-md-2 {
+            flex: 0 0 auto;
+            width: 16.66666667%;
+        }
+
+        .col-md-6 {
+            flex: 0 0 auto;
+            width: 50%;
+        }
+
+        .col-md-10 {
+            flex: 0 0 auto;
+            width: 83.33333333%;
+        }
+    }
+
+    @media (min-width: 992px) {
+        .col-lg-2 {
+            flex: 0 0 auto;
+            width: 16.66666667%;
+        }
+
+        .col-lg-6 {
+            flex: 0 0 auto;
+            width: 50%;
+        }
+
+        .col-lg-10 {
+            flex: 0 0 auto;
+            width: 83.33333333%;
+        }
+    }
+
+    @media (min-width: 1200px) {
+
+        .col-xl-4 {
+            flex: 0 0 auto;
+            width: 33.33333333%;
+        }
+
+    }
+
+    @media (min-width: 1400px) {
+        .col-xxl-6 {
+            flex: 0 0 auto;
+            width: 50%;
+        }
+    }
+}

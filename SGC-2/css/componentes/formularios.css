@@ -1,0 +1,430 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* componentes/formularios.css: Componente formularios: lo de Bootstrap y el aspecto de la app en una sola definición. */
+
+@layer componentes {
+    /* ─── Formularios */
+
+    .form-label {
+        margin-bottom: var(--esp-2);
+    }
+
+    input,
+    textarea,
+    select {
+        -webkit-user-select: text;
+        user-select: text;
+    }
+
+    .form-control {
+        display: block;
+        width: 100%;
+        padding: .375rem var(--esp-3);
+        font-size: var(--texto-base);
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--ui-body-color);
+        background-color: var(--ui-body-bg);
+        background-clip: padding-box;
+        border: var(--ui-border-width) solid var(--ui-border-color);
+        -webkit-appearance: none;
+        appearance: none;
+        -moz-appearance: none;
+        border-radius: var(--ui-border-radius);
+        transition: border-color var(--dur-fast) ease-in-out, box-shadow var(--dur-fast) ease-in-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .form-control {
+            transition: none;
+        }
+    }
+
+    .form-control[type=file] {
+        overflow: hidden;
+    }
+
+    .form-control[type=file]:not(:disabled):not([readonly]) {
+        cursor: pointer;
+    }
+
+    .form-control:focus {
+        color: var(--ui-body-color);
+        background-color: var(--ui-body-bg);
+        border-color: color-mix(in srgb, var(--color-blue) 50%, var(--bg-card));
+        outline: 0;
+        box-shadow: var(--foco-anillo);
+    }
+
+    .form-control::-webkit-date-and-time-value {
+        min-width: 85px;
+        height: 1.5em;
+        margin: 0;
+    }
+
+    .form-control::-webkit-datetime-edit {
+        display: block;
+        padding: 0;
+    }
+
+    .form-control::-moz-placeholder {
+        color: var(--ui-secondary-color);
+        opacity: 1;
+    }
+
+    .form-control::placeholder {
+        color: var(--ui-secondary-color);
+        opacity: 1;
+    }
+
+    .form-control:disabled {
+        background-color: var(--ui-secondary-bg);
+        opacity: 1;
+    }
+
+    .form-control::-webkit-file-upload-button {
+        padding: .375rem var(--esp-3);
+        margin: -.375rem -.75rem;
+        -webkit-margin-end: .75rem;
+        margin-inline-end: var(--esp-3);
+        color: var(--ui-body-color);
+        background-color: var(--ui-tertiary-bg);
+        pointer-events: none;
+        border-color: inherit;
+        border-style: solid;
+        border-width: 0;
+        border-inline-end-width: var(--ui-border-width);
+        border-radius: 0;
+        -webkit-transition: color var(--dur-fast) ease-in-out, background-color var(--dur-fast) ease-in-out, border-color var(--dur-fast) ease-in-out, box-shadow var(--dur-fast) ease-in-out;
+        transition: color var(--dur-fast) ease-in-out, background-color var(--dur-fast) ease-in-out, border-color var(--dur-fast) ease-in-out, box-shadow var(--dur-fast) ease-in-out;
+    }
+
+    .form-control::file-selector-button {
+        padding: .375rem var(--esp-3);
+        margin: -.375rem -.75rem;
+        -webkit-margin-end: .75rem;
+        margin-inline-end: var(--esp-3);
+        color: var(--ui-body-color);
+        background-color: var(--ui-tertiary-bg);
+        pointer-events: none;
+        border-color: inherit;
+        border-style: solid;
+        border-width: 0;
+        border-inline-end-width: var(--ui-border-width);
+        border-radius: 0;
+        transition: color var(--dur-fast) ease-in-out, background-color var(--dur-fast) ease-in-out, border-color var(--dur-fast) ease-in-out, box-shadow var(--dur-fast) ease-in-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .form-control::-webkit-file-upload-button {
+            -webkit-transition: none;
+            transition: none;
+        }
+
+        .form-control::file-selector-button {
+            transition: none;
+        }
+    }
+
+    .form-control:hover:not(:disabled):not([readonly])::-webkit-file-upload-button {
+        background-color: var(--ui-secondary-bg);
+    }
+
+    .form-control:hover:not(:disabled):not([readonly])::file-selector-button {
+        background-color: var(--ui-secondary-bg);
+    }
+
+    .form-control-sm {
+        min-height: calc(1.5em + .5rem + calc(var(--ui-border-width) * 2));
+        padding: var(--esp-1) var(--esp-2);
+        font-size: var(--texto-md);
+        border-radius: var(--ui-border-radius-sm);
+    }
+
+    .form-control-sm::-webkit-file-upload-button {
+        padding: var(--esp-1) var(--esp-2);
+        margin: -.25rem -.5rem;
+        -webkit-margin-end: .5rem;
+        margin-inline-end: var(--esp-2);
+    }
+
+    .form-control-sm::file-selector-button {
+        padding: var(--esp-1) var(--esp-2);
+        margin: -.25rem -.5rem;
+        -webkit-margin-end: .5rem;
+        margin-inline-end: var(--esp-2);
+    }
+
+    textarea.form-control {
+        min-height: calc(1.5em + .75rem + calc(var(--ui-border-width) * 2));
+    }
+
+    textarea.form-control-sm {
+        min-height: calc(1.5em + .5rem + calc(var(--ui-border-width) * 2));
+    }
+
+    .form-select {
+        --ui-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        display: block;
+        width: 100%;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--ui-body-color);
+        background-color: var(--ui-body-bg);
+        background-image: var(--ui-form-select-bg-img), var(--ui-form-select-bg-icon, none);
+        background-repeat: no-repeat;
+        background-position: right .75rem center;
+        background-size: 16px 12px;
+        border: var(--ui-border-width) solid var(--ui-border-color);
+        transition: border-color var(--dur-fast) ease-in-out, box-shadow var(--dur-fast) ease-in-out;
+        -webkit-appearance: none;
+        appearance: none;
+        -moz-appearance: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .form-select {
+            transition: none;
+        }
+    }
+
+    .form-select:focus {
+        border-color: color-mix(in srgb, var(--color-blue) 50%, var(--bg-card));
+        outline: 0;
+        box-shadow: var(--foco-anillo);
+    }
+
+    .form-select[multiple],
+    .form-select[size]:not([size="1"]) {
+        padding-right: var(--esp-3);
+        background-image: none;
+    }
+
+    .form-select:disabled {
+        background-color: var(--ui-secondary-bg);
+    }
+
+    .form-select:-moz-focusring {
+        color: transparent;
+        text-shadow: 0 0 0 var(--ui-body-color);
+    }
+
+    .form-select-sm {
+        font-size: var(--texto-md);
+        border-radius: var(--ui-border-radius-sm);
+    }
+
+    [data-tema=dark] .form-select {
+        --ui-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23adb5bd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    }
+
+    .form-check {
+        display: block;
+        min-height: 1.5rem;
+        margin-bottom: .125rem;
+    }
+
+    .form-check .form-check-input {
+        float: left;
+    }
+
+    .form-check-input {
+        --ui-form-check-bg: var(--ui-body-bg);
+        width: 1em;
+        height: 1em;
+        margin-top: .25em;
+        vertical-align: top;
+        background-color: var(--ui-form-check-bg);
+        background-image: var(--ui-form-check-bg-image);
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+        border: var(--ui-border-width) solid var(--ui-border-color);
+        -webkit-appearance: none;
+        appearance: none;
+        -moz-appearance: none;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color-adjust: exact;
+    }
+
+    .form-check-input[type=checkbox] {
+        border-radius: var(--radio-chico);
+    }
+
+    .form-check-input[type=radio] {
+        border-radius: 50%;
+    }
+
+    .form-check-input:active {
+        filter: brightness(90%);
+    }
+
+    .form-check-input:focus {
+        border-color: color-mix(in srgb, var(--color-blue) 50%, var(--bg-card));
+        outline: 0;
+        box-shadow: var(--foco-anillo);
+    }
+
+    .form-check-input:checked {
+        background-color: var(--color-blue);
+        border-color: var(--color-blue);
+    }
+
+    .form-check-input:checked[type=checkbox] {
+        --ui-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+    }
+
+    .form-check-input:checked[type=radio] {
+        --ui-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23fff'/%3e%3c/svg%3e");
+    }
+
+    .form-check-input[type=checkbox]:indeterminate {
+        background-color: var(--color-blue);
+        border-color: var(--color-blue);
+        --ui-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10h8'/%3e%3c/svg%3e");
+    }
+
+    /* Oscuro: la casilla marcada es celeste (--color-blue); la tilde va oscura (--color-blue-on, fija en el SVG) */
+    [data-tema="dark"] .form-check-input:checked[type=checkbox] {
+        --ui-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23041e49' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+    }
+
+    [data-tema="dark"] .form-check-input:checked[type=radio] {
+        --ui-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23041e49'/%3e%3c/svg%3e");
+    }
+
+    [data-tema="dark"] .form-check-input[type=checkbox]:indeterminate {
+        --ui-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23041e49' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10h8'/%3e%3c/svg%3e");
+    }
+
+    .form-check-input:disabled {
+        pointer-events: none;
+        filter: none;
+        opacity: .5;
+    }
+
+    .form-switch {
+        padding-left: 2.5em;
+    }
+
+    .form-switch .form-check-input {
+        --ui-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%280, 0, 0, 0.25%29'/%3e%3c/svg%3e");
+        width: 2em;
+        margin-left: -2.5em;
+        background-image: var(--ui-form-switch-bg);
+        background-position: left center;
+        border-radius: 2em;
+        transition: background-position var(--dur-fast) ease-in-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .form-switch .form-check-input {
+            transition: none;
+        }
+    }
+
+    .form-switch .form-check-input:focus {
+        --ui-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%2386b7fe'/%3e%3c/svg%3e");
+    }
+
+    .form-switch .form-check-input:checked {
+        background-position: right center;
+        --ui-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+    }
+
+    [data-tema=dark] .form-switch .form-check-input:not(:checked):not(:focus) {
+        --ui-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%28255, 255, 255, 0.25%29'/%3e%3c/svg%3e");
+    }
+
+    /* ─── Select propio (crearCustomDropdownSelect, app.js): el <select> nativo oculto, el botón y su contenedor; el
+       menú está en desplegables.css */
+
+    .custom-select-wrapper {
+        position: relative;
+        display: block;
+        width: 100%;
+    }
+
+    .custom-select-native {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .custom-select-btn {
+        width: 100%;
+        min-height: 31px;
+        text-align: left;
+        background-color: var(--ui-body-bg);
+        color: var(--color-texto);
+        border: 1px solid var(--border-color);
+        border-radius: var(--ui-border-radius-sm);
+        padding: var(--esp-1) 2.25rem var(--esp-1) var(--esp-2);
+        font-size: var(--texto-md);
+        line-height: 1.5;
+        background-image: var(--ui-form-select-bg-img);
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px 12px;
+        transition: border-color var(--dur-fast) ease-in-out, box-shadow var(--dur-fast) ease-in-out;
+    }
+
+    .custom-select-btn:focus,
+    .custom-select-btn.show {
+        border-color: color-mix(in srgb, var(--color-blue) 50%, var(--bg-card));
+        box-shadow: var(--foco-anillo);
+    }
+
+    .custom-select-btn:disabled {
+        background-color: var(--ui-secondary-bg);
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+
+    /* ─── Modal de Dispositivo Unificado (Inspector compacto con scrollbar) */
+
+    .modal-disp-input,
+    .modal-disp-select {
+        width: 100%;
+        max-width: 100%;
+        height: 32px;
+        font-family: inherit;
+        font-size: var(--texto-md);
+        line-height: 1.4;
+        border-radius: var(--radio-chico);
+        background-color: var(--ui-tertiary-bg, rgba(255, 255, 255, 0.05));
+        border: 1px solid var(--border-color);
+        color: var(--color-texto);
+        padding: var(--esp-1) 10px;
+        box-sizing: border-box;
+    }
+
+    .modal-disp-select {
+        padding-right: var(--esp-8);
+    }
+
+    .modal-disp-input:focus,
+    .modal-disp-select:focus {
+        background-color: var(--bg-card);
+        border-color: var(--ui-primary);
+        box-shadow: 0 0 0 2px rgba(var(--color-blue-rgb), 0.25);
+        color: var(--color-texto);
+    }
+
+    /* ─── Clave con botón «ver mientras se mantiene presionado» (modal de inicio de sesión) */
+
+    
+
+}

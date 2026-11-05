@@ -1,0 +1,220 @@
+# SGC-2 — análisis de implementación
+
+Objetivo: una versión **estática** (GitHub Pages, sin backend) del front de `cctv_monitor`, con los datos en un JSON
+(localStorage) sincronizable con un **GitHub Gist**, igual que `idr/SGC`. Cuando esté completa reemplaza a `idr/SGC`.
+
+Fecha: 2026-11-05. Estado: **entrega 1 hecha** (ver §9 y §12).
+
+---
+
+## 1. Qué se toma de cada proyecto
+
+| De `cctv_monitor` (front) | De `idr/SGC` |
+|---|---|
+| `ui.js` (pestañas/modales/desplegables propios), CSS propio `static/css/` (sin Bootstrap) | `GistSync`: token, Gist ID, autosync, `_leerGist` (con `RAW_HOST` para > 1 MB), leer antes de subir (B7) |
+| `comun.js` (bloques `UI COMUN`, `FECHAS Y CSV PURO`, `preferencias`, toast) | Lápidas `eliminados` + `updatedAt` por entidad + `_mergeCampos`/`_modoMerge` |
+| Stock: `stock.js`, `stock-puro.js`, `stock-listar.js`, `stock-catalogos.js`, `stock-seleccion.js`, `stock-alta-lote.js` | Firma del contenido (verificación de integridad) |
+| Producción: `produccion.js` (`modeloProduccion` → `construirProduccion`), `produccion-seleccion.js` | **Parseador de canales** (`cctv_online.json` → grabadores/canales, 3 pasos) |
+| `resumen.js` (panel Estado, sin Monitoreo/Alertas/Disponibilidad), `favoritos.js`, `busqueda.js` | **Parseador de datos** (MAC → serie/firmware/modelo, y «nuevos») |
+| `atajos.js`, `privacidad.js`, `ajustes.js`, `selector.js`, `animaciones.js`, `preload.js` | Historial deshacer/rehacer (Ctrl+Z), export/import JSON, manifest/PWA de la suite |
+| Imágenes `static/img/devices/`, `vendor/bootstrap-icons` + fuentes | `shared/idr-infra.js` (edificios compartidos de la suite) |
+| Reglas del stock (`cctv/stock.py`) **portadas a JS puro** | CSP en `<meta>` con `connect-src` a `api.github.com` y `gist.githubusercontent.com` |
+
+La base es el front de cctv_monitor (más nuevo, probado, sin `innerHTML`, CSP estricta). De SGC se trae solo la
+sincronización y los parseadores, **reescritos** sobre las funciones puras del stock (no copiados con sus bugs:
+B13, B14, B21, S7 del `ROADMAP.md` de SGC).
+
+## 2. Qué se quita
+
+**Todo el backend**: `cctv/` (Python), `web/` (FastAPI), simulador, CLI, `iniciar.py`, tests de Python y mutación.
+
+**Del front:**
+- Login, sesiones, roles, kiosco, clave temporal (`sesion.js`, `data-rol-minimo`). Sin servidor no hay a quién
+  autenticar: quien tiene el token del Gist escribe; sin token, solo baja (lectura).
+- Panel Estado: **Monitoreo** (KPI + gráficos), **Alertas**, **Disponibilidad**, banner de red del host (`red-host.js`).
+  Quedan: Favoritos, Canales (capacidad usada/total por grabador, ahora con los datos manuales) y Activos.
+- Pestaña **Auditoría** completa (logs del sistema, logs de NVR, dispositivos/grabador/cámara, video, disponibilidad).
+  Ver pregunta P3 por «Base de datos» (historial del stock).
+- Escaneo, escaneo dirigido, capturas (snapshots), video en vivo, notificaciones de escritorio, sonido de alertas,
+  reiniciar monitor, conciliación contra `/api/...` (reemplazada por los parseadores sobre un archivo local).
+- Ajustes: secciones **Monitoreo** y **Alertas**. Quedan Apariencia, Comportamiento, Stock, Privacidad, Apartados.
+  Se agrega **Sincronización** (Gist), **Parseadores** y **Datos** (exportar/importar JSON, migrar desde SGC).
+- En Producción y en las fichas: estado online/offline, «sin relevar», «sin señal», captura, «Ir al grabador»,
+  gráfico de disponibilidad. Lo que se ve es la **condición** del stock (operativo, revisar, averiado...).
+- Preferencias por usuario en el servidor → solo localStorage (la API `preferencias.set/get` se conserva, sin `PUT`).
+- Respaldo automático → exportar JSON + el historial de revisiones del propio Gist.
+
+## 3. El cambio de fondo: producción manual
+
+Hoy Producción **sale del escaneo** (`/api/v2/datos`: NVR de `config.toml` + `cctv_online.json`) y la `instalacion`
+del stock no sabe en qué grabador ni en qué canal está un equipo. En SGC-2 no hay escaneo: la producción es un dato.
+
+### Modelo propuesto (recomendado)
+
+La instalación es **del dispositivo** y opcionalmente apunta a un canal:
+
+```jsonc
+// dispositivo (como el stock de cctv_monitor)
+{ "id": "...", "tipo": "domo", "condicion": "operativo", "marca": "", "modelo": "", "serie": null, "mac": null,
+  "patrimonio": null, "firmware": null, "canales": null, "comentario": "", "creado": "…Z", "actualizado": "…Z",
+  "instalacion": {                      // null = en depósito
+    "descripcion": "", "ip": null, "edificio": null, "piso": "", "rack": "", "puerto": "", "comentario": "",
+    "grabador": "id-del-NVR" | null,    // null = «Otros dispositivos» (decoder, switch, el propio NVR...)
+    "canal": 7 | null,
+    "actualizado": "…Z" } }
+```
+
+- Un grabador es un dispositivo con `canales` (NVR/DVR). Sus canales 1..N **se derivan**: ocupado = hay una
+  instalación con ese `grabador` y `canal`; libre = no. No hay `canales_data` duplicando la descripción/IP.
+- Invariantes (en una función pura `validarInstalacion`, como `stock.aplicar_reglas_produccion`):
+  `(grabador, canal)` único; `canal` en 1..`canales` del grabador; el grabador existe, está instalado y no se
+  apunta a sí mismo; en producción solo `operativo`; IP literal válida; un equipo, un lugar.
+- Achicar `canales` de un grabador con canales ocupados por encima → 409 local (se avisa, no se pierde nada).
+- Borrar un grabador con cámaras asignadas → se pide confirmar; las cámaras pasan a «Otros» o a depósito.
+
+Ventajas frente al modelo de SGC (`grabadores[].canales_data[]` + `otros_prod[]`): un equipo no puede quedar en dos
+canales (B14, B21 de SGC), no hay que «propagar ubicación» (R8), y el merge del Gist es **por dispositivo**, que es lo
+que el ROADMAP de SGC dejó pendiente como R7 (dos personas editando canales distintos del mismo grabador ya no se pisan).
+
+### Las dos entradas a producción
+
+1. **Desde el canal** (Producción): cada grabador muestra sus N canales; un canal libre tiene «Asignar» → buscador
+   de dispositivos en depósito (combobox único, el R3 de SGC) → formulario de instalación con grabador/canal fijos.
+   Un canal ocupado: «Editar instalación», «Mover a otro canal», «Quitar de producción» (vuelve a depósito).
+2. **Desde el modal del dispositivo** (Stock): «Poner en producción» / sección Instalación con selector de grabador
+   (solo los instalados) y de canal (solo los libres, más el propio) o «Sin grabador». El modal ya tiene los campos
+   de instalación: se agregan los dos selectores.
+
+Ambas entradas usan la misma función pura (`ponerEnProduccion(datos, idDispositivo, instalacion)`), que es la que
+aplica las invariantes y escribe el historial.
+
+## 4. Capa de datos (reemplaza el servidor)
+
+Hecho en la entrega 1, con un cambio respecto del plan: en vez de un `datos.js` con métodos propios, el navegador
+**responde las mismas rutas** que el servidor (`/api/stock*`, `/api/v2/datos`), así `stock.js` y compañía no cambian:
+
+- `js/api-local.js`: enrutador de las rutas de stock (GET/POST/PUT/DELETE, mismos cuerpos y respuestas, mismos
+  estados 422/404/409 y los textos de `servicios/stock.py`). `apiFetch` (comun.js) le pasa cada pedido.
+- `js/datos-puro.js`: las reglas de `cctv/stock.py` como funciones puras sobre el JSON (validación con todos los
+  errores juntos, marca/piso/MAC/IP normalizados, unicidad de serie/MAC/patrimonio, alta en lote todo o nada, cambio
+  en lote con simulación, catálogo de grupos y tipos con los de sistema protegidos, edificios y pisos con
+  renombrar/unificar, páginas de modelos, historial filtrable, «en producción solo operativo»).
+- Cada escritura trabaja sobre una **copia** y solo se guarda si no lanzó (como una transacción). Después avisa con
+  `sgc:datos-cambiados` (y en otras pestañas por el evento `storage`, que fuerza a releer).
+- Persistencia: `localStorage` `sgc2/datos_v1`; todas las claves llevan el prefijo `sgc2/` (en GitHub Pages la suite
+  comparte origen). `version` por dispositivo (bloqueo optimista, 409) + `creado`/`actualizado`.
+- Historial dentro del JSON con tope de 2000 cambios; borrar deja la entrada «eliminado» y una lápida en
+  `eliminados.dispositivos` (para el merge del Gist, entrega 3).
+- `sanearDatos`: todo lo que entra (localStorage, archivo, Gist) se revisa entero; lo que no pasa se descarta o se
+  corrige y se informa en `avisos`.
+- `/api/v2/datos` se arma desde el stock: los grabadores instalados (`canales` = capacidad). Las cámaras por canal
+  llegan con la entrega 2.
+
+## 5. Sincronización con Gist
+
+Se porta `GistSync` de SGC con sus arreglos v1–v3 (B1–B10) y se corrige lo pendiente:
+
+- Merge por dispositivo, catálogo por clave, lápidas en `eliminados` incluidas en la firma (S4 de SGC).
+- Token: se recomienda *fine-grained* solo `gist`; opción de **no persistirlo** (solo sesión). Ver P4.
+- **Gist secreto ≠ privado** (S3): IPs, MACs y ubicaciones legibles para quien tenga el ID. Ver P4 (cifrado).
+- Un solo archivo en el Gist: `sgc2.json` (`formato: "sgc2"`, `version: 1`), distinto del de SGC, para que las dos
+  apps puedan convivir durante la transición sin pisarse.
+
+## 6. Parseadores (de SGC, reescritos)
+
+Entrada: el `cctv_online.json` que genera el escáner (Python, fuera de esta app; sigue corriendo donde haya red).
+
+- **Parseador de canales**: paso 1 archivo → paso 2 mapeo NVR del archivo ↔ grabador del stock (por MAC > serie > IP,
+  igual que `stock.vincular`; nunca por nombre parcial: B13) con «Crear grabador» (con marca/modelo/MAC del archivo:
+  B21) → paso 3 vista previa. Aplica **instalaciones** (grabador+canal, descripción, IP) a los dispositivos que
+  matchean por MAC/serie; «sin match» se pueden dar de alta **y quedan asignados al canal** (B21). Modos
+  conservar/reemplazar los canales que el archivo no trae. Un equipo que ya está en otro lugar → conflicto visible,
+  no se mueve solo.
+- **Parseador de datos**: MAC (cualquier separador, varias) → serie/firmware/modelo; nunca pisa con vacío (B4);
+  saneado y con largo máximo (S7); `JSON.parse` acotado (`MAX_JSON`).
+- Los dos usan la lógica pura de conciliación (`a_produccion`, `diferencias`) portada de `cctv/stock.py`; la
+  conciliación actual de la pestaña Stock se reemplaza por ellos.
+- Todo cambio de un parseador entra al historial y al deshacer (Ctrl+Z).
+
+## 7. Migración desde SGC (para reemplazarlo)
+
+Port a JS de `cctv/stock_sgc.py` (ya resuelve forma → tipo, estados → condiciones, tipos retirados, nulos):
+
+- `dispositivos[]` → dispositivos; `estado: ''` + en producción → `operativo`.
+- `grabadores[].canales_data[]` con `dispositivoId` → `instalacion { grabador, canal, descripcion, ip, edificio, piso,
+  rack, puerto, comentario }`; el grabador mismo → su instalación sin grabador.
+- `otros_prod[]` → instalación sin grabador.
+- Canales con descripción/IP pero **sin dispositivo** → no hay dónde ponerlos en el modelo nuevo: se listan en el
+  reporte de migración (o ver P5).
+- Varias MACs en un dispositivo (SGC lo permite, el stock no) → la primera queda, las demás al comentario + reporte.
+- Duplicados de serie/MAC/patrimonio → reporte, sin perder datos (como hace `stock_sgc`).
+- Ensayo primero (vista previa con el reporte), aplicar después.
+
+## 8. Estructura de `SGC-2/`
+
+```
+SGC-2/
+  index.html            CSP en <meta> (script/style 'self', connect-src GitHub), sin style inline
+  manifest.json  icon.svg  icons/
+  css/                  copiado de cctv_monitor/static/css/ (+ estilos de los parseadores)
+  js/  ui.js comun.js api-local.js datos-puro.js datos-ui.js sesion-local.js (+ gist.js parseador-*.js migrar-sgc.js)
+       stock*.js produccion*.js resumen.js favoritos.js busqueda.js atajos.js ajustes.js privacidad.js ...
+  img/devices/  vendor/bootstrap-icons/  vendor/fonts/
+  tests/                node --test (lógica pura: datos, merge, parseadores, migración) + e2e en jsdom
+  README.md  ANALISIS-IMPLEMENTACION.md
+```
+
+Al reemplazar a SGC: agregar `SGC-2/` al `sw.js` raíz de la suite, y más tarde renombrar a `SGC/`.
+
+## 9. Entregas
+
+1. ✅ **Esqueleto**: copiar el front, quitar lo de §2, stock en localStorage (alta/edición/borrado, lote,
+   catálogos, ubicaciones, modelos, historial, exportar/importar/borrar). Tests node de la lógica pura y prueba de humo.
+2. **Producción manual**: modelo §3, vista por grabador con canales libres, las dos entradas, panel Estado (Canales,
+   Activos, Favoritos).
+3. **Gist**: sync + merge + lápidas + firma; seguridad del token (P4).
+4. **Parseadores** de canales y de datos.
+5. **Migración desde SGC** y prueba con el JSON real; agregar al `sw.js` de la suite.
+6. Reemplazo: período de convivencia, luego `SGC-2` → `SGC`.
+
+## 10. Riesgos
+
+- El stock de cctv_monitor tiene reglas en el servidor que hoy el front da por hechas: hay que portarlas TODAS a JS
+  o el JSON puede quedar inconsistente (sobre todo tras un merge del Gist: se revalidan las invariantes después de
+  combinar y los conflictos se informan, no se descartan).
+- localStorage ~5 MB: con el historial acotado alcanza de sobra para el parque actual.
+- Sin servidor, cualquiera con el token escribe todo: no hay roles. Si hacen falta permisos, no es un sitio estático.
+- Dos personas editando el mismo dispositivo a la vez: gana la edición más reciente (como en SGC), con aviso.
+
+## 11. Preguntas abiertas
+
+- **P1. Datos iniciales** → migrar desde el **Gist actual de SGC** (§7).
+- **P2. Modelo de producción** → **instalación del dispositivo** con grabador+canal (§3).
+- **P3. Historial del stock** → **se conserva, acotado** (~2000 cambios en el JSON, lista con filtro y búsqueda).
+- **P4. Protección del Gist** → **cifrado AES-GCM con frase** (WebCrypto, clave derivada con PBKDF2 y sal propia del
+  Gist). Al estar cifrado, la firma pasa a ser la del propio cifrado: AES-GCM detecta cualquier alteración y cubre
+  `eliminados` (resuelve S3 y S4 de SGC).
+  - **Frase**: cualquier texto (normalizado a NFC), mínimo 20 caracteres, aviso si parece débil. Botón «Generar
+    frase»: 6 palabras al azar (`crypto.getRandomValues`) de una lista en español incluida en la app (~77 bits).
+    PBKDF2-SHA-256 con 600 000 iteraciones. No reutilizar contraseñas de otros sistemas (se avisa en el modal).
+  - **Guardado**: la frase **se puede guardar en el navegador** (casilla «Recordar en este navegador»; sin marcar,
+    vale solo para la sesión). Se avisa que quien use esa PC puede leer los datos. El token sigue el mismo criterio (S2).
+  - Frase perdida: el Gist no se puede descifrar; se vuelve a subir desde los datos locales con una frase nueva.
+
+## 12. Entrega 1: lo hecho y lo que quedó para después
+
+- Copiado el front de cctv_monitor a `SGC-2/` con rutas relativas (`js/`, `css/`, `img/`, `vendor/`).
+- Quitado: Monitoreo, Alertas y Disponibilidad del panel Estado; la pestaña Auditoría (queda **Historial**, los
+  cambios del stock); escaneo, conciliación, capturas (vista «snapshot», «Usar captura» de Favoritos), video en vivo,
+  notificaciones, sonido, red del host, login/roles/kiosco (`sesion-local.js`: sin login, rol operador para lo que se
+  muestra) y las secciones Monitoreo y Alertas de Ajustes. CSS muerto y variables sin uso, fuera.
+- Ajustes > **Datos**: exportar, importar (reemplaza; confirmación en dos pasos) y borrar todo.
+- La capacidad de canales de un grabador sale del stock (`canales`), ya no de Auditoría > Grabador.
+- Producción muestra cada grabador instalado aunque no tenga cámaras (con sus canales libres): base de la entrega 2.
+- Tests: 362 de node (los del front de cctv_monitor que aplican, adaptados, y `datos.test.mjs` nuevo) y
+  `tests/e2e/humo.mjs` (la página real en jsdom: alta, edición, 409, producción, historial, exportar/importar).
+  Verificado también en Firefox (headless) con datos sembrados.
+- Pendiente (entregas siguientes): instalación con grabador+canal y las dos entradas a producción (2); Gist cifrado
+  (3); parseadores (4); migración desde SGC y `sw.js` de la suite (5). El popup de un equipo todavía calcula las
+  acciones de Auditoría/disponibilidad (sin botones): se rehace con «Asignar a canal» en la entrega 2.
+

@@ -1,0 +1,766 @@
+/* app/estructura.css: App, zona estructura. */
+
+@layer app {
+    /* Modales con pestañas o secciones plegables (Listar, Catálogos, Conciliar, detalles de stock, canales, disponibilidad y
+       alertas): alto fijo, así no se achican ni se agrandan según la pestaña, lo plegado o los resultados */
+    .modal-altura-fija .modal-content {
+        height: min(42rem, 85vh);
+    }
+
+    /* «Última act» / «Actualizando...»: ancho fijo, así el cambio de texto no corre lo que tiene al lado (con el panel en el
+       encabezado movía los botones) */
+    #last-update {
+        width: 12.5rem;
+        justify-content: flex-end;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    /* ─── Sidebar / Tabs */
+
+    .sidebar-tab-icon {
+        margin-right: var(--esp-2);
+    }
+
+    #sidebar-col {
+        transition: width var(--dur-panel) var(--ease-panel),
+                flex var(--dur-panel) var(--ease-panel),
+                max-width var(--dur-panel) var(--ease-panel);
+        overflow-x: hidden;
+        will-change: width, max-width;
+    }
+
+    #main-content-col {
+        transition: width var(--dur-panel) var(--ease-panel),
+                flex var(--dur-panel) var(--ease-panel),
+                max-width var(--dur-panel) var(--ease-panel);
+        will-change: width, max-width;
+    }
+
+    #v-pills-tabContent {
+        min-height: calc(100vh - var(--navbar-height) - 3rem);
+    }
+
+    /* ─── Escritorio y tablets (>= 768px): panel lateral vertical con ancho suficiente y anclado */
+
+    @media (min-width: 768px) {
+        #sidebar-col {
+            position: sticky;
+            top: calc(var(--navbar-height) + 1.5rem);
+            height: var(--alto-panel, calc(100vh - var(--navbar-height) - 3rem));
+            align-self: flex-start;
+            z-index: var(--capa-panel);
+        }
+
+        #sidebar-col:has(.dropdown-menu.show) {
+            z-index: var(--capa-barra);
+        }
+
+        #sidebar-col:not(.sidebar-collapsed) {
+            flex: 0 0 215px;
+            width: 215px;
+            max-width: 215px;
+            overflow: visible;
+        }
+
+        #sidebar-col:not(.sidebar-collapsed) ~ #main-content-col {
+            flex: 1 1 0;
+            width: calc(100% - 215px);
+            max-width: calc(100% - 215px);
+        }
+
+        .sidebar-sticky {
+            height: 100%;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* El relleno de 4 px (compensado por el margen negativo: el ancho no cambia) deja lugar para el aro de foco de las
+           pestañas, que el scroll del panel recortaba; abajo, lo mismo para el botón «Ocultar». */
+        .sidebar-top {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0 var(--esp-1);
+            margin: 0 calc(var(--esp-1) * -1);
+        }
+
+        /* (era `mt-auto pt-3 border-top ...` en el HTML: las utilidades ganan a esta capa y no dejaban cambiarlo arriba o abajo) */
+        .sidebar-bottom {
+            flex: 0 0 auto;
+            margin-top: auto;
+            padding-top: var(--esp-4);
+            padding-bottom: var(--esp-1);
+            border-top: 1px solid color-mix(in srgb, var(--color-texto-suave) 10%, transparent);
+        }
+    }
+
+    /* ─── Estado Colapsado del Panel Lateral (Solo Íconos) */
+
+    @media (min-width: 768px) {
+        #sidebar-col.sidebar-collapsed {
+            flex: 0 0 68px;
+            max-width: 68px;
+            width: 68px;
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+
+        #sidebar-col.sidebar-collapsed ~ #main-content-col {
+            flex: 1 1 0;
+            max-width: calc(100% - 68px);
+            width: calc(100% - 68px);
+        }
+
+        .sidebar-label {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: clip;
+            display: inline-block;
+            opacity: 1;
+            max-width: 140px;
+            vertical-align: middle;
+            transition: opacity var(--dur-pop-soft) var(--ease-panel),
+                    max-width var(--dur-panel) var(--ease-panel);
+        }
+
+        #sidebar-col.sidebar-collapsed .sidebar-label {
+            opacity: 0;
+            max-width: 0;
+            margin: 0;
+            padding: 0;
+            pointer-events: none;
+        }
+
+        .sidebar-tab-icon {
+            transition: margin var(--dur-panel) var(--ease-panel), font-size var(--dur-base) ease;
+        }
+
+        #sidebar-col.sidebar-collapsed .sidebar-tab-icon {
+            margin-right: 0;
+            font-size: var(--texto-lg);
+        }
+
+        .search-container {
+            margin-bottom: var(--esp-4);
+            transition: background-color var(--dur-panel) var(--ease-panel),
+                    border-color var(--dur-panel) var(--ease-panel);
+        }
+
+        #sidebar-col.sidebar-collapsed .search-container {
+            justify-content: center;
+            cursor: pointer;
+            background-color: var(--search-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radio-medio);
+            height: 42px;
+        }
+
+        .search-container .search-icon {
+            transition: left var(--dur-panel) var(--ease-panel),
+                    transform var(--dur-panel) var(--ease-panel),
+                    font-size var(--dur-panel) var(--ease-panel),
+                    color var(--dur-base) ease;
+        }
+
+        #sidebar-col.sidebar-collapsed .search-container .search-icon {
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: var(--texto-lg);
+            pointer-events: auto;
+        }
+
+        .search-input {
+            transition: opacity var(--dur-pop-soft) var(--ease-panel),
+                    width var(--dur-panel) var(--ease-panel),
+                    padding var(--dur-panel) var(--ease-panel);
+        }
+
+        #sidebar-col.sidebar-collapsed .search-input {
+            opacity: 0;
+            width: 0;
+            min-width: 0;
+            padding: 0;
+            border-color: transparent;
+            pointer-events: none;
+        }
+
+        #sidebar-col.sidebar-collapsed .search-filter-dropdown {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #sidebar-col.sidebar-collapsed #btn-toggle-sidebar {
+            padding: var(--esp-2) 0;
+        }
+    }
+
+    /* Popup con el nombre de la sección sobre un ícono del panel colapsado (resumen.js) */
+
+    .sidebar-tip {
+        position: fixed;
+        z-index: var(--capa-tip);
+        padding: 6px 10px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radio-medio);
+        background-color: var(--bg-card);
+        color: var(--color-texto);
+        box-shadow: var(--sombra-media);
+        font-size: var(--texto-sm);
+        font-weight: 600;
+        white-space: nowrap;
+        pointer-events: none;
+    }
+
+    /* ─── Dispositivos móviles y ventanas chicas (< 768px): botones horizontales arriba solo con íconos */
+
+    @media (max-width: 767.98px) {
+        #sidebar-col {
+            width: 100%;
+            max-width: 100%;
+            flex: 0 0 100%;
+            overflow: visible;                          /* si no, recorta el menú de filtros de la búsqueda, que cuelga de él */
+            position: relative;
+            z-index: var(--capa-panel);
+            padding-left: var(--esp-2);
+            padding-right: var(--esp-2);
+            margin-bottom: var(--esp-3);
+        }
+
+        #sidebar-col:has(.dropdown-menu.show) {         /* el menú abierto queda sobre los encabezados pegajosos de Activos y Producción */
+            z-index: var(--capa-barra);
+        }
+
+        #main-content-col {
+            width: 100%;
+            max-width: 100%;
+            flex: 0 0 100%;
+        }
+
+        .sidebar-sticky {
+            position: static;
+            height: auto;
+            min-height: auto;
+            display: block;
+        }
+
+        .sidebar-top {
+            display: block;
+            overflow: visible;
+        }
+
+        .sidebar-bottom {
+            display: none;
+        }
+    }
+
+    /* ─── En móviles: mostrar únicamente los íconos de cada pestaña */
+
+    @media (max-width: 767.98px) {
+        #sidebar-col .sidebar-label {
+            display: none;
+        }
+
+        #v-pills-tab::-webkit-scrollbar {
+            display: none;
+        }
+
+        #v-pills-tab .sidebar-tab-icon {
+            font-size: var(--texto-lg);
+            margin-right: 0;
+        }
+
+        .search-container {
+            margin-bottom: var(--esp-2);
+        }
+    }
+
+    /* ─── Ubicación del panel lateral en escritorio (>= 768px): `html[data-panel-pos]` = right | top | bottom (izquierda es la de
+       fábrica, sin atributo). Se elige manteniendo presionado «Ocultar» (app.js). En pantallas chicas no aplica: el panel es la
+       barra de arriba. */
+
+    @media (min-width: 768px) {
+        html[data-panel-pos="right"] #sidebar-col {
+            order: 2;
+        }
+
+        html[data-panel-pos="right"] #main-content-col {
+            order: 1;
+        }
+
+        /* Arriba o abajo: una barra a todo lo ancho (búsqueda, pestañas y «Ocultar» en una fila) */
+        html[data-panel-pos="top"] #sidebar-col,
+        html[data-panel-pos="bottom"] #sidebar-col {
+            flex: 0 0 100%;
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            overflow: visible;
+            padding-left: calc(var(--ui-gutter-x, 1.5rem) * 0.5);
+            padding-right: calc(var(--ui-gutter-x, 1.5rem) * 0.5);
+        }
+
+        /* Oculto (solo íconos): la barra se ajusta a su contenido en vez de quedar a todo lo ancho con el espacio vacío */
+        html[data-panel-pos="top"] #sidebar-col.sidebar-collapsed,
+        html[data-panel-pos="bottom"] #sidebar-col.sidebar-collapsed {
+            flex: 0 0 auto;
+            width: auto;
+            max-width: 100%;
+        }
+
+        html[data-panel-pos="top"] #sidebar-col ~ #main-content-col,
+        html[data-panel-pos="bottom"] #sidebar-col ~ #main-content-col {
+            flex: 0 0 100%;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        /* Arriba: el panel vive DENTRO del encabezado (app.js ubicarPanelEnEncabezado), sin tarjeta propia */
+        html[data-panel-pos="top"] .navbar #sidebar-col {
+            position: static;
+            flex: 1 1 auto;
+            width: auto;
+            max-width: none;
+            margin: 0 var(--esp-4);
+            padding: 0;
+        }
+
+        html[data-panel-pos="top"] .navbar #sidebar-col.sidebar-collapsed {
+            flex: 0 1 auto;
+        }
+
+        html[data-panel-pos="top"] .navbar .sidebar-sticky {
+            padding: 0;
+            background-color: transparent;
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        html[data-panel-pos="top"] #main-content-col {
+            flex: 0 0 100%;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        /* abajo: queda a la vista como un dock mientras el contenido se desplaza */
+        html[data-panel-pos="bottom"] #sidebar-col {
+            order: 2;
+            position: sticky;
+            top: auto;
+            bottom: 0.5rem;
+            margin-top: var(--esp-3);
+            z-index: calc(var(--capa-pegajosa) + 5);
+        }
+
+        html[data-panel-pos="top"] .sidebar-sticky,
+        html[data-panel-pos="bottom"] .sidebar-sticky {
+            height: auto;
+            min-height: 0;
+            flex-direction: row;
+            align-items: center;
+            gap: var(--esp-4);
+            padding: 0.4rem 0.6rem;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radio-grande);
+            box-shadow: var(--sombra-tarjeta);
+        }
+
+        html[data-panel-pos="top"] .sidebar-top,
+        html[data-panel-pos="bottom"] .sidebar-top {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: row;
+            align-items: center;
+            gap: var(--esp-4);
+            overflow: visible;
+            padding: 0;
+            margin: 0;
+        }
+
+        html[data-panel-pos="top"] .search-container,
+        html[data-panel-pos="bottom"] .search-container {
+            flex: 0 0 280px;
+            width: 280px;
+            margin-bottom: 0;
+        }
+
+        html[data-panel-pos="top"] #sidebar-col.sidebar-collapsed .search-container,
+        html[data-panel-pos="bottom"] #sidebar-col.sidebar-collapsed .search-container {
+            flex-basis: 48px;
+            width: 48px;
+        }
+
+        html[data-panel-pos="top"] #v-pills-tab,
+        html[data-panel-pos="bottom"] #v-pills-tab {
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 6px;
+        }
+
+        html[data-panel-pos="top"] #v-pills-tab .nav-link,
+        html[data-panel-pos="bottom"] #v-pills-tab .nav-link {
+            margin-bottom: 0;
+            min-width: 44px;
+        }
+
+        html[data-panel-pos="top"] .sidebar-bottom,
+        html[data-panel-pos="bottom"] .sidebar-bottom {
+            flex: 0 0 auto;
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+
+        html[data-panel-pos="top"] #btn-toggle-sidebar,
+        html[data-panel-pos="bottom"] #btn-toggle-sidebar {
+            width: auto;
+            padding-left: var(--esp-3);
+            padding-right: var(--esp-3);
+        }
+
+        /* Si no entra a lo ancho (app.js ajustarEtiquetasPanel): sin textos en las pestañas ni en «Ocultar / Mover»; el buscador
+           no se toca. `sidebar-midiendo` anula la transición mientras se mide con los textos a la vista. */
+        #sidebar-col.sidebar-midiendo .sidebar-label,
+        #sidebar-col.sidebar-etiquetas-ocultas .sidebar-label {
+            transition: none;          /* sin animar: medir y volver a poner la clase no puede reiniciar una transición (parpadeo sin fin) */
+        }
+
+        /* Ya sin textos, si todavía no entra el buscador cede lugar (hasta un mínimo); con los textos a la vista mantiene su ancho */
+        html[data-panel-pos="top"] .navbar #sidebar-col.sidebar-etiquetas-ocultas {
+            min-width: 0;              /* sin textos puede achicarse (con ellos no: así se detecta que no entran) */
+        }
+
+        html[data-panel-pos="top"] #sidebar-col.sidebar-etiquetas-ocultas .search-container,
+        html[data-panel-pos="bottom"] #sidebar-col.sidebar-etiquetas-ocultas .search-container {
+            flex: 0 1 280px;
+            min-width: 150px;
+        }
+
+        #sidebar-col.sidebar-etiquetas-ocultas .sidebar-label {
+            opacity: 0;
+            max-width: 0;
+            margin: 0;
+            padding: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        #sidebar-col.sidebar-etiquetas-ocultas .sidebar-tab-icon {
+            margin-right: 0;
+        }
+
+        /* Arriba, el botón de ocultar vive en el encabezado, al lado del de ajustes: solo el ícono (oculto / no oculto), sin texto,
+           así no quita lugar a los botones de la derecha */
+        .navbar > .container-fluid > .d-flex > .sidebar-bottom {
+            flex: 0 0 auto;
+            margin: 0 var(--esp-2) 0 0;
+            padding: 0;
+            border: 0;
+        }
+
+        .navbar #btn-toggle-sidebar {
+            width: auto;
+            padding: var(--esp-1) var(--esp-2);
+        }
+
+        .navbar #btn-toggle-sidebar .sidebar-label {
+            display: none;
+        }
+    }
+
+    /* Mientras se arrastra «Ocultar»: la franja muestra dónde quedaría el panel y se desliza de un borde a otro */
+
+    .panel-destino {
+        position: fixed;
+        z-index: var(--capa-tip);
+        pointer-events: none;
+        opacity: 0;
+        border: 2px dashed var(--ui-primary);
+        border-radius: var(--radio-grande);
+        background-color: color-mix(in srgb, var(--ui-primary) 14%, transparent);
+        transition: left var(--dur-panel) var(--ease-panel), top var(--dur-panel) var(--ease-panel),
+                width var(--dur-panel) var(--ease-panel), height var(--dur-panel) var(--ease-panel),
+                opacity var(--dur-base) ease;
+    }
+
+    .panel-destino.activo {
+        opacity: 1;
+    }
+
+    .panel-destino[data-zona="left"] {
+        left: 8px;
+        top: calc(var(--navbar-height, 58px) + 8px);
+        width: 215px;
+        height: calc(100vh - var(--navbar-height, 58px) - 16px);
+    }
+
+    .panel-destino[data-zona="right"] {
+        left: calc(100vw - 215px - 8px);
+        top: calc(var(--navbar-height, 58px) + 8px);
+        width: 215px;
+        height: calc(100vh - var(--navbar-height, 58px) - 16px);
+    }
+
+    /* Arriba el panel vive DENTRO del encabezado (ubicarPanelEnEncabezado): la franja cubre la barra, no queda debajo */
+    .panel-destino[data-zona="top"] {
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: var(--navbar-height, 58px);
+        border-radius: 0;
+    }
+
+    .panel-destino[data-zona="bottom"] {
+        left: 8px;
+        top: calc(100vh - 64px - 8px);
+        width: calc(100vw - 16px);
+        height: 64px;
+    }
+
+    body.panel-reubicando {
+        cursor: grabbing;
+        user-select: none;
+    }
+
+    body.panel-reubicando #btn-toggle-sidebar {
+        cursor: grabbing;
+    }
+
+    /* ─── Insignias de coincidencia de búsqueda en el panel lateral */
+
+    .nav-pills .nav-link:hover .sidebar-search-badge {
+        background-color: transparent;
+        color: var(--color-blue);
+        border: none;
+    }
+
+    .sidebar-search-badge.badge-cero,
+    .nav-pills .nav-link.active .sidebar-search-badge.badge-cero {
+        background-color: transparent;
+        color: var(--color-texto-suave);
+        --ui-badge-color: var(--color-texto-suave);
+        border: none;
+        opacity: 0.65;
+    }
+
+    /* ─── Search Input (Sidebar) */
+
+    .search-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-container .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--color-texto-suave);
+        font-size: var(--texto-md);
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .search-input {
+        background-color: var(--search-bg);
+        border: 1px solid var(--border-color);
+        color: var(--color-texto);
+        padding: 9px 38px 9px 33px;
+        border-radius: var(--radio-medio);
+        width: 100%;
+        font-size: var(--texto-md);
+        transition: all var(--dur-base);
+    }
+
+    .search-input:focus,
+    .search-input:not(:placeholder-shown) {
+        border-color: var(--color-blue);
+        box-shadow: 0 0 0 3px var(--search-focus);
+        outline: none;
+    }
+
+    /* Búsqueda ACTIVA: se nota a simple vista (fondo teñido, aro sólido y texto firme), porque con un filtro puesto la lista
+       vacía se confunde con falta de datos. La «X» (`#search-clear`) la limpia; solo se ve con búsqueda activa. */
+    .search-input.search-active {
+        padding-right: 68px;
+        background-color: var(--ui-primary-bg-subtle);
+        border-color: var(--color-blue);
+        box-shadow: 0 0 0 2px var(--color-blue);
+        font-weight: 600;
+    }
+
+    .search-clear {
+        display: none;
+        position: absolute;
+        right: 38px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 3;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        background: transparent;
+        color: var(--color-blue);
+        padding: var(--esp-1) 6px;
+        border-radius: var(--radio-medio);
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .search-container.search-active .search-clear {
+        display: inline-flex;
+    }
+
+    #sidebar-col.sidebar-collapsed .search-clear {
+        display: none;
+    }
+
+    .search-clear:hover,
+    .search-clear:focus-visible {
+        background-color: var(--dropdown-item-hover);
+    }
+
+    .search-container:focus-within .search-icon,
+    .search-container.search-active .search-icon,
+    .search-container:has(.search-input:not(:placeholder-shown)) .search-icon {
+        color: var(--color-blue);
+    }
+
+    .search-input::placeholder {
+        color: var(--color-texto-suave);
+        font-size: var(--texto-sm);
+        opacity: 0.8;
+    }
+
+    /* ─── blue-12 ya vale 12% en claro y 15% en oscuro, así que esta única regla */
+
+    .search-filter-btn.active-filter {
+        color: var(--color-blue);
+        background-color: var(--blue-12);
+    }
+
+    .filtro-dropdown-toggle-all {
+        font-size: var(--texto-xs);
+        color: var(--color-texto-suave);
+        text-decoration: none;
+        background: none;
+        border: none;
+        padding: 0;
+        font-weight: 500;
+        white-space: nowrap;
+        transition: color var(--dur-fast) ease;
+    }
+
+    .filtro-dropdown-toggle-all:hover {
+        color: var(--color-blue);
+    }
+
+    /* ─── Botón Scroll Top (Volver arriba - Estilo IDR) */
+
+    .btn-scroll-top {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background-color: var(--color-blue);
+        color: var(--color-blue-on);
+        box-shadow: var(--sombra-media);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: var(--capa-flotante);
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(20px) scale(0.9);
+        transition: opacity var(--dur-slow) ease, transform var(--dur-slow) var(--ease-pop), bottom var(--dur-panel) var(--ease-panel),
+                right var(--dur-panel) var(--ease-panel), background-color var(--dur-base) ease, box-shadow var(--dur-base) ease;
+        border: none;
+        padding: 0;
+    }
+
+    /* Con el panel lateral abajo y a la vista (barra completa a todo el ancho) el botón sube sobre ella; con el panel oculto (solo
+       íconos, queda a la izquierda) va en su lugar de siempre. A la derecha se corre a la izquierda del panel. `bottom` y `right`
+       se animan: sube, baja o se corre con el panel. */
+    @media (min-width: 768px) {
+        html[data-panel-pos="bottom"]:has(#sidebar-col:not(.sidebar-collapsed)) .btn-scroll-top {
+            bottom: 6.25rem;
+        }
+
+        /* Panel a la derecha: el botón se corre a su izquierda (a la vista: 215 px de panel; oculto: la franja de íconos de 68 px) */
+        html[data-panel-pos="right"] .btn-scroll-top {
+            right: 8rem;
+        }
+
+        html[data-panel-pos="right"]:has(#sidebar-col:not(.sidebar-collapsed)) .btn-scroll-top {
+            right: 17rem;
+        }
+    }
+
+    .btn-scroll-top.show {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0) scale(1);
+    }
+
+    .btn-scroll-top:hover {
+        background-color: var(--color-blue-hover);
+        box-shadow: var(--sombra-alta);
+        transform: translateY(-2px) scale(1.05);
+    }
+
+    .btn-scroll-top:active {
+        transform: scale(0.92);
+    }
+
+    .btn-scroll-top i {
+        font-size: var(--texto-lg);
+        line-height: 1;
+    }
+
+    [data-tema="dark"] .btn-scroll-top {
+        box-shadow: var(--sombra-media);
+    }
+
+    /* ─── Barra flotante de progreso del escaneo */
+
+    #scan-progress-container,
+    #snapshots-progress-container {
+        z-index: var(--capa-popup);
+        width: 90%;
+        max-width: 500px;
+    }
+
+    #scan-progress-bar,
+    #snapshots-progress-bar {
+        width: 0;
+    }
+
+    /* ─── Spinner del "Actualizando..." de la barra superior */
+    
+    /* ─── Modo kiosco (rol `kiosco`, pantalla de sala; app.js `uiAplicarRol`): solo el panel de Estado, a todo el ancho,
+       sin panel lateral, sin menú ⚙ y sin clics en el contenido (nada que abra otra pestaña ni un modal). El login
+       queda usable: está fuera del contenido. */
+    html.modo-kiosco #sidebar-col,
+    html.modo-kiosco #menu-config {
+        display: none;
+    }
+
+    html.modo-kiosco #app-main-row > #main-content-col {
+        flex: 0 0 100%;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    html.modo-kiosco #v-pills-tabContent {
+        pointer-events: none;
+    }
+}

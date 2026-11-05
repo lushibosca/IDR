@@ -1,0 +1,757 @@
+/* app/produccion.css: App, zona produccion. */
+
+@layer app {
+    /* ─── PRODUCCIÓN: MODO SELECCIÓN (produccion-seleccion.js): lo marcado se distingue por el color, como en Activos */
+
+    .produccion-modo-seleccion .canal-item:not(.canal-item-disponible) {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    #produccion-accordion {
+        transition: padding-bottom var(--dur-anim) ease;
+    }
+
+    /* La barra flotante de abajo no tapa lo último de la lista */
+    .produccion-modo-seleccion {
+        padding-bottom: 5rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #produccion-accordion {
+            transition: none;
+        }
+    }
+
+    /* ─── Acordeón Producción / Cámaras: Disposición SGC en 2 columnas */
+
+    #produccion-accordion .accordion-item {
+        background-color: transparent;
+        border: none;
+        content-visibility: auto;
+        contain-intrinsic-size: auto 54px;
+    }
+
+    #produccion-accordion .accordion-button,
+    #produccion-accordion .accordion-button:not(.collapsed) {
+        background-color: transparent;
+        border: none;
+    }
+
+    #produccion-accordion .accordion-body {
+        background-color: transparent;
+        border: none;
+    }
+
+    #produccion-accordion .accordion-header {
+        background-color: var(--bg-main);
+    }
+
+    #produccion-accordion .accordion-button:hover {
+        background-color: var(--table-hover-bg);
+    }
+
+    /* Nombre del grupo en Producción: naranja, abierto o cerrado */
+    .produccion-acordeon-titulo {
+        color: var(--color-orange);
+    }
+
+    .canal-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+        gap: 10px 14px;
+        background-color: transparent;
+    }
+
+    .canal-lista {
+        display: flex;
+        flex-direction: column;
+        background-color: transparent;
+        container-type: inline-size;
+    }
+
+    .canal-lista-header,
+    .canal-lista .canal-item {
+        display: grid;
+        grid-template-columns: 68px minmax(120px, 1.8fr) minmax(115px, 1.1fr)
+            minmax(120px, 1.3fr) minmax(105px, 1.1fr) 100px;
+        align-items: center;
+        column-gap: var(--esp-3);
+    }
+
+    .canal-lista-header {
+        position: sticky;
+        top: calc(var(--navbar-height) + var(--produccion-header-height, 52px));
+        z-index: var(--capa-pegajosa);
+        padding: var(--esp-2) var(--esp-4);
+        font-size: var(--texto-xs);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--color-texto-suave);
+        background-color: var(--table-header-bg);
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: 0 1px 0 var(--border-color);
+        user-select: none;
+    }
+
+    [data-tema="dark"] .canal-lista-header {
+        background-color: var(--table-header-bg);
+        border-color: var(--blanco-08);
+        box-shadow: 0 1px 0 var(--blanco-08);
+    }
+
+    .canal-col-ch {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+    }
+
+    .canal-col-desc,
+    .canal-col-ip,
+    .canal-col-ubic,
+    .canal-col-rack {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .canal-col-estado {
+        min-width: 0;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .canal-lista-header .canal-col-estado {
+        text-align: right;
+    }
+
+    .canal-lista .canal-item {
+        border-radius: 0;
+        background-color: transparent;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        min-height: 42px;
+        padding: 7px var(--esp-4);
+    }
+
+    [data-tema="dark"] .canal-lista .canal-item {
+        background-color: transparent;
+        border-color: var(--blanco-08);
+    }
+
+    .canal-lista .canal-item:hover {
+        background-color: var(--table-hover-bg);
+        filter: none;
+    }
+
+    .canal-lista .canal-item:focus,
+    .canal-lista .canal-item:focus-visible {
+        outline-offset: -2px;
+    }
+
+    .canal-lista .canal-item-sin-relevar {
+        background-color: rgba(var(--ui-info-rgb), 0.08);
+        border-bottom-color: rgba(var(--ui-info-rgb), 0.35);
+    }
+
+    [data-tema="dark"] .canal-lista .canal-item-sin-relevar {
+        background-color: color-mix(in srgb, rgba(var(--ui-info-rgb), 1) 12%, transparent);
+        border-bottom-color: rgba(var(--ui-info-rgb), 0.35);
+    }
+
+    .canal-lista .canal-item-disponible {
+        border-bottom-style: dashed;
+        background-color: transparent;
+    }
+
+    .canal-lista .canal-item-nombre {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .canal-item-lugar {
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Adaptación responsiva de columnas según el ancho del contenedor */
+    @container (max-width: 920px) {
+        .canal-lista-header,
+        .canal-lista .canal-item {
+            grid-template-columns: 68px minmax(120px, 1.8fr) minmax(115px, 1.1fr)
+                minmax(120px, 1.3fr) 100px;
+        }
+
+        .canal-col-rack {
+            display: none;
+        }
+    }
+
+    @container (max-width: 720px) {
+        .canal-lista-header,
+        .canal-lista .canal-item {
+            grid-template-columns: 68px minmax(120px, 1.6fr) minmax(110px, 1fr) 100px;
+        }
+
+        .canal-col-ubic {
+            display: none;
+        }
+    }
+
+    @container (max-width: 540px) {
+        .canal-lista-header {
+            display: none;
+        }
+
+        .canal-lista .canal-item {
+            grid-template-columns: 68px minmax(0, 1fr) auto;
+            grid-template-rows: auto auto;
+            row-gap: 2px;
+            padding: var(--esp-2) 14px;
+        }
+
+        .canal-lista .canal-col-ch {
+            grid-column: 1;
+            grid-row: 1 / span 2;
+            align-self: center;
+        }
+
+        .canal-lista .canal-col-desc {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            align-self: center;
+        }
+
+        .canal-lista .canal-col-ubic,
+        .canal-lista .canal-col-rack {
+            display: none;
+        }
+
+        .canal-lista .canal-col-estado {
+            grid-column: 3;
+            grid-row: 1;
+            text-align: right;
+            justify-self: end;
+        }
+
+        .canal-lista .canal-col-ip {
+            grid-column: 3;
+            grid-row: 2;
+            text-align: right;
+            justify-self: end;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .canal-grid {
+            grid-template-columns: minmax(0, 1fr);          /* `1fr` solo no baja del contenido y ensancha la página */
+        }
+
+        .canal-lista-header {
+            display: none;
+        }
+
+        .canal-lista .canal-item {
+            grid-template-columns: 68px minmax(0, 1fr) auto;
+            grid-template-rows: auto auto;
+            row-gap: 2px;
+            padding: var(--esp-2) 14px;
+        }
+
+        .canal-lista .canal-col-ch {
+            grid-column: 1;
+            grid-row: 1 / span 2;
+            align-self: center;
+        }
+
+        .canal-lista .canal-col-desc {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            align-self: center;
+        }
+
+        .canal-lista .canal-col-ubic,
+        .canal-lista .canal-col-rack {
+            display: none;
+        }
+
+        .canal-lista .canal-col-estado {
+            grid-column: 3;
+            grid-row: 1;
+            text-align: right;
+            justify-self: end;
+        }
+
+        .canal-lista .canal-col-ip {
+            grid-column: 3;
+            grid-row: 2;
+            text-align: right;
+            justify-self: end;
+        }
+    }
+
+    .canal-item {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 52px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 7px var(--esp-4);
+        border: 1px solid var(--border-color);
+        border-radius: var(--ui-border-radius-pill);
+        background-color: var(--bg-card);
+        color: var(--color-texto);
+        transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, filter var(--dur-fast) ease;
+        min-height: 52px;
+        cursor: pointer;
+        scroll-margin-top: calc(var(--navbar-height) + 60px);
+        scroll-margin-bottom: 40px;
+    }
+
+    [data-tema="dark"] .canal-item {
+        background-color: color-mix(in srgb, var(--color-texto) 4%, var(--bg-card));
+        border-color: var(--blanco-08);
+    }
+
+    .canal-item:focus,
+    .canal-item:focus-visible {
+        outline: 2px solid var(--ui-primary);
+        outline-offset: 1px;
+    }
+
+    /* Canal caído: el fondo y el borde quedan normales y los textos en rojo (clases `text-danger` del JS); solo el badge del canal
+       (rojo sólido, `bg-danger`) parpadea con la opacidad. Un equipo que no es cámara no tiene badge de canal: no se anima nada. */
+    .canal-item-offline .canal-ch-badge {
+        --blink-min: 0.45;
+        animation: blink-opacity 0.325s infinite alternate ease-in-out;
+    }
+
+    .canal-item-sin-relevar {
+        border-color: rgba(var(--ui-info-rgb), 0.4);
+        background-color: rgba(var(--ui-info-rgb), 0.08);
+        --blink-min: 0.55;
+        animation: blink-opacity 1.5s infinite alternate ease-in-out;
+    }
+
+    [data-tema="dark"] .canal-item-sin-relevar {
+        border-color: rgba(var(--ui-info-rgb), 0.35);
+        background-color: color-mix(in srgb, rgba(var(--ui-info-rgb), 1) 12%, var(--bg-card));
+    }
+
+    /* Con el cursor encima deja de parpadear y queda a opacidad plena: la animación SIGUE corriendo con su mínimo en 1
+       (va de 1 a 1). Pausarla dejaba la opacidad del instante (a veces la mínima) y pausarla o quitarla la atrasaba o
+       reiniciaba: al sacar el cursor, ese canal quedaba desincronizado del resto. */
+    .canal-item-offline:hover .canal-ch-badge,
+    .canal-item-sin-relevar:hover {
+        --blink-min: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .canal-item-offline .canal-ch-badge,
+        .canal-item-sin-relevar {
+            animation: none;
+        }
+    }
+
+    .canal-item-disponible {
+        opacity: 0.65;
+        border-style: dashed;
+        background-color: transparent;
+    }
+
+    .canal-item-disponible:hover {
+        opacity: 0.95;
+        border-color: var(--color-blue);
+    }
+
+    [data-tema="dark"] .canal-item-disponible {
+        border-color: var(--blanco-15);
+        background-color: transparent;
+    }
+
+    /* ─── Vista snapshot: la tarjeta lleva la captura del canal debajo y queda cuadrada */
+
+    .canal-grid.canal-grid-snapshot {
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: var(--esp-3);
+    }
+
+    .canal-item-snapshot {
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        aspect-ratio: 1 / 1;
+        min-height: 0;
+        padding: 10px;
+        gap: var(--esp-2);
+        border-radius: var(--radio-grande);
+        overflow: hidden;
+    }
+
+    .canal-item-cabecera {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--esp-2);
+        min-width: 0;
+    }
+
+    .canal-item-snapshot .canal-item-left {
+        margin-right: 0;
+        flex: 0 0 auto;
+    }
+
+    .canal-item-snapshot .canal-item-right {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--esp-2);
+    }
+
+    /* la descripción del dispositivo, debajo de la captura (en una línea; completa en el title) */
+    .canal-item-pie {
+        min-width: 0;
+        text-align: center;
+    }
+
+    .canal-item-captura {
+        flex: 1 1 0;
+        min-height: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: var(--radio-medio);
+        background-color: color-mix(in srgb, var(--color-texto) 6%, var(--bg-card));
+    }
+
+    .canal-item-captura-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        user-select: none;
+        pointer-events: none;
+        transition: opacity var(--dur-base) ease;
+    }
+
+    .canal-item-captura {
+        position: relative;
+    }
+
+    /* mientras carga: el aviso a la vista y la imagen (invisible) encima, sin empujarlo */
+    .canal-item-captura-cargando .canal-item-captura-img {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+    }
+
+    .canal-item-captura-img.canal-item-captura-modelo {
+        object-fit: contain;
+        padding: 10px;
+    }
+
+    .canal-item-captura-vacia {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--esp-1);
+        color: var(--ui-secondary-color);
+        opacity: 0.7;
+    }
+
+    @media (max-width: 576px) {
+        .canal-grid.canal-grid-snapshot {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    .canal-item-left {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        flex: 1 1 auto;
+        margin-right: var(--esp-3);
+        gap: 10px;
+    }
+
+    .canal-item-thumb {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border-radius: var(--radio-medio);
+        background-color: transparent;
+    }
+
+    .canal-item-img {
+        max-width: 36px;
+        max-height: 34px;
+        object-fit: contain;
+        user-select: none;
+        pointer-events: none;
+    }
+
+    .canal-item-fallback-icon {
+        font-size: var(--texto-lg);
+    }
+
+    .canal-item-nombre {
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: var(--texto-md);
+        color: var(--color-texto);
+    }
+
+    .canal-item-right {
+        text-align: right;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+    }
+
+    .canal-item-ip {
+        font-size: var(--texto-xs);
+        line-height: 1.1;
+        user-select: text;
+    }
+
+    /* ─── Popup de un equipo (Producción y Activos: abrirPopupDispositivo) */
+
+    .popup-dispositivo {
+        width: 270px;
+        background-color: var(--dropdown-bg);
+        border: 1px solid var(--dropdown-border);
+        border-radius: var(--radio-grande);
+        box-shadow: var(--dropdown-shadow);
+        z-index: var(--capa-tip);
+        color: var(--color-texto);
+        overflow: hidden;
+        animation: dropdownPopupIn var(--dur-pop-soft) var(--ease-pop) forwards;
+    }
+
+    .popup-disp-header {
+        background-color: transparent;
+        border-color: var(--border-color);
+    }
+
+    .popup-disp-img-wrapper,
+    .stock-modal-img-wrapper {
+        background-color: transparent;
+        border-radius: var(--radio-medio);
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid transparent;
+    }
+
+    .popup-disp-img-wrapper {
+        position: relative;
+        height: 125px;
+        padding: var(--esp-2);
+        overflow: hidden;
+    }
+
+    .popup-disp-img-ghost {
+        position: absolute;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .popup-disp-slide-in-right {
+        animation: popupDispSlideInRight var(--dur-pop-soft) var(--ease-pop) forwards;
+    }
+
+    .popup-disp-slide-in-left {
+        animation: popupDispSlideInLeft var(--dur-pop-soft) var(--ease-pop) forwards;
+    }
+
+    .popup-disp-slide-out-left {
+        animation: popupDispSlideOutLeft var(--dur-pop-soft) var(--ease-pop) forwards;
+    }
+
+    .popup-disp-slide-out-right {
+        animation: popupDispSlideOutRight var(--dur-pop-soft) var(--ease-pop) forwards;
+    }
+
+    @keyframes popupDispSlideInRight {
+        0% {
+            transform: translateX(45px);
+            opacity: 0;
+        }
+        100% {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes popupDispSlideInLeft {
+        0% {
+            transform: translateX(-45px);
+            opacity: 0;
+        }
+        100% {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes popupDispSlideOutLeft {
+        0% {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        100% {
+            transform: translateX(-45px);
+            opacity: 0;
+        }
+    }
+
+    @keyframes popupDispSlideOutRight {
+        0% {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        100% {
+            transform: translateX(45px);
+            opacity: 0;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .popup-disp-slide-in-right,
+        .popup-disp-slide-in-left,
+        .popup-disp-slide-out-left,
+        .popup-disp-slide-out-right {
+            animation: none;
+            transform: none;
+            opacity: 1;
+        }
+    }
+
+    .stock-modal-img-wrapper {
+        position: relative;
+        height: 160px;
+        padding: var(--esp-3);
+        overflow: hidden;
+    }
+
+    .popup-disp-img,
+    .stock-modal-img {
+        max-width: 100%;
+        object-fit: contain;
+        user-select: none;
+        pointer-events: none;
+    }
+
+    .popup-disp-img {
+        max-height: 105px;
+    }
+
+    .stock-modal-img {
+        max-height: 136px;
+    }
+
+    .popup-disp-img-clickable {
+        pointer-events: auto;
+        cursor: zoom-in;
+    }
+
+    .popup-disp-arrow-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: var(--pizarra-75);
+        color: var(--sobre-oscuro);
+        border: 1px solid var(--blanco-20);
+        cursor: pointer;
+        z-index: 5;
+        transition: background-color var(--dur-fast) ease, transform var(--dur-fast) ease, color var(--dur-fast) ease;
+    }
+
+    .popup-disp-arrow-btn:hover {
+        background-color: var(--pizarra-95);
+        transform: translateY(-50%) scale(1.1);
+        /* el azul del sistema, aclarado: el fondo de la flecha es oscuro en los dos temas */
+        color: color-mix(in srgb, var(--color-blue) 45%, var(--sobre-oscuro));
+    }
+
+    .popup-disp-arrow-prev {
+        left: 6px;
+    }
+
+    .popup-disp-arrow-next {
+        right: 6px;
+    }
+
+    /* Captura o video en ventana flotante («PiP» como el de YouTube): solo la imagen, sin encabezado ni botones; se arrastra
+       desde la imagen y el doble clic (o doble toque) vuelve al modal, donde están los controles */
+    #snapshotModal.modal-flotante .modal-header,
+    #snapshotModal.modal-flotante .modal-footer {
+        display: none;
+    }
+
+    #snapshotModal.modal-flotante .modal-dialog {
+        width: clamp(12rem, 26vw, 24rem);
+    }
+
+    #snapshotModal.modal-flotante .modal-content {
+        overflow: hidden;
+        border-radius: var(--radio-medio);
+        background-color: var(--superficie-video);
+    }
+
+    #snapshotModal.modal-flotante .snapshot-modal-img {
+        display: block;
+        border-radius: 0;
+        -webkit-user-drag: none;
+    }
+
+    /* «X» de la ventana flotante: arriba a la derecha, solo al pasar el cursor por encima (o con el foco; en pantallas táctiles,
+       siempre) para cerrarla sin volver al modal */
+    
+
+    /* Error de «Ver en vivo»: sobre el borde inferior de la imagen (no en el pie, donde empujaba los botones) */
+    
+    /* «Ver en vivo» tarda unos segundos en dar el primer cuadro: banner sobre la captura hasta que llega */
+    
+    .snapshot-modal-img {
+        max-height: 70vh;
+        object-fit: contain;
+        border-radius: var(--radio-medio);
+    }
+
+    /* Pantalla completa (2 clics sobre la imagen o su botón): la imagen entera, centrada sobre negro */
+    
+
+    /* Lo marcado en el modo selección: al final y con la especificidad de las reglas por tema y por vista (lista, oscuro),
+       que si no le ganaban el fondo; vale en tarjetas, en lista, claro y oscuro, también con hover o en caída */
+    .canal-item.stock-seleccionada,
+    .canal-lista .canal-item.stock-seleccionada,
+    [data-tema="dark"] .canal-item.stock-seleccionada,
+    [data-tema="dark"] .canal-lista .canal-item.stock-seleccionada,
+    .canal-lista .canal-item.stock-seleccionada:hover,
+    [data-tema="dark"] .canal-lista .canal-item.stock-seleccionada:hover {
+        background-color: var(--ui-primary-bg-subtle);
+    }
+}

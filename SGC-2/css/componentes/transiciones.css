@@ -1,0 +1,101 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* componentes/transiciones.css: Componente transiciones: lo de Bootstrap y el aspecto de la app en una sola definición. */
+
+@layer componentes {
+    /* ─── Transiciones */
+
+    .fade {
+        transition: opacity var(--dur-fast) linear;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .fade {
+            transition: none;
+        }
+    }
+
+    .fade:not(.show) {
+        opacity: 0;
+    }
+
+    /* ─── Colapso animado con CSS Grid. Lo comparten los acordeones (cámaras y NVRs) y auditoría.
+       Recorta el CONTENEDOR, no su hijo: a mitad de la transición (f entre 0 y 1, con f < 1) el contenedor mide
+       f × contenido, pero la fila (el hijo) solo f², porque la fracción se aplica dos veces. Si recortaba el hijo,
+       lo visible iba por detrás de la caja y quedaba una franja vacía: al cerrar, el contenido se iba antes y el
+       grupo siguiente subía sobre el hueco. `clip` (no hidden) no crea un contenedor de scroll: los encabezados
+       sticky de adentro siguen funcionando. */
+
+    .grid-collapse {
+        display: grid;
+        grid-template-rows: 0fr;
+        overflow: clip;
+        opacity: 0;           /* el contenido se desvanece mientras el alto cambia: suaviza la entrada y la salida */
+        transition: grid-template-rows var(--dur-colapso) var(--ease-colapso), opacity var(--dur-colapso) var(--ease-colapso),
+            visibility var(--dur-colapso);
+        visibility: hidden;
+    }
+
+    /* Abierto, el margen de recorte deja ver el aro de foco (4 px) y la sombra de lo que toca el borde del contenedor
+       (chips, botones, filas); cerrándose no, para que no asome contenido mientras el alto baja a 0. */
+    .grid-collapse.show {
+        grid-template-rows: 1fr;
+        opacity: 1;
+        visibility: visible;
+        overflow-clip-margin: 0.5rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .grid-collapse {
+            transition: none;
+        }
+    }
+
+    .grid-collapse>:first-child {
+        min-height: 0;
+    }
+
+    /* Fila de tabla plegable (uiFilaPlegable): el grid-collapse de cada celda anima el alto; plegada, la celda pierde
+       el relleno y el borde al mismo ritmo, así la fila llega a 0 y las de abajo suben con ella */
+    tr.fila-plegable>td {
+        transition: padding-top var(--dur-colapso) var(--ease-colapso),
+            padding-bottom var(--dur-colapso) var(--ease-colapso), border-bottom-width var(--dur-colapso) var(--ease-colapso);
+    }
+
+    tr.fila-plegable.plegada>td {
+        padding-top: 0;
+        padding-bottom: 0;
+        border-bottom-width: 0;
+    }
+
+    /* Sección plegable (uiSeccionPlegable): cabecera a lo ancho con un chevron que gira al abrir */
+    .seccion-plegable-cab {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        border: 0;
+        background: none;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .seccion-plegable-chevron {
+        transition: transform var(--dur-colapso) var(--ease-colapso);
+    }
+
+    .seccion-plegable-cab[aria-expanded="true"] .seccion-plegable-chevron {
+        transform: rotate(90deg);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        tr.fila-plegable>td,
+        .seccion-plegable-chevron {
+            transition: none;
+        }
+    }
+
+}

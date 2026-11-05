@@ -1,0 +1,157 @@
+/* app/animaciones.css: App, zona animaciones. */
+
+@layer app {
+    /* ─── Menús de la barra superior: ui.js no los calcula, van debajo de su botón (lo que antes hacía Bootstr */
+
+    @keyframes dropdownPopupIn {
+        0% {
+        opacity: 0;
+        scale: 0.82;
+        translate: 0 -4px;
+        }
+
+        100% {
+        opacity: 1;
+        scale: 1;
+        translate: 0 0;
+        }
+    }
+
+    @keyframes dropdownPopupTopIn {
+        0% {
+        opacity: 0;
+        scale: 0.82;
+        translate: 0 4px;
+        }
+
+        100% {
+        opacity: 1;
+        scale: 1;
+        translate: 0 0;
+        }
+    }
+
+    /* ─── ANIMACIONES DE MUTACIÓN (Estilo Horarios) */
+
+    @keyframes mutacionSalida {
+        from {
+        opacity: 1;
+        transform: scale(1);
+        }
+
+        to {
+        opacity: 0;
+        transform: scale(0.9);
+        }
+    }
+
+    @keyframes mutacionEntrada {
+        from {
+        opacity: 0;
+        transform: scale(0.9);
+        }
+
+        to {
+        opacity: 1;
+        transform: scale(1);
+        }
+    }
+
+    /* ─── Animación de carga: Blur Reveal (revela suavemente el contenido al cargar o recargar) ─── */
+    @keyframes blurReveal {
+        from {
+            opacity: 0;
+            filter: blur(12px);
+            transform: translateY(6px) scale(1.01);
+        }
+
+        to {
+            opacity: 1;
+            filter: none;
+            transform: none;
+        }
+    }
+
+    /* Antes de la primera carga de datos el dashboard no se ve (evita mostrar placeholders y luego el parpadeo) */
+    html[data-cargando] .resumen-seccion-reubicable {
+        opacity: 0;
+    }
+
+    html[data-cargando-lista] #produccion-accordion,
+    html[data-cargando-lista] #stock-accordion {
+        opacity: 0;
+    }
+
+    /* Listas largas (Stock y Producción, cientos de filas): el blur obliga a repintar toda la lista en cada cuadro y
+       se entrecorta; ahí solo opacidad y un leve desplazamiento (los dos corren en el compositor) */
+    @keyframes listaReveal {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    #stock-accordion.blur-reveal,
+    #produccion-accordion.blur-reveal {
+        animation-name: listaReveal;
+        will-change: opacity, transform;
+    }
+
+    .blur-reveal {
+        animation: blurReveal var(--dur-blur-reveal, 0.4s) cubic-bezier(0.16, 1, 0.3, 1) both;
+        animation-delay: var(--delay-blur-reveal, 0ms);
+        will-change: filter, opacity, transform;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .blur-reveal {
+            animation: none;
+            filter: none;
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    .mutacion-entrante {
+        transform-origin: top center;
+        animation: mutacionEntrada var(--dur-anim) ease forwards;
+    }
+
+    .mutacion-saliente {
+        transform-origin: top center;
+        animation: mutacionSalida var(--dur-anim) ease forwards;
+    }
+
+    /* Copia de la pestaña principal que sale mientras desliza (animaciones.js): va dentro del contenedor, que recorta lo que se sale */
+    .slide-pestana-saliente {
+        z-index: 1;
+        will-change: transform, opacity;
+    }
+
+    /* ─── ANIMACIÓN DE SLIDE LATERAL ESTILO CALENDARIO (Subpestañas de Auditoría) */
+
+    .slide-subtabs-wrapper {
+        position: relative;
+        overflow: hidden;
+        pointer-events: none;
+        width: 100%;
+    }
+
+    /* ─── >= 75%: 0.65s */
+
+    @keyframes blink-opacity {
+        0% {
+            opacity: var(--blink-min, 0.45);
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+
+}

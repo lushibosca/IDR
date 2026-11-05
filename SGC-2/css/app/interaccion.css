@@ -1,0 +1,30 @@
+/* app/interaccion.css: App, zona interaccion. */
+
+@layer app {
+    /* ─── HOVER (pointer: fine) — Unificado con filter (estilo horarios) */
+
+    @media (hover: hover) and (pointer: fine) {
+        :is(.btn, .btn-scroll-top, .search-filter-btn):hover:not(:disabled) {
+            filter: var(--hover);
+        }
+    }
+
+    /* HOVER ÚNICO de todo lo clickeable que no es un botón: el relleno `--dropdown-item-hover` (el de las filas de Ajustes, las
+       pestañas, los acordeones y las tablas: `--nav-hover` y `--table-hover-bg` son el mismo token). */
+    .disp-etiqueta-abrible:not(td) {
+        border-radius: var(--radio-medio);
+    }
+
+    .disp-etiqueta-abrible,
+    td.stock-ubicacion {
+        transition: background-color var(--dur-base) ease;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .disp-etiqueta-abrible:hover,
+        td.stock-ubicacion:hover,
+        .metric-card.kpi-clickable:hover, .metric-card.chip-compact:hover, .chip-compact:hover, .canal-item:hover, .stock-card:hover, [data-auditoria-nvr]:hover, #audgrab-tarjetas .stock-ubicacion:hover, .favorito-tile:hover {
+            background-color: var(--dropdown-item-hover);
+        }
+    }
+}

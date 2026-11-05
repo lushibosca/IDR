@@ -1,0 +1,447 @@
+/* app/estado.css: App, zona estado. */
+
+@layer app {
+    /* ─── Metrics SaaS (Icono a la izquierda) */
+
+    .metric-card.kpi-clickable {
+        cursor: pointer;
+    }
+
+    /* Un chip de Activos que se está moviendo (pulsación larga; uiReordenable): levantado, sobre los demás */
+    [data-activos-chip].reordenando {
+        position: relative;
+        z-index: 3;
+        cursor: grabbing;
+        user-select: none;
+    }
+
+    [data-activos-chip].reordenando .metric-card {
+        box-shadow: var(--sombra-media);
+    }
+
+    .metric-card.kpi-clickable:hover,
+    .chip-compact:hover {
+        filter: var(--hover);
+    }
+
+    .metric-card.kpi-clickable:focus-visible {
+        outline: 2px solid var(--color-blue);
+        outline-offset: 2px;
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.1;
+        color: var(--color-texto);
+        letter-spacing: -0.5px;
+    }
+
+    /* tramo sin monitoreo (servidor apagado, antes de arrancar): punteado y atenuado, no «todo bien» */
+
+    .metric-label-text {
+        font-size: var(--texto-xs);
+        color: var(--color-texto-suave);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-top: var(--esp-1);
+    }
+
+    .metric-icon {
+        width: 58px;
+        height: 58px;
+        border-radius: var(--radio-grande);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.85rem;
+        flex-shrink: 0;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        transition: transform var(--dur-pop-soft) var(--ease-pop);
+        will-change: opacity, filter;
+    }
+
+    /* ─── Colores de íconos temáticos — los tokens ya cambian de valor por tema, */
+
+    .metric-card.nvr.warning .metric-icon {
+        background-color: var(--yellow-14);
+        color: var(--color-yellow);
+    }
+
+    /* Sin fondo, borde ni sombra (panel más limpio): lo clicable se nota al pasar el mouse, y el foco solo con
+       teclado (tras un clic no queda el contorno azul) */
+    /* «Todas las alertas»: con pocos grupos y cerrados el modal queda bajo y recortaría el menú de copiar (el contenido del
+       modal es overflow: hidden): alto mínimo para que el menú entre completo (sin pasar del alto de la ventana) */
+    #modal-todas-alertas .modal-content {
+        min-height: min(26rem, 100%);
+    }
+
+    /* ─── ANIMACIÓN DE DESTELLO EN CHIPS AL CAMBIAR DE ESTADO (--dur-destello) */
+
+    /* ─── Barra de progreso circular para Canales de Grabación */
+
+    .progress-ring {
+        transform: rotate(-90deg);
+    }
+
+    .progress-ring-bg {
+        stroke: rgba(255, 255, 255, 0.1);
+    }
+
+    [data-tema="light"] .progress-ring-bg {
+        stroke: rgba(0, 0, 0, 0.08);
+    }
+
+    .progress-ring-circle {
+        stroke: var(--color-orange);
+        stroke-dasharray: 213.63;
+        stroke-dashoffset: 213.63;
+        transition: stroke-dashoffset 0.6s var(--ease-panel), stroke 0.6s var(--ease-panel);
+    }
+
+    /* Color según lo usado (nivelCapacidad): verde, naranja desde 70 %, rojo desde 90 % */
+    .progress-ring-ok {
+        stroke: var(--color-green);
+    }
+
+    .progress-ring-aviso {
+        stroke: var(--color-orange);
+    }
+
+    .progress-ring-critico {
+        stroke: var(--color-red);
+    }
+
+    /* ─── Sección Activos: Cuadrícula en 2 columnas adaptable al espacio disponible */
+
+    #infra-chips {
+        container-type: inline-size;
+    }
+
+    @container (min-width: 680px) {
+        #infra-chips .col-infra-half {
+            flex: 0 0 auto;
+            width: 50%;
+        }
+    }
+
+    @container (max-width: 679.98px) {
+        #infra-chips .col-infra-half {
+            flex: 0 0 auto;
+            width: 100%;
+        }
+    }
+
+    /* Con la sección ancha (zona de arriba) caben 3 o 4 chips por fila */
+    @container (min-width: 1020px) {
+        #infra-chips .col-infra-half {
+            width: 33.33333333%;
+        }
+    }
+
+    @container (min-width: 1360px) {
+        #infra-chips .col-infra-half {
+            width: 25%;
+        }
+    }
+
+    .mutacion-fantasma {
+        pointer-events: none;
+    }
+
+    /* ─── Canales: un anillo por grabador, solo si la sección es ancha; Atención: más datos por fila */
+
+    #canales-section,
+    #alertas-section {
+        container-type: inline-size;
+    }
+
+    /* Zona de dos columnas (sección entre 680 y 900 px): el chip de capacidad ocupa media fila, como los de Activos, sin
+       rellenar el resto. Más angosta apila a todo el ancho; más ancha lleva los anillos por grabador y se estira. */
+    @container (min-width: 680px) and (max-width: 899.98px) {
+        #card-kpi-capacidad {
+            width: calc(50% - 0.25rem);
+        }
+    }
+
+    .cap-grabadores {
+        display: none;
+    }
+
+    /* Dentro de la tarjeta de capacidad, entre el anillo general y los totales: una grilla pareja que usa el espacio libre,
+       separada por la misma línea que los totales (la capacidad instalada sigue a la vista) */
+    @container (min-width: 900px) {
+        .cap-grabadores:not(.d-none) {
+            display: grid;
+            flex: 1 1 auto;
+            grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+            align-items: center;
+            gap: var(--esp-3) var(--esp-4);
+            min-width: 0;
+            margin: 0 var(--esp-4) 0 var(--esp-6);
+            padding: 0 var(--esp-4);
+            border-left: 1px solid var(--ui-border-color);
+            border-right: 1px solid var(--ui-border-color);
+        }
+    }
+
+    .cap-grabador {
+        min-width: 0;
+    }
+
+    /* ─── Tarjeta KPI de capacidad: anillo de porcentaje y etiquetas compactas */
+
+    .kpi-anillo {
+        width: 84px;
+        height: 84px;
+    }
+
+    .kpi-anillo-pct {
+        font-size: var(--texto-lg);
+    }
+
+    .kpi-etiqueta-compacta,
+    .kpi-etiqueta-xs {
+        line-height: 1.15;
+    }
+
+    .kpi-etiqueta-compacta {
+        font-size: var(--texto-xs);
+    }
+
+    .kpi-etiqueta-xs {
+        font-size: var(--texto-xs);
+    }
+
+    /* ─── Fila de totales al pie de una tabla de detalle (Detalle de canales): fija abajo, como el encabezado arriba.
+       Su contenedor lleva `.tabla-con-pie`: sin overflow propio, el sticky se ata al cuerpo del modal que se desplaza */
+
+    .tabla-con-pie {
+        overflow: visible;
+    }
+
+    /* Relleno que baja la fila de totales al pie del cuerpo del modal cuando hay pocas filas (resumen.js `ajustarRellenoPie`) */
+    .tabla-relleno td {
+        padding: 0;
+        border: 0;
+    }
+
+    .fila-totales th,
+    .fila-totales td {
+        position: sticky;
+        bottom: 0;
+        z-index: var(--capa-celda-fija);
+        font-weight: 700;
+        background-color: var(--table-header-bg);
+        box-shadow: 0 -1px 0 var(--border-color);
+    }
+
+    /* Detalle de canales: el valor de «En uso» y «Disponibles» es lo que muta al alternar cantidad/porcentaje */
+
+    .cap-valor {
+        display: inline-block;
+    }
+
+    /* Detalle de canales: color en Disponibles y borde lateral según el porcentaje de uso (mismos umbrales que el anillo) */
+
+    #tabla-detalle-capacidad tbody tr.cap-fila-ok > td:first-child {
+        border-left: 3px solid var(--color-green);
+    }
+    #tabla-detalle-capacidad tbody tr.cap-fila-ok > td:nth-child(4),
+    #tabla-detalle-capacidad.table-hover tbody tr.cap-fila-ok:hover > td:nth-child(4) {
+        color: var(--color-green);
+        font-weight: 600;
+    }
+
+    #tabla-detalle-capacidad tbody tr.cap-fila-aviso > td:first-child {
+        border-left: 3px solid var(--color-orange);
+    }
+    #tabla-detalle-capacidad tbody tr.cap-fila-aviso > td:nth-child(4),
+    #tabla-detalle-capacidad.table-hover tbody tr.cap-fila-aviso:hover > td:nth-child(4) {
+        color: var(--color-orange);
+        font-weight: 600;
+    }
+
+    #tabla-detalle-capacidad tbody tr.cap-fila-critico > td:first-child {
+        border-left: 3px solid var(--color-red);
+    }
+    #tabla-detalle-capacidad tbody tr.cap-fila-critico > td:nth-child(4),
+    #tabla-detalle-capacidad.table-hover tbody tr.cap-fila-critico:hover > td:nth-child(4) {
+        color: var(--color-red);
+        font-weight: 600;
+    }
+
+    /* ─── Modales de detalle de stock (`.modal-detalle-tipos`): tipo con sus modelos plegables (pintarTablaTipos) */
+
+    .modal-detalle-tipos .table-responsive {
+        overflow: visible;
+    }
+
+    /* Columnas fijas: al desplegar un tipo, un modelo de nombre largo no ensancha ni corre las columnas de números
+       (el nombre se parte en la primera, que se queda con el resto del ancho) */
+    .modal-detalle-tipos table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .modal-detalle-tipos thead th:not(:first-child) {
+        width: 15%;
+    }
+
+    .modal-detalle-tipos td:first-child {
+        overflow-wrap: anywhere;
+    }
+
+    .modal-detalle-tipos thead th {
+        position: sticky;
+        top: 0;
+        z-index: var(--capa-celda-fija);
+        background-color: var(--table-header-bg);
+        box-shadow: 0 1px 0 var(--border-color);
+    }
+
+    .resumen-tipo-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .resumen-tipo-chevron {
+        transition: transform var(--dur-base) ease;
+    }
+
+    tr.resumen-tipo {
+        cursor: pointer;
+    }
+
+    .resumen-tipo-btn[aria-expanded="true"] .resumen-tipo-chevron {
+        transform: rotate(90deg);
+    }
+
+    .resumen-modelo > td {
+        background-color: var(--table-hover-bg);
+    }
+
+    .resumen-modelo-nombre {
+        padding-left: 2.6rem;
+        color: var(--color-texto-suave);
+    }
+
+    .resumen-modelo[data-resumen-modelo] {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    /* Miniatura del modelo a la izquierda (vacía si no hay imagen: los nombres quedan alineados) */
+    .resumen-modelo-thumb {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        margin-right: 0.6rem;
+        vertical-align: middle;
+    }
+
+    .resumen-modelo-img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    /* ─── Zonas del panel Estado: las secciones reubicables se mueven entre ellas (resumen.js) */
+
+    .dashboard-zona {
+        min-width: 0;
+    }
+
+    /* Durante el arrastre toda zona es un destino visible, aunque no tenga ninguna sección */
+    .resumen-arrastrando-activo .dashboard-zona {
+        min-height: 3.5rem;
+        border: 2px dashed var(--ui-border-color);
+        border-radius: var(--ui-border-radius);
+    }
+
+    /* Monitoreo: tres chips en fila si la zona es ancha (cada uno necesita ~280 px: con menos quedaban comprimidos); apilados, cada uno
+       a todo el ancho, en cuanto la sección cae en una columna */
+
+    #monitoreo-section {
+        container-type: inline-size;
+    }
+
+    /* El destello de los chips (anillo, resplandor y sombra, hasta unos 50 px) sale del recuadro: el colapso recorta
+       (`overflow: clip`) y lo cortaba arriba y abajo. El margen de recorte lo deja asomar sin perder el plegado. */
+    #monitoreo-collapse {
+        overflow-clip-margin: 3.5rem;
+    }
+
+    /* relative: al reubicarla, la que se arrastra pasa por encima de las demás (z-index de uiAnimarReubicacion) */
+    .resumen-seccion-reubicable {
+        position: relative;
+        transition: opacity var(--dur-base) ease;
+    }
+
+    .resumen-seccion-reordenando {
+        opacity: 0.55;
+        user-select: none;
+    }
+
+    .resumen-toggle-arrastrando {
+        cursor: grabbing;
+    }
+
+    .resumen-arrastrando-activo {
+        user-select: none;
+        cursor: grabbing;
+    }
+
+    /* Por encima del contenido de su sección: la fila de Monitoreo (`.row.g-4`) sube con su margen negativo sobre la mitad de abajo
+       del encabezado y se llevaba el clic y la pulsación larga de esa parte */
+    .resumen-seccion-toggle {
+        position: relative;
+        z-index: 1;
+        touch-action: pan-y;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    /* Los botones de opciones del encabezado, por encima de la fila de chips (que sube con su margen negativo) y de sus menús */
+    .resumen-seccion-acciones {
+        position: relative;
+        z-index: 2;
+    }
+
+    .resumen-seccion-toggle:hover h6,
+    .resumen-seccion-toggle:hover .resumen-seccion-chevron {
+        color: var(--color-texto);
+    }
+
+    .resumen-seccion-chevron {
+        transition: transform var(--dur-base) ease;
+    }
+
+    .resumen-seccion-toggle[aria-expanded="false"] .resumen-seccion-chevron {
+        transform: rotate(-90deg);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .resumen-tipo-chevron,
+        .resumen-seccion-chevron,
+        .resumen-seccion-reubicable {
+            transition: none;
+        }
+    }
+
+    /* El popup de un tramo (clases del de los chips: fijo, en <body>, sobre los modales) no recibe el puntero */
+    #stock-grafico-popup {
+        pointer-events: none;
+    }
+
+}

@@ -1,0 +1,249 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* tokens.css: Variables (colores, radios, tiempos, sombras): un solo bloque para el tema claro y otro para el oscuro.
+   Primera hoja: declara el orden de las capas. Una capa posterior le gana a cualquiera anterior sin importar la especificidad;
+   por eso no hace falta ningún !important (docs/diseno/CSS-Y-UI.md). */
+
+@layer tokens, base, iconos, grilla, componentes, app, utilidades;
+
+@import url("../vendor/bootstrap-icons/bootstrap-icons.min.css") layer(iconos);
+
+@layer tokens {
+    :root,
+    [data-tema="light"] {
+        --ui-primary: var(--color-blue);
+        --ui-primary-rgb: var(--color-blue-rgb);
+        --ui-secondary-rgb: 107, 114, 128;              /* = --color-texto-suave */
+        --ui-success-rgb: var(--color-green-rgb);
+        --ui-info-rgb: var(--color-blue-rgb);           /* «info» = el mismo azul (sin cian aparte) */
+        --ui-warning-rgb: var(--color-yellow-rgb);
+        --ui-danger-rgb: var(--color-red-rgb);
+        --ui-dark-rgb: 33, 37, 41;
+        --ui-info-text-emphasis: color-mix(in srgb, var(--color-blue) 75%, var(--color-texto));
+        --ui-warning-text-emphasis: color-mix(in srgb, var(--color-yellow) 75%, var(--color-texto));
+        --ui-danger-text-emphasis: color-mix(in srgb, var(--color-red) 75%, var(--color-texto));
+        --ui-primary-bg-subtle: color-mix(in srgb, var(--color-blue) 15%, var(--bg-card));
+        --ui-info-bg-subtle: color-mix(in srgb, var(--color-blue) 12%, var(--bg-card));
+        --ui-warning-bg-subtle: color-mix(in srgb, var(--color-yellow) 12%, var(--bg-card));
+        --ui-danger-bg-subtle: color-mix(in srgb, var(--color-red) 12%, var(--bg-card));
+        --ui-light-bg-subtle: var(--bg-main);
+        --ui-dark-bg-subtle: color-mix(in srgb, var(--color-texto) 15%, var(--bg-card));
+        --ui-info-border-subtle: color-mix(in srgb, var(--color-blue) 35%, var(--bg-card));
+        --ui-warning-border-subtle: color-mix(in srgb, var(--color-yellow) 35%, var(--bg-card));
+        --ui-danger-border-subtle: color-mix(in srgb, var(--color-red) 35%, var(--bg-card));
+        --ui-font-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        --ui-body-font-size: 1rem;
+        --ui-body-font-weight: 400;
+        --ui-body-line-height: 1.5;
+        /* los grises de Bootstrap (ui-*) salen de los del sistema: --color-texto, --color-texto-suave, --border-color, --bg-* */
+        --ui-body-color: var(--color-texto);
+        --ui-body-color-rgb: 33, 37, 41;
+        --ui-body-bg: var(--bg-card);
+        --ui-body-bg-rgb: 255, 255, 255;
+        --ui-emphasis-color: #000;
+        --ui-emphasis-color-rgb: 0, 0, 0;
+        --ui-secondary-color: var(--color-texto-suave);
+        --ui-secondary-bg: color-mix(in srgb, var(--color-texto) 8%, var(--bg-card));
+        --ui-tertiary-color: color-mix(in srgb, var(--color-texto-suave) 70%, transparent);
+        --ui-tertiary-bg: var(--bg-main);
+        --ui-tertiary-bg-rgb: 248, 249, 250;
+        --ui-heading-color: inherit;
+        --ui-link-color: var(--color-blue);
+        --ui-link-color-rgb: var(--color-blue-rgb);
+        --ui-link-hover-color: var(--color-blue-hover);
+        --ui-link-hover-color-rgb: var(--color-blue-hover-rgb);
+        --ui-code-color: #d63384;
+        --ui-border-width: 1px;
+        --ui-border-style: solid;
+        --ui-border-color: var(--border-color);
+        --ui-border-color-translucent: rgba(0, 0, 0, 0.175);
+        --ui-border-radius: var(--radio-chico);
+        --ui-border-radius-sm: var(--radio-chico);
+        --ui-border-radius-lg: var(--radio-medio);
+        --ui-border-radius-pill: 50rem;
+        --navbar-height: 58px;
+        --stock-header-height: 41px;
+        --stock-th-height: 29px;
+        --produccion-header-height: 52px;
+        --bg-main: #f9fafb;
+        --bg-card: #ffffff;
+        --border-color: #e5e7eb;
+        --color-texto: #111827;
+        --color-texto-suave: #6b7280;
+        --nav-hover: var(--dropdown-item-hover);
+        --search-bg: #ffffff;
+        --search-focus: rgba(var(--color-blue-rgb), 0.15);
+        --table-header-bg: #f8fafc;
+        --table-hover-bg: var(--dropdown-item-hover);
+        --sombra-tarjeta: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+        /* Sombras: tres elevaciones (las tarjetas y los menús tienen la suya, --sombra-tarjeta y --dropdown-shadow) */
+        --sombra-baja: 0 1px 3px rgba(0, 0, 0, 0.08);                       /* barra, marcadores, shadow-sm */
+        --sombra-media: 0 4px 14px rgba(0, 0, 0, 0.18);                     /* toast, botones flotantes, arrastre */
+        --sombra-alta: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 4px 10px -2px rgba(0, 0, 0, 0.15);   /* popups */
+        /* Capas (z-index) de lo que flota, de abajo hacia arriba; dentro de un componente, 1..10 locales */
+        --capa-celda-fija: 10;       /* dentro de un modal o una tabla: lo que flota sobre sus vecinos (fila de totales, ficha arrastrada) */
+        --capa-panel: 1000;          /* panel lateral */
+        --capa-pegajosa: 1020;       /* encabezados pegajosos (thead, acordeón, sticky-top) */
+        --capa-flotante: 1040;       /* botón «volver arriba» */
+        --capa-barra: 1050;          /* barra superior y sus menús */
+        --capa-modal-fondo: 1050;
+        --capa-modal: 1055;
+        --capa-popup: 1060;          /* popups, selects propios, progreso del escaneo */
+        --capa-tip: 1070;            /* popup de dispositivo, tip del panel */
+        --capa-aviso: 1100;          /* toast */
+        /* Tamaños de letra: seis (los títulos de Bootstrap con vw, los íconos/cifras grandes >= 1.75rem y los em
+           relativos quedan aparte) */
+        --texto-xs: 0.75rem;     /* insignias, notas, ayudas */
+        --texto-sm: 0.8125rem;   /* tablas densas, metadatos */
+        --texto-md: 0.875rem;    /* controles chicos, listas */
+        --texto-base: 1rem;
+        --texto-lg: 1.25rem;     /* subtítulos */
+        --texto-xl: 1.5rem;      /* títulos de sección */
+        /* Radios: tres y nada más (más el círculo 50% y la píldora --ui-border-radius-pill, que son formas) */
+        --radio-chico: 6px;     /* insignias, botones, campos, celdas */
+        --radio-medio: 10px;    /* menús, fichas, ítems, modales */
+        --radio-grande: 20px;   /* tarjetas y popups */
+        /* Escala de espaciado (padding, margin, gap): múltiplos de 4 px en rem. Lo que no está en la escala (6, 10, 14 px...) queda
+           escrito donde se usa. */
+        --esp-1: 0.25rem;
+        --esp-2: 0.5rem;
+        --esp-3: 0.75rem;
+        --esp-4: 1rem;
+        --esp-6: 1.5rem;
+        --esp-8: 2rem;
+        /* Anillo de foco del teclado (campos, botones, menús) */
+        --foco-anillo: 0 0 0 .25rem rgba(var(--color-blue-rgb), .25);
+        /* Velos y superficies con transparencia fija, nombrados por color y opacidad (como --red-15, --blue-12) */
+        --blanco-08: rgba(255, 255, 255, 0.08);     /* bordes finos y fondo al pasar, sobre el tema oscuro */
+        --blanco-15: rgba(255, 255, 255, 0.15);
+        --blanco-20: rgba(255, 255, 255, 0.2);
+        --pizarra-75: rgba(15, 23, 42, 0.75);       /* botones sobre la foto o el video (oscuros en los dos temas) */
+        --pizarra-95: rgba(15, 23, 42, 0.95);
+        --sobre-oscuro: #ffffff;                    /* texto o ícono sobre esas superficies oscuras */
+        --superficie-video: #000;                   /* fondo del video y la captura ampliada */
+        --ease-pop: cubic-bezier(0.16, 1, 0.3, 1);
+        --apple-modal-in: transform var(--dur-panel) var(--ease-pop), opacity var(--dur-base) ease-out;
+        --apple-modal-out: transform var(--dur-base) var(--ease-panel), opacity 0.16s ease-in;
+        --dropdown-bg: var(--bg-card);
+        --dropdown-border: var(--border-color);
+        --dropdown-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.04);
+        --dropdown-item-hover: rgba(0, 0, 0, 0.05);
+        /* EL azul del sistema (el de .btn-primary): todo lo azul sale de acá, en los dos temas */
+        --color-blue: #1a73e8;
+        --color-blue-rgb: 26, 115, 232;
+        --color-blue-hover: #1765cc;
+        --color-blue-hover-rgb: 23, 101, 204;
+        --color-blue-on: #ffffff;          /* texto o ícono sobre un fondo azul */
+        --btn-close-sobre-color: invert(1) grayscale(100%) brightness(200%);   /* la X sobre un fondo de color */
+        /* Rojo, verde, amarillo y naranja: como el azul, con su rgb, su hover y el texto encima (-on) los que se usan */
+        --color-green: #1e8e3e;
+        --color-green-rgb: 30, 142, 62;
+        --color-green-on: #ffffff;
+        --color-red: #d93025;
+        --color-red-rgb: 217, 48, 37;
+        --color-red-hover: #b3261e;
+        --color-red-on: #ffffff;
+        --color-yellow: #b06000;
+        --color-yellow-rgb: 176, 96, 0;
+        --color-yellow-hover: #965200;
+        --color-yellow-on: #ffffff;
+        --color-orange: #e37400;
+        --color-purple: #7b3fb8;
+        --color-purple-on: #ffffff;
+        --canal-multi-bg: #6f4ea1;          /* canal de una cámara que está en varios grabadores */
+        --nav-active-bg: rgba(var(--color-blue-rgb), 0.08);
+        --nav-active-text: var(--color-blue);
+        --red-08: color-mix(in srgb, var(--color-red) 8%, transparent);
+        --red-30: color-mix(in srgb, var(--color-red) 30%, transparent);
+        --green-08: color-mix(in srgb, var(--color-green) 8%, transparent);
+        --yellow-06: color-mix(in srgb, var(--color-yellow) 6%, transparent);
+        --yellow-22: color-mix(in srgb, var(--color-yellow) 22%, transparent);
+        --orange-06: color-mix(in srgb, var(--color-orange) 6%, transparent);
+        --orange-12: color-mix(in srgb, var(--color-orange) 12%, transparent);
+        --orange-22: color-mix(in srgb, var(--color-orange) 22%, transparent);
+        --blue-12: color-mix(in srgb, var(--color-blue) 12%, transparent);
+        --red-06: color-mix(in srgb, var(--color-red) 6%, transparent);
+        --red-15: color-mix(in srgb, var(--color-red) 8%, transparent);
+        --red-22: color-mix(in srgb, var(--color-red) 22%, transparent);
+        --yellow-14: color-mix(in srgb, var(--color-yellow) 12%, transparent);
+        --dur-snap: 0.1s;
+        --dur-fast: 0.15s;
+        --dur-base: 0.2s;
+        --dur-slow: 0.3s;
+        --dur-pop-soft: 0.22s;
+        --dur-anim: 0.25s;
+        /* abrir/cerrar grupos (.grid-collapse) y sus chevrons: la curva del acordeón de Producción del SGC, más larga y
+           pareja que la de los popups (con aquella casi todo el movimiento caía en los primeros milisegundos) */
+        --dur-colapso: 0.35s;
+        --ease-colapso: cubic-bezier(0.25, 1, 0.5, 1);
+        --dur-panel: 0.28s;
+        --ease-panel: cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-ui: var(--dur-anim) ease;
+        --hover: brightness(0.9);
+    }
+
+    [data-tema="dark"] {
+        --ui-body-bg: var(--bg-main);
+        --ui-secondary-rgb: 154, 160, 166;
+        --bg-main: #131314;
+        --bg-card: #1e1f20;
+        --border-color: #2d2f31;
+        --color-texto: #e3e3e3;
+        --color-texto-suave: #9aa0a6;
+        --nav-hover: var(--dropdown-item-hover);
+        --search-bg: #131314;
+        --search-focus: rgba(var(--color-blue-rgb), 0.25);
+        --table-header-bg: #1e1f20;
+        --table-hover-bg: var(--dropdown-item-hover);
+        --sombra-tarjeta: none;
+        --dropdown-border: rgba(255, 255, 255, 0.09);
+        --dropdown-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.07);
+        --dropdown-item-hover: rgba(255, 255, 255, 0.08);
+        --color-blue: #a8c7fa;
+        --color-blue-rgb: 168, 199, 250;
+        --color-blue-hover: #8ab4f8;
+        --color-blue-hover-rgb: 138, 180, 248;
+        --color-blue-on: #041e49;
+        --ui-code-color: #e685b5;
+        --btn-close-sobre-color: none;
+        --color-green: #81c995;
+        --color-green-rgb: 129, 201, 149;
+        --color-green-on: #0a3818;
+        --color-red: #f28b82;
+        --color-red-rgb: 242, 139, 130;
+        --color-red-hover: #ee675c;
+        --color-red-on: #601410;
+        --color-yellow: #fdd663;
+        --color-yellow-rgb: 253, 214, 99;
+        --color-yellow-hover: #fcc934;
+        --color-yellow-on: #2d2000;
+        --color-orange: #fba94b;
+        --color-purple: #c9a5f5;
+        --color-purple-on: #2a0d4d;
+        --canal-multi-bg: #6a4691;
+        --nav-active-bg: rgba(var(--color-blue-rgb), 0.14);
+        --nav-active-text: var(--color-blue);
+        --red-08: color-mix(in srgb, var(--color-red) 12%, transparent);
+        --red-30: color-mix(in srgb, var(--color-red) 35%, transparent);
+        --green-08: color-mix(in srgb, var(--color-green) 12%, transparent);
+        --yellow-06: color-mix(in srgb, var(--color-yellow) 8%, transparent);
+        --yellow-22: color-mix(in srgb, var(--color-yellow) 25%, transparent);
+        --orange-06: color-mix(in srgb, var(--color-orange) 8%, transparent);
+        --orange-12: color-mix(in srgb, var(--color-orange) 15%, transparent);
+        --orange-22: color-mix(in srgb, var(--color-orange) 25%, transparent);
+        --blue-12: color-mix(in srgb, var(--color-blue) 15%, transparent);
+        --red-06: color-mix(in srgb, var(--color-red) 8%, transparent);
+        --red-15: color-mix(in srgb, var(--color-red) 15%, transparent);
+        --red-22: color-mix(in srgb, var(--color-red) 25%, transparent);
+        --yellow-14: color-mix(in srgb, var(--color-yellow) 14%, transparent);
+        --sombra-baja: 0 1px 3px rgba(0, 0, 0, 0.4);
+        --sombra-media: 0 4px 16px rgba(0, 0, 0, 0.5);
+        --sombra-alta: 0 12px 32px -4px rgba(0, 0, 0, 0.6), 0 4px 10px -2px rgba(0, 0, 0, 0.35);
+        --hover: brightness(1.2);
+        --ui-card-bg: var(--bg-card);
+        --ui-card-border-color: var(--border-color);
+    }
+}

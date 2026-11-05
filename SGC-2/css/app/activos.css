@@ -1,0 +1,861 @@
+/* app/activos.css: App, zona activos. */
+
+@layer app {
+
+
+    .stock-celda-truncate {
+        max-width: 220px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .stock-celda-clamp2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.25;
+        max-height: 2.5em;
+        max-width: 260px;
+        word-break: break-word;
+    }
+
+    .modal-disp-fila {
+        min-height: 36px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-disp-val {
+        width: 270px;
+        flex: 0 0 270px;
+        max-width: 62%;
+    }
+
+    @media (max-width: 480px) {
+        .modal-disp-val {
+            width: 210px;
+            flex: 0 0 210px;
+            max-width: 58%;
+        }
+    }
+
+    .popup-disp-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .popup-disp-acciones .btn {
+        border-radius: var(--radio-medio);
+        font-weight: 500;
+        font-size: var(--texto-sm);
+        padding: 6px var(--esp-3);
+        transition: none;
+    }
+
+    /* Fila de atajos con solo el ícono, abajo de las acciones con texto */
+    .popup-disp-iconos {
+        margin-top: var(--esp-1);
+    }
+
+    /* El texto de cada atajo solo se ve si es el único que queda a la vista (popupAcciones, en produccion.js) */
+    .popup-disp-icono-label {
+        display: none;
+    }
+
+    .popup-disp-iconos-solo .popup-disp-icono-label {
+        display: inline;
+    }
+
+    .popup-disp-acciones .btn:hover,
+    .popup-disp-acciones .btn:focus,
+    .popup-disp-acciones .btn:focus-visible,
+    .popup-disp-acciones .btn:active {
+        outline: 2px solid var(--ui-primary);
+        outline-offset: 1px;
+        box-shadow: none;
+        background-color: transparent;
+        color: var(--color-texto);
+        border-color: var(--border-color);
+    }
+
+    /* ─── ACTIVOS: MODO SELECCIÓN (stock-seleccion.js): lo marcado se distingue por el color, sin casilleros */
+
+    .stock-modo-seleccion .tabla-stock tbody tr,
+    .stock-modo-seleccion .stock-card {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .tabla-stock tbody tr > td,
+    .stock-card {
+        transition: background-color var(--dur-base) ease, box-shadow var(--dur-base) ease;
+    }
+
+    /* La misma marca en la lista (el fondo de la fila) y en las tarjetas (el fondo de la tarjeta): solo color, sin borde */
+    .tabla-stock tbody tr.stock-seleccionada > td,
+    .stock-card.stock-seleccionada {
+        background-color: var(--ui-primary-bg-subtle);
+    }
+
+    /* La lista se rearmó (cambió el estado de un equipo): lo marcado nace con su color, sin la transición del fondo (comun.js
+       `pintarSinTransicion`); si no, el color viajaba del normal al marcado y parpadeaba */
+    #stock-accordion.seleccion-sin-transicion *,
+    #produccion-accordion.seleccion-sin-transicion * {
+        transition: none;
+    }
+
+    /* Alta por lote (stock-alta-lote.js): una línea por dispositivo, sin cortar (se desplaza de lado) y a la misma altura las tres */
+    .stock-lote-area {
+        resize: none;
+        white-space: pre;
+        overflow-x: auto;
+        line-height: 1.4;
+    }
+
+    #stock-sel-contador,
+    #produccion-sel-contador {
+        display: inline-block;
+    }
+
+    /* Barra flotante en el borde de abajo de la ventana mientras hay selección activa: «N seleccionados» y sus acciones.
+       Le deja lugar abajo a la lista para que no tape lo último. */
+    #stock-accordion {
+        transition: padding-bottom var(--dur-anim) ease;
+    }
+
+    .stock-modo-seleccion {
+        padding-bottom: 5rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #stock-accordion {
+            transition: none;
+        }
+    }
+
+    .stock-seleccion-banner {
+        position: fixed;
+        right: 0;
+        bottom: 1rem;
+        left: 0;
+        z-index: var(--capa-flotante);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--esp-3);
+        width: fit-content;
+        max-width: calc(100% - 2rem);
+        margin: 0 auto;
+        padding: 0.35rem var(--esp-2) 0.35rem 0.85rem;
+        border: 1px solid var(--ui-primary);
+        border-radius: var(--radio-medio);
+        background-color: var(--bg-card);
+        box-shadow: var(--sombra-media);
+        font-size: var(--texto-sm);
+        transition: bottom var(--dur-panel) var(--ease-panel);
+    }
+
+    /* Con el panel lateral abajo y a la vista (barra a todo el ancho) la barra de selección sube sobre ella */
+    @media (min-width: 768px) {
+        html[data-panel-pos="bottom"]:has(#sidebar-col:not(.sidebar-collapsed)) .stock-seleccion-banner {
+            bottom: 5.5rem;
+        }
+    }
+
+    /* Entra y sale desde abajo (la mutación estándar escala desde arriba) */
+    .stock-seleccion-banner.mutacion-entrante,
+    .stock-seleccion-banner.mutacion-saliente {
+        transform-origin: bottom center;
+    }
+
+    /* ─── ACTIVOS: VISTA EN TARJETAS (ESTILO SGC) */
+
+    .stock-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+        gap: var(--esp-3);
+        padding: var(--esp-3);
+        background-color: transparent;
+    }
+
+    @media (max-width: 576px) {
+        .stock-cards-grid {
+            grid-template-columns: minmax(0, 1fr);          /* `1fr` solo no baja del contenido y ensancha la página */
+            gap: var(--esp-2);
+            padding: var(--esp-2);
+        }
+    }
+
+    .stock-card {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 82px;
+        display: flex;
+        align-items: center;
+        gap: var(--esp-3);
+        padding: 10px 14px;
+        background-color: var(--ui-card-bg, var(--bg-card));
+        border: 1px solid var(--border-color);
+        border-radius: var(--radio-grande);
+        cursor: pointer;
+        user-select: none;
+        min-height: 82px;
+        scroll-margin-top: calc(var(--navbar-height) + 60px);
+        scroll-margin-bottom: 40px;
+    }
+
+    .stock-card:focus,
+    .stock-card:focus-visible {
+        outline: 2px solid var(--ui-primary);
+        outline-offset: 1px;
+    }
+
+    .stock-subgrupos-tarjetas {
+        display: flex;
+        flex-direction: column;
+        background-color: transparent;
+    }
+
+    /* Nombre del grupo en Activos: naranja, abierto o cerrado (ambas vistas) */
+    .stock-acordeon-titulo {
+        color: var(--color-orange);
+    }
+
+    #stock-accordion .accordion-item {
+        background-color: transparent;
+        border: none;
+        content-visibility: auto;
+        contain-intrinsic-size: auto 54px;
+    }
+
+    #stock-accordion .accordion-button,
+    #stock-accordion .accordion-button:not(.collapsed) {
+        background-color: transparent;
+        border: none;
+    }
+
+    #stock-accordion .accordion-body {
+        background-color: transparent;
+        border: none;
+    }
+
+    #stock-accordion .accordion-header {
+        background-color: var(--bg-main);
+    }
+
+    #stock-accordion .accordion-button:hover {
+        background-color: var(--table-hover-bg);
+    }
+
+    #stock-accordion .table-responsive {
+        overflow: visible;
+    }
+
+    #stock-accordion .tabla-stock {
+        border: none;
+    }
+
+    #stock-accordion .tabla-stock td {
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    #stock-accordion .tabla-stock thead th {
+        position: sticky;
+        top: calc(var(--navbar-height) + var(--stock-header-height, 41px));
+        z-index: var(--capa-pegajosa);
+        background-color: var(--table-header-bg);
+        box-shadow: 0 1px 0 var(--border-color);
+    }
+
+    #stock-accordion .tabla-stock thead th[data-sort] {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+        transition: color var(--dur-fast) ease;
+    }
+
+    #stock-accordion .tabla-stock thead th[data-sort]:hover,
+    #stock-accordion .tabla-stock thead th[data-sort]:focus-visible {
+        color: var(--ui-primary);
+        outline: none;
+    }
+
+    #stock-accordion .tabla-stock thead th[data-sort] .bi {
+        font-size: var(--texto-xs);
+        vertical-align: baseline;
+    }
+
+    /* la columna que se está moviendo (mantener presionado y arrastrar el encabezado) */
+    #stock-accordion .tabla-stock thead th.reordenando {
+        background-color: var(--dropdown-item-hover);
+        box-shadow: var(--sombra-baja);
+        cursor: grabbing;
+    }
+
+    .stock-subgrupo-tbody {
+        border-top: none;
+    }
+
+    .stock-subgrupo-fila {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .stock-subgrupo-celda {
+        position: sticky;
+        top: calc(var(--navbar-height) + var(--stock-header-height, 41px) + var(--stock-th-height, 29px));
+        z-index: calc(var(--capa-pegajosa) - 1);
+        background-color: var(--bg-main);
+        padding: 7px var(--esp-3);
+        border-top: none;
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: none;
+    }
+
+    .stock-subgrupo-fila:hover,
+    .stock-subgrupo-fila:hover .stock-subgrupo-celda,
+    .stock-subgrupo-fila:focus,
+    .stock-subgrupo-fila:focus .stock-subgrupo-celda {
+        background-color: var(--bg-main);
+        background-image: linear-gradient(var(--table-hover-bg), var(--table-hover-bg));
+    }
+
+    /* El aro de foco de la fila de un subgrupo va en su celda (adentro): el de la fila quedaba debajo del fondo de la celda
+       (sticky, con fondo propio) y solo asomaban el borde de arriba y de abajo */
+    .stock-subgrupo-fila:focus-visible {
+        outline: none;
+    }
+
+    .stock-subgrupo-fila:focus-visible .stock-subgrupo-celda {
+        box-shadow: inset 0 0 0 2px var(--ui-primary);
+    }
+
+    .stock-subgrupo-bloque {
+        border-bottom: none;
+        background-color: transparent;
+    }
+
+    .stock-subgrupo-bloque:last-child {
+        border-bottom: none;
+    }
+
+    .stock-subgrupo-header {
+        cursor: pointer;
+        user-select: none;
+        background-color: var(--bg-main);
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: calc(var(--navbar-height) + var(--stock-header-height, 41px));
+        z-index: calc(var(--capa-pegajosa) - 1);
+    }
+
+    .stock-subgrupo-header:hover,
+    .stock-subgrupo-header:focus,
+    .stock-subgrupo-header:focus-visible {
+        background-color: var(--bg-main);
+        background-image: linear-gradient(var(--table-hover-bg), var(--table-hover-bg));
+    }
+
+    .stock-subgrupo-header:focus-visible {
+        outline: 2px solid var(--ui-primary);
+        outline-offset: -2px;
+    }
+
+    .stock-subgrupo-chevron {
+        transition: transform var(--dur-colapso) var(--ease-colapso);
+        display: inline-block;
+    }
+
+    .stock-subgrupo-colapsado .stock-subgrupo-chevron {
+        transform: rotate(-90deg);
+    }
+
+    .stock-subgrupo-cuerpo-tr,
+    .stock-subgrupo-cuerpo-tr:hover > * {
+        background-color: transparent;
+        padding: 0;
+        border: none;
+    }
+
+    .stock-subgrupo-cuerpo-tr td > .grid-collapse {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 120px;
+    }
+
+    .stock-card-thumb {
+        width: 54px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border-radius: var(--radio-medio);
+        background-color: transparent;
+    }
+
+    .stock-card-img {
+        max-width: 50px;
+        max-height: 44px;
+        object-fit: contain;
+        user-select: none;
+        pointer-events: none;
+    }
+
+    .stock-card-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        flex-grow: 1;
+        min-width: 0;
+        gap: 2px;
+    }
+
+    .stock-card-titulo {
+        font-size: var(--texto-md);
+        letter-spacing: -0.01em;
+        color: var(--color-texto);
+    }
+
+    .stock-card-sub {
+        font-size: var(--texto-xs);
+        line-height: 1.3;
+    }
+
+    .stock-card-pie {
+        font-size: var(--texto-xs);
+        line-height: 1.3;
+    }
+
+    /* Listar, paso «Ver»: el recuadro con la lista ocupa el alto que queda del modal (no las 10 filas fijas de antes). El otro paso
+       (elegir qué listar) sigue con su alto natural y se desplaza como siempre */
+    #stockExportModal .modal-body {
+        display: flex;
+        flex-direction: column;
+    }
+
+    #stockExportModal .modal-body > * {
+        flex-shrink: 0;
+    }
+
+    #stockExportModal #stock-exp-paso-preview:not(.d-none) {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    #stock-exp-preview-texto {
+        flex: 1 1 auto;
+        min-height: 8rem;
+        resize: none;
+    }
+
+    /* ─── Fichas de columnas para Listar (stockExportModal) */
+    .stock-chip-contenedor {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--esp-2);
+        align-items: center;
+        user-select: none;
+    }
+
+    .stock-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--esp-2);
+        padding: 6px var(--esp-3);
+        border-radius: var(--radio-medio);
+        font-size: var(--texto-sm);
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px dashed var(--border-color);
+        background-color: transparent;
+        color: var(--color-texto-suave);
+        transition: transform var(--dur-fast) ease,
+            box-shadow var(--dur-fast) ease,
+            background-color var(--dur-fast) ease;
+    }
+
+    .stock-chip * {
+        pointer-events: none;
+    }
+
+    .stock-chip:hover {
+        border-color: var(--ui-primary);
+        color: var(--color-texto);
+    }
+
+    .stock-chip-activa {
+        background-color: var(--ui-primary);
+        border: 1px solid var(--ui-primary);
+        color: var(--color-blue-on);
+        cursor: grab;
+    }
+
+    .stock-chip-activa:hover {
+        background-color: var(--ui-primary);
+        color: var(--color-blue-on);
+    }
+
+    .stock-chip-arrastrando {
+        opacity: 0.85;
+        transform: rotate(2deg) scale(1.04);
+        cursor: grabbing;
+        box-shadow: var(--sombra-media);
+        z-index: var(--capa-celda-fija);
+    }
+
+    .stock-chip-sobre {
+        outline: 2px dashed var(--ui-primary);
+        outline-offset: 2px;
+    }
+
+    .stock-chip-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: var(--color-blue-on);           /* el número va al revés que la ficha azul */
+        color: var(--color-blue);
+        font-size: var(--texto-xs);
+        font-weight: 700;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    .stock-chip-ayuda {
+        font-size: var(--texto-xs);
+    }
+
+    /* Catálogos: modal unificado de edificios, pisos y dispositivos */
+    .stock-cat-nav {
+        display: flex;
+        gap: var(--esp-1);
+        background: var(--dropdown-item-hover);
+        border: 1px solid var(--ui-border-color);
+        border-radius: var(--radio-medio);
+        padding: var(--esp-1);
+        margin-bottom: var(--esp-3);
+    }
+
+    .stock-cat-tab {
+        flex: 1;
+        padding: 7px var(--esp-3);
+        border-radius: var(--radio-chico);
+        border: none;
+        background: transparent;
+        color: var(--ui-secondary-color);
+        font-size: var(--texto-md);
+        font-weight: 500;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease;
+    }
+
+    .stock-cat-tab:hover {
+        color: var(--ui-body-color);
+        background: var(--dropdown-item-hover);
+    }
+
+    .stock-cat-tab.active {
+        background: var(--color-blue);
+        color: var(--color-blue-on);
+        font-weight: 600;
+    }
+
+    .stock-cat-subtitulo {
+        font-size: var(--texto-sm);
+        color: var(--ui-secondary-color);
+        margin-bottom: 14px;
+        line-height: 1.45;
+    }
+
+    .stock-cat-busqueda-fila {
+        display: flex;
+        gap: var(--esp-2);
+        margin-bottom: var(--esp-3);
+    }
+
+    .stock-cat-filtros-fila {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--esp-3);
+        gap: var(--esp-3);
+    }
+
+    .stock-cat-filtros {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .stock-cat-filtro-btn {
+        padding: 3px var(--esp-3);
+        border-radius: var(--ui-border-radius-pill);
+        border: 1px solid var(--ui-border-color);
+        background: transparent;
+        color: var(--ui-secondary-color);
+        font-size: var(--texto-sm);
+        cursor: pointer;
+        transition: border-color var(--dur-fast) ease,
+            color var(--dur-fast) ease,
+            background-color var(--dur-fast) ease;
+    }
+
+    .stock-cat-filtro-btn:hover {
+        border-color: var(--ui-secondary-color);
+        color: var(--ui-body-color);
+    }
+
+    .stock-cat-filtro-btn.active,
+    .stock-cat-filtro-activo {
+        background: var(--ui-secondary-bg);
+        border-color: var(--ui-secondary-color);
+        color: var(--ui-emphasis-color);
+        font-weight: 600;
+    }
+
+    .stock-cat-orden-btn {
+        background: transparent;
+        border: none;
+        color: var(--ui-secondary-color);
+        font-size: var(--texto-sm);
+        cursor: pointer;
+        padding: 3px 6px;
+        transition: color var(--dur-fast) ease;
+    }
+
+    .stock-cat-orden-btn:hover {
+        color: var(--ui-body-color);
+    }
+
+    .stock-cat-lista-card {
+        border: 1px solid var(--ui-border-color);
+        background: var(--dropdown-item-hover);
+        border-radius: var(--radio-medio);
+        overflow: hidden;
+    }
+
+    .stock-cat-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 9px 14px;
+        border-bottom: 1px solid var(--ui-border-color-translucent);
+        gap: var(--esp-3);
+        background: transparent;
+        transition: background-color var(--dur-fast) ease;
+    }
+
+    .stock-cat-item:last-child {
+        border-bottom: none;
+    }
+
+    .stock-cat-item:hover {
+        background: var(--dropdown-item-hover);
+    }
+
+    .stock-cat-item-izq {
+        display: flex;
+        align-items: center;
+        gap: var(--esp-2);
+        min-width: 0;
+        flex: 1;
+    }
+
+    .stock-cat-item-der {
+        display: flex;
+        align-items: center;
+        gap: var(--esp-3);
+        flex-shrink: 0;
+    }
+
+    .stock-cat-item-nombre {
+        font-size: var(--texto-md);
+        color: var(--ui-body-color);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .stock-cat-item-conteo {
+        min-width: 28px;
+        text-align: right;
+        font-size: var(--texto-md);
+        color: var(--ui-secondary-color);
+        flex-shrink: 0;
+    }
+
+    .stock-cat-btn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: var(--radio-chico);
+        border: 1px solid var(--ui-border-color);
+        background: transparent;
+        color: var(--ui-body-color);
+        font-size: var(--texto-sm);
+        cursor: pointer;
+        transition: background-color var(--dur-fast) ease,
+            border-color var(--dur-fast) ease,
+            color var(--dur-fast) ease;
+        padding: 0;
+    }
+
+    .stock-cat-btn-icon:hover:not(:disabled) {
+        background: var(--dropdown-item-hover);
+        color: var(--ui-emphasis-color);
+        border-color: var(--ui-secondary-color);
+    }
+
+    .stock-cat-btn-icon:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        border-color: var(--ui-border-color-translucent);
+    }
+
+    .stock-cat-btn-borrar-activo {
+        border-color: rgba(var(--ui-danger-rgb), 0.4);
+        color: var(--ui-danger-text-emphasis);
+    }
+
+    .stock-cat-btn-borrar-activo:hover:not(:disabled) {
+        background: rgba(var(--ui-danger-rgb), 0.15);
+        border-color: rgb(var(--ui-danger-rgb));
+        color: var(--ui-danger-text-emphasis);
+    }
+
+    .stock-badge-sistema {
+        display: inline-flex;
+        align-items: center;
+        padding: 1px 6px;
+        border-radius: var(--radio-chico);
+        font-size: var(--texto-xs);
+        font-weight: 500;
+        background: var(--ui-secondary-bg);
+        border: 1px solid var(--ui-border-color);
+        color: var(--ui-secondary-color);
+        flex-shrink: 0;
+    }
+
+    .stock-cat-card-grupo {
+        border: 1px solid var(--ui-border-color);
+        background: var(--dropdown-item-hover);
+        border-radius: var(--radio-medio);
+        margin-bottom: var(--esp-3);
+        overflow: hidden;
+        transition: border-color var(--dur-fast) ease;
+    }
+
+    .stock-cat-header-grupo {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: rgba(var(--ui-emphasis-color-rgb), 0.03);
+        cursor: pointer;
+        user-select: none;
+        gap: var(--esp-3);
+        transition: background-color var(--dur-fast) ease;
+    }
+
+    .stock-cat-header-grupo:hover {
+        background: rgba(var(--ui-emphasis-color-rgb), 0.05);
+    }
+
+    .stock-cat-grupo-izq {
+        display: flex;
+        align-items: center;
+        gap: var(--esp-2);
+        font-weight: 600;
+        font-size: var(--texto-base);
+        color: var(--ui-body-color);
+        min-width: 0;
+        flex: 1;
+    }
+
+    .stock-cat-chevron {
+        display: inline-block;
+        transition: transform var(--dur-base) ease;
+        font-size: var(--texto-xs);
+        color: var(--ui-secondary-color);
+        flex-shrink: 0;
+    }
+
+    .stock-cat-grupo-der {
+        display: flex;
+        align-items: center;
+        gap: var(--esp-2);
+        flex-shrink: 0;
+    }
+
+    .stock-cat-grupo-equipos {
+        font-size: var(--texto-md);
+        color: var(--ui-secondary-color);
+        margin-right: var(--esp-1);
+    }
+
+    .stock-cat-cuerpo-grupo {
+        border-top: 1px solid var(--ui-border-color-translucent);
+    }
+
+    .stock-cat-pie-grupo {
+        padding: var(--esp-2) var(--esp-3);
+        background: var(--ui-tertiary-bg);
+        border-top: 1px solid var(--ui-border-color-translucent);
+    }
+
+    .stock-cat-btn-subgrupo {
+        padding: var(--esp-1) 10px;
+        font-size: var(--texto-sm);
+        border-radius: var(--radio-chico);
+        border: 1px solid var(--ui-primary);
+        background: transparent;
+        color: var(--ui-primary);
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease;
+    }
+
+    .stock-cat-btn-subgrupo:hover {
+        background: rgba(var(--ui-primary-rgb), 0.15);
+    }
+
+    .stock-cat-drag-handle {
+        cursor: grab;
+        color: var(--ui-secondary-color);
+        display: inline-flex;
+        align-items: center;
+        padding: 0 var(--esp-1);
+        font-size: var(--texto-md);
+        flex-shrink: 0;
+    }
+
+    .stock-cat-drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .stock-cat-card-drop-target {
+        outline: 2px dashed var(--color-blue);
+        outline-offset: -2px;
+    }
+
+    .stock-cat-mover-select {
+        display: none;
+    }
+}

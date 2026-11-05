@@ -1,0 +1,74 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* componentes/toast.css: Componente toast: lo de Bootstrap y el aspecto de la app en una sola definición. */
+
+@layer componentes {
+    /* ─── Toast (#toast es propio pero usa esta clase) */
+
+    .toast {
+        -webkit-user-select: text;
+        user-select: text;
+        --ui-toast-font-size: var(--texto-md);
+        --ui-toast-bg: rgba(var(--ui-body-bg-rgb), 0.85);
+        font-size: var(--ui-toast-font-size);
+        background-color: var(--ui-toast-bg);
+        background-clip: padding-box;
+        border: 2px solid transparent;
+        display: flex;
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        justify-content: center;
+        align-items: center;
+        gap: var(--esp-3);
+        transform: translateX(-50%) translateY(80px);
+        transition: transform var(--dur-slow) ease, opacity var(--dur-slow) ease;
+        background: var(--bg-card);
+        color: var(--color-texto);
+        padding: var(--esp-4) var(--esp-6);
+        border-radius: var(--radio-medio);
+        box-shadow: var(--sombra-media);
+        opacity: 0;
+        z-index: var(--capa-aviso);
+        pointer-events: none;
+        width: calc(100% - 2rem);
+        max-width: 400px;
+        text-align: center;
+        font-weight: 500;
+        white-space: pre-line;
+        box-sizing: border-box;
+    }
+
+    /* ─── Solo existe un #toast en el HTML y ya lleva class="toast": con un único selector alcanza. */
+
+    [data-tema="dark"] .toast {
+        box-shadow: var(--sombra-media);
+    }
+
+    .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+        pointer-events: auto;
+        will-change: transform, opacity;
+    }
+
+    .toast.success {
+        border-color: var(--color-green);
+    }
+
+    .toast.error,
+    .toast.warning {
+        border-color: var(--color-red);
+    }
+
+    .toast.info {
+        border-color: var(--color-blue);
+    }
+
+    .toast.toast-accionable {
+        cursor: pointer;
+    }
+}

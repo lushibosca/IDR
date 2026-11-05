@@ -1,0 +1,151 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* componentes/tablas.css: Componente tablas: lo de Bootstrap y el aspecto de la app en una sola definición. */
+
+@layer componentes {
+    /* ─── Tablas */
+
+    .table {
+        --ui-table-color: var(--ui-body-color);
+        --ui-table-border-color: var(--ui-border-color);
+        width: 100%;
+        margin-bottom: 0;
+        vertical-align: top;
+        border-color: var(--ui-table-border-color);
+        color: var(--color-texto);
+        font-size: var(--texto-base);
+        background-color: transparent;
+    }
+
+    .table>:not(caption)>*>* {
+        padding: var(--esp-2) var(--esp-2);
+        color: var(--color-texto);
+        background-color: transparent;
+        box-shadow: none;
+    }
+
+    .table>tbody {
+        vertical-align: inherit;
+    }
+
+    .table>thead {
+        vertical-align: bottom;
+    }
+
+    .table-sm>:not(caption)>*>* {
+        padding: var(--esp-1) var(--esp-1);
+    }
+
+    .table-light {
+        --ui-table-color: var(--color-texto);
+        --ui-table-border-color: var(--border-color);
+        color: var(--ui-table-color);
+        border-color: var(--ui-table-border-color);
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* ─── Tables */
+
+    .table th {
+        background-color: var(--table-header-bg);
+        border-bottom: 1px solid var(--border-color);
+        font-weight: 600;
+        padding: 14px var(--esp-4);
+        white-space: nowrap;
+        text-transform: uppercase;
+        font-size: var(--texto-xs);
+        letter-spacing: 0.05em;
+    }
+
+    .table td {
+        border-bottom: 1px solid var(--border-color);
+        padding: 14px var(--esp-4);
+        vertical-align: middle;
+    }
+
+    .table-hover tbody tr:hover>* {
+        background-color: var(--table-hover-bg);
+        color: var(--color-texto);
+    }
+
+    /* ─── Tabla de Activos / Stock: filas compactas de hasta 2 líneas */
+
+    .tabla-stock {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .tabla-stock td {
+        padding-top: 5px;
+        padding-bottom: 5px;
+        line-height: 1.25;
+    }
+
+    .tabla-stock tbody tr {
+        cursor: pointer;
+        scroll-margin-top: calc(var(--navbar-height) + var(--stock-header-height, 41px) + var(--stock-th-height, 29px) + 38px);
+        scroll-margin-bottom: 40px;
+    }
+
+    .tabla-stock tbody tr:focus,
+    .tabla-stock tbody tr:focus-visible {
+        outline: 2px solid var(--ui-primary);
+        outline-offset: -2px;
+        background-color: var(--table-hover-bg);
+    }
+
+    .tabla-stock .col-stock-img { width: 5%; }
+    .tabla-stock .col-stock-tipo { width: 13%; }
+    .tabla-stock .col-stock-mac { width: 15%; }
+    .tabla-stock .col-stock-mod { width: 15%; }
+    .tabla-stock .col-stock-pat {
+        width: 16%;
+        white-space: nowrap;
+    }
+    .tabla-stock .col-stock-ubic { width: 21%; }
+    .tabla-stock .col-stock-com { width: 15%; }
+
+    /* Miniatura de la lista: una columna angosta, la imagen entra en una caja chica y centrada */
+    .tabla-stock .col-stock-img {
+        padding-right: 0;
+    }
+
+    .stock-lista-thumb {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        max-width: 2.75rem;
+        height: 1.75rem;
+    }
+
+    .stock-lista-img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .tabla-stock .col-stock-pat .stock-celda-truncate {
+        max-width: 140px;
+    }
+
+    /* Celular: las tablas de los modales de detalle (capacidad, alertas...) se compactan para que entren sin deslizar */
+    @media (max-width: 767.98px) {
+        .modal-body .table > :not(caption) > * > * {
+            padding: 0.4rem 0.3rem;
+            font-size: var(--texto-sm);
+        }
+
+        .modal-body .table th {
+            white-space: normal;
+            line-height: 1.15;
+        }
+    }
+}

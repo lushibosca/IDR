@@ -1,0 +1,138 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* componentes/insignias.css: Componente insignias: lo de Bootstrap y el aspecto de la app en una sola definición. */
+
+@layer componentes {
+    /* ─── Insignias */
+
+    .badge {
+        --ui-badge-font-size: 0.75em;
+        --ui-badge-color: #fff;
+        display: inline-block;
+        padding: 6px 10px;
+        font-size: var(--ui-badge-font-size);
+        font-weight: 500;
+        line-height: 1;
+        color: var(--ui-badge-color);
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: var(--radio-chico);
+    }
+
+    .badge:empty {
+        display: none;
+    }
+
+    /* ─── Estado Colapsado del Panel Lateral (Solo Íconos) */
+
+    @media (min-width: 768px) {
+        #sidebar-col.sidebar-collapsed .sidebar-search-badge {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            height: 16px;
+            min-width: 16px;
+            font-size: var(--texto-xs);
+            padding: 0 var(--esp-1);
+        }
+    }
+
+    /* ─── En móviles: mostrar únicamente los íconos de cada pestaña */
+
+    @media (max-width: 767.98px) {
+        #v-pills-tab .sidebar-search-badge {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            height: 16px;
+            min-width: 16px;
+            font-size: var(--texto-xs);
+            padding: 0 var(--esp-1);
+        }
+    }
+
+    /* ─── Insignias de coincidencia de búsqueda en el panel lateral */
+
+    .sidebar-search-badge {
+        --ui-badge-color: var(--color-blue);
+        font-size: var(--texto-sm);
+        font-weight: 600;
+        padding: 0 2px;
+        height: auto;
+        min-width: auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+        color: var(--color-blue);
+        border: none;
+        transition: color var(--dur-base) ease, opacity var(--dur-base) ease;
+        line-height: 1;
+        box-sizing: border-box;
+    }
+
+    .nav-pills .nav-link.active .sidebar-search-badge {
+        background-color: transparent;
+        color: var(--nav-active-text);
+        --ui-badge-color: var(--nav-active-text);
+        border: none;
+    }
+
+    /* ─── Acordeón Producción / Cámaras: Disposición SGC en 2 columnas */
+
+    .canal-ch-badge {
+        font-size: var(--texto-xs);
+        letter-spacing: 0.02em;
+        flex-shrink: 0;
+    }
+
+    .canal-item-estado {
+        font-size: var(--texto-xs);
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    /* ─── ACTIVOS: INSIGNIA DE ESTADO / CONDICIÓN (ESTILO SGC) */
+
+    .stock-card-pill {
+        font-size: var(--texto-xs);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 3px var(--esp-2);
+        max-width: 180px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
+    }
+
+    .stock-pill-primary {
+        background-color: var(--color-blue);
+        color: var(--color-blue-on);
+    }
+
+    .stock-pill-success {
+        background-color: var(--color-green);
+        color: var(--color-green-on);
+    }
+
+    .stock-pill-warning {
+        background-color: var(--color-yellow);
+        color: var(--color-yellow-on);
+    }
+
+    .stock-pill-danger {
+        background-color: var(--color-red);
+        color: var(--color-red-on);
+    }
+
+    .stock-pill-secondary {
+        background-color: var(--ui-secondary-bg);
+        color: var(--ui-secondary-color);
+    }
+
+}

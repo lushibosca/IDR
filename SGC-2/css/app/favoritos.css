@@ -1,0 +1,177 @@
+/* app/favoritos.css: App, sección Favoritos del panel Estado y estrella del popup del equipo. */
+
+@layer app {
+    .favoritos-grilla {
+        display: grid;
+        grid-template-columns: repeat(var(--favoritos-columnas, 4), minmax(0, 1fr));
+        gap: var(--esp-3);
+    }
+
+    .favorito-tile {
+        display: flex;
+        align-items: center;
+        gap: var(--esp-3);
+        min-width: 0;
+        padding: var(--esp-2) var(--esp-3);
+        background-color: var(--bg-card);
+        border-radius: var(--radio-grande);
+        box-shadow: var(--sombra-tarjeta);
+        cursor: pointer;
+        transition: filter var(--dur-fast) ease;
+    }
+
+    /* El tile que se está moviendo (pulsación larga): levantado, sobre los demás, que se deslizan a su lugar */
+    .favorito-tile.reordenando {
+        cursor: grabbing;
+        box-shadow: var(--sombra-media);
+        user-select: none;
+        position: relative;
+        z-index: 3;
+    }
+
+
+    .favorito-tile:focus-visible {
+        outline: 2px solid var(--ui-primary);
+        outline-offset: 2px;
+    }
+
+    /* «Solo íconos» (panel.favoritos_compacto): la foto del modelo con el punto de estado en la esquina; el nombre y el estado
+       salen en la etiqueta flotante. Las fichas se acomodan en renglones, sin columnas. */
+    .favoritos-grilla.favoritos-compacta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--esp-2);
+    }
+
+    .favoritos-compacta .favorito-tile {
+        position: relative;
+        padding: 0.4rem;
+    }
+
+    .favoritos-compacta .favorito-nombre,
+    .favoritos-compacta .favorito-estado > span:not(.favorito-punto) {
+        display: none;
+    }
+
+    .favoritos-compacta .favorito-estado {
+        position: absolute;
+        top: 0.25rem;
+        right: 0.25rem;
+    }
+
+    .favoritos-compacta .favorito-punto {
+        width: 10px;
+        height: 10px;
+        border: 2px solid var(--bg-card);
+        box-sizing: content-box;
+    }
+
+    /* La foto del modelo (o el ícono del tipo) en un cuadrado */
+    .favorito-icono {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radio-medio);
+        font-size: var(--texto-lg);
+        overflow: hidden;
+    }
+
+    .favorito-icono-cam {
+        background-color: var(--orange-12);
+        color: var(--color-orange);
+    }
+
+    .favorito-icono-nvr,
+    .favorito-icono-eq {
+        background-color: var(--ui-primary-bg-subtle);
+        color: var(--color-blue);
+    }
+
+    .favorito-foto {
+        pointer-events: none;
+        -webkit-user-drag: none;
+        user-select: none;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 3px;
+        background-color: var(--bg-card);
+    }
+
+    .favorito-texto {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: var(--esp-1);
+        min-width: 0;
+    }
+
+    .favorito-estado {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: var(--texto-xs);
+        color: var(--color-texto-suave);
+        white-space: nowrap;
+    }
+
+    .favorito-punto {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--color-texto-suave);
+    }
+
+    .favorito-online .favorito-punto {
+        background-color: var(--color-green);
+    }
+
+    .favorito-offline .favorito-punto {
+        background-color: var(--color-red);
+    }
+
+    .favorito-offline .favorito-estado {
+        color: var(--color-red);
+    }
+
+    .favorito-nombre {
+        font-size: var(--texto-md);
+        font-weight: 600;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Estrella del popup: sin texto; amarilla cuando el equipo está en Favoritos */
+    .popup-disp-fav {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border: 0;
+        border-radius: var(--radio-chico);
+        background: transparent;
+        color: var(--color-texto-suave);
+        cursor: pointer;
+        transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease;
+    }
+
+    .popup-disp-fav:hover {
+        background-color: var(--dropdown-item-hover);
+    }
+
+    .popup-disp-fav:focus-visible {
+        outline: 2px solid var(--ui-primary);
+        outline-offset: 1px;
+    }
+
+    .popup-disp-fav-activo {
+        color: var(--color-yellow);
+    }
+}

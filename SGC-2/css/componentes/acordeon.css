@@ -1,0 +1,169 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* componentes/acordeon.css: Componente acordeon: lo de Bootstrap y el aspecto de la app en una sola definición. */
+
+@layer componentes {
+    /* ─── Acordeón */
+
+    .accordion {
+        --ui-accordion-color: var(--ui-body-color);
+        --ui-accordion-transition: color var(--dur-fast) ease-in-out, background-color var(--dur-fast) ease-in-out, border-color var(--dur-fast) ease-in-out, box-shadow var(--dur-fast) ease-in-out, border-radius var(--dur-fast) ease;
+        --ui-accordion-border-radius: var(--ui-border-radius);
+        --ui-accordion-btn-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23212529'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+        --ui-accordion-btn-icon-width: 1.25rem;
+        --ui-accordion-btn-icon-transform: rotate(-180deg);
+        --ui-accordion-btn-icon-transition: transform var(--dur-colapso) var(--ease-colapso);   /* al ritmo del colapso */
+        --ui-accordion-btn-active-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23052c65'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+        --ui-accordion-btn-focus-border-color: color-mix(in srgb, var(--color-blue) 50%, var(--bg-card));
+        --ui-accordion-body-padding-x: 1.25rem;
+        --ui-accordion-body-padding-y: 1rem;
+    }
+
+    .accordion-button {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 14px 18px;
+        font-size: var(--texto-base);
+        text-align: left;
+        border: 0;
+        border-radius: var(--radio-medio);
+        overflow-anchor: none;
+        transition: var(--ui-accordion-transition);
+        color: var(--color-texto);
+        background-color: var(--bg-card);
+        font-weight: 500;
+        box-shadow: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .accordion-button {
+            transition: none;
+        }
+    }
+
+    .accordion-button:not(.collapsed)::after {
+        background-image: var(--ui-accordion-btn-active-icon);
+        transform: var(--ui-accordion-btn-icon-transform);
+    }
+
+    /* Texto corto a la derecha del encabezado, pegado a la flecha (uiItemAcordeon `detalle`: la IP del grabador en
+       Producción). Él toma el margen automático y la flecha queda a su lado. */
+    .accordion-detalle {
+        margin-left: auto;
+        padding-left: var(--esp-3);
+        padding-right: var(--esp-2);
+        color: var(--ui-secondary-color);
+        font-size: var(--texto-sm);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    /* Celular: el título, las insignias y la IP no entran en una línea; pasan a la siguiente en vez de ensanchar la página */
+    @media (max-width: 767.98px) {
+        .accordion-button {
+            flex-wrap: wrap;
+            row-gap: var(--esp-1);
+            padding-left: 14px;
+            padding-right: 14px;
+        }
+    }
+
+    .accordion-button.accordion-con-detalle::after {
+        margin-left: 0;
+    }
+
+    .accordion-button::after {
+        flex-shrink: 0;
+        width: var(--ui-accordion-btn-icon-width);
+        height: var(--ui-accordion-btn-icon-width);
+        margin-left: auto;
+        content: "";
+        background-image: var(--ui-accordion-btn-icon);
+        background-repeat: no-repeat;
+        background-size: var(--ui-accordion-btn-icon-width);
+        transition: var(--ui-accordion-btn-icon-transition);
+        filter: var(--ui-accordion-btn-icon-transform);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .accordion-button::after {
+            transition: none;
+        }
+    }
+
+    .accordion-button:hover {
+        z-index: 2;
+        background-color: var(--table-hover-bg);
+    }
+
+    .accordion-button:focus {
+        z-index: 3;
+        border-color: var(--ui-accordion-btn-focus-border-color);
+    }
+
+    /* Aro de foco por teclado adentro del botón (con el contorno de afuera, el borde redondeado del grupo y los vecinos lo recortaban) */
+    .accordion-button:focus-visible {
+        outline: 2px solid var(--ui-primary);
+        outline-offset: -2px;
+    }
+
+    .accordion-header {
+        margin-bottom: 0;
+        position: sticky;
+        top: var(--navbar-height);
+        z-index: var(--capa-pegajosa);
+        background-color: var(--bg-card);
+        border-radius: var(--radio-medio);
+    }
+
+    .accordion-item {
+        color: var(--ui-accordion-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radio-medio);
+        margin-bottom: var(--esp-2);
+        background-color: var(--bg-card);
+        scroll-margin-top: calc(var(--navbar-height) + 12px);
+    }
+
+    .accordion-item:not(:first-of-type) {
+        border-top: 0;
+    }
+
+    .accordion-item:last-of-type .accordion-collapse {
+        border-bottom-right-radius: var(--ui-accordion-border-radius);
+        border-bottom-left-radius: var(--ui-accordion-border-radius);
+    }
+
+    .accordion-body {
+        padding: var(--ui-accordion-body-padding-y) var(--ui-accordion-body-padding-x);
+        background-color: var(--bg-card);
+    }
+
+    [data-tema=dark] .accordion-button::after {
+        --ui-accordion-btn-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%236ea8fe'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+        --ui-accordion-btn-active-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%236ea8fe'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+        filter: invert(0.7) brightness(1.1);
+    }
+
+    /* ─── Accordion */
+
+    .accordion-button:not(.collapsed) {
+        color: var(--color-texto);
+        background-color: var(--bg-card);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+
+
+    /* ─── Solo acordeones: cerrado no debe dejar padding ni borde visibles */
+
+    .accordion-collapse.grid-collapse:not(.show)>.accordion-body {
+        padding: 0;
+        border: none;
+    }
+}

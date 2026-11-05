@@ -1,0 +1,267 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* componentes/modal.css: Componente modal: lo de Bootstrap y el aspecto de la app en una sola definición. */
+
+@layer componentes {
+    /* ─── Modal */
+
+    .modal {
+        --ui-modal-zindex: var(--capa-modal);
+        --ui-modal-width: 500px;
+        --ui-modal-padding: 1rem;
+        --ui-modal-margin: 0.5rem;
+        --ui-modal-color: ;
+        --ui-modal-bg: var(--ui-body-bg);
+        --ui-modal-border-color: var(--ui-border-color-translucent);
+        --ui-modal-border-width: var(--ui-border-width);
+        --ui-modal-border-radius: var(--ui-border-radius-lg);
+        --ui-modal-inner-border-radius: calc(var(--ui-border-radius-lg) - (var(--ui-border-width)));
+        --ui-modal-header-padding-x: 1rem;
+        --ui-modal-header-padding-y: 1rem;
+        --ui-modal-header-padding: 1rem 1rem;
+        --ui-modal-header-border-color: var(--ui-border-color);
+        --ui-modal-header-border-width: var(--ui-border-width);
+        --ui-modal-title-line-height: 1.5;
+        --ui-modal-footer-gap: 0.5rem;
+        --ui-modal-footer-bg: ;
+        --ui-modal-footer-border-color: var(--ui-border-color);
+        --ui-modal-footer-border-width: var(--ui-border-width);
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: var(--ui-modal-zindex);
+        display: none;
+        width: 100%;
+        height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+        outline: 0;
+    }
+
+    .modal-dialog {
+        position: relative;
+        width: auto;
+        margin: var(--ui-modal-margin);
+        pointer-events: none;
+    }
+
+    /* estado de partida (al abrir) y de llegada (al cerrar) de la animación desde el clic */
+    .modal.fade .modal-dialog {
+        transition: var(--apple-modal-out);
+        transform: scale(0.15);
+        opacity: 0;
+        transform-origin: center center;
+        will-change: transform, opacity;
+    }
+
+    /* Modal flotante («PiP», data-ui-flotar): no bloquea la página y se arrastra desde cualquier parte de su contenido. El
+       contenedor deja pasar los clics; solo el diálogo los recibe */
+    .modal.modal-flotante {
+        pointer-events: none;
+        overflow: visible;
+    }
+
+    .modal-flotante .modal-dialog {
+        position: fixed;
+        margin: 0;
+        min-height: 0;
+        width: clamp(14rem, 36vw, 30rem);              /* en pantallas chicas, una ventanita: no casi todo el ancho */
+        max-width: none;
+        pointer-events: auto;
+    }
+
+    .modal-flotante .modal-content {
+        box-shadow: var(--sombra-media), 0 0 0 1px var(--ui-border-color);
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+    }
+
+    .modal-flotante-arrastrando .modal-content {
+        cursor: grabbing;
+    }
+
+    .modal-dialog-scrollable {
+        height: calc(100% - var(--ui-modal-margin) * 2);
+    }
+
+    .modal-dialog-scrollable .modal-content {
+        max-height: 100%;
+        overflow: hidden;
+    }
+
+    .modal-dialog-scrollable .modal-body {
+        overflow-y: auto;
+        overflow-x: auto;
+    }
+
+    .modal-dialog-centered {
+        display: flex;
+        align-items: center;
+        min-height: calc(100% - var(--ui-modal-margin) * 2);
+    }
+
+    .modal-content {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        color: var(--ui-modal-color);
+        pointer-events: auto;
+        background-color: var(--ui-modal-bg);
+        background-clip: padding-box;
+        border: var(--ui-modal-border-width) solid var(--ui-modal-border-color);
+        border-radius: var(--ui-modal-border-radius);
+        outline: 0;
+    }
+
+    .modal-backdrop {
+        --ui-backdrop-zindex: var(--capa-modal-fondo);
+        --ui-backdrop-bg: #000;
+        --ui-backdrop-opacity: 0.5;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: var(--ui-backdrop-zindex);
+        width: 100vw;
+        height: 100vh;
+        background-color: var(--ui-backdrop-bg);
+    }
+
+    .modal-backdrop.fade {
+        opacity: 0;
+    }
+
+    .modal-backdrop.show {
+        opacity: var(--ui-backdrop-opacity);
+    }
+
+    .modal-header {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--ui-modal-header-padding);
+        border-bottom: var(--ui-modal-header-border-width) solid var(--ui-modal-header-border-color);
+        border-top-left-radius: var(--ui-modal-inner-border-radius);
+        border-top-right-radius: var(--ui-modal-inner-border-radius);
+    }
+
+    .modal-header .btn-close {
+        padding: calc(var(--ui-modal-header-padding-y) * .5) calc(var(--ui-modal-header-padding-x) * .5);
+        margin: calc(-.5 * var(--ui-modal-header-padding-y)) calc(-.5 * var(--ui-modal-header-padding-x)) calc(-.5 * var(--ui-modal-header-padding-y)) auto;
+    }
+
+    .modal-title {
+        margin-bottom: 0;
+        line-height: var(--ui-modal-title-line-height);
+    }
+
+    .modal-body {
+        position: relative;
+        flex: 1 1 auto;
+        padding: var(--ui-modal-padding);
+    }
+
+    .modal-footer {
+        display: flex;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        padding: calc(var(--ui-modal-padding) - var(--ui-modal-footer-gap) * .5);
+        background-color: var(--ui-modal-footer-bg);
+        border-top: var(--ui-modal-footer-border-width) solid var(--ui-modal-footer-border-color);
+        border-bottom-right-radius: var(--ui-modal-inner-border-radius);
+        border-bottom-left-radius: var(--ui-modal-inner-border-radius);
+    }
+
+    .modal-footer>* {
+        margin: calc(var(--ui-modal-footer-gap) * .5);
+    }
+
+    @media (min-width: 576px) {
+        .modal {
+            --ui-modal-margin: 1.75rem;
+        }
+
+        .modal-dialog {
+            max-width: var(--ui-modal-width);
+            margin-right: auto;
+            margin-left: auto;
+        }
+    }
+
+    @media (min-width: 992px) {
+        .modal-lg{
+            --ui-modal-width: 800px;
+        }
+    }
+
+    /* ─── Modal de Dispositivo Unificado (Inspector compacto con scrollbar) */
+
+    /* Cuerpo que cambia de alto con animación (Listar, Catálogos, Conciliación de stock.js): el lugar de la barra de
+       scroll queda reservado, así el contenido no se ensancha ni se angosta cuando la barra aparece o se va. */
+    .modal-body-estable {
+        scrollbar-gutter: stable;
+        overflow-x: hidden;               /* el deslizamiento entre pestañas (uiDeslizarCambio) no crea scroll de lado */
+    }
+
+    .modal-dispositivo {
+        max-width: 920px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Ficha en dos columnas (desde 768 px): arriba imagen y gráfico, abajo red y dispositivo | detalles de instalación */
+    .modal-disp-cols {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        column-gap: var(--esp-6);
+    }
+
+    @media (min-width: 768px) {
+        .modal-disp-cols {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    .modal-dispositivo .modal-body {
+        max-height: calc(85vh - 120px);
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    /* ─── Modales que siguen el tema (claro/oscuro) */
+
+    .modal-tema {
+        background-color: var(--bg-card);
+        color: var(--color-texto);
+        border: 1px solid var(--border-color);
+    }
+
+    /* ─── MODALES (Estilo Apple: apertura y cierre desde el origen del clic) */
+
+    .modal.show .modal-dialog {
+        transform: scale(1);
+        opacity: 1;
+        transition: var(--apple-modal-in);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .modal.fade .modal-dialog {
+            transform: none;
+            opacity: 0;
+            transition: opacity var(--dur-fast) ease-out;
+        }
+
+        .modal.show .modal-dialog {
+            transform: none;
+            opacity: 1;
+            transition: opacity var(--dur-fast) ease-out;
+        }
+    }
+}

@@ -1,0 +1,263 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* componentes/navegacion.css: Componente navegacion: lo de Bootstrap y el aspecto de la app en una sola definición. */
+
+@layer componentes {
+    /* ─── Navegación */
+
+    .nav {
+        --ui-nav-link-padding-x: 1rem;
+        --ui-nav-link-padding-y: 0.5rem;
+        --ui-nav-link-disabled-color: var(--ui-secondary-color);
+        display: flex;
+        flex-wrap: wrap;
+        padding-left: 0;
+        margin-bottom: 0;
+        list-style: none;
+    }
+
+    .nav-item {
+        display: inline-block;
+    }
+
+    .nav-link {
+        display: block;
+        padding: var(--ui-nav-link-padding-y) var(--ui-nav-link-padding-x);
+        text-decoration: none;
+        background: 0 0;
+        border: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .nav-link {
+            transition: none;
+        }
+    }
+
+    .nav-link:focus-visible {
+        outline: 0;
+        box-shadow: var(--foco-anillo);
+    }
+
+    .nav-link.disabled {
+        color: var(--ui-nav-link-disabled-color);
+        pointer-events: none;
+        cursor: default;
+    }
+
+    .nav-pills .nav-link:disabled {
+        color: var(--ui-nav-link-disabled-color);
+        background-color: transparent;
+        border-color: transparent;
+    }
+
+    .tab-content>.tab-pane {
+        display: none;
+    }
+
+    /* ─── Barra superior */
+
+    .navbar {
+        --ui-navbar-padding-x: 0;
+        --ui-navbar-padding-y: 0.5rem;
+        --ui-navbar-brand-padding-y: 0.3125rem;
+        --ui-navbar-brand-margin-end: 1rem;
+        --ui-navbar-brand-font-size: var(--texto-lg);
+        --ui-navbar-brand-color: rgba(var(--ui-emphasis-color-rgb), 1);
+        --ui-navbar-brand-hover-color: rgba(var(--ui-emphasis-color-rgb), 1);
+        position: sticky;
+        top: 0;
+        z-index: var(--capa-barra);
+        background-color: var(--bg-card);
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: var(--sombra-baja);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--ui-navbar-padding-y) var(--ui-navbar-padding-x);
+    }
+
+    .navbar>.container-fluid {
+        display: flex;
+        flex-wrap: inherit;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .navbar-brand {
+        padding-top: var(--ui-navbar-brand-padding-y);
+        padding-bottom: var(--ui-navbar-brand-padding-y);
+        margin-right: var(--ui-navbar-brand-margin-end);
+        font-size: var(--ui-navbar-brand-font-size);
+        color: var(--ui-navbar-brand-color);
+        text-decoration: none;
+        white-space: nowrap;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+
+    .navbar-brand:focus,
+    .navbar-brand:hover {
+        color: var(--ui-navbar-brand-hover-color);
+    }
+
+    @media (min-width: 992px) {
+        .navbar-expand-lg {
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+        }
+    }
+
+    .navbar[data-tema=dark] {
+        --ui-navbar-brand-color: var(--color-texto);
+        --ui-navbar-brand-hover-color: var(--color-texto);
+    }
+
+    /* ─── Sidebar / Tabs */
+
+    #v-pills-tab {
+        flex-direction: column;
+    }
+
+    #v-pills-tab .nav-link {
+        justify-content: space-between;
+    }
+
+    /* ─── En móviles: mostrar únicamente los íconos de cada pestaña */
+
+    @media (max-width: 767.98px) {
+        #v-pills-tab {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 6px;
+            width: 100%;
+            padding-bottom: var(--esp-1);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        #v-pills-tab .nav-link {
+            flex: 1 1 0;
+            min-width: 0;
+            white-space: nowrap;
+            margin-bottom: 0;
+            padding: var(--esp-2) 0;
+            justify-content: center;
+            text-align: center;
+            min-height: 42px;
+            position: relative;
+        }
+    }
+
+    @media (min-width: 768px) {
+        #sidebar-col.sidebar-collapsed .nav-pills .nav-link {
+            justify-content: center;
+            text-align: center;
+            padding: 10px 0;
+            position: relative;
+        }
+    }
+
+    .nav-pills .nav-link {
+        color: var(--color-texto-suave);
+        border-radius: var(--radio-medio);
+        padding: 10px var(--esp-4);
+        margin-bottom: 6px;
+        font-weight: 500;
+        min-height: 44px;
+        transition: background-color var(--dur-base) ease, color var(--dur-base) ease,
+            padding var(--dur-panel) var(--ease-panel);
+    }
+
+    .nav-pills .nav-link:hover {
+        background-color: var(--nav-hover);
+        color: var(--color-texto);
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: var(--nav-active-bg);
+        color: var(--nav-active-text);
+    }
+
+    /* ─── Pestañas horizontales (estilo pills estandarizado: Ayuda, Auditoría, Modal Listar) */
+
+    .nav-subtabs,
+    #auditoria-subtabs,
+    #stock-exp-modos {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--esp-1);
+        border: none;
+    }
+
+    .nav-subtabs .nav-link,
+    #auditoria-subtabs .nav-link,
+    #stock-exp-modos .nav-link,
+    #stock-exp-modos [data-stock-exp-modo] {
+        font-size: var(--texto-sm);
+        font-weight: 500;
+        border: none;
+        border-radius: var(--radio-medio);
+        color: var(--color-texto-suave);
+        padding: 0.35rem 0.75rem;
+        min-height: auto;
+        margin-bottom: 0;
+        background-color: transparent;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        transition: background-color var(--dur-base) ease, color var(--dur-base) ease;
+    }
+
+    .nav-subtabs .nav-link:hover,
+    .nav-subtabs .nav-link:focus,
+    #auditoria-subtabs .nav-link:hover,
+    #auditoria-subtabs .nav-link:focus,
+    #stock-exp-modos .nav-link:hover,
+    #stock-exp-modos .nav-link:focus,
+    #stock-exp-modos [data-stock-exp-modo]:hover,
+    #stock-exp-modos [data-stock-exp-modo]:focus {
+        background-color: var(--nav-hover);
+        color: var(--color-texto);
+    }
+
+    .nav-subtabs .nav-link.active,
+    #auditoria-subtabs .nav-link.active,
+    #stock-exp-modos .nav-link.active,
+    #stock-exp-modos [data-stock-exp-modo].active {
+        background-color: var(--nav-active-bg);
+        color: var(--nav-active-text);
+        font-weight: 600;
+    }
+
+    .nav-subtabs .nav-link:focus-visible,
+    #auditoria-subtabs .nav-link:focus-visible,
+    #stock-exp-modos .nav-link:focus-visible,
+    #stock-exp-modos [data-stock-exp-modo]:focus-visible {
+        outline: 2px solid var(--ui-primary);
+        outline-offset: 1px;
+    }
+
+    .preload-tab #v-pills-dashboard {
+        display: none;
+    }
+
+    .preload-tab #v-pills-dashboard-tab {
+        background-color: transparent;
+        color: var(--color-texto-suave);
+    }
+
+    /* ─── Corrección de salto (margin collapse) en animaciones de mutación */
+
+    .tab-content>.active {
+        display: flow-root;
+    }
+}

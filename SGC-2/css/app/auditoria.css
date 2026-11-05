@@ -1,0 +1,201 @@
+/* app/auditoria.css: App, zona auditoria. */
+
+@layer app {
+
+    /* ─── Acordeones de Auditoría de Video (estilo simple como Producción y Activos) */
+
+    #audvid-resultado .accordion-item {
+        background-color: transparent;
+        border: none;
+    }
+
+    #audvid-resultado .accordion-button,
+    #audvid-resultado .accordion-button:not(.collapsed) {
+        background-color: transparent;
+        border: none;
+    }
+
+    #audvid-resultado .accordion-body {
+        background-color: transparent;
+        border: none;
+        padding: 0;
+    }
+
+    #audvid-resultado .accordion-header {
+        background-color: var(--bg-card);
+    }
+
+    #audvid-resultado .accordion-button:hover {
+        background-color: var(--table-hover-bg);
+    }
+
+    /* ─── Paneles de resultado de las consultas a demanda (index.html: `.panel-resultado`, hijo directo de su tarjeta;
+       `.resultado-tabla`: el resultado es una tabla de registros, como Logs de servidores y Disponibilidad). Una
+       pantalla nueva solo suma la clase en el HTML. */
+
+    .resultado-tabla table,
+    #audvid-table,
+    #audgrab-resultado table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .resultado-tabla td,
+    #audvid-resultado td {
+        padding-top: 5px;
+        padding-bottom: 5px;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .panel-resultado .card-footer {
+        border-bottom-left-radius: calc(var(--radio-grande) - 1px);
+        border-bottom-right-radius: calc(var(--radio-grande) - 1px);
+    }
+
+    @media (min-width: 768px) {
+        #audvid-tabla-collapse .table-responsive,
+        .resultado-tabla .table-responsive {
+            overflow: visible;
+        }
+
+        .resultado-tabla thead th {
+            position: sticky;
+            top: var(--navbar-height);
+            z-index: var(--capa-pegajosa);
+            background-color: var(--table-header-bg);
+            box-shadow: 0 1px 0 var(--border-color);
+        }
+
+        #audvid-table thead th {
+            position: sticky;
+            top: calc(var(--navbar-height) + var(--stock-header-height, 41px));
+            z-index: var(--capa-pegajosa);
+            background-color: var(--table-header-bg);
+            box-shadow: 0 1px 0 var(--border-color);
+        }
+    }
+
+    #audvid-table thead th[data-sort] {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+        transition: color var(--dur-fast) ease;
+    }
+
+    #audvid-table thead th[data-sort]:hover,
+    #audvid-table thead th[data-sort]:focus-visible {
+        color: var(--ui-primary);
+        outline: none;
+    }
+
+    #audvid-table thead th[data-sort] .bi {
+        font-size: var(--texto-xs);
+        vertical-align: baseline;
+        transition: color var(--dur-fast) ease;
+    }
+
+    /* ─── Tablas de discrepancias en Homogeneidad por modelo */
+
+    #audvid-homog-lista .table-responsive {
+        overflow-x: auto;
+    }
+
+    /* ─── Historial / Logs */
+
+    #logs-container {
+        background-color: var(--bg-card);
+        color: var(--color-texto);
+        border: none;
+        border-radius: 0 0 var(--radio-grande) var(--radio-grande);
+        overflow-y: visible;
+        font-size: var(--texto-md);
+        line-height: 1.6;
+        min-height: 400px;
+        white-space: pre-wrap;
+    }
+
+    /* ─── Filas-atajo de las tarjetas de Auditoría > Grabador: «Canales en uso» (pestaña Cámaras), «Auditoría  */
+
+        [data-auditoria-nvr],
+    #audgrab-tarjetas .stock-ubicacion {
+        cursor: pointer;
+        border-radius: var(--radio-chico);
+        margin: 0 -6px;
+        padding: 1px 6px;
+        transition: filter var(--transition-ui), background-color var(--dur-fast) ease;
+    }
+
+        [data-auditoria-nvr]:hover,
+    [data-auditoria-nvr]:focus-visible,
+    #audgrab-tarjetas .stock-ubicacion:hover,
+    #audgrab-tarjetas .stock-ubicacion:focus-visible {
+        background-color: var(--nav-hover);
+    }
+
+        [data-auditoria-nvr] .bi,
+    #audgrab-tarjetas .stock-ubicacion .bi {
+        font-size: var(--texto-xs);
+        opacity: 0.7;
+    }
+
+    /* ─── Auditoría > Cámara: resultados de búsqueda con estilo popup y scrollbar delgado */
+
+    
+
+    /* ─── Anchos de columnas de las tablas de logs y auditoría de video */
+
+    
+
+    .ancho-15 {
+        width: 15%;
+    }
+
+    .ancho-17 {
+        width: 17%;
+    }
+
+    /* ─── Modal de auditoría de grabador en 2 columnas (Almacenamiento) */
+
+    
+    @media (min-width: 768px) {
+        #audgrab-modal .modal-lg {
+            --ui-modal-width: min(840px, calc(100vw - 3.5rem));
+        }
+
+    }
+
+    /* ─── Tarjeta con imagen del dispositivo auditado (Grabador y Cámara) */
+
+    .auditoria-card-img-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex: 1 1 auto;
+        min-height: 170px;
+        padding: var(--esp-3);
+        background-color: transparent;
+        border: 1px solid transparent;
+        border-radius: var(--radio-medio);
+        overflow: hidden;
+    }
+
+    .auditoria-card-img {
+        max-width: 100%;
+        max-height: 155px;
+        object-fit: contain;
+        user-select: none;
+        pointer-events: none;
+    }
+
+    .auditoria-card-img-fallback {
+        font-size: 2.75rem;
+        line-height: 1;
+        color: var(--color-texto-suave);
+        opacity: 0.5;
+        user-select: none;
+    }
+}
+

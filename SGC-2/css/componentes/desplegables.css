@@ -1,0 +1,290 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* componentes/desplegables.css: Componente desplegables: lo de Bootstrap y el aspecto de la app en una sola definición. */
+
+@layer componentes {
+    /* ─── Desplegables */
+
+    .dropdown {
+        position: relative;
+    }
+
+    .dropdown-toggle {
+        white-space: nowrap;
+    }
+
+    .dropdown-toggle::after {
+        display: inline-block;
+        margin-left: .255em;
+        vertical-align: .255em;
+        content: "";
+        border-top: .3em solid;
+        border-right: .3em solid transparent;
+        border-bottom: 0;
+        border-left: .3em solid transparent;
+    }
+
+    .dropdown-toggle:empty::after {
+        margin-left: 0;
+    }
+
+    .dropdown-menu {
+        --ui-dropdown-min-width: 10rem;
+        --ui-dropdown-font-size: var(--texto-base);
+        --ui-dropdown-color: var(--ui-body-color);
+        --ui-dropdown-link-active-color: var(--color-blue-on);
+        --ui-dropdown-link-active-bg: var(--color-blue);
+        --ui-dropdown-link-disabled-color: var(--ui-tertiary-color);
+        position: absolute;
+        display: none;
+        min-width: var(--ui-dropdown-min-width);
+        max-height: calc(100vh - var(--navbar-height, 58px) - 24px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+        padding: 6px;
+        margin: 0;
+        font-size: var(--ui-dropdown-font-size);
+        color: var(--ui-dropdown-color);
+        text-align: left;
+        list-style: none;
+        background-clip: padding-box;
+        border: 1px solid var(--dropdown-border);
+        border-radius: var(--radio-grande);
+        background-color: var(--dropdown-bg);
+        box-shadow: var(--dropdown-shadow);
+        margin-top: var(--esp-2);
+        transform-origin: top left;
+        z-index: var(--capa-barra);
+    }
+
+    .dropdown-menu-end {
+        transform-origin: top right;
+    }
+
+    .dropdown-divider {
+        height: 0;
+        margin: 5px var(--esp-1);
+        overflow: hidden;
+        border: none;
+        border-top: 1px solid var(--border-color);
+        opacity: 0.6;
+    }
+
+    .dropdown-item {
+        width: 100%;
+        padding: 7px var(--esp-3);
+        clear: both;
+        text-align: inherit;
+        text-decoration: none;
+        white-space: nowrap;
+        background-color: transparent;
+        border: 0;
+        border-radius: var(--radio-medio);
+        margin: 1px 0;
+        font-size: var(--texto-md);
+        font-weight: 500;
+        color: var(--color-texto);
+        transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease, transform var(--dur-snap) ease;
+        display: flex;
+        align-items: center;
+    }
+
+    .dropdown-item.active {
+        color: var(--ui-dropdown-link-active-color);
+        text-decoration: none;
+        background-color: var(--ui-dropdown-link-active-bg);
+    }
+
+    .dropdown-item:active {
+        color: var(--ui-dropdown-link-active-color);
+        text-decoration: none;
+        background-color: var(--ui-dropdown-link-active-bg);
+        transform: scale(0.98);
+    }
+
+    .dropdown-item.disabled,
+    .dropdown-item:disabled {
+        color: var(--ui-dropdown-link-disabled-color);
+        pointer-events: none;
+        background-color: transparent;
+    }
+
+    .dropdown-menu[data-ui-posicion="estatica"] {
+        top: 100%;
+    }
+
+    .dropdown-menu-end[data-ui-posicion="estatica"] {
+        right: 0;
+        left: auto;
+    }
+
+    .dropdown-menu[data-ui-posicion^="top"] {
+        margin-top: 0;
+        margin-bottom: var(--esp-2);
+        transform-origin: bottom left;
+    }
+
+    .dropdown-menu-end[data-ui-posicion^="top"] {
+        transform-origin: bottom right;
+    }
+
+    .dropdown-menu.show {
+        display: block;
+        animation: dropdownPopupIn var(--dur-panel) var(--ease-pop) forwards;
+        will-change: scale, translate, opacity;
+    }
+
+    .dropdown-menu[data-ui-posicion^="top"].show {
+        animation-name: dropdownPopupTopIn;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .dropdown-menu.show {
+            animation: none;
+        }
+    }
+
+    .dropdown-header {
+        display: block;
+        padding: 6px var(--esp-3) var(--esp-1) var(--esp-3);
+        margin-bottom: 0;
+        white-space: nowrap;
+        font-size: var(--texto-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-texto-suave);
+    }
+
+    /* Menús de opciones con dos columnas (Activos: Énfasis a la izquierda, Mostrar a la derecha), solo en escritorio: en pantallas
+       chicas las columnas van una debajo de la otra */
+    .dropdown-columna {
+        list-style: none;
+    }
+
+    @media (min-width: 768px) {
+        .menu-columnas.show {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--esp-2);
+        }
+
+        #search-filter-menu {
+            min-width: 380px;
+        }
+
+        .menu-columnas > .dropdown-columna {
+            flex: 1 1 0;
+            min-width: 175px;
+        }
+
+        .menu-columnas > .dropdown-columna + .dropdown-columna {
+            padding-left: var(--esp-2);
+            border-left: 1px solid var(--border-color);
+        }
+    }
+
+    /* ─── Estado Colapsado del Panel Lateral (Solo Íconos) */
+
+    @media (min-width: 768px) {
+        .search-filter-dropdown {
+            transition: opacity var(--dur-pop-soft) var(--ease-panel);
+        }
+    }
+
+    /* ─── Search Input (Sidebar) */
+
+    .search-filter-dropdown {
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 3;
+    }
+
+    /* ─── Menús de la barra superior: ui.js no los calcula, van debajo de su botón (lo que antes hacía Bootstr */
+
+    .dropdown-item:hover,
+    .dropdown-item:focus {
+        background-color: var(--dropdown-item-hover);
+        color: var(--color-texto);
+    }
+
+    /* ─── Bootstrap le pone fondo azul sólido a .dropdown-item.active por defecto; */
+
+    .search-filter-item.active,
+    .search-filter-item:active,
+    .search-filter-panel-item.active,
+    .search-filter-panel-item:active,
+    .item-casilla.active,
+    .item-casilla:active {
+        background-color: var(--blue-12);
+        color: var(--color-blue);
+        font-weight: 600;
+    }
+
+    /* ─── Menús de la barra superior: ui.js no los calcula, van debajo de su botón (lo que antes hacía Bootstr */
+
+    [data-tema="dark"] .dropdown-item:hover:not(
+        .search-filter-item.active, .search-filter-item:active,
+        .search-filter-panel-item.active, .search-filter-panel-item:active,
+        .item-casilla.active, .item-casilla:active
+    ),
+    [data-tema="dark"] .dropdown-item:focus:not(
+        .search-filter-item.active, .search-filter-item:active,
+        .search-filter-panel-item.active, .search-filter-panel-item:active,
+        .item-casilla.active, .item-casilla:active
+    ) {
+        color: var(--color-texto);
+    }
+
+    /* ─── Menú del select propio (el botón, en formularios.css). Ya es .dropdown-menu: radio, relleno, fondo y borde */
+
+    .custom-select-menu {
+        box-shadow: var(--dropdown-shadow);
+        min-width: 100%;
+        max-width: 420px;
+        max-height: 250px;
+        overflow-y: auto;
+        z-index: var(--capa-popup);
+        margin-top: var(--esp-1);
+    }
+
+    .custom-select-menu.show {
+        animation: dropdownPopupIn var(--dur-panel) var(--ease-pop) forwards;
+    }
+
+    .custom-select-menu .dropdown-item {
+        cursor: pointer;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .custom-select-menu .dropdown-item:hover,
+    .custom-select-menu .dropdown-item:focus {
+        background-color: var(--dropdown-item-hover);
+        color: var(--color-texto);
+    }
+
+    .custom-select-menu .dropdown-item.active {
+        background-color: var(--ui-primary);
+        color: var(--color-blue-on);
+        font-weight: 600;
+    }
+
+    .custom-select-menu .dropdown-item.disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* ─── Reemplazos de estilos inline */
+
+    .min-w-220 {
+        min-width: 220px;
+    }
+}

@@ -1,0 +1,401 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* componentes/botones.css: Componente botones: lo de Bootstrap y el aspecto de la app en una sola definición. */
+
+@layer componentes {
+    /* ─── Botones */
+
+    .btn {
+        --ui-btn-padding-x: 0.75rem;
+        --ui-btn-padding-y: 0.375rem;
+        --ui-btn-font-family: ;
+        --ui-btn-font-size: var(--texto-base);
+        --ui-btn-font-weight: 400;
+        --ui-btn-line-height: 1.5;
+        --ui-btn-color: var(--ui-body-color);
+        --ui-btn-bg: transparent;
+        --ui-btn-border-width: var(--ui-border-width);
+        --ui-btn-border-color: transparent;
+        --ui-btn-border-radius: var(--ui-border-radius);
+        --ui-btn-hover-border-color: transparent;
+        --ui-btn-disabled-opacity: 0.65;
+        --ui-btn-focus-box-shadow: 0 0 0 0.25rem rgba(var(--ui-btn-focus-shadow-rgb), .5);
+        display: inline-block;
+        padding: var(--ui-btn-padding-y) var(--ui-btn-padding-x);
+        font-family: var(--ui-btn-font-family);
+        font-size: var(--ui-btn-font-size);
+        font-weight: var(--ui-btn-font-weight);
+        line-height: var(--ui-btn-line-height);
+        color: var(--ui-btn-color);
+        text-align: center;
+        text-decoration: none;
+        vertical-align: middle;
+        -webkit-user-select: none;
+        user-select: none;
+        -moz-user-select: none;
+        border: var(--ui-btn-border-width) solid var(--ui-btn-border-color);
+        border-radius: var(--ui-btn-border-radius);
+        background-color: var(--ui-btn-bg);
+        transition: filter var(--transition-ui), color var(--dur-fast) ease-in-out, background-color var(--dur-fast) ease-in-out, border-color var(--dur-fast) ease-in-out, box-shadow var(--dur-fast) ease-in-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .btn {
+            transition: none;
+        }
+    }
+
+    .btn:hover {
+        color: var(--ui-btn-hover-color);
+        background-color: var(--ui-btn-hover-bg);
+        border-color: var(--ui-btn-hover-border-color);
+    }
+
+    .btn:focus-visible {
+        color: var(--ui-btn-focus-color, var(--ui-btn-hover-color));
+        background-color: var(--ui-btn-focus-bg, var(--ui-btn-hover-bg));
+        border-color: var(--ui-btn-focus-border-color, var(--ui-btn-hover-border-color));
+        outline: 0;
+        box-shadow: var(--ui-btn-focus-box-shadow);
+    }
+
+    .btn.active,
+    .btn.show,
+    .btn:first-child:active,
+    :not(.btn-check)+.btn:active {
+        color: var(--ui-btn-active-color);
+        background-color: var(--ui-btn-active-bg);
+        border-color: var(--ui-btn-active-border-color);
+    }
+
+    .btn.active:focus-visible,
+    .btn.show:focus-visible,
+    .btn:first-child:active:focus-visible,
+    :not(.btn-check)+.btn:active:focus-visible {
+        box-shadow: var(--ui-btn-focus-box-shadow);
+    }
+
+    .btn.disabled,
+    .btn:disabled,
+    fieldset:disabled .btn {
+        color: var(--ui-btn-disabled-color);
+        pointer-events: none;
+        background-color: var(--ui-btn-disabled-bg);
+        border-color: var(--ui-btn-disabled-border-color);
+        opacity: var(--ui-btn-disabled-opacity);
+    }
+
+    .btn-primary {
+        --ui-btn-focus-shadow-rgb: var(--color-blue-rgb);
+        font-weight: 500;
+        --ui-btn-bg: var(--color-blue);
+        --ui-btn-active-bg: var(--color-blue);
+        --ui-btn-disabled-bg: var(--color-blue);
+        --ui-btn-focus-bg: var(--color-blue);
+        --ui-btn-border-color: var(--color-blue);
+        --ui-btn-active-border-color: var(--color-blue);
+        --ui-btn-disabled-border-color: var(--color-blue);
+        --ui-btn-focus-border-color: var(--color-blue);
+        --ui-btn-color: var(--color-blue-on);
+        --ui-btn-active-color: var(--color-blue-on);
+        --ui-btn-disabled-color: var(--color-blue-on);
+        --ui-btn-focus-color: var(--color-blue-on);
+        --ui-btn-hover-color: var(--color-blue-on);
+        --ui-btn-hover-bg: var(--color-blue-hover);
+        --ui-btn-hover-border-color: var(--color-blue-hover);
+    }
+
+    .btn-warning {
+        --ui-btn-focus-shadow-rgb: var(--color-yellow-rgb);
+        --ui-btn-bg: var(--color-yellow);
+        --ui-btn-active-bg: var(--color-yellow);
+        --ui-btn-disabled-bg: var(--color-yellow);
+        --ui-btn-focus-bg: var(--color-yellow);
+        --ui-btn-border-color: var(--color-yellow);
+        --ui-btn-active-border-color: var(--color-yellow);
+        --ui-btn-disabled-border-color: var(--color-yellow);
+        --ui-btn-focus-border-color: var(--color-yellow);
+        --ui-btn-color: var(--color-yellow-on);
+        --ui-btn-active-color: var(--color-yellow-on);
+        --ui-btn-disabled-color: var(--color-yellow-on);
+        --ui-btn-focus-color: var(--color-yellow-on);
+        --ui-btn-hover-bg: var(--color-yellow-hover);
+        --ui-btn-hover-border-color: var(--color-yellow-hover);
+        --ui-btn-hover-color: var(--color-yellow-on);
+    }
+
+    .btn-danger {
+        --ui-btn-color: var(--color-red-on);
+        --ui-btn-bg: var(--color-red);
+        --ui-btn-border-color: var(--color-red);
+        --ui-btn-hover-color: var(--color-red-on);
+        --ui-btn-hover-bg: var(--color-red-hover);
+        --ui-btn-hover-border-color: var(--color-red-hover);
+        --ui-btn-focus-shadow-rgb: var(--color-red-rgb);
+        --ui-btn-active-color: var(--color-red-on);
+        --ui-btn-active-bg: var(--color-red-hover);
+        --ui-btn-active-border-color: var(--color-red-hover);
+        --ui-btn-disabled-color: var(--color-red-on);
+        --ui-btn-disabled-bg: var(--color-red);
+        --ui-btn-disabled-border-color: var(--color-red);
+    }
+
+    .btn-outline-primary {
+        --ui-btn-color: var(--color-blue);
+        --ui-btn-border-color: var(--color-blue);
+        --ui-btn-hover-color: var(--color-blue-on);
+        --ui-btn-hover-bg: var(--color-blue);
+        --ui-btn-hover-border-color: var(--color-blue);
+        --ui-btn-focus-shadow-rgb: var(--color-blue-rgb);
+        --ui-btn-active-color: var(--color-blue-on);
+        --ui-btn-active-bg: var(--color-blue);
+        --ui-btn-active-border-color: var(--color-blue);
+        --ui-btn-disabled-color: var(--color-blue);
+        --ui-btn-disabled-bg: transparent;
+        --ui-btn-disabled-border-color: var(--color-blue);
+    }
+
+    .btn-outline-secondary {
+        --ui-btn-color: var(--color-texto-suave);
+        --ui-btn-border-color: var(--color-texto-suave);
+        --ui-btn-hover-color: var(--bg-card);
+        --ui-btn-hover-bg: var(--color-texto-suave);
+        --ui-btn-hover-border-color: var(--color-texto-suave);
+        --ui-btn-focus-shadow-rgb: var(--ui-secondary-rgb);
+        --ui-btn-active-color: var(--bg-card);
+        --ui-btn-active-bg: var(--color-texto-suave);
+        --ui-btn-active-border-color: var(--color-texto-suave);
+        --ui-btn-disabled-color: var(--color-texto-suave);
+        --ui-btn-disabled-bg: transparent;
+        --ui-btn-disabled-border-color: var(--color-texto-suave);
+    }
+
+    .btn-outline-danger {
+        --ui-btn-focus-shadow-rgb: var(--color-red-rgb);
+        --ui-btn-active-bg: var(--red-15);
+        --ui-btn-disabled-bg: transparent;
+        --ui-btn-color: var(--color-red);
+        --ui-btn-active-color: var(--color-red);
+        --ui-btn-disabled-color: var(--color-red);
+        --ui-btn-focus-color: var(--color-red);
+        --ui-btn-border-color: var(--red-30);
+        --ui-btn-active-border-color: var(--red-30);
+        --ui-btn-disabled-border-color: var(--red-30);
+        --ui-btn-focus-border-color: var(--red-30);
+        --ui-btn-hover-border-color: var(--red-30);
+        --ui-btn-hover-bg: var(--red-08);
+        --ui-btn-hover-color: var(--color-red);
+        --ui-btn-focus-bg: transparent;
+    }
+
+    .btn-link {
+        --ui-btn-font-weight: 400;
+        --ui-btn-color: var(--ui-link-color);
+        --ui-btn-bg: transparent;
+        --ui-btn-border-color: transparent;
+        --ui-btn-hover-color: var(--ui-link-hover-color);
+        --ui-btn-hover-border-color: transparent;
+        --ui-btn-active-color: var(--ui-link-hover-color);
+        --ui-btn-active-border-color: transparent;
+        --ui-btn-disabled-color: var(--color-texto-suave);
+        --ui-btn-disabled-border-color: transparent;
+        --ui-btn-focus-shadow-rgb: var(--color-blue-rgb);
+        text-decoration: underline;
+    }
+
+    .btn-link:focus-visible {
+        color: var(--ui-btn-color);
+    }
+
+    .btn-link:hover {
+        color: var(--ui-btn-hover-color);
+    }
+
+    /* ─── Grupos de botones */
+
+    .btn-group-sm>.btn,
+    .btn-sm {
+        --ui-btn-padding-y: 0.25rem;
+        --ui-btn-padding-x: 0.5rem;
+        --ui-btn-font-size: var(--texto-md);
+        --ui-btn-border-radius: var(--ui-border-radius-sm);
+    }
+
+    .btn-group {
+        position: relative;
+        display: inline-flex;
+        vertical-align: middle;
+        border-radius: var(--ui-border-radius);
+    }
+
+    .btn-group>.btn {
+        position: relative;
+        flex: 1 1 auto;
+    }
+
+    .btn-group>.btn.active,
+    .btn-group>.btn:active,
+    .btn-group>.btn:focus,
+    .btn-group>.btn:hover {
+        z-index: 1;
+    }
+
+    .btn-group>.btn-group:not(:first-child),
+    .btn-group>:not(.btn-check:first-child)+.btn {
+        margin-left: calc(var(--ui-border-width) * -1);
+    }
+
+    .btn-group>.btn-group:not(:last-child)>.btn,
+    .btn-group>.btn:not(:last-child):not(.dropdown-toggle) {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    .btn-group>.btn-group:not(:first-child)>.btn,
+    .btn-group>.btn:nth-child(n+3),
+    .btn-group>:not(.btn-check)+.btn {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
+    /* ─── Botones */
+
+    .btn .badge {
+        position: relative;
+        top: -1px;
+    }
+
+    /* ─── Botón cerrar */
+
+    .btn-close {
+        --ui-btn-close-color: #000;
+        --ui-btn-close-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e");
+        --ui-btn-close-opacity: 0.5;
+        --ui-btn-close-hover-opacity: 0.75;
+        --ui-btn-close-focus-shadow: var(--foco-anillo);
+        --ui-btn-close-focus-opacity: 1;
+        --ui-btn-close-disabled-opacity: 0.25;
+        --ui-btn-close-white-filter: invert(1) grayscale(100%) brightness(200%);
+        box-sizing: content-box;
+        width: 1em;
+        height: 1em;
+        padding: .25em .25em;
+        color: var(--ui-btn-close-color);
+        background: transparent var(--ui-btn-close-bg) center/1em auto no-repeat;
+        border: 0;
+        border-radius: var(--radio-chico);
+        opacity: var(--ui-btn-close-opacity);
+    }
+
+    .btn-close:hover {
+        color: var(--ui-btn-close-color);
+        text-decoration: none;
+        opacity: var(--ui-btn-close-hover-opacity);
+    }
+
+    .btn-close:focus {
+        box-shadow: var(--ui-btn-close-focus-shadow);
+        opacity: var(--ui-btn-close-focus-opacity);
+    }
+
+    .btn-close.disabled,
+    .btn-close:disabled {
+        pointer-events: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+        opacity: var(--ui-btn-close-disabled-opacity);
+    }
+
+    [data-tema=dark] .btn-close {
+        filter: var(--ui-btn-close-white-filter);
+    }
+
+    /* ─── Estado Colapsado del Panel Lateral (Solo Íconos) */
+
+    @media (min-width: 768px) {
+        #btn-toggle-sidebar {
+            transition: padding var(--dur-panel) var(--ease-panel);
+        }
+    }
+
+    /* ─── Search Input (Sidebar) */
+
+    .search-filter-btn {
+        background: transparent;
+        border: none;
+        color: var(--color-texto-suave);
+        padding: var(--esp-1) 7px;
+        font-size: var(--texto-md);
+        border-radius: var(--radio-medio);
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .search-filter-btn:hover,
+    .search-filter-btn:focus,
+    .search-filter-btn.show {
+        color: var(--color-texto);
+        background-color: var(--table-hover-bg);
+    }
+
+    /* ─── Botones en Modo Claro */
+
+    .btn-primary:hover {
+        --ui-btn-active-bg: var(--color-blue-hover);
+        --ui-btn-focus-bg: var(--color-blue-hover);
+        --ui-btn-active-border-color: var(--color-blue-hover);
+        --ui-btn-focus-border-color: var(--color-blue-hover);
+    }
+
+    .btn-outline-danger:hover {
+        --ui-btn-active-bg: var(--red-08);
+        --ui-btn-focus-bg: var(--red-08);
+        --ui-btn-active-color: var(--color-red);
+        --ui-btn-focus-color: var(--color-red);
+    }
+
+    .btn-warning:hover {
+        --ui-btn-active-bg: var(--color-yellow-hover);
+        --ui-btn-focus-bg: var(--color-yellow-hover);
+        --ui-btn-active-border-color: var(--color-yellow-hover);
+        --ui-btn-focus-border-color: var(--color-yellow-hover);
+        --ui-btn-active-color: var(--color-yellow-on);
+        --ui-btn-focus-color: var(--color-yellow-on);
+    }
+
+    /* ─── La regla base de .btn-outline-danger ya cubre oscuro sola (var(--color-red) */
+
+    [data-tema="dark"] .btn-outline-danger:hover {
+        background-color: var(--red-15);
+    }
+
+    /* activo: el fondo sigue siendo --color-texto-suave (la regla base), el texto va con el color de la tarjeta (antes
+       quedaba --color-texto-suave sobre --color-texto-suave y el botón activo de un grupo no se leía) */
+    [data-tema="dark"] .btn-outline-secondary {
+        --ui-btn-color: var(--color-texto-suave);
+        --ui-btn-active-color: var(--bg-card);
+        --ui-btn-disabled-color: var(--color-texto-suave);
+        --ui-btn-focus-color: var(--color-texto-suave);
+        --ui-btn-border-color: var(--border-color);
+        --ui-btn-active-border-color: var(--border-color);
+        --ui-btn-disabled-border-color: var(--border-color);
+        --ui-btn-focus-border-color: var(--border-color);
+        --ui-btn-hover-border-color: var(--border-color);
+        --ui-btn-hover-bg: var(--blanco-08);
+        --ui-btn-hover-color: var(--color-texto);
+        --ui-btn-focus-bg: var(--color-texto-suave);
+    }
+
+    [data-tema="dark"] .btn-outline-secondary:hover {
+        --ui-btn-active-bg: var(--blanco-08);
+        --ui-btn-focus-bg: var(--blanco-08);
+        --ui-btn-active-color: var(--color-texto);
+        --ui-btn-focus-color: var(--color-texto);
+    }
+}

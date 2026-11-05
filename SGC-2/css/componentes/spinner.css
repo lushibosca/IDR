@@ -1,0 +1,49 @@
+/*!
+ * Parte derivada de Bootstrap v5.3.0 (https://getbootstrap.com/)
+ * Copyright 2011-2023 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+ */
+/* componentes/spinner.css: Componente spinner: lo de Bootstrap y el aspecto de la app en una sola definición. */
+
+@layer componentes {
+    /* ─── Spinners */
+
+    .spinner-border {
+        display: inline-block;
+        width: var(--ui-spinner-width);
+        height: var(--ui-spinner-height);
+        vertical-align: var(--ui-spinner-vertical-align);
+        border-radius: 50%;
+        animation: var(--ui-spinner-animation-speed) linear infinite var(--ui-spinner-animation-name);
+        --ui-spinner-width: 2rem;
+        --ui-spinner-height: 2rem;
+        --ui-spinner-vertical-align: -0.125em;
+        --ui-spinner-border-width: 0.25em;
+        --ui-spinner-animation-speed: 0.75s;
+        --ui-spinner-animation-name: spinner-border;
+        border: var(--ui-spinner-border-width) solid currentcolor;
+        border-right-color: transparent;
+    }
+
+    @keyframes spinner-border {
+        to {
+        transform: rotate(360deg)
+        }
+    }
+
+    .spinner-border-sm {
+        --ui-spinner-width: 1rem;
+        --ui-spinner-height: 1rem;
+        --ui-spinner-border-width: 0.2em;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .spinner-border {
+            --ui-spinner-animation-speed: 1.5s;
+        }
+    }
+
+    html[data-movimiento="reducido"] .spinner-border {
+        --ui-spinner-animation-speed: 1.5s;
+    }
+}
