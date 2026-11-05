@@ -81,8 +81,9 @@
             });
         }
         enDosPasos($('datos-borrar'), 'Tocá de nuevo para borrar todo', () => {
+            if (typeof GistSync !== 'undefined') GistSync.olvidar();      // antes: si no, la sincronización lo repondría desde el Gist
             ApiLocal.borrarTodo();
-            mostrarToast('Se borraron los datos de este navegador.', 'info', 3000);
+            mostrarToast('Se borraron los datos de este navegador y se desconectó el Gist (el Gist no se tocó).', 'info', 5000);
         });
         const avisos = ApiLocal.avisosCarga();
         if (avisos.length) mostrarToast(`Datos guardados con observaciones: ${avisos.join('; ')}.`, 'warning', 8000);

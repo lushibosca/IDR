@@ -273,6 +273,36 @@ check('Producción se actualiza sola', $('produccion-accordion').textContent.inc
     check('parseador: el historial lo marca como importación', h.cambios.some((c) => c.origen === 'importacion'));
 }
 
+// --- Ajustes > Datos > Borrar todo, por la pantalla (dos toques), con el Gist y la sincronización automática activos
+{
+    const ID = 'b1b2c3d4e5f60718293a4b5c6d7e8f90', FRASE = 'frase larga de prueba para borrar todo', TOKEN = 'ghp_borrar1234567890abcdefgh';
+    let remoto = JSON.stringify(await w.eval('gistCifrar')(w.eval('ApiLocal').exportar(), FRASE));
+    let llamadas = 0;
+    w.fetch = async (url, op = {}) => {
+        llamadas++;
+        const ok = (json) => ({ ok: true, status: 200, json: async () => json });
+        if (op.method === 'PATCH') { remoto = JSON.parse(op.body).files['sgc2.json'].content; return ok({ id: ID }); }
+        return ok({ id: ID, files: { 'sgc2.json': { content: remoto } } });
+    };
+    w.localStorage.setItem('sgc2/gist_cfg', JSON.stringify({ gistId: ID, auto: true, recordarToken: true, recordarFrase: true }));
+    w.localStorage.setItem('sgc2/gist_token', TOKEN);
+    w.localStorage.setItem('sgc2/gist_frase', FRASE);
+    const antes = (await api('/api/stock')).dispositivos.length;
+    $('datos-borrar').click();
+    $('datos-borrar').click();
+    await esperar(400);
+    check('Borrar todo por la pantalla vacía el stock', antes > 0 && (await api('/api/stock')).dispositivos.length === 0);
+    await esperar(7000);          // más que la espera de la sincronización automática (5 s)
+    const despues = (await api('/api/stock')).dispositivos.length;
+    check('Borrar todo: nada lo repone desde el Gist', despues === 0, `${despues} dispositivos; ${llamadas} llamadas al Gist`);
+    check('Borrar todo: no queda ID, token ni frase del Gist', !w.localStorage.getItem('sgc2/gist_cfg') && !w.localStorage.getItem('sgc2/gist_token')
+        && !w.localStorage.getItem('sgc2/gist_frase') && $('gist-id').value === '' && $('gist-token').value === '' && $('gist-frase').value === '',
+        `${w.localStorage.getItem('sgc2/gist_cfg')} / ${$('gist-id').value}`);
+    check('Borrar todo: no tocó el Gist (otras PC conservan sus datos)', JSON.parse(await w.eval('gistDescifrar')(JSON.parse(remoto), FRASE)).dispositivos.length === 6);
+    // se vuelve a cargar el estado para lo que sigue (exportar/importar/migración)
+    w.eval('ApiLocal').importar(await w.eval('gistDescifrar')(JSON.parse(remoto), FRASE));
+}
+
 // --- exportar, borrar e importar
 const exportado = w.eval('ApiLocal').exportar();
 w.eval('ApiLocal').borrarTodo();

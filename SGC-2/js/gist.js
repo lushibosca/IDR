@@ -331,6 +331,7 @@ if (typeof document !== 'undefined') {
 
     // ---- sincronizar
     let ocupado = false;
+    let epoca = 0;                      // sube al olvidar la configuración: una sincronización en curso se descarta
     let pendiente = null;
     let reloj = null;
     const estado = { texto: '', tipo: 'info' };
@@ -350,6 +351,8 @@ if (typeof document !== 'undefined') {
     async function sincronizar({ crear = false } = {}) {
         if (ocupado) { pendiente = { crear }; return { accion: 'pendiente', texto: 'Ya se está sincronizando.', avisos: [] }; }
         ocupado = true;
+        const mi = epoca;
+        const vigente = () => { if (mi !== epoca) throw new ErrorGist('Sincronización cancelada: se borraron los datos o la configuración.', 'cancelado'); };
         try {
             const cfg = config.leer();
             const token = secreto.leer('gist_token');
@@ -383,13 +386,16 @@ if (typeof document !== 'undefined') {
             const bruto = parsearSobre(plano);
             if (!bruto || bruto.formato !== FORMATO_DATOS) throw new ErrorGist('El contenido del Gist no es de SGC-2.', 'formato');
             const remoto = sanearDatos(bruto, ahoraZ());
+            vigente();
             const res = gistFusionar(local, remoto.datos, sanearDatos, ahoraZ());
             const avisos = [...remoto.avisos, ...res.avisos];
+            vigente();
             if (res.cambiaLocal) guardarLocal(res.datos);
             let subido = false;
             if (res.cambiaRemoto) {
                 if (token) {
                     const sobre = await gistCifrar(JSON.stringify(exportarDatos(res.datos, ahoraZ())), frase, { sal: sobreRemoto.sal });
+                    vigente();
                     await pedir('PATCH', `/gists/${cfg.gistId}`, token, { files: contenido(sobre) });
                     subido = true;
                 } else {
@@ -526,6 +532,27 @@ if (typeof document !== 'undefined') {
             pintarAuto();
             pintarFrase();
             mostrarToast('Token y frase olvidados en este navegador.', 'info', 3000);
+        });
+
+        // «Borrar todo» (Ajustes > Datos) deja este navegador sin Gist: sin ID, token, frase ni sincronización automática (el Gist
+        // en sí no se toca: las otras PC conservan sus datos)
+        window.GistSync = Object.freeze({
+            olvidar() {
+                epoca++;
+                clearTimeout(reloj);
+                pendiente = null;
+                secreto.guardar('gist_token', '', false);
+                secreto.guardar('gist_frase', '', false);
+                storage.remove('gist_cfg');
+                gistOlvidarClave();
+                for (const id of ['gist-id', 'gist-token', 'gist-frase']) $(id).value = '';
+                $('gist-recordar-token').checked = false;
+                $('gist-recordar-frase').checked = false;
+                pintarAuto();
+                pintarFrase();
+                pintarUltima();
+                mostrarEstado('');
+            }
         });
 
         // al abrir: si está todo guardado y la automática activa, se baja lo que hayan subido otros
