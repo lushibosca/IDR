@@ -15,6 +15,8 @@ catálogos, con los datos en el navegador. Reemplazará a `idr/SGC`. Análisis y
   (`sanearDatos`).
 - **Prefijo `sgc2/`** en todas las claves de `localStorage`: en GitHub Pages las apps de la suite comparten el origen.
 - **Ajustes > Datos**: exportar e importar el JSON, y borrar todo (con confirmación en dos pasos).
+- **Sincronización**: Ajustes > Sincronización sube los datos CIFRADOS (AES-GCM, clave de una frase) a un Gist secreto y
+  los fusiona por dispositivo con lo que suban otras PC (`js/gist.js`). Sin token solo baja.
 - **Producción manual**: la instalación guarda en qué grabador y canal está un dispositivo. Se asigna con un clic en
   un canal libre de Producción o con los selectores «Grabador» y «Canal» de la ficha del dispositivo.
 

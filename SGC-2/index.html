@@ -724,6 +724,41 @@
                             </div>
                             <input type="file" id="datos-archivo" class="d-none" accept=".json,application/json">
                         </section>
+                        <section class="ajuste-seccion" aria-labelledby="ajustes-gist">
+                            <h6 class="ajuste-seccion-titulo" id="ajustes-gist">Sincronización (Gist cifrado)</h6>
+                            <div class="ajuste-fila">
+                                <i class="bi bi-cloud-arrow-up ajuste-icono" aria-hidden="true"></i>
+                                <div class="ajuste-texto gist-campos">
+                                    <span class="ajuste-desc">Los datos se cifran en este navegador antes de subirse a un Gist secreto de GitHub. Sin la frase nadie puede leerlos, ni siquiera con el ID.</span>
+                                    <label class="ajuste-titulo" for="gist-id">ID del Gist</label>
+                                    <input type="text" class="form-control form-control-sm" id="gist-id" autocomplete="off" spellcheck="false" maxlength="40" placeholder="Vacío para crear uno nuevo">
+                                    <label class="ajuste-titulo" for="gist-token">Token de GitHub (permiso «gist»)</label>
+                                    <input type="password" class="form-control form-control-sm" id="gist-token" autocomplete="off" spellcheck="false" maxlength="255" placeholder="Sin token solo se baja">
+                                    <label class="form-check gist-recordar"><input type="checkbox" class="form-check-input" id="gist-recordar-token"><span>Recordar el token en este navegador</span></label>
+                                    <label class="ajuste-titulo" for="gist-frase">Frase de cifrado (mínimo 20 caracteres)</label>
+                                    <input type="password" class="form-control form-control-sm" id="gist-frase" autocomplete="off" spellcheck="false" maxlength="200">
+                                    <span class="ajuste-desc" id="gist-frase-aviso" aria-live="polite"></span>
+                                    <label class="form-check gist-recordar"><input type="checkbox" class="form-check-input" id="gist-recordar-frase"><span>Recordar la frase en este navegador (quien use esta PC podrá leer los datos)</span></label>
+                                    <div class="gist-botones">
+                                        <button type="button" class="btn btn-primary btn-sm gist-accion" id="gist-sincronizar">Sincronizar</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm gist-accion" id="gist-crear">Crear Gist nuevo y subir</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-generar">Generar frase</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-ver">Mostrar / ocultar</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-olvidar">Olvidar token y frase</button>
+                                    </div>
+                                    <span class="ajuste-desc" id="gist-estado" role="status" aria-live="polite"></span>
+                                    <span class="ajuste-desc" id="gist-ultima"></span>
+                                </div>
+                            </div>
+                            <div class="ajuste-fila">
+                                <i class="bi bi-arrow-repeat ajuste-icono" aria-hidden="true"></i>
+                                <div class="ajuste-texto">
+                                    <span class="ajuste-titulo" id="gist-auto-titulo">Sincronizar solo</span>
+                                    <span class="ajuste-desc">Al abrir baja lo que subieron otros, y cada cambio se sube a los pocos segundos (necesita token y frase guardados).</span>
+                                </div>
+                                <button type="button" class="interruptor" id="gist-auto" role="switch" aria-labelledby="gist-auto-titulo"><span class="interruptor-perilla"></span></button>
+                            </div>
+                        </section>
                         <section class="ajuste-seccion" aria-labelledby="ajustes-privacidad">
                             <h6 class="ajuste-seccion-titulo" id="ajustes-privacidad">Privacidad</h6>
                             <div class="ajuste-fila">
@@ -1957,7 +1992,7 @@
     <script src="js/animaciones.js?v=18"></script>
     <script src="js/busqueda.js?v=8"></script>
     <script src="js/datos-puro.js?v=1"></script>
-    <script src="js/api-local.js?v=1"></script>
+    <script src="js/api-local.js?v=2"></script>
     <script src="js/comun.js?v=55"></script>
     <script src="js/app.js?v=272"></script>
     <script src="js/sesion-local.js?v=1"></script>
@@ -1977,6 +2012,7 @@
     <script src="js/auditoria-bd.js?v=3"></script>
     <script src="js/ajustes.js?v=6"></script>
     <script src="js/datos-ui.js?v=1"></script>
+    <script src="js/gist.js?v=1"></script>
     <script src="js/privacidad.js?v=2"></script>
 
 </body>

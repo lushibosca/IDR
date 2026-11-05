@@ -35,7 +35,9 @@ const dom = new JSDOM(fs.readFileSync(path.join(RAIZ, 'index.html'), 'utf8'), {
     url: ORIGEN + 'index.html', runScripts: 'dangerously', resources: new Disco(), pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(w) {
         w.structuredClone = w.structuredClone || structuredClone;
-        if (!w.crypto || !w.crypto.getRandomValues) w.crypto = globalThis.crypto;
+        Object.defineProperty(w, 'crypto', { value: globalThis.crypto, configurable: true });   // jsdom no trae WebCrypto (subtle)
+        w.TextEncoder = w.TextEncoder || TextEncoder;
+        w.TextDecoder = w.TextDecoder || TextDecoder;
         w.CSS = w.CSS || { escape: (t) => String(t).replace(/["\\]/g, '\\$&') };
         w.matchMedia = w.matchMedia || (() => ({ matches: false, addEventListener() {}, removeEventListener() {},
             addListener() {}, removeListener() {} }));
@@ -160,16 +162,73 @@ check('guardar la deja en el CH 1', enCanal.instalacion && enCanal.instalacion.g
 await hasta(() => $('produccion-accordion').textContent.includes('Hall'));
 check('Producción se actualiza sola', $('produccion-accordion').textContent.includes('Hall'));
 
+// --- Gist cifrado: crear, bajar lo que sube otra PC y que lo subido no se lea sin la frase
+{
+    const ID = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
+    const TOKEN = 'ghp_prueba1234567890abcdefgh';
+    const FRASE = 'frase larga de prueba para el humo';
+    let archivo = null, llamadas = [];
+    w.fetch = async (url, op = {}) => {
+        const u = new URL(url);
+        llamadas.push(`${op.method || 'GET'} ${u.pathname}`);
+        const ok = (json) => ({ ok: true, status: 200, json: async () => json, text: async () => JSON.stringify(json) });
+        if (u.origin !== 'https://api.github.com') return { ok: false, status: 404 };
+        if (op.method === 'POST' && u.pathname === '/gists') {
+            archivo = JSON.parse(op.body).files['sgc2.json'].content;
+            return ok({ id: ID, files: { 'sgc2.json': { content: archivo } } });
+        }
+        if (u.pathname === `/gists/${ID}` && op.method === 'PATCH') {
+            archivo = JSON.parse(op.body).files['sgc2.json'].content;
+            return ok({ id: ID });
+        }
+        if (u.pathname === `/gists/${ID}`) return ok({ id: ID, files: archivo ? { 'sgc2.json': { content: archivo } } : {} });
+        return { ok: false, status: 404 };
+    };
+    $('gist-token').value = TOKEN;
+    $('gist-frase').value = FRASE;
+    $('gist-crear').click();
+    await hasta(() => archivo && /Gist secreto creado/.test($('gist-estado').textContent), 8000);
+    check('Gist: se crea y se sube', !!archivo && /Gist secreto creado/.test($('gist-estado').textContent), $('gist-estado').textContent);
+    check('Gist: lo subido está cifrado (no se lee el stock)', archivo && !/NVR Anexo|Hikvision|aa:bb/.test(archivo)
+        && JSON.parse(archivo).formato === 'sgc2-cifrado');
+    check('Gist: el ID queda en el campo', $('gist-id').value === ID);
+    await api('/api/stock/dispositivos', 'POST', { tipo: 'domo', modelo: 'LOCAL-EXTRA', serie: 'L-9' });   // cambio local sin subir
+    // otra PC agrega un equipo y sube
+    const plano = await w.eval('gistDescifrar')(JSON.parse(archivo), FRASE);
+    const remoto = JSON.parse(plano);
+    remoto.dispositivos.push({ id: 'otra-pc-1', tipo: 'switch', condicion: 'operativo', marca: 'Cisco', modelo: 'C9200', serie: 'SW-1',
+        mac: null, patrimonio: null, firmware: null, canales: null, comentario: '', instalacion: null,
+        creado: '2026-11-05T11:00:00Z', actualizado: '2026-11-05T11:00:00Z', version: 1 });
+    archivo = JSON.stringify(await w.eval('gistCifrar')(JSON.stringify(remoto), FRASE, { sal: JSON.parse(archivo).sal }));
+    llamadas = [];
+    $('gist-sincronizar').click();
+    await hasta(() => /Sincronizado/.test($('gist-estado').textContent), 8000);
+    const lista = (await api('/api/stock')).dispositivos;
+    check('Gist: baja el equipo de la otra PC y conserva los propios', lista.some((x) => x.serie === 'SW-1') && lista.length === 5,
+        $('gist-estado').textContent);
+    const remotoFinal = JSON.parse(await w.eval('gistDescifrar')(JSON.parse(archivo), FRASE));
+    check('Gist: lo local se subió fusionado', remotoFinal.dispositivos.length === 5 && llamadas.includes(`PATCH /gists/${ID}`),
+        llamadas.join(','));
+    $('gist-frase').value = 'otra frase larga que no es la correcta';
+    $('gist-sincronizar').click();
+    await hasta(() => /incorrecta/.test($('gist-estado').textContent), 8000);
+    check('Gist: frase equivocada, no toca nada', /incorrecta/.test($('gist-estado').textContent)
+        && (await api('/api/stock')).dispositivos.length === 5, $('gist-estado').textContent);
+    $('gist-olvidar').click();
+    $('gist-id').value = '';
+    w.localStorage.removeItem('sgc2/gist_cfg');
+}
+
 // --- exportar, borrar e importar
 const exportado = w.eval('ApiLocal').exportar();
 w.eval('ApiLocal').borrarTodo();
 check('borrar todo vacía el stock', (await api('/api/stock')).dispositivos.length === 0);
 const r = w.eval('ApiLocal').importar(exportado);
-check('importar lo exportado recupera todo', r.dispositivos === 3 && (await api('/api/stock')).dispositivos.length === 3,
+check('importar lo exportado recupera todo', r.dispositivos === 5 && (await api('/api/stock')).dispositivos.length === 5,
     JSON.stringify(r));
 let mal = null;
 try { w.eval('ApiLocal').importar('{"formato":"otro"}'); } catch (e) { mal = e; }
-check('importar otro formato: se rechaza sin tocar nada', mal && (await api('/api/stock')).dispositivos.length === 3);
+check('importar otro formato: se rechaza sin tocar nada', mal && (await api('/api/stock')).dispositivos.length === 5);
 
 await esperar(300);
 check('sin errores de JavaScript', errores.length === 0, errores.join(' | '));

@@ -19,7 +19,7 @@ const HOJAS = [
 ];
 // Clases sin estilo propio a propósito: ganchos para JS/tests o marcadores de estado.
 const GANCHOS = new Set([
-  "custom-select-label", "popup-disp-body", "popup-disp-info", "sidebar-toggle-icon",
+  "custom-select-label", "gist-accion", "popup-disp-body", "popup-disp-info", "sidebar-toggle-icon",
 ]);
 // Usadas pero sin definición en ningún lado (no tienen efecto). Se informan; arreglarlas es aparte.
 const SIN_EFECTO_CONOCIDAS = new Set([]);

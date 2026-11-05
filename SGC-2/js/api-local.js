@@ -179,6 +179,14 @@ const ApiLocal = (() => {
         guardar(r.datos);
         return { dispositivos: r.datos.dispositivos.length, avisos: r.avisos };
     }
+    /** Una copia de los datos guardados (para fusionar con el Gist). */
+    function datosActuales() {
+        return structuredClone(cargados());
+    }
+    /** Reemplaza los datos por unos YA saneados (el resultado de fusionar con el Gist). */
+    function reemplazar(nuevos) {
+        guardar(structuredClone(nuevos));
+    }
     function borrarTodo() {
         guardar(datosVacios());
     }
@@ -192,5 +200,5 @@ const ApiLocal = (() => {
         });
     }
 
-    return { pedir, atender, exportar, importar, borrarTodo, avisosCarga: () => { cargados(); return [...avisosCarga]; } };
+    return { pedir, atender, exportar, importar, borrarTodo, datos: datosActuales, reemplazar, avisosCarga: () => { cargados(); return [...avisosCarga]; } };
 })();

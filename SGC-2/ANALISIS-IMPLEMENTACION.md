@@ -3,7 +3,7 @@
 Objetivo: una versión **estática** (GitHub Pages, sin backend) del front de `cctv_monitor`, con los datos en un JSON
 (localStorage) sincronizable con un **GitHub Gist**, igual que `idr/SGC`. Cuando esté completa reemplaza a `idr/SGC`.
 
-Fecha: 2026-11-05. Estado: **entregas 1 y 2 hechas** (ver §9, §12 y §13).
+Fecha: 2026-11-05. Estado: **entregas 1, 2 y 3 hechas** (ver §9 y §12–§14).
 
 ---
 
@@ -172,7 +172,7 @@ Al reemplazar a SGC: agregar `SGC-2/` al `sw.js` raíz de la suite, y más tarde
    catálogos, ubicaciones, modelos, historial, exportar/importar/borrar). Tests node de la lógica pura y prueba de humo.
 2. ✅ **Producción manual**: modelo §3, vista por grabador con canales libres, las dos entradas, panel Estado (Canales,
    Activos, Favoritos).
-3. **Gist**: sync + merge + lápidas + firma; seguridad del token (P4).
+3. ✅ **Gist**: sync + merge + lápidas, cifrado AES-GCM con frase (P4).
 4. **Parseadores** de canales y de datos.
 5. **Migración desde SGC** y prueba con el JSON real; agregar al `sw.js` de la suite.
 6. Reemplazo: período de convivencia, luego `SGC-2` → `SGC`.
@@ -246,3 +246,29 @@ Al reemplazar a SGC: agregar `SGC-2/` al `sw.js` raíz de la suite, y más tarde
 - Queda para después: el popup de un equipo no tiene todavía «Quitar del canal» / «Mover» directos (se hace desde la
   ficha); dos grabadores con la misma descripción se verían en un mismo grupo de Producción (agrupa por nombre).
 
+
+## 14. Entrega 3: Gist cifrado
+
+- `js/gist.js`: lógica pura en el bloque `GIST PURO` (cifrado, frase, fusión, validación del sobre) y, debajo, el
+  transporte (`fetch` a `api.github.com`) y la pantalla de **Ajustes > Sincronización**.
+- **Cifrado**: sobre `{formato:'sgc2-cifrado', version:1, kdf:'PBKDF2-SHA-256', iter:600000, sal, iv, datos}` en
+  `sgc2.json`. AES-GCM-256 con la sal del Gist (se reutiliza al subir; el IV es nuevo cada vez) y un AAD fijo. Al
+  descifrar se exige `iter` entre 600 000 y 2 000 000 (un Gist ajeno no baja el costo ni lo dispara), sal de 16 bytes e
+  IV de 12. Frase equivocada o Gist alterado → un solo mensaje («frase incorrecta o Gist alterado»). Sin firma aparte:
+  el GCM cubre todo, lápidas incluidas.
+- **Frase**: NFC, mínimo 20 caracteres, aviso si es débil. «Generar frase» hace 5 palabras pronunciables de 3 sílabas
+  consonante+vocal (80 sílabas → ≈95 bits, con rechazo de bytes para no sesgar), en vez de una lista de 6 palabras: no
+  hace falta incluir un diccionario. Token y frase solo se guardan con «Recordar»; si no, quedan en `sessionStorage`.
+- **Fusión** (`gistFusionar`, después de `sanearDatos` a cada lado y otra vez sobre el resultado): por dispositivo gana
+  el `actualizado` más reciente (a igual fecha, la `version` mayor; a igual todo, lo local). Lápida ≥ última edición →
+  se borra; edición posterior a la lápida → el dispositivo revive. Catálogo, edificios, pisos y páginas de modelo se
+  unen (lo local manda; un tipo o edificio borrado en una PC vuelve si la otra lo tiene); el historial se une sin
+  repetir. Las invariantes (serie/MAC únicas, canal ocupado) se revalidan: lo que choque se corrige y queda en `avisos`.
+- **Flujo** (`sincronizar`): leer el Gist → descifrar → fusionar → guardar local si cambió (`ApiLocal.reemplazar`) →
+  subir solo si el resultado difiere de lo bajado (PATCH). Sin token solo baja y avisa que quedan cambios sin subir.
+  «Crear Gist nuevo y subir» crea uno **secreto** (con token) y guarda su ID. Archivos grandes: `raw_url` solo si es
+  `https://gist.githubusercontent.com`.
+- **Automática**: al abrir baja y cada `sgc:datos-cambiados` sube a los 5 s (con token, frase y ID guardados). El
+  guardado que hace la propia sincronización no la dispara de nuevo.
+- Tests: `tests/js/gist.test.mjs` (12) y la prueba de humo recorre crear → otra PC sube → sincronizar → frase mala,
+  con un `fetch` falso de la API de Gists.

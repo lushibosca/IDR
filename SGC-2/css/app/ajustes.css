@@ -174,3 +174,23 @@
         display: none;
     }
 }
+
+/* Sincronización con el Gist: campos apilados dentro de una fila de Ajustes */
+@layer app {
+    .gist-campos {
+        gap: var(--esp-2);
+    }
+
+    .gist-recordar {
+        display: flex;
+        align-items: center;
+        gap: var(--esp-2);
+        font-size: var(--texto-md);
+    }
+
+    .gist-botones {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--esp-2);
+    }
+}
