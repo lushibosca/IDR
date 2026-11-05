@@ -3,7 +3,7 @@
 Objetivo: una versión **estática** (GitHub Pages, sin backend) del front de `cctv_monitor`, con los datos en un JSON
 (localStorage) sincronizable con un **GitHub Gist**, igual que `idr/SGC`. Cuando esté completa reemplaza a `idr/SGC`.
 
-Fecha: 2026-11-05. Estado: **entregas 1, 2 y 3 hechas** (ver §9 y §12–§14).
+Fecha: 2026-11-05. Estado: **entregas 1 a 4 hechas** (ver §9 y §12–§15).
 
 ---
 
@@ -173,7 +173,7 @@ Al reemplazar a SGC: agregar `SGC-2/` al `sw.js` raíz de la suite, y más tarde
 2. ✅ **Producción manual**: modelo §3, vista por grabador con canales libres, las dos entradas, panel Estado (Canales,
    Activos, Favoritos).
 3. ✅ **Gist**: sync + merge + lápidas, cifrado AES-GCM con frase (P4).
-4. **Parseadores** de canales y de datos.
+4. ✅ **Parseadores** de canales y de datos.
 5. **Migración desde SGC** y prueba con el JSON real; agregar al `sw.js` de la suite.
 6. Reemplazo: período de convivencia, luego `SGC-2` → `SGC`.
 
@@ -272,3 +272,25 @@ Al reemplazar a SGC: agregar `SGC-2/` al `sw.js` raíz de la suite, y más tarde
   guardado que hace la propia sincronización no la dispara de nuevo.
 - Tests: `tests/js/gist.test.mjs` (12) y la prueba de humo recorre crear → otra PC sube → sincronizar → frase mala,
   con un `fetch` falso de la API de Gists.
+
+## 15. Entrega 4: parseadores
+
+- `js/parseador.js`: bloque `PARSEADOR PURO` + la ventana (Ajustes > Parseadores). Un solo archivo (`cctv_online.json`),
+  dos usos; los dos muestran una **vista previa** y recién «Aplicar» escribe (una transacción de `ApiLocal.importacion`,
+  historial con origen `importacion` y entra al Ctrl+Z del historial del stock como cualquier cambio).
+- Se reusan `crearDispositivo`/`modificarDispositivo`: el archivo no tiene atajos, cada fila pasa por las reglas del
+  stock; la que no puede (condición, serie repetida...) queda en el informe y las demás se aplican.
+- **Datos**: por MAC → serie, firmware y modelo; nunca pisa con vacío (B4); una serie que ya tiene otro equipo se omite
+  y se informa; una MAC con valores distintos en el archivo no se aplica.
+- **Canales** (3 pasos en una sola pantalla): el NVR del archivo se vincula al del stock por **MAC > serie > IP** de la
+  instalación (nunca por nombre: B13) y se puede cambiar con el selector, ignorar o «dar de alta». Cada cámara se busca
+  por MAC > serie y se pone en su canal con descripción e IP del archivo (edificio/piso del grabador si no tenía).
+- **Conflictos** (se listan, no se aplican): equipo ya en otro canal, canal ocupado por otro, equipo no operativo, fuera de
+  la capacidad, MAC en más de un canal del archivo, canal repetido, equipo que es un grabador, sin MAC ni serie.
+- **Altas** (casilla, con tipo a elegir): las cámaras que no están en el stock se crean **ya asignadas al canal** (B21);
+  el grabador creado lleva marca/modelo/MAC/serie/firmware del archivo y su capacidad en el escalón siguiente al canal
+  máximo. **Conservar/liberar**: «liberar» deja sin canal (conserva el resto de la instalación) a los equipos de los
+  canales que el archivo no trae, solo en grabadores que sí trae cámaras.
+- Con el `cctv_online.json` real (329 filas, 8 NVR) y un stock vacío: 8 grabadores, 289 altas y 40 filas en conflicto
+  (las 22 MAC repetidas y sus canales); sin fallos.
+- Tests: `tests/js/parseador.test.mjs` (8) y la prueba de humo (ventana → archivo → vista previa → aplicar).

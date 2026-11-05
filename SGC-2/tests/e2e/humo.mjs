@@ -219,16 +219,43 @@ check('Producción se actualiza sola', $('produccion-accordion').textContent.inc
     w.localStorage.removeItem('sgc2/gist_cfg');
 }
 
+// --- Parseador de canales: archivo del escáner → vista previa → aplicar
+{
+    const sinAsignar = await api('/api/stock/dispositivos', 'POST', { tipo: 'domo', modelo: 'PARS', serie: 'P-77', mac: 'aa:bb:cc:00:00:77' });
+    const archivoEscaner = JSON.stringify({
+        nvrs: [{ ip: '10.0.0.10', nvr_name: 'NVR-A', modelo: 'DS-7616NI-K2', nro_serie: 'X', mac_address: 'AA-BB-CC-DD-EE-01', firmware: 'V4' }],
+        camaras: [{ ip_address: '10.0.7.7', camera_name: 'Parseada', mac_address: 'aa:bb:cc:00:00:77', modelo: 'PARS', nro_serie: 'P-77',
+            firmware: 'V9', nvr_name: 'NVR-A', channel_id: 5 }] });
+    $('pars-abrir-canales').click();
+    await hasta(() => $('parseadorModal').classList.contains('show'));
+    check('parseador: se abre la ventana', $('parseadorModal').classList.contains('show') && $('pars-aplicar').disabled);
+    const entrada = $('pars-archivo');
+    Object.defineProperty(entrada, 'files', { configurable: true,
+        value: [{ name: 'cctv_online.json', size: archivoEscaner.length, text: async () => archivoEscaner }] });
+    entrada.dispatchEvent(new w.Event('change'));
+    await hasta(() => /Parseada|Pasillo|se asignar/i.test($('pars-contenido').textContent) && !$('pars-aplicar').disabled);
+    check('parseador: la vista previa muestra la cámara en su canal', /CH 5/.test($('pars-contenido').textContent)
+        && !$('pars-aplicar').disabled, $('pars-contenido').textContent.slice(0, 200));
+    $('pars-aplicar').click();
+    await esperar(300);
+    const asignada = (await api('/api/stock')).dispositivos.find((x) => x.id === sinAsignar.id);
+    check('parseador: aplicar la deja en el CH 5 con descripción e IP', asignada.instalacion && asignada.instalacion.grabador === nvr.id
+        && asignada.instalacion.canal === 5 && asignada.instalacion.descripcion === 'Parseada' && asignada.instalacion.ip === '10.0.7.7',
+        JSON.stringify(asignada.instalacion));
+    const h = await api('/api/stock/historial');
+    check('parseador: el historial lo marca como importación', h.cambios.some((c) => c.origen === 'importacion'));
+}
+
 // --- exportar, borrar e importar
 const exportado = w.eval('ApiLocal').exportar();
 w.eval('ApiLocal').borrarTodo();
 check('borrar todo vacía el stock', (await api('/api/stock')).dispositivos.length === 0);
 const r = w.eval('ApiLocal').importar(exportado);
-check('importar lo exportado recupera todo', r.dispositivos === 5 && (await api('/api/stock')).dispositivos.length === 5,
+check('importar lo exportado recupera todo', r.dispositivos === 6 && (await api('/api/stock')).dispositivos.length === 6,
     JSON.stringify(r));
 let mal = null;
 try { w.eval('ApiLocal').importar('{"formato":"otro"}'); } catch (e) { mal = e; }
-check('importar otro formato: se rechaza sin tocar nada', mal && (await api('/api/stock')).dispositivos.length === 5);
+check('importar otro formato: se rechaza sin tocar nada', mal && (await api('/api/stock')).dispositivos.length === 6);
 
 await esperar(300);
 check('sin errores de JavaScript', errores.length === 0, errores.join(' | '));

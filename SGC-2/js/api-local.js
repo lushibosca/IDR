@@ -187,6 +187,10 @@ const ApiLocal = (() => {
     function reemplazar(nuevos) {
         guardar(structuredClone(nuevos));
     }
+    /** Una importación (parseadores): `fn(copia, ctx)` con el origen «importacion» en el historial; se guarda si no lanza. */
+    function importacion(fn) {
+        return escribir((d, c) => fn(d, { ...c, origen: 'importacion' }));
+    }
     function borrarTodo() {
         guardar(datosVacios());
     }
@@ -200,5 +204,5 @@ const ApiLocal = (() => {
         });
     }
 
-    return { pedir, atender, exportar, importar, borrarTodo, datos: datosActuales, reemplazar, avisosCarga: () => { cargados(); return [...avisosCarga]; } };
+    return { pedir, atender, exportar, importar, borrarTodo, datos: datosActuales, reemplazar, importacion, avisosCarga: () => { cargados(); return [...avisosCarga]; } };
 })();

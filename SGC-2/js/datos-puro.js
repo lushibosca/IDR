@@ -348,7 +348,7 @@ function listado(datos) {
 function _registrar(datos, ctx, entradas) {
     for (const e of entradas) {
         datos.historial_seq += 1;
-        datos.historial.push({ n: datos.historial_seq, cuando: ctx.ahora(), origen: e.origen || 'manual',
+        datos.historial.push({ n: datos.historial_seq, cuando: ctx.ahora(), origen: e.origen || ctx.origen || 'manual',
             objeto: e.objeto, clave: e.clave || '', dispositivo_id: e.dispositivo_id || null, campo: e.campo,
             antes: e.antes === undefined ? null : e.antes, despues: e.despues === undefined ? null : e.despues,
             usuario: ctx.usuario || null });

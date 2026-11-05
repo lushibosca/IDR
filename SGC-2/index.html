@@ -724,6 +724,25 @@
                             </div>
                             <input type="file" id="datos-archivo" class="d-none" accept=".json,application/json">
                         </section>
+                        <section class="ajuste-seccion" aria-labelledby="ajustes-parseadores">
+                            <h6 class="ajuste-seccion-titulo" id="ajustes-parseadores">Parseadores (cctv_online.json)</h6>
+                            <div class="ajuste-fila" id="pars-abrir-datos" role="button" tabindex="0">
+                                <i class="bi bi-cpu ajuste-icono" aria-hidden="true"></i>
+                                <div class="ajuste-texto">
+                                    <span class="ajuste-titulo">Parseador de datos</span>
+                                    <span class="ajuste-desc">Serie, firmware y modelo de los dispositivos, por MAC, desde el archivo del escáner.</span>
+                                </div>
+                                <span class="ajuste-accion-estado"><i class="bi bi-chevron-right"></i></span>
+                            </div>
+                            <div class="ajuste-fila" id="pars-abrir-canales" role="button" tabindex="0">
+                                <i class="bi bi-diagram-3 ajuste-icono" aria-hidden="true"></i>
+                                <div class="ajuste-texto">
+                                    <span class="ajuste-titulo">Parseador de canales</span>
+                                    <span class="ajuste-desc">Pone cada cámara en el canal de su grabador, con descripción e IP, desde el archivo del escáner.</span>
+                                </div>
+                                <span class="ajuste-accion-estado"><i class="bi bi-chevron-right"></i></span>
+                            </div>
+                        </section>
                         <section class="ajuste-seccion" aria-labelledby="ajustes-gist">
                             <h6 class="ajuste-seccion-titulo" id="ajustes-gist">Sincronización (Gist cifrado)</h6>
                             <div class="ajuste-fila">
@@ -963,6 +982,39 @@
                         <i class="bi bi-plus-lg me-1"></i>Nuevo dispositivo en este canal
                     </button>
                     <button type="button" class="btn btn-outline-secondary btn-sm" data-ui-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Parseadores del cctv_online.json (js/parseador.js): vista previa y aplicar -->
+    <div class="modal fade" id="parseadorModal" tabindex="-1" aria-labelledby="pars-titulo-modal" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+            <div class="modal-content modal-tema border-0 shadow">
+                <div class="modal-header border-0 pb-1">
+                    <h5 class="modal-title fs-6 fw-bold text-primary" id="pars-titulo-modal">
+                        <i class="bi bi-file-earmark-code me-2"></i><span id="pars-titulo-texto">Parseador</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body py-2">
+                    <p class="small text-secondary mb-2" id="pars-ayuda"></p>
+                    <div class="pars-barra">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="pars-elegir"><i class="bi bi-folder2-open me-1"></i>Elegir cctv_online.json</button>
+                        <span class="small text-secondary" id="pars-archivo-info"></span>
+                    </div>
+                    <input type="file" id="pars-archivo" class="d-none" accept=".json,application/json">
+                    <div class="pars-opciones d-none" id="pars-opciones-canales">
+                        <label class="form-check gist-recordar"><input type="radio" class="form-check-input" name="pars-modo" value="conservar" checked><span>Conservar los canales que el archivo no trae</span></label>
+                        <label class="form-check gist-recordar"><input type="radio" class="form-check-input" name="pars-modo" value="reemplazar"><span>Liberar los canales que el archivo no trae (el equipo queda sin canal)</span></label>
+                        <label class="form-check gist-recordar"><input type="checkbox" class="form-check-input" id="pars-altas"><span>Dar de alta las cámaras que no están en el stock, como</span></label>
+                        <select class="form-select form-select-sm pars-select" id="pars-tipo-alta" aria-label="Tipo para las altas"></select>
+                    </div>
+                    <div id="pars-contenido"></div>
+                </div>
+                <div class="modal-footer border-0 pt-1 pb-3">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-ui-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="pars-aplicar" disabled>Aplicar</button>
                 </div>
             </div>
         </div>
@@ -1991,8 +2043,8 @@
     <!-- Lógica Externa (Hardening) con versionado para evitar caché -->
     <script src="js/animaciones.js?v=18"></script>
     <script src="js/busqueda.js?v=8"></script>
-    <script src="js/datos-puro.js?v=1"></script>
-    <script src="js/api-local.js?v=2"></script>
+    <script src="js/datos-puro.js?v=2"></script>
+    <script src="js/api-local.js?v=3"></script>
     <script src="js/comun.js?v=55"></script>
     <script src="js/app.js?v=272"></script>
     <script src="js/sesion-local.js?v=1"></script>
@@ -2013,6 +2065,7 @@
     <script src="js/ajustes.js?v=6"></script>
     <script src="js/datos-ui.js?v=1"></script>
     <script src="js/gist.js?v=1"></script>
+    <script src="js/parseador.js?v=1"></script>
     <script src="js/privacidad.js?v=2"></script>
 
 </body>
