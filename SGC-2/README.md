@@ -15,6 +15,8 @@ catálogos, con los datos en el navegador. Reemplazará a `idr/SGC`. Análisis y
   (`sanearDatos`).
 - **Prefijo `sgc2/`** en todas las claves de `localStorage`: en GitHub Pages las apps de la suite comparten el origen.
 - **Ajustes > Datos**: exportar e importar el JSON, y borrar todo (con confirmación en dos pasos).
+- **Producción manual**: la instalación guarda en qué grabador y canal está un dispositivo. Se asigna con un clic en
+  un canal libre de Producción o con los selectores «Grabador» y «Canal» de la ficha del dispositivo.
 
 Se quitó todo lo que necesitaba un servidor o la red de cámaras: monitoreo, alertas, disponibilidad, escaneo,
 capturas, video en vivo, Auditoría (queda solo **Historial**, los cambios del stock), login y roles.

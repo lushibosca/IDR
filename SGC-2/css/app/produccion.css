@@ -1,6 +1,25 @@
 /* app/produccion.css: App, zona produccion. */
 
 @layer app {
+    /* ─── PRODUCCIÓN: ASIGNAR UN DISPOSITIVO A UN CANAL LIBRE (produccion-asignar.js) */
+
+    .asignar-item {
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .asignar-item:hover,
+    .asignar-item:focus-visible {
+        filter: var(--hover);
+    }
+
+    .asignar-item-detalle {
+        display: block;
+        font-size: 0.8em;
+        color: var(--color-texto-suave);
+    }
+
     /* ─── PRODUCCIÓN: MODO SELECCIÓN (produccion-seleccion.js): lo marcado se distingue por el color, como en Activos */
 
     .produccion-modo-seleccion .canal-item:not(.canal-item-disponible) {

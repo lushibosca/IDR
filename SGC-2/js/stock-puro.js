@@ -683,7 +683,7 @@ function stockValoresDeDispositivo(d) {
         patrimonio: t(d && d.patrimonio), firmware: t(d && d.firmware), canales: t(d && d.canales),
         comentario: t(d && d.comentario), instalado: !!(d && d.instalacion), descripcion: t(i.descripcion),
         ip: t(i.ip), edificio: t(i.edificio), piso: t(i.piso), rack: t(i.rack), puerto: t(i.puerto),
-        instComentario: t(i.comentario)
+        instComentario: t(i.comentario), grabador: t(i.grabador), canal: t(i.canal)
     };
 }
 
@@ -700,9 +700,37 @@ function stockPayload(v) {
         comentario: txt(v.comentario),
         instalacion: v.instalado ? {
             descripcion: txt(v.descripcion), ip: opt(v.ip), edificio: txt(v.edificio), piso: txt(v.piso),
-            rack: txt(v.rack), puerto: txt(v.puerto), comentario: txt(v.instComentario)
+            rack: txt(v.rack), puerto: txt(v.puerto), comentario: txt(v.instComentario),
+            grabador: opt(v.grabador), canal: /^[0-9]{1,4}$/.test(txt(v.canal)) ? Number(txt(v.canal)) : opt(v.canal)
         } : null
     };
+}
+
+// Producción manual: los grabadores (NVR/DVR) instalados a los que se puede asignar `idPropio` ([[id, texto]], por nombre),
+// y los canales de uno: [{ canal, ocupante (nombre de otro dispositivo) | '' }] (sin capacidad cargada, `porDefecto`).
+const STOCK_TIPOS_GRABADOR = ['nvr', 'dvr'];
+function stockGrabadoresAsignables(dispositivos, idPropio, nombre) {
+    return (Array.isArray(dispositivos) ? dispositivos : [])
+        .filter(d => d && d.id !== idPropio && STOCK_TIPOS_GRABADOR.includes(d.tipo) && d.instalacion)
+        .map(d => [d.id, nombre(d) + (d.instalacion.ip ? ` (${d.instalacion.ip})` : '')])
+        .sort((a, b) => a[1].localeCompare(b[1], 'es', { numeric: true, sensitivity: 'base' }));
+}
+function stockCanalesDe(dispositivos, idGrabador, idPropio, nombre, porDefecto = 64) {
+    const lista = Array.isArray(dispositivos) ? dispositivos : [];
+    const g = lista.find(d => d && d.id === idGrabador);
+    if (!g) return [];
+    const ocupantes = new Map();
+    for (const d of lista) {
+        const i = d && d.instalacion;
+        if (i && i.grabador === idGrabador && d.id !== idPropio && i.canal) ocupantes.set(Number(i.canal), nombre(d));
+    }
+    const total = Math.max(Number(g.canales) || porDefecto, ...ocupantes.keys());
+    return Array.from({ length: total }, (_, k) => ({ canal: k + 1, ocupante: ocupantes.get(k + 1) || '' }));
+}
+// El primer canal libre (o '' si no hay)
+function stockPrimerCanalLibre(canales) {
+    const libre = canales.find(c => !c.ocupante);
+    return libre ? String(libre.canal) : '';
 }
 
 // Valores distintos (no vacíos) de un campo, ordenados: sugerencias para marca/modelo

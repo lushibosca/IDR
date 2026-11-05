@@ -3,7 +3,7 @@
 Objetivo: una versión **estática** (GitHub Pages, sin backend) del front de `cctv_monitor`, con los datos en un JSON
 (localStorage) sincronizable con un **GitHub Gist**, igual que `idr/SGC`. Cuando esté completa reemplaza a `idr/SGC`.
 
-Fecha: 2026-11-05. Estado: **entrega 1 hecha** (ver §9 y §12).
+Fecha: 2026-11-05. Estado: **entregas 1 y 2 hechas** (ver §9, §12 y §13).
 
 ---
 
@@ -170,7 +170,7 @@ Al reemplazar a SGC: agregar `SGC-2/` al `sw.js` raíz de la suite, y más tarde
 
 1. ✅ **Esqueleto**: copiar el front, quitar lo de §2, stock en localStorage (alta/edición/borrado, lote,
    catálogos, ubicaciones, modelos, historial, exportar/importar/borrar). Tests node de la lógica pura y prueba de humo.
-2. **Producción manual**: modelo §3, vista por grabador con canales libres, las dos entradas, panel Estado (Canales,
+2. ✅ **Producción manual**: modelo §3, vista por grabador con canales libres, las dos entradas, panel Estado (Canales,
    Activos, Favoritos).
 3. **Gist**: sync + merge + lápidas + firma; seguridad del token (P4).
 4. **Parseadores** de canales y de datos.
@@ -214,7 +214,35 @@ Al reemplazar a SGC: agregar `SGC-2/` al `sw.js` raíz de la suite, y más tarde
 - Tests: 362 de node (los del front de cctv_monitor que aplican, adaptados, y `datos.test.mjs` nuevo) y
   `tests/e2e/humo.mjs` (la página real en jsdom: alta, edición, 409, producción, historial, exportar/importar).
   Verificado también en Firefox (headless) con datos sembrados.
-- Pendiente (entregas siguientes): instalación con grabador+canal y las dos entradas a producción (2); Gist cifrado
+- Pendiente (entregas siguientes): ~~instalación con grabador+canal y las dos entradas a producción (2)~~ (hecho, §13); Gist cifrado
   (3); parseadores (4); migración desde SGC y `sw.js` de la suite (5). El popup de un equipo todavía calcula las
   acciones de Auditoría/disponibilidad (sin botones): se rehace con «Asignar a canal» en la entrega 2.
+
+## 13. Entrega 2: producción manual
+
+- La instalación de un dispositivo tiene `grabador` (id del NVR/DVR) y `canal`: los dos o ninguno (sin grabador =
+  «Otros dispositivos»). Reglas en `datos-puro.js`: el grabador es un NVR/DVR **instalado** y no él mismo; un grabador
+  no va en el canal de otro; el canal entra en la capacidad (`canales`; sin cargar, hasta 4096); un canal, un
+  dispositivo (409 «canal 3 de «NVR»: ya lo ocupa «Pasillo»»).
+- Un grabador con dispositivos en sus canales no sale de producción, no cambia a otro tipo, no baja de `canales` por
+  debajo del canal más alto ocupado y no se borra (409, también en el cambio en lote). Mover o liberar los canales
+  primero. Sacar una cámara de producción (o cambiarle la condición) libera su canal.
+- `/api/v2/datos` arma las cámaras desde las instalaciones con canal (nombre, IP, MAC, modelo, `stock` del
+  dispositivo): Producción, Favoritos, la búsqueda y el resumen de Canales las leen sin cambios. Estado = «Operativo»
+  (no hay monitoreo: se quitó «Levantado» y el «Estado de conexión» de la ficha).
+- **Entrada 1, desde el canal:** en Producción cada grabador muestra sus canales; un clic en uno libre abre «Asignar
+  al canal» (`js/produccion-asignar.js`): el stock sin grabadores, primero lo del depósito listo para usar, con
+  búsqueda; o «Nuevo dispositivo en este canal». Al elegir se abre la ficha del dispositivo con Instalado, grabador,
+  canal y (si no tenía) la ubicación del grabador ya puestos; se guarda con «Guardar».
+- **Entrada 2, desde el modal del dispositivo:** en Detalles de instalación, selectores «Grabador (NVR)» (los
+  instalados, o «Sin grabador») y «Canal» (cada uno con su ocupante; los ocupados, deshabilitados). Elegir el grabador
+  propone el primer canal libre y su edificio/piso si el dispositivo no tenía. Para un grabador no se muestran.
+- Lo que entra (archivo, localStorage) se sanea: una asignación rota (grabador inexistente, fuera de rango, repetida)
+  queda sin canal y se avisa.
+- `stock.js` relee el stock con `sgc:datos-cambiados` (antes solo al abrir la pestaña).
+- Tests: 371 de node (reglas de canal, consistencia del grabador, vista, saneo, selector y formulario) y la prueba de
+  humo recorre la pantalla: canal libre → elegir → ficha con grabador/canal → guardar → Producción actualizada.
+  Visto en Firefox (headless) con un grabador de 8 canales y 3 ocupados.
+- Queda para después: el popup de un equipo no tiene todavía «Quitar del canal» / «Mover» directos (se hace desde la
+  ficha); dos grabadores con la misma descripción se verían en un mismo grupo de Producción (agrupa por nombre).
 

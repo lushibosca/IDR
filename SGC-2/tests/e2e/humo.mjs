@@ -103,16 +103,73 @@ await hasta(() => $('bd-resultado') && $('bd-resultado').textContent.includes('a
 const hist = await api('/api/stock/historial');
 check('historial con las altas y la edición', hist.cambios.length >= 4, String(hist.cambios.length));
 
+// --- producción manual: grabador + canal (por la API y por la pantalla)
+const cam1 = await api('/api/stock/dispositivos', 'POST', { tipo: 'domo', modelo: 'DS-2CD2123G0-I', serie: 'C-1',
+    instalacion: { descripcion: 'Pasillo', ip: '10.0.1.5', edificio: 'Anexo A', piso: 'PB', grabador: nvr.id, canal: 3 } });
+check('alta directo en un canal', cam1.instalacion.grabador === nvr.id && cam1.instalacion.canal === 3);
+rechazo = null;
+try {
+    await api('/api/stock/dispositivos', 'POST', { tipo: 'domo', instalacion: { grabador: nvr.id, canal: 3 } });
+} catch (e) { rechazo = e; }
+check('canal ocupado: 409', rechazo && rechazo.status === 409 && /canal 3 de «NVR Anexo»: ya lo ocupa «Pasillo»/.test(rechazo.message),
+    rechazo && rechazo.message);
+rechazo = null;
+try {
+    await api('/api/stock/dispositivos', 'POST', { tipo: 'domo', instalacion: { grabador: nvr.id, canal: 17 } });
+} catch (e) { rechazo = e; }
+check('canal fuera de la capacidad: 422', rechazo && rechazo.status === 422);
+const nvrAhora = (await api('/api/stock')).dispositivos.find((x) => x.id === nvr.id);
+rechazo = null;
+try {
+    await api(`/api/stock/dispositivos/${nvr.id}`, 'PUT', { ...nvrAhora, instalacion: null, version: nvrAhora.version });
+} catch (e) { rechazo = e; }
+check('grabador con cámaras no sale de producción: 409', rechazo && rechazo.status === 409);
+rechazo = null;
+try { await api(`/api/stock/dispositivos/${nvr.id}?version=${nvrAhora.version}`, 'DELETE'); } catch (e) { rechazo = e; }
+check('grabador con cámaras no se borra: 409', rechazo && rechazo.status === 409);
+const v2 = await api('/api/v2/datos');
+check('/api/v2/datos trae la cámara en su canal', v2.camaras.length === 1 && v2.camaras[0].channel_id === 3
+    && v2.camaras[0].nvr_name === 'NVR Anexo' && v2.camaras[0].stock.id === cam1.id);
+
+$('v-pills-produccion-tab').click();
+await hasta(() => $('produccion-accordion').textContent.includes('Pasillo'));
+check('Producción muestra la cámara en el canal', $('produccion-accordion').textContent.includes('Pasillo'));
+const libre = [...d.querySelectorAll('#produccion-accordion .canal-item-disponible')].find((el) => el.dataset.channelId === '1');
+check('Producción muestra los canales libres', !!libre);
+libre.click();
+await hasta(() => $('asignarCanalModal').classList.contains('show'));
+check('canal libre: se abre «Asignar al canal»', $('asignarCanalModal').classList.contains('show'),
+    $('asignar-titulo-texto').textContent);
+const opcion = [...d.querySelectorAll('#asignar-lista [data-asignar-id]')].find((b) => b.dataset.asignarId === cam.id);
+check('la cámara del depósito está entre las opciones (y no el grabador)', !!opcion
+    && !d.querySelector(`#asignar-lista [data-asignar-id="${nvr.id}"]`));
+opcion.click();
+await hasta(() => $('stockModal').classList.contains('show'));
+check('elegirla abre su formulario con el grabador y el canal', $('stockModal').classList.contains('show')
+    && $('stock-f-grabador').value === nvr.id && $('stock-f-canal').value === '1' && $('stock-f-instalado').checked,
+    `${$('stock-f-grabador').value} ${$('stock-f-canal').value}`);
+const ocupado = [...$('stock-f-canal').options].find((o) => o.value === '3');
+check('el canal ocupado figura deshabilitado con su ocupante', ocupado && ocupado.disabled && /Pasillo/.test(ocupado.textContent));
+$('stock-f-descripcion').value = 'Hall';
+$('stock-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
+await esperar(600);
+if ($('stock-form-error') && !$('stock-form-error').classList.contains('d-none')) console.log('error del formulario:', $('stock-form-error').textContent);
+const enCanal = (await api('/api/stock')).dispositivos.find((x) => x.id === cam.id);
+check('guardar la deja en el CH 1', enCanal.instalacion && enCanal.instalacion.grabador === nvr.id
+    && enCanal.instalacion.canal === 1, JSON.stringify(enCanal.instalacion));
+await hasta(() => $('produccion-accordion').textContent.includes('Hall'));
+check('Producción se actualiza sola', $('produccion-accordion').textContent.includes('Hall'));
+
 // --- exportar, borrar e importar
 const exportado = w.eval('ApiLocal').exportar();
 w.eval('ApiLocal').borrarTodo();
 check('borrar todo vacía el stock', (await api('/api/stock')).dispositivos.length === 0);
 const r = w.eval('ApiLocal').importar(exportado);
-check('importar lo exportado recupera todo', r.dispositivos === 2 && (await api('/api/stock')).dispositivos.length === 2,
+check('importar lo exportado recupera todo', r.dispositivos === 3 && (await api('/api/stock')).dispositivos.length === 3,
     JSON.stringify(r));
 let mal = null;
 try { w.eval('ApiLocal').importar('{"formato":"otro"}'); } catch (e) { mal = e; }
-check('importar otro formato: se rechaza sin tocar nada', mal && (await api('/api/stock')).dispositivos.length === 2);
+check('importar otro formato: se rechaza sin tocar nada', mal && (await api('/api/stock')).dispositivos.length === 3);
 
 await esperar(300);
 check('sin errores de JavaScript', errores.length === 0, errores.join(' | '));

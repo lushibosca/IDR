@@ -870,7 +870,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         ['patrimonio', 'stock-f-patrimonio'], ['firmware', 'stock-f-firmware'], ['canales', 'stock-f-canales'],
         ['comentario', 'stock-f-comentario'], ['descripcion', 'stock-f-descripcion'], ['ip', 'stock-f-ip'],
         ['edificio', 'stock-f-edificio'], ['piso', 'stock-f-piso'], ['rack', 'stock-f-rack'], ['puerto', 'stock-f-puerto'],
-        ['instComentario', 'stock-f-inst-comentario']];
+        ['instComentario', 'stock-f-inst-comentario'], ['grabador', 'stock-f-grabador'], ['canal', 'stock-f-canal']];
 
     // Producción: aviso según condición/«Instalado» y, si el monitoreo lo ve, sin borrar ni sacarlo de producción
     function actualizarProduccion() {
@@ -899,8 +899,35 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         eliminar.title = visto ? 'En producción según el último escaneo: no se puede borrar' : '';
     }
 
+    // Producción manual: el selector de grabador (los NVR/DVR instalados) y el de sus canales, con el que ocupa cada uno.
+    // Un grabador no va en el canal de otro: para él no se muestran.
+    const nombreDisp = (d) => stockNombreVisible(d, String(d.tipo || '').toUpperCase() || 'Dispositivo');
+    function poblarGrabadores(valor) {
+        poblarSelect($('stock-f-grabador'), stockGrabadoresAsignables(datos.dispositivos, editando && editando.id, nombreDisp),
+            'Sin grabador (otros dispositivos)');
+        $('stock-f-grabador').value = [...$('stock-f-grabador').options].some(o => o.value === valor) ? valor : '';
+    }
+    function poblarCanales(valor) {
+        const sel = $('stock-f-canal');
+        const canales = stockCanalesDe(datos.dispositivos, $('stock-f-grabador').value, editando && editando.id, nombreDisp);
+        sel.replaceChildren(...canales.map(c => {
+            const o = new Option(c.ocupante ? `CH ${c.canal} · ${c.ocupante}` : `CH ${c.canal} · libre`, String(c.canal));
+            o.disabled = !!c.ocupante;
+            return o;
+        }));
+        const libre = canales.some(c => String(c.canal) === String(valor) && !c.ocupante);
+        sel.value = libre ? String(valor) : stockPrimerCanalLibre(canales);
+    }
+    function sincronizarCanal() {
+        const esGrabador = STOCK_TIPOS_GRABADOR.includes($('stock-f-tipo').value);
+        if (esGrabador) $('stock-f-grabador').value = '';
+        $('stock-f-grabador-fila').classList.toggle('d-none', esGrabador);
+        $('stock-f-canal-fila').classList.toggle('d-none', esGrabador || !$('stock-f-grabador').value);
+    }
+
     function sincronizarFormulario() {
         actualizarProduccion();
+        sincronizarCanal();
         $('stock-f-inst').classList.toggle('d-none', !$('stock-f-instalado').checked);
         const nuevo = $('stock-f-edificio').value === STOCK_EDIFICIO_NUEVO;
         $('stock-f-edificio-nuevo').classList.toggle('d-none', !nuevo);
@@ -926,19 +953,23 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         const v = valores || stockValoresDeDispositivo(d);
         poblarSelect($('stock-f-piso'), [...stockOpcionesPiso(datos.pisos, v.piso), [STOCK_PISO_NUEVO, 'Otro piso…']],
             'Sin piso');
-        for (const [clave, id] of CAMPOS_FORM) $(id).value = v[clave];
+        poblarGrabadores(v.grabador);
+        for (const [clave, id] of CAMPOS_FORM) if (clave !== 'grabador' && clave !== 'canal') $(id).value = v[clave];
+        poblarCanales(v.canal);
         $('stock-f-instalado').checked = v.instalado;
         $('stock-f-edificio-nuevo').value = '';
         $('stock-f-piso-nuevo').value = '';
         sugerirModelos();
-        const nvrFila = $('stock-f-nvr-fila');
-        const nvrInput = $('stock-f-nvr');
-        if (nvrFila && nvrInput) {
-            const txtNvr = stockNvrTexto(_camActual);
-            nvrInput.value = txtNvr;
-            nvrFila.classList.toggle('d-none', !txtNvr);
-        }
         sincronizarFormulario();
+    }
+
+    // «NVR Anexo (10.0.0.1) (CH 3)»: el canal de la instalación del dispositivo, o ''
+    function textoCanal(d) {
+        const i = d && d.instalacion;
+        const g = i && i.grabador ? porId.get(i.grabador) : null;
+        if (!g) return '';
+        const ip = g.instalacion && g.instalacion.ip ? ` (${g.instalacion.ip})` : '';
+        return `${nombreDisp(g)}${ip} (CH ${i.canal})`;
     }
 
     function stockNvrTexto(infoCam) {
@@ -1026,20 +1057,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         // --- SECCIÓN 1: RED Y DISPOSITIVO ---
         filas.push({ seccion: 'RED Y DISPOSITIVO' });
 
-        if (infoCam) {
-            const badgeEst = document.createElement('span');
-            if (infoCam.is_offline) {
-                badgeEst.className = 'badge bg-danger';
-                badgeEst.textContent = 'Caído';
-            } else if (infoCam.fallback_ping) {
-                badgeEst.className = 'badge bg-warning';
-                badgeEst.textContent = 'En ping';
-            } else {
-                badgeEst.className = 'badge bg-success';
-                badgeEst.textContent = 'Levantado';
-            }
-            filas.push({ etiqueta: 'Estado de conexión', valor: badgeEst });
-        }
+        // (sin monitoreo no hay «estado de conexión»: la condición del stock ya está en la ficha)
 
         const tipoTxt = d ? stockTipoTexto(d, etiquetasTipo) : (infoCam ? 'Cámara' : 'Dispositivo');
         filas.push({ etiqueta: 'Tipo', valor: tipoTxt });
@@ -1104,7 +1122,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         // --- SECCIÓN 2: DETALLES DE INSTALACIÓN ---
         filasInst.push({ seccion: 'DETALLES DE INSTALACIÓN' });
 
-        const nvrTxt = stockNvrTexto(infoCam);
+        const nvrTxt = textoCanal(d) || stockNvrTexto(infoCam);
         if (nvrTxt) {
             filasInst.push({ etiqueta: 'Grabador (NVR)', valor: nvrTxt });
         }
@@ -1393,6 +1411,11 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
             return;
         }
         desdeCamaras = true;
+        if (celdaUbicacion.dataset.stockAlta === '1' && celdaUbicacion.dataset.channelId
+            && typeof window.abrirAsignarCanal === 'function') {
+            window.abrirAsignarCanal(celdaUbicacion.dataset);
+            return;
+        }
         if (celdaUbicacion.dataset.stockAlta === 'nvr') {
             const e = celdaUbicacion.dataset;
             abrirModal(null, stockValoresDesdeEscaneo({ tipo: 'nvr', ip: e.equipoIp, mac: e.equipoMac, modelo: e.equipoModelo,
@@ -1403,6 +1426,23 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         if (!fila) return;
         abrirModal(null, stockValoresDesdeEscaneo({ tipo: 'camara', ip: fila.dataset.camIp, mac: fila.dataset.mac,
             modelo: fila.dataset.modelo, firmware: fila.dataset.firmware, nombre: fila.dataset.camName }), 'edicion');
+    }
+
+    // Poner en producción en un canal (Producción > canal libre): el formulario de `d` (o de uno nuevo) con «Instalado»,
+    // el grabador y el canal ya elegidos y, si no tiene, la ubicación del grabador. Se guarda con «Guardar», como siempre
+    // (las reglas son las del stock: en producción solo operativo, un canal por dispositivo).
+    async function abrirParaCanal(d, idGrabador, canal) {
+        await cargar();                                   // lo último (otro canal pudo ocuparse recién)
+        if (!datos) return;
+        if (d) d = porId.get(d.id) || null;
+        const g = porId.get(idGrabador);
+        if (!g) { toast('El grabador ya no está en el stock.', 'warning'); return; }
+        const base = d ? stockValoresDeDispositivo(d) : { ...stockValoresDeDispositivo(null), tipo: 'camara' };
+        const gi = g.instalacion || {};
+        const valores = { ...base, instalado: true, condicion: 'operativo', grabador: g.id, canal: String(canal),
+            edificio: base.edificio || gi.edificio || '', piso: base.piso || gi.piso || '' };
+        desdeCamaras = true;
+        abrirModal(d || null, valores, 'edicion');
     }
 
     async function despuesDeEscribir(mensaje, nivel = 'success') {
@@ -1761,6 +1801,16 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
     for (const id of ['stock-f-tipo', 'stock-f-condicion', 'stock-f-instalado', 'stock-f-edificio', 'stock-f-piso']) {
         $(id).addEventListener('change', sincronizarFormulario);
     }
+    $('stock-f-grabador').addEventListener('change', () => {
+        poblarCanales('');
+        const g = porId.get($('stock-f-grabador').value);
+        // la ubicación del grabador como punto de partida (si todavía no se cargó otra)
+        if (g && g.instalacion) {
+            if (!$('stock-f-edificio').value && g.instalacion.edificio) $('stock-f-edificio').value = g.instalacion.edificio;
+            if (!$('stock-f-piso').value && g.instalacion.piso) $('stock-f-piso').value = g.instalacion.piso;
+        }
+        sincronizarFormulario();
+    });
     for (const id of ['stock-f-marca', 'stock-f-modelo']) $(id).addEventListener('input', sugerirModelos);
     $('stock-historial-ver').addEventListener('click', verHistorial);
     document.addEventListener('cctv:busqueda', (e) => {
@@ -1773,6 +1823,8 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
     });
     renderMenuAgrupar();
     if (tab.classList.contains('active')) cargar();         // pestaña restaurada al recargar la página
+    // Los datos cambiaron (otra pantalla, otra pestaña del navegador, una importación): se releen si ya se habían leído
+    document.addEventListener('sgc:datos-cambiados', () => { if (datos) cargar(); });
 
     window.contarCoincidenciasStock = function(term) {
         return contarStockActual(term || '');
@@ -1784,7 +1836,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         estado: () => ({ datos, etiquetasTipo, catalogo, criterio }),
         visibles, armarMapaCamaras, cargar, animarModal, toast, modal, seleccion,
         // el alta por lote (stock-alta-lote.js): cambia de modo con la mutación estándar y guarda como el resto del modal
-        altaLote, cambiarModoAnimado, modoActual: () => modoModal, mostrarErrorForm, despuesDeEscribir,
+        altaLote, cambiarModoAnimado, modoActual: () => modoModal, mostrarErrorForm, despuesDeEscribir, abrirParaCanal,
         selectoresDelFormulario: () => ({ tipo: $('stock-f-tipo'), condicion: $('stock-f-condicion') }),
     });
 })();

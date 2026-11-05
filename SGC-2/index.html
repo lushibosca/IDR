@@ -905,6 +905,34 @@
     </div>
 
     <!-- Cambiar datos de lo seleccionado (static/stock-seleccion.js): tipo, condición, edificio, piso y rack -->
+    <!-- Asignar un dispositivo a un canal libre (js/produccion-asignar.js): lista del stock, con búsqueda -->
+    <div class="modal fade modal-altura-fija" id="asignarCanalModal" tabindex="-1" aria-labelledby="asignar-titulo"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content modal-tema border-0 shadow">
+                <div class="modal-header border-0 pb-1">
+                    <h5 class="modal-title fs-6 fw-bold text-primary text-truncate" id="asignar-titulo">
+                        <i class="bi bi-plug me-2"></i><span id="asignar-titulo-texto">Asignar al canal</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body py-2">
+                    <input type="search" class="form-control form-control-sm mb-2" id="asignar-buscar"
+                        placeholder="Buscar por descripción, modelo, serie, MAC o IP" autocomplete="off"
+                        aria-label="Buscar dispositivo">
+                    <div class="list-group" id="asignar-lista"></div>
+                    <div class="small text-secondary py-3 text-center d-none" id="asignar-vacio"></div>
+                </div>
+                <div class="modal-footer border-0 pt-1 pb-3 justify-content-between">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="asignar-nuevo">
+                        <i class="bi bi-plus-lg me-1"></i>Nuevo dispositivo en este canal
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-ui-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="stockLoteModal" tabindex="-1" aria-labelledby="stockLoteLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content modal-tema border-0 shadow">
@@ -1231,13 +1259,23 @@
                             <!-- En producción solo un equipo operativo (static/stock.js: stockAvisoProduccion) -->
                             <div class="d-none" id="stock-f-aviso-produccion" role="status"></div>
                             <fieldset id="stock-f-inst" class="border-0 p-0 m-0 d-none">
-                                <div class="modal-disp-fila d-flex justify-content-between align-items-center gap-3 py-1 d-none"
-                                    id="stock-f-nvr-fila">
-                                    <label class="text-secondary small mb-0 flex-shrink-0" for="stock-f-nvr">Grabador
+                                <!-- Producción manual: en qué canal de qué grabador está (js/stock.js; sin grabador =
+                                     «Otros dispositivos»). No se muestra para un grabador. -->
+                                <div class="modal-disp-fila d-flex justify-content-between align-items-center gap-3 py-1"
+                                    id="stock-f-grabador-fila">
+                                    <label class="text-secondary small mb-0 flex-shrink-0" for="stock-f-grabador">Grabador
                                         (NVR)</label>
                                     <div class="modal-disp-val">
-                                        <input class="form-control form-control-sm modal-disp-input text-secondary"
-                                            id="stock-f-nvr" readonly tabindex="-1">
+                                        <select class="form-select form-select-sm modal-disp-select"
+                                            id="stock-f-grabador"></select>
+                                    </div>
+                                </div>
+                                <div class="modal-disp-fila d-flex justify-content-between align-items-center gap-3 py-1 d-none"
+                                    id="stock-f-canal-fila">
+                                    <label class="text-secondary small mb-0 flex-shrink-0" for="stock-f-canal">Canal</label>
+                                    <div class="modal-disp-val">
+                                        <select class="form-select form-select-sm modal-disp-select"
+                                            id="stock-f-canal"></select>
                                     </div>
                                 </div>
                                 <div
@@ -1580,6 +1618,7 @@
 </div>
 <div class="ayuda-seccion-desc">Equipos instalados, agrupados por grabador con sus canales.</div>
 <div class="ayuda-seccion-items">
+<div class="ayuda-seccion-item"><strong>Canales:</strong> un clic en un canal libre le asigna un dispositivo; en la ficha del dispositivo se elige grabador y canal (o «Sin grabador»).</div>
 </div>
 </div>
 
@@ -1934,6 +1973,7 @@
     <script src="js/stock-seleccion.js?v=17"></script>
     <script src="js/stock-alta-lote.js?v=4"></script>
     <script src="js/produccion-seleccion.js?v=7"></script>
+    <script src="js/produccion-asignar.js?v=1"></script>
     <script src="js/auditoria-bd.js?v=3"></script>
     <script src="js/ajustes.js?v=6"></script>
     <script src="js/datos-ui.js?v=1"></script>

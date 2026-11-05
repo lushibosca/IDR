@@ -40,6 +40,7 @@ const ATAJOS = [
     // ---- Mouse y toque
     { donde: 'Equipos', tipo: 'mouse', gesto: 'Clic', accion: 'Abrir el popup del equipo (Activos, Producción y Favoritos); en el modo selección, marcarlo' },
     { donde: 'Equipos', tipo: 'mouse', gesto: 'Doble clic', accion: 'Ver los datos del equipo (Activos, Producción y Favoritos)' },
+    { donde: 'Producción', tipo: 'mouse', gesto: 'Clic en un canal libre', accion: 'Elegir qué dispositivo del stock va en ese canal (o dar de alta uno nuevo ahí)' },
     { donde: 'Equipos', tipo: 'mouse', gesto: 'Doble clic en un dato', accion: 'Copiar el nombre, la IP, la MAC, el modelo o el firmware' },
     { donde: 'Popup del equipo', tipo: 'mouse', gesto: 'Clic en la estrella', accion: 'Agregar o quitar de Favoritos (equipos en producción)' },
     { donde: 'Activos', tipo: 'mouse', gesto: 'Mantener presionado el encabezado de una columna (vista lista) y arrastrar', accion: 'Mover la columna a otro lugar de la tabla; el orden se recuerda y sigue a la persona (un clic ordena por esa columna)' },

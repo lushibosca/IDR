@@ -486,7 +486,7 @@ function produccionEstado(it) {
             if (it.redMotivo) s.title = it.redMotivo;
             return s;
         }
-        if (it.red === 'online') return uiNodo('span', 'text-success fw-semibold', 'Levantado');
+        if (it.red === 'online') return uiNodo('span', 'text-success fw-semibold', 'Operativo');
         return it.revisar ? uiNodo('span', 'text-warning-emphasis fw-semibold', 'A revisar') : null;
     }
     if (it.sinSenal) {
@@ -506,9 +506,8 @@ function produccionEstado(it) {
         s.title = 'Responde ping directo, pero su NVR está caído (sin grabación)';
         return s;
     }
-    const s = uiNodo('span', 'text-success fw-semibold', 'Levantado');
-    if (it.sinRelevar) s.title = `Cámara levantada pero sin inventario. ${uiTextoSinRelevar(it.sinRelevarMotivo)}`;
-    return s;
+    // Sin monitoreo, un canal ocupado es un equipo en producción: operativo (la única condición posible ahí)
+    return uiNodo('span', 'text-success fw-semibold', 'Operativo');
 }
 
 // Las capturas de la vista snapshot se piden de a pocas y solo las que están cerca de la vista (uiColaImagenes): cientos de

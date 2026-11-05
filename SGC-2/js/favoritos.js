@@ -235,7 +235,7 @@ function uiTituloDispositivo(id, texto, fav, alta = null) {
 }
 
 const ESTADOS_FAVORITO = {
-    online: 'Levantado',
+    online: 'Operativo',
     offline: 'Caído',
     sin_senal: 'Sin señal',
     desconocido: 'Sin dato'
