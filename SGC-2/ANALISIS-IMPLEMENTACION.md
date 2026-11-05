@@ -346,3 +346,13 @@ principal ni respaldo):
   Las altas de una cámara que aparece en dos grabadores crean UNA cámara con las dos asignaciones.
 - **Migración desde SGC**: una cámara en canales de dos grabadores conserva las dos; dos canales del mismo grabador, el primero
   (con aviso).
+
+## 18. Borrar todo y reemplazos con el Gist activo
+
+- **Borrar todo** vaciaba el navegador pero, con la sincronización automática, a los 5 s volvía a bajar todo del Gist (el borrado local
+  no deja lápidas). Ahora olvida el ID, el token y la frase, apaga la automática y descarta una sincronización en curso
+  (`GistSync.olvidar`); el Gist no se toca.
+- **Importar** y **Migrar > Reemplazar todo** reemplazan lo de este navegador: lo que estaba y ya no está deja **lápida**
+  (`reemplazarConLapidas`), así la siguiente sincronización lo borra en el Gist y en las otras PC en vez de traerlo de vuelta. Un equipo
+  editado en otra PC después del reemplazo sigue vivo (regla de las lápidas). Lo que solo está en el Gist y nunca estuvo acá no se puede
+  marcar: vuelve, como en cualquier fusión.

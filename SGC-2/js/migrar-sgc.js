@@ -352,9 +352,8 @@ if (typeof document !== 'undefined') {
         if (!bruto || !resultado) return;
         try {
             const local = ApiLocal.datos();
-            const final = unir() && local.dispositivos.length
-                ? gistFusionar(local, resultado.datos, sanearDatos, ahoraZ()).datos : resultado.datos;
-            ApiLocal.reemplazar(final);
+            if (unir() && local.dispositivos.length) ApiLocal.reemplazar(gistFusionar(local, resultado.datos, sanearDatos, ahoraZ()).datos);
+            else ApiLocal.reemplazarTodo(resultado.datos);
             mostrarToast(`Migración aplicada: ${resultado.informe.dispositivos} dispositivo(s) de SGC.`, 'success', 5000);
             UI.modal.cerrar($('migrarModal'));
         } catch (e) {

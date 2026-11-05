@@ -343,6 +343,16 @@ check('importar otro formato: se rechaza sin tocar nada', mal && (await api('/ap
         && camSgc.instalacion.canal === 2 && camSgc.instalacion.descripcion === 'Cámara SGC', JSON.stringify(camSgc && camSgc.instalacion));
 }
 
+// --- importar un archivo con menos equipos (reemplaza): lo que sale deja lápida para que el Gist lo borre en las otras PC
+{
+    const completo = JSON.parse(w.eval('ApiLocal').exportar());
+    const sale = completo.dispositivos[0].id;
+    completo.dispositivos = completo.dispositivos.filter((x) => x.id !== sale && !(x.instalacion && (x.instalacion.asignaciones || []).some((a) => a.grabador === sale)));
+    w.eval('ApiLocal').importar(JSON.stringify(completo));
+    const guardado = JSON.parse(w.localStorage.getItem('sgc2/datos_v1'));
+    check('importar (reemplaza): lo que sale deja lápida', !!guardado.eliminados.dispositivos[sale], Object.keys(guardado.eliminados.dispositivos).join());
+}
+
 await esperar(300);
 check('sin errores de JavaScript', errores.length === 0, errores.join(' | '));
 console.log(fallos ? `\n${fallos} FALLO(S)` : '\nTODO OK');

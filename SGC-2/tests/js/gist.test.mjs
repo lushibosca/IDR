@@ -6,7 +6,7 @@ import { cargarBloque, plano } from "./_bloque.mjs";
 const D = cargarBloque("datos-puro.js", "DATOS PURO",
   { String, Number, Array, Map, Set, Math, Object, JSON, URL, RegExp, Error, Date },
   ["datosVacios", "crearDispositivo", "modificarDispositivo", "eliminarDispositivo", "sanearDatos", "exportarDatos",
-    "editarUbicacion"]);
+    "editarUbicacion", "reemplazarConLapidas"]);
 const G = cargarBloque("gist.js", "GIST PURO",
   { String, Number, Array, Map, Set, Math, Object, JSON, URL, RegExp, Error, Date, Uint8Array, TextEncoder, TextDecoder,
     btoa, atob, crypto: globalThis.crypto },
@@ -176,4 +176,26 @@ test("utilidades: raw_url solo de gist.githubusercontent.com, errores HTTP con t
   assert.match(G.gistErrorHttp(401, "leer"), /token/);
   assert.match(G.gistErrorHttp(404, "leer"), /No existe/);
   assert.match(G.gistErrorHttp(500, "leer"), /500/);
+});
+
+test("reemplazar (importar o migrar): lo que sale deja lápida y la sincronización no lo trae de vuelta", () => {
+  const actual = D.datosVacios();
+  const x = D.crearDispositivo(actual, entrada({ serie: "SALE" }), ctx(1));
+  const y = D.crearDispositivo(actual, entrada({ serie: "QUEDA" }), ctx(1));
+  const nuevo = D.datosVacios();
+  nuevo.dispositivos.push(structuredClone(plano(actual).dispositivos.find(d => d.id === y.id)));
+  nuevo.eliminados.dispositivos[y.id] = "2020-01-01T00:00:00Z";         // una lápida vieja de lo que SÍ queda se descarta
+  const r = D.reemplazarConLapidas(actual, copia(nuevo), "2026-11-05T13:00:00Z");
+  assert.equal(r.eliminados.dispositivos[x.id], "2026-11-05T13:00:00Z");
+  assert.equal(r.eliminados.dispositivos[y.id], undefined);
+  assert.deepEqual(plano(r.dispositivos.map(d => d.serie)), ["QUEDA"]);
+  // el Gist todavía tiene los dos (de otra PC): al fusionar, "SALE" no vuelve
+  const f = G.gistFusionar(copia(r), copia(actual), D.sanearDatos, "2026-11-05T13:05:00Z");
+  assert.deepEqual(plano(f.datos.dispositivos.map(d => d.serie)), ["QUEDA"]);
+  assert.equal(f.cambiaRemoto, true, "y el Gist se entera del borrado");
+  // si en otra PC lo editaron DESPUÉS del reemplazo, vive
+  const editado = copia(actual);
+  D.modificarDispositivo(editado, x.id, entrada({ serie: "SALE", modelo: "Despues" }), 1, ctx(59));
+  editado.dispositivos.find(d => d.id === x.id).actualizado = "2026-11-05T14:00:00Z";
+  assert.equal(G.gistFusionar(copia(r), copia(editado), D.sanearDatos, "2026-11-05T14:05:00Z").datos.dispositivos.length, 2);
 });

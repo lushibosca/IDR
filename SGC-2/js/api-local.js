@@ -176,12 +176,16 @@ const ApiLocal = (() => {
             throw new ErrorDatos('validacion', 'no es un archivo exportado de SGC-2 (para el de SGC usá «Migrar desde SGC»)');
         }
         const r = sanearDatos(bruto, ahora());
-        guardar(r.datos);
+        guardar(reemplazarConLapidas(cargados(), r.datos, ahora()));
         return { dispositivos: r.datos.dispositivos.length, avisos: r.avisos };
     }
     /** Una copia de los datos guardados (para fusionar con el Gist). */
     function datosActuales() {
         return structuredClone(cargados());
+    }
+    /** Reemplaza TODO por unos datos ya saneados (migración en modo «reemplazar»): lo que sale deja lápida. */
+    function reemplazarTodo(nuevos) {
+        guardar(reemplazarConLapidas(cargados(), structuredClone(nuevos), ahora()));
     }
     /** Reemplaza los datos por unos YA saneados (el resultado de fusionar con el Gist). */
     function reemplazar(nuevos) {
@@ -204,5 +208,5 @@ const ApiLocal = (() => {
         });
     }
 
-    return { pedir, atender, exportar, importar, borrarTodo, datos: datosActuales, reemplazar, importacion, avisosCarga: () => { cargados(); return [...avisosCarga]; } };
+    return { pedir, atender, exportar, importar, borrarTodo, datos: datosActuales, reemplazar, reemplazarTodo, importacion, avisosCarga: () => { cargados(); return [...avisosCarga]; } };
 })();

@@ -1217,6 +1217,16 @@ function sanearDatos(bruto, ahora) {
     return { datos: r, avisos };
 }
 
+/** `nuevos` (ya saneados) pasa a reemplazar a `actuales`: los dispositivos que estaban y ya no están quedan con lápida, para que
+ *  la sincronización con el Gist los BORRE en las otras PC en vez de volver a traerlos. Se conservan las lápidas anteriores. */
+function reemplazarConLapidas(actuales, nuevos, ahora) {
+    const r = { ...nuevos, eliminados: { dispositivos: { ...actuales.eliminados.dispositivos, ...nuevos.eliminados.dispositivos } } };
+    const quedan = new Set(nuevos.dispositivos.map(d => d.id));
+    for (const d of actuales.dispositivos) if (!quedan.has(d.id)) r.eliminados.dispositivos[d.id] = ahora;
+    for (const id of quedan) delete r.eliminados.dispositivos[id];
+    return r;
+}
+
 /** Lo que se exporta (y se guarda): los datos más su formato. */
 function exportarDatos(datos, cuando) {
     return { ...datos, formato: FORMATO_DATOS, version: VERSION_DATOS, exportado: cuando };
