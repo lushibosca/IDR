@@ -26,7 +26,7 @@ test("candidatos: sin grabadores, primero lo listo del depósito y lo que se mov
   assert.deepEqual(plano(r.map((x) => x.id)), ["a", "b", "d", "c"]);
   assert.match(r[0].detalle, /en depósito$/);
   assert.match(r[1].detalle, /en depósito \(revisar\)/);
-  assert.match(r[3].detalle, /CH 2 de otro grabador/);
+  assert.match(r[3].detalle, /ya está en otro grabador/);
   assert.deepEqual(plano(A.asignarCandidatos(stock, "hik s1", nombre).map((x) => x.id)), ["a"]);
   assert.deepEqual(plano(A.asignarCandidatos(stock, "pásillo", nombre).map((x) => x.id)), ["c"]);
   assert.deepEqual(plano(A.asignarCandidatos(null, "", nombre)), []);
@@ -51,11 +51,18 @@ test("selectores del formulario: grabadores instalados (no él mismo) y canales 
   assert.equal(S.stockCanalesDe([{ id: "z", tipo: "nvr", instalacion: {} }], "z", null, nombre).length, 64);
 });
 
-test("cuerpo del formulario: grabador y canal viajan en la instalación (canal como número)", () => {
+test("cuerpo del formulario: las asignaciones (grabador y canal, varias) viajan en la instalación; el canal como número", () => {
   const v = { ...S.stockValoresDeDispositivo(stock[4]) };
-  assert.equal(v.grabador, "g");
-  assert.equal(v.canal, "2");
-  const cuerpo = S.stockPayload(v);
-  assert.deepEqual([cuerpo.instalacion.grabador, cuerpo.instalacion.canal], ["g", 2]);
-  assert.deepEqual(plano(S.stockPayload({ ...v, grabador: "", canal: "" }).instalacion).grabador, null);
+  assert.deepEqual(plano(v.asignaciones), [{ grabador: "g", canal: "2" }]);
+  assert.deepEqual(plano(S.stockPayload(v).instalacion.asignaciones), [{ grabador: "g", canal: 2 }]);
+  const dos = S.stockPayload({ ...v, asignaciones: [{ grabador: "g", canal: "2" }, { grabador: "h", canal: "7" }, { grabador: "", canal: "" }] });
+  assert.deepEqual(plano(dos.instalacion.asignaciones), [{ grabador: "g", canal: 2 }, { grabador: "h", canal: 7 }]);
+  assert.deepEqual(plano(S.stockPayload({ ...v, asignaciones: [] }).instalacion.asignaciones), []);
+  // lo que viene de la API con la lista nueva
+  const api = { ...stock[4], instalacion: { ...stock[4].instalacion, asignaciones: [{ grabador: "g", canal: 2 }, { grabador: "h", canal: 5 }] } };
+  assert.equal(S.stockValoresDeDispositivo(api).asignaciones.length, 2);
+  // los canales de un grabador cuentan las asignaciones de cualquier equipo, no solo la primera
+  const ocupa = S.stockCanalesDe([stock[0], { id: "x", tipo: "domo", instalacion: { asignaciones: [{ grabador: "h", canal: 1 }, { grabador: "g", canal: 3 }] } }],
+    "g", null, nombre);
+  assert.equal(ocupa[2].ocupante, nombre({ id: "x", tipo: "domo", instalacion: {} }));
 });

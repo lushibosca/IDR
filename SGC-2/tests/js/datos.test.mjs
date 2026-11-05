@@ -218,7 +218,7 @@ test("saneo de lo que entra: formato ajeno vacío, ids y únicos repetidos fuera
   assert.deepEqual(plano(d.dispositivos.map((x) => [x.id, x.tipo, x.condicion, x.mac])),
     [["a", "domo", "revisar", "aa:bb:cc:dd:ee:ff"], ["b", "otro", "revisar", null]]);
   assert.deepEqual(plano(d.dispositivos[0].instalacion), { descripcion: "", ip: null, edificio: "Nuevo Edificio", piso: "PB",
-    rack: "", puerto: "", comentario: "", actualizado: "2026-02-02T00:00:00Z", grabador: null, canal: null });
+    rack: "", puerto: "", comentario: "", actualizado: "2026-02-02T00:00:00Z", asignaciones: [] });
   assert.ok(d.edificios.includes("Nuevo Edificio") && d.pisos.includes("PB"));
   const nvr = d.catalogo.tipos.find((t) => t.clave === "nvr");
   assert.equal(nvr.sistema, true);
@@ -262,13 +262,13 @@ test("canal: grabador y canal juntos, el grabador es un NVR/DVR instalado y el c
 test("canal: mover de canal y sacar de producción lo liberan; el historial lo registra", () => {
   const { datos, ctx, g } = conGrabador();
   const c = D.crearDispositivo(datos, { tipo: "domo", instalacion: { grabador: g.id, canal: 1 } }, ctx);
-  const movida = D.modificarDispositivo(datos, c.id, { ...c, instalacion: { ...c.instalacion, canal: 5 } }, 1, ctx);
+  const movida = D.modificarDispositivo(datos, c.id, { ...c, instalacion: { ...c.instalacion, asignaciones: [{ grabador: g.id, canal: 5 }] } }, 1, ctx);
   assert.equal(movida.instalacion.canal, 5);
   D.crearDispositivo(datos, { tipo: "bullet", instalacion: { grabador: g.id, canal: 1 } }, ctx);    // el 1 quedó libre
   const fuera = D.modificarDispositivo(datos, c.id, { ...movida, instalacion: null }, 2, ctx);
   assert.equal(fuera.instalacion, null);
   const campos = D.historialDispositivo(datos, c.id).entradas.map((e) => [e.campo, e.antes, e.despues]);
-  assert.ok(campos.some(([c0, a, b]) => c0 === "instalacion.canal" && a === "1" && b === "5"));
+  assert.ok(campos.some(([c0, a, b]) => c0 === "instalacion.asignaciones" && a === `${g.id}#1` && b === `${g.id}#5`));
 });
 
 test("grabador con asignados: no sale de producción, no cambia de tipo, no se achica ni se borra", () => {
@@ -296,7 +296,7 @@ test("vista de producción: lo asignado sale como cámara de su grabador, ordena
   assert.ok(v.camaras.every((c) => c.is_offline === false && c.stock && c.stock.id));
 });
 
-test("saneo: asignaciones rotas (grabador inexistente, fuera de rango, repetidas, a sí mismo) quedan sin canal", () => {
+test("saneo: asignaciones rotas (grabador inexistente, fuera de rango, repetidas, a sí mismo) quedan sin canal (los datos viejos con grabador+canal sueltos se leen igual)", () => {
   const disp = (id, tipo, inst, extra = {}) => ({ id, tipo, instalacion: inst, ...extra });
   const r = D.sanearDatos({ formato: "sgc2", dispositivos: [
     disp("g", "nvr", {}, { canales: 4 }),
@@ -307,8 +307,35 @@ test("saneo: asignaciones rotas (grabador inexistente, fuera de rango, repetidas
     disp("e", "nvr", { grabador: "g", canal: 3 }),
     disp("f", "domo", { grabador: "g", canal: null }),
   ] }, "2026-01-01T00:00:00Z");
-  const canal = (id) => { const x = r.datos.dispositivos.find((y) => y.id === id).instalacion; return [x.grabador, x.canal]; };
-  assert.deepEqual(plano(canal("a")), ["g", 1]);
-  for (const id of ["b", "c", "d", "e", "f"]) assert.deepEqual(plano(canal(id)), [null, null], id);
-  assert.ok(r.avisos.some((a) => /5 asignación/.test(a)));
+  const canal = (id) => r.datos.dispositivos.find((y) => y.id === id).instalacion.asignaciones;
+  assert.deepEqual(plano(canal("a")), [{ grabador: "g", canal: 1 }]);
+  for (const id of ["b", "c", "d", "e", "f"]) assert.deepEqual(plano(canal(id)), [], id);
+  assert.ok(r.avisos.some((a) => /4 asignación/.test(a)));
+});
+
+test("una cámara en varios grabadores: todas las asignaciones valen igual", () => {
+  const { datos, ctx, g } = conGrabador();
+  const g2 = D.crearDispositivo(datos, { tipo: "nvr", canales: 8, instalacion: { descripcion: "NVR 2", ip: "10.0.0.2" } }, ctx);
+  const c = D.crearDispositivo(datos, { tipo: "domo", instalacion: { descripcion: "Redundante",
+    asignaciones: [{ grabador: g.id, canal: 7 }, { grabador: g2.id, canal: 3 }] } }, ctx);
+  assert.deepEqual(plano(c.instalacion.asignaciones), [{ grabador: g.id, canal: 7 }, { grabador: g2.id, canal: 3 }]);
+  const v = D.datosProduccion(datos);
+  assert.deepEqual(plano(v.camaras.filter((x) => x.camera_name === "Redundante").map((x) => [x.nvr_name, x.channel_id])),
+    [["NVR 1", 7], ["NVR 2", 3]]);
+  // cada canal sigue siendo de un solo equipo, y un mismo grabador no puede estar dos veces
+  rechaza(() => D.crearDispositivo(datos, { tipo: "bullet", instalacion: { asignaciones: [{ grabador: g2.id, canal: 3 }] } }, ctx), 409, /canal 3 de «NVR 2»/);
+  rechaza(() => D.crearDispositivo(datos, { tipo: "bullet", instalacion: { asignaciones: [{ grabador: g.id, canal: 8 }, { grabador: g.id, canal: 9 }] } }, ctx), 422, /dos veces/);
+  // los dos grabadores quedan protegidos mientras tengan la cámara
+  rechaza(() => D.eliminarDispositivo(datos, g2.id, 1, ctx), 409);
+  // quitar una asignación libera solo ese canal
+  const una = D.modificarDispositivo(datos, c.id, { ...c, instalacion: { ...c.instalacion, asignaciones: [{ grabador: g2.id, canal: 3 }] } }, 1, ctx);
+  assert.deepEqual(plano(una.instalacion.asignaciones), [{ grabador: g2.id, canal: 3 }]);
+  D.crearDispositivo(datos, { tipo: "bullet", instalacion: { asignaciones: [{ grabador: g.id, canal: 7 }] } }, ctx);
+});
+
+test("datos guardados con el par grabador+canal suelto se leen como una asignación", () => {
+  const r = D.sanearDatos({ formato: "sgc2", dispositivos: [{ id: "g", tipo: "nvr", condicion: "operativo", canales: 4, instalacion: {} },
+    { id: "a", tipo: "domo", condicion: "operativo", instalacion: { grabador: "g", canal: 2 } }] }, "2026-01-01T00:00:00Z");
+  assert.deepEqual(plano(r.datos.dispositivos[1].instalacion.asignaciones), [{ grabador: "g", canal: 2 }]);
+  assert.equal(r.avisos.length, 0);
 });

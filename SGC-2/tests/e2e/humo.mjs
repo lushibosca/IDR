@@ -148,9 +148,9 @@ check('la cámara del depósito está entre las opciones (y no el grabador)', !!
 opcion.click();
 await hasta(() => $('stockModal').classList.contains('show'));
 check('elegirla abre su formulario con el grabador y el canal', $('stockModal').classList.contains('show')
-    && $('stock-f-grabador').value === nvr.id && $('stock-f-canal').value === '1' && $('stock-f-instalado').checked,
-    `${$('stock-f-grabador').value} ${$('stock-f-canal').value}`);
-const ocupado = [...$('stock-f-canal').options].find((o) => o.value === '3');
+    && $('stock-f-asig-grab-0').value === nvr.id && $('stock-f-asig-canal-0').value === '1' && $('stock-f-instalado').checked,
+    `${$('stock-f-asig-grab-0') && $('stock-f-asig-grab-0').value} ${$('stock-f-asig-canal-0') && $('stock-f-asig-canal-0').value}`);
+const ocupado = [...$('stock-f-asig-canal-0').options].find((o) => o.value === '3');
 check('el canal ocupado figura deshabilitado con su ocupante', ocupado && ocupado.disabled && /Pasillo/.test(ocupado.textContent));
 $('stock-f-descripcion').value = 'Hall';
 $('stock-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
@@ -161,6 +161,33 @@ check('guardar la deja en el CH 1', enCanal.instalacion && enCanal.instalacion.g
     && enCanal.instalacion.canal === 1, JSON.stringify(enCanal.instalacion));
 await hasta(() => $('produccion-accordion').textContent.includes('Hall'));
 check('Producción se actualiza sola', $('produccion-accordion').textContent.includes('Hall'));
+
+// --- una cámara en dos grabadores (redundancia): todas las asignaciones valen igual
+{
+    const nvr2 = await api('/api/stock/dispositivos', 'POST', { tipo: 'nvr', modelo: 'NVR-2', canales: 8, mac: 'aa:bb:cc:dd:ee:02',
+        instalacion: { descripcion: 'NVR Respaldo', ip: '10.0.0.11' } });
+    const redundante = await api('/api/stock/dispositivos', 'POST', { tipo: 'domo', serie: 'R-1',
+        instalacion: { descripcion: 'Redundante', asignaciones: [{ grabador: nvr.id, canal: 9 }, { grabador: nvr2.id, canal: 2 }] } });
+    check('una cámara en dos grabadores', redundante.instalacion.asignaciones.length === 2, JSON.stringify(redundante.instalacion.asignaciones));
+    const v3 = await api('/api/v2/datos');
+    check('Producción la muestra en los dos grabadores', v3.camaras.filter((c) => c.camera_name === 'Redundante').map((c) => c.nvr_name).sort().join() === 'NVR Anexo,NVR Respaldo');
+    $('v-pills-produccion-tab').click();
+    await hasta(() => $('produccion-accordion').textContent.includes('NVR Respaldo'));
+    check('la pantalla de Producción la pinta en ambos', ($('produccion-accordion').textContent.match(/Redundante/g) || []).length >= 2);
+    // el formulario muestra una fila por grabador y deja agregar otra
+    $('v-pills-stock-tab').click();
+    await hasta(() => $('stock-accordion').textContent.includes('Redundante'));
+    w.eval('StockNucleo').abrirParaCanal(redundante, nvr2.id, 4);
+    await hasta(() => $('stockModal').classList.contains('show') && $('stock-f-asig-grab-1'));
+    check('el formulario trae sus dos asignaciones (la del canal pedido reemplaza la de ese grabador)',
+        $('stock-f-asig-grab-0').value === nvr.id && $('stock-f-asig-grab-1').value === nvr2.id && $('stock-f-asig-canal-1').value === '4',
+        `${$('stock-f-asig-grab-0').value} ${$('stock-f-asig-grab-1').value} ${$('stock-f-asig-canal-1').value}`);
+    check('un grabador ya elegido no se repite en la otra fila', [...$('stock-f-asig-grab-1').options].find((o) => o.value === nvr.id).disabled);
+    w.UI ? w.UI.modal.cerrar($('stockModal')) : null;
+    await esperar(300);
+    await api(`/api/stock/dispositivos/${redundante.id}?version=${redundante.version}`, 'DELETE');
+    await api(`/api/stock/dispositivos/${nvr2.id}?version=${nvr2.version}`, 'DELETE');
+}
 
 // --- Gist cifrado: crear, bajar lo que sube otra PC y que lo subido no se lea sin la frase
 {

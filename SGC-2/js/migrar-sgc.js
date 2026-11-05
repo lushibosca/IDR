@@ -79,7 +79,7 @@ function _migInstalacion(fuente, donde, avisos) {
     }
     return { descripcion: textoAcotado(fuente.descripcion, LARGOS_STOCK.descripcion), ip, edificio: espacios(textoAcotado(fuente.edificio, LARGOS_STOCK.edificio)),
         piso: normalizarPiso(fuente.piso), rack: textoAcotado(fuente.rack, LARGOS_STOCK.rack), puerto: puertoOk, comentario,
-        grabador: null, canal: null };
+        asignaciones: [] };
 }
 /** Un mismo equipo en varios lugares: cada campo vacío se completa; si dos lugares dicen cosas distintas gana el primero. */
 function _migFusionar(actual, nueva, nombre, donde, avisos) {
@@ -242,12 +242,14 @@ function migrarDesdeSgc(bruto, { ahora, nuevoId }) {
             if (!i) continue;
             if (!canal) { avisos.push(`${donde}: canal no válido; queda sin canal`); continue; }
             if (did === gid || TIPOS_GRABADOR.includes(disp.get(did).tipo)) { avisos.push(`${donde}: un grabador no va en el canal de otro; queda sin canal`); continue; }
-            if (i.grabador) { avisos.push(`${disp.get(did).modelo || did} está en dos canales (${donde} y otro); se conserva el primero`); continue; }
+            if (i.asignaciones.some(x => x.grabador === gid)) {
+                avisos.push(`${disp.get(did).modelo || did} está en dos canales del mismo grabador (${donde} y otro); se conserva el primero`);
+                continue;
+            }
             const clave = `${gid}#${canal}`;
             if (ocupados.has(clave)) { avisos.push(`${donde}: el canal ya lo ocupa ${ocupados.get(clave)}; ${did} queda sin canal`); continue; }
             ocupados.set(clave, disp.get(did).modelo || did);
-            i.grabador = gid;
-            i.canal = canal;
+            i.asignaciones.push({ grabador: gid, canal });
             informe.canalesAsignados++;
         }
     }

@@ -673,6 +673,13 @@ function stockUrlPagina(valor) {
     }
 }
 
+// Las asignaciones [{grabador, canal}] de una instalación (de la API: `asignaciones`; de lo viejo: el par grabador+canal)
+function stockAsignacionesDe(i) {
+    if (!i) return [];
+    if (Array.isArray(i.asignaciones)) return i.asignaciones.filter(a => a && a.grabador && a.canal);
+    return i.grabador && i.canal ? [{ grabador: i.grabador, canal: i.canal }] : [];
+}
+
 // Valores del formulario (todo texto/booleano) a partir de un dispositivo; sin dispositivo, los de un alta
 function stockValoresDeDispositivo(d) {
     const i = (d && d.instalacion) || {};
@@ -683,7 +690,8 @@ function stockValoresDeDispositivo(d) {
         patrimonio: t(d && d.patrimonio), firmware: t(d && d.firmware), canales: t(d && d.canales),
         comentario: t(d && d.comentario), instalado: !!(d && d.instalacion), descripcion: t(i.descripcion),
         ip: t(i.ip), edificio: t(i.edificio), piso: t(i.piso), rack: t(i.rack), puerto: t(i.puerto),
-        instComentario: t(i.comentario), grabador: t(i.grabador), canal: t(i.canal)
+        instComentario: t(i.comentario),
+        asignaciones: stockAsignacionesDe(d && d.instalacion).map(a => ({ grabador: t(a.grabador), canal: t(a.canal) }))
     };
 }
 
@@ -701,7 +709,8 @@ function stockPayload(v) {
         instalacion: v.instalado ? {
             descripcion: txt(v.descripcion), ip: opt(v.ip), edificio: txt(v.edificio), piso: txt(v.piso),
             rack: txt(v.rack), puerto: txt(v.puerto), comentario: txt(v.instComentario),
-            grabador: opt(v.grabador), canal: /^[0-9]{1,4}$/.test(txt(v.canal)) ? Number(txt(v.canal)) : opt(v.canal)
+            asignaciones: (Array.isArray(v.asignaciones) ? v.asignaciones : []).filter(a => a && txt(a.grabador))
+                .map(a => ({ grabador: txt(a.grabador), canal: /^[0-9]{1,4}$/.test(txt(a.canal)) ? Number(txt(a.canal)) : opt(a.canal) }))
         } : null
     };
 }
@@ -721,8 +730,8 @@ function stockCanalesDe(dispositivos, idGrabador, idPropio, nombre, porDefecto =
     if (!g) return [];
     const ocupantes = new Map();
     for (const d of lista) {
-        const i = d && d.instalacion;
-        if (i && i.grabador === idGrabador && d.id !== idPropio && i.canal) ocupantes.set(Number(i.canal), nombre(d));
+        if (!d || d.id === idPropio) continue;
+        for (const a of stockAsignacionesDe(d.instalacion)) if (a.grabador === idGrabador) ocupantes.set(Number(a.canal), nombre(d));
     }
     const total = Math.max(Number(g.canales) || porDefecto, ...ocupantes.keys());
     return Array.from({ length: total }, (_, k) => ({ canal: k + 1, ocupante: ocupantes.get(k + 1) || '' }));

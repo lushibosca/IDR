@@ -774,3 +774,18 @@
         background-color: var(--ui-primary-bg-subtle);
     }
 }
+
+/* Formulario del dispositivo: una fila por grabador+canal */
+@layer app {
+    .asig-fila {
+        display: flex;
+        align-items: center;
+        gap: var(--esp-2);
+        margin-bottom: var(--esp-2);
+    }
+
+    .asig-fila .form-select {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+}

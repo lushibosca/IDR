@@ -137,7 +137,8 @@ function parsPlanCanales(datos, arch, opciones = {}) {
         return m;
     };
     const canales = veces(c => (c.nvr && c.canal ? `${c.nvr}\u0000${c.canal}` : null));
-    const macs = veces(c => c.mac);
+    const macsEnNvr = veces(c => (c.mac && c.nvr ? `${c.nvr}\u0000${c.mac}` : null));      // en OTRO grabador no es repetida: es redundancia
+    const tocados = new Set();                                        // equipos que ya tienen una acción en este plan
 
     for (const nvr of arch.nvrs) {
         const auto = parsGrabadorDe(datos, idx, nvr);
@@ -164,13 +165,13 @@ function parsPlanCanales(datos, arch, opciones = {}) {
         const dev = g.grabadorId ? porId.get(g.grabadorId) : null;
         const capacidad = dev ? dev.canales : null;
         const ocupantes = new Map();
-        if (dev) for (const x of datos.dispositivos) if (x.instalacion && x.instalacion.grabador === dev.id) ocupantes.set(x.instalacion.canal, x);
+        if (dev) for (const x of datos.dispositivos) for (const a of asignacionesDe(x.instalacion)) if (a.grabador === dev.id) ocupantes.set(a.canal, x);
         const enArchivo = new Set();
         for (const c of filas) {
             if (!c.canal) { conflicto(c, 'sin número de canal'); continue; }
             enArchivo.add(c.canal);
             if (canales.get(`${c.nvr}\u0000${c.canal}`) > 1) { conflicto(c, 'el canal aparece más de una vez en el archivo'); continue; }
-            if (c.mac && macs.get(c.mac) > 1) { conflicto(c, 'la MAC aparece en más de un canal del archivo'); continue; }
+            if (c.mac && macsEnNvr.get(`${c.nvr}\u0000${c.mac}`) > 1) { conflicto(c, 'la MAC aparece en más de un canal de este grabador'); continue; }
             if (capacidad && c.canal > capacidad) { conflicto(c, `el grabador tiene ${capacidad} canales`); continue; }
             const disp = _parsBuscar(idx, c.mac, c.serie);
             if (!disp) {
@@ -182,20 +183,22 @@ function parsPlanCanales(datos, arch, opciones = {}) {
             if (TIPOS_GRABADOR.includes(disp.tipo)) { conflicto(c, `«${_parsNombre(disp)}» es un grabador`); continue; }
             if (disp.condicion !== CONDICION_PRODUCCION) { conflicto(c, `«${_parsNombre(disp)}» no está operativo (${disp.condicion})`); continue; }
             const cur = disp.instalacion;
-            if (cur && cur.grabador && (cur.grabador !== g.grabadorId || cur.canal !== c.canal)) {
-                const otro = porId.get(cur.grabador);
-                conflicto(c, `«${_parsNombre(disp)}» ya está en el CH ${cur.canal} de «${otro ? _parsNombre(otro) : cur.grabador}»`);
+            const mismo = g.grabadorId ? asignacionesDe(cur).find(a => a.grabador === g.grabadorId) : null;
+            if (mismo && mismo.canal !== c.canal) {
+                conflicto(c, `«${_parsNombre(disp)}» ya está en el CH ${mismo.canal} de este grabador`);
                 continue;
             }
             const ocupa = ocupantes.get(c.canal);
             if (ocupa && ocupa.id !== disp.id) { conflicto(c, `el canal lo ocupa «${_parsNombre(ocupa)}»`); continue; }
             const cambia = [];
-            if (!cur || cur.grabador !== g.grabadorId) cambia.push({ campo: 'canal', antes: cur ? '' : 'en depósito', despues: `CH ${c.canal}` });
-            if (c.nombre && (!cur || cur.descripcion !== c.nombre)) cambia.push({ campo: 'descripción', antes: cur ? cur.descripcion : '', despues: c.nombre });
-            if (c.ip && (!cur || cur.ip !== c.ip)) cambia.push({ campo: 'IP', antes: cur && cur.ip || '', despues: c.ip });
+            const primera = !tocados.has(disp.id);                          // un equipo en dos grabadores: descripción e IP, la primera fila
+            if (!mismo) cambia.push({ campo: 'canal', antes: cur ? (asignacionesDe(cur).length ? 'ya en otros grabadores' : 'sin canal') : 'en depósito', despues: `+ CH ${c.canal}` });
+            if (primera && c.nombre && (!cur || cur.descripcion !== c.nombre)) cambia.push({ campo: 'descripción', antes: cur ? cur.descripcion : '', despues: c.nombre });
+            if (primera && c.ip && (!cur || cur.ip !== c.ip)) cambia.push({ campo: 'IP', antes: cur && cur.ip || '', despues: c.ip });
             if (!cambia.length) { plan.sinCambios++; continue; }
+            tocados.add(disp.id);
             plan.acciones.push({ tipo: 'asignar', nvr: nvr.nombre, grabadorId: g.grabadorId, canal: c.canal, dispositivoId: disp.id,
-                nombre: _parsNombre(disp), camara: c, cambia });
+                nombre: _parsNombre(disp), camara: c, cambia, conTexto: primera });
         }
         if (modo === 'reemplazar' && dev && filas.length) {
             for (const [canal, x] of ocupantes) {
@@ -244,30 +247,35 @@ function parsAplicarCanales(datos, plan, ctx) {
         const gid = destino(a);
         if (!gid) { r.fallos.push({ que: a.nombre || a.camara.nombre, motivo: 'su grabador no se pudo crear' }); continue; }
         try {
-            if (a.tipo === 'alta') {
+            const ya = a.tipo === 'alta' ? datos.dispositivos.find(x => (a.camara.mac && x.mac === a.camara.mac)
+                || (a.camara.serie && x.serie && x.serie.toLowerCase() === a.camara.serie.toLowerCase())) : null;
+            if (a.tipo === 'alta' && !ya) {                 // la misma cámara en dos grabadores: la segunda fila se suma a la que se acaba de crear
                 const grab = datos.dispositivos.find(x => x.id === gid);
                 const gi = grab && grab.instalacion || {};
                 const c = a.camara;
                 crearDispositivo(datos, { tipo: a.tipoAlta, condicion: CONDICION_PRODUCCION, marca: _parsMarca(c.modelo), modelo: c.modelo,
                     serie: c.serie, mac: c.mac, firmware: c.firmware,
-                    instalacion: { descripcion: c.nombre, ip: c.ip, edificio: gi.edificio || '', piso: gi.piso || '', grabador: gid, canal: a.canal } }, ctx);
+                    instalacion: { descripcion: c.nombre, ip: c.ip, edificio: gi.edificio || '', piso: gi.piso || '', asignaciones: [{ grabador: gid, canal: a.canal }] } }, ctx);
                 r.altas++;
                 continue;
             }
-            const d = datos.dispositivos.find(x => x.id === a.dispositivoId);
+            const d = ya || datos.dispositivos.find(x => x.id === a.dispositivoId);
             if (!d) continue;
             const f = _formulario(d);
             const cur = f.instalacion || {};
+            const otras = (cur.asignaciones || []).filter(x => x.grabador !== gid);
             if (a.tipo === 'liberar') {
-                f.instalacion = { ...cur, grabador: null, canal: null };
+                f.instalacion = { ...cur, asignaciones: otras };
             } else {
                 const grab = datos.dispositivos.find(x => x.id === gid);
                 const gi = grab && grab.instalacion || {};
-                f.instalacion = { ...cur, descripcion: a.camara.nombre || cur.descripcion || '', ip: a.camara.ip || cur.ip || null,
-                    edificio: cur.edificio || gi.edificio || '', piso: cur.piso || gi.piso || '', grabador: gid, canal: a.canal };
+                const conTexto = a.conTexto !== false && !ya;
+                f.instalacion = { ...cur, descripcion: conTexto ? (a.camara.nombre || cur.descripcion || '') : cur.descripcion || '',
+                    ip: conTexto ? (a.camara.ip || cur.ip || null) : cur.ip || null,
+                    edificio: cur.edificio || gi.edificio || '', piso: cur.piso || gi.piso || '', asignaciones: [...otras, { grabador: gid, canal: a.canal }] };
             }
             modificarDispositivo(datos, d.id, f, d.version, ctx);
-            if (a.tipo === 'liberar') r.liberados++; else r.asignados++;
+            if (a.tipo === 'liberar') r.liberados++; else if (ya) r.altas++; else r.asignados++;
         } catch (e) { _parsFallo(r.fallos, a.nombre || a.camara.nombre, e); }
     }
     return r;

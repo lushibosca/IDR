@@ -7,7 +7,7 @@ const D = cargarBloque("datos-puro.js", "DATOS PURO",
   { String, Number, Array, Map, Set, Math, Object, JSON, URL, RegExp, Error, Date },
   ["datosVacios", "crearDispositivo", "modificarDispositivo", "editarUbicacion", "textoAcotado", "enteroAcotado",
     "ipLiteralValida", "macNormalizada", "_opcional", "NULOS_SERIE", "TIPOS_GRABADOR", "CONDICION_PRODUCCION", "CANALES_MAX",
-    "GRUPO_CAMARAS", "ErrorDatos", "_formulario"]);
+    "GRUPO_CAMARAS", "ErrorDatos", "_formulario", "asignacionesDe"]);
 const P = cargarBloque("parseador.js", "PARSEADOR PURO", { String, Number, Array, Map, Set, Math, Object, JSON, RegExp, Error, ...D },
   ["parsearArchivoEscaner", "parsPlanDatos", "parsPlanCanales", "parsAplicarDatos", "parsAplicarCanales", "ErrorParseo"]);
 
@@ -87,7 +87,7 @@ test("canales: vincula el NVR por MAC y asigna la cámara a su canal con descrip
   const r = P.parsAplicarCanales(d, plan, ctx());
   assert.deepEqual(plano(r), { asignados: 1, altas: 0, liberados: 0, grabadoresCreados: 0, fallos: [] });
   const i = d.dispositivos.find(x => x.id === cam.id).instalacion;
-  assert.deepEqual(plano([i.grabador, i.canal, i.descripcion, i.ip, i.edificio, i.piso]), [nvr.id, 7, "Pasillo", "10.0.0.5", "Anexo", "PB"]);
+  assert.deepEqual(plano([i.asignaciones, i.descripcion, i.ip, i.edificio, i.piso]), [[{ grabador: nvr.id, canal: 7 }], "Pasillo", "10.0.0.5", "Anexo", "PB"]);
   // aplicar de nuevo no cambia nada
   const otra = P.parsPlanCanales(d, archivo([nvrArch()], [camara({ channel_id: 7 })]));
   assert.equal(otra.acciones.length, 0);
@@ -109,14 +109,13 @@ test("canales: el NVR nunca se vincula por nombre parecido; sin vínculo se igno
   assert.equal(nuevo.tipo, "nvr");
   assert.equal(nuevo.marca, "Hikvision");
   const camAlta = d.dispositivos.find(x => x.mac === "aa:bb:cc:00:00:01");
-  assert.equal(camAlta.instalacion.grabador, nuevo.id, "la cámara nueva queda asignada al canal (no suelta)");
-  assert.equal(camAlta.instalacion.canal, 1);
+  assert.deepEqual(plano(camAlta.instalacion.asignaciones), [{ grabador: nuevo.id, canal: 1 }], "la cámara nueva queda asignada al canal (no suelta)");
 });
 
 test("canales: conflictos visibles, nada se mueve solo", () => {
   const { d, c, nvr } = stock();
-  const enOtro = D.crearDispositivo(d, { tipo: "domo", mac: "aa:bb:cc:00:00:01", instalacion: { descripcion: "X", grabador: nvr.id, canal: 9 } }, c);
-  const ocupante = D.crearDispositivo(d, { tipo: "domo", mac: "aa:bb:cc:00:00:02", instalacion: { descripcion: "Ocupa", grabador: nvr.id, canal: 2 } }, c);
+  const enOtro = D.crearDispositivo(d, { tipo: "domo", mac: "aa:bb:cc:00:00:01", instalacion: { descripcion: "X", asignaciones: [{ grabador: nvr.id, canal: 9 }] } }, c);
+  const ocupante = D.crearDispositivo(d, { tipo: "domo", mac: "aa:bb:cc:00:00:02", instalacion: { descripcion: "Ocupa", asignaciones: [{ grabador: nvr.id, canal: 2 }] } }, c);
   D.crearDispositivo(d, { tipo: "domo", mac: "aa:bb:cc:00:00:03", condicion: "averiado" }, c);
   D.crearDispositivo(d, { tipo: "domo", mac: "aa:bb:cc:00:00:04" }, c);
   D.crearDispositivo(d, { tipo: "domo", mac: "aa:bb:cc:00:00:05" }, c);
@@ -132,22 +131,22 @@ test("canales: conflictos visibles, nada se mueve solo", () => {
     camara({ mac_address: "aa:bb:cc:00:00:09", channel_id: 10 })]);        // sin match
   const plan = P.parsPlanCanales(d, a);
   const motivos = plan.conflictos.map(x => x.motivo).join(" | ");
-  assert.match(motivos, /ya está en el CH 9/);
+  assert.match(motivos, /ya está en el CH 9 de este grabador/);
   assert.match(motivos, /el canal lo ocupa «Ocupa»/);
   assert.match(motivos, /no está operativo/);
   assert.match(motivos, /tiene 16 canales/);
-  assert.match(motivos, /MAC aparece en más de un canal/);
+  assert.match(motivos, /MAC aparece en más de un canal de este grabador/);
   assert.match(motivos, /canal aparece más de una vez/);
   assert.equal(plan.acciones.length, 0);
   assert.equal(plan.sinMatch.length, 1);
-  assert.equal(d.dispositivos.find(x => x.id === enOtro.id).instalacion.canal, 9);
-  assert.equal(d.dispositivos.find(x => x.id === ocupante.id).instalacion.canal, 2);
+  assert.equal(d.dispositivos.find(x => x.id === enOtro.id).instalacion.asignaciones[0].canal, 9);
+  assert.equal(d.dispositivos.find(x => x.id === ocupante.id).instalacion.asignaciones[0].canal, 2);
 });
 
 test("canales: «reemplazar» libera los canales que el archivo no trae; «conservar» no toca nada", () => {
   const { d, c, nvr } = stock();
-  const a1 = D.crearDispositivo(d, { tipo: "domo", mac: "aa:bb:cc:00:00:01", instalacion: { descripcion: "Uno", grabador: nvr.id, canal: 1 } }, c);
-  const a2 = D.crearDispositivo(d, { tipo: "domo", mac: "aa:bb:cc:00:00:02", instalacion: { descripcion: "Dos", grabador: nvr.id, canal: 2 } }, c);
+  const a1 = D.crearDispositivo(d, { tipo: "domo", mac: "aa:bb:cc:00:00:01", instalacion: { descripcion: "Uno", asignaciones: [{ grabador: nvr.id, canal: 1 }] } }, c);
+  const a2 = D.crearDispositivo(d, { tipo: "domo", mac: "aa:bb:cc:00:00:02", instalacion: { descripcion: "Dos", asignaciones: [{ grabador: nvr.id, canal: 2 }] } }, c);
   const a = archivo([nvrArch()], [camara({ mac_address: "aa:bb:cc:00:00:01", camera_name: "Uno", ip_address: null, channel_id: 1 })]);
   assert.equal(P.parsPlanCanales(d, a, { modo: "conservar" }).acciones.filter(x => x.tipo === "liberar").length, 0);
   const plan = P.parsPlanCanales(d, a, { modo: "reemplazar" });
@@ -155,8 +154,8 @@ test("canales: «reemplazar» libera los canales que el archivo no trae; «conse
   const r = P.parsAplicarCanales(d, plan, ctx());
   assert.equal(r.liberados, 1);
   const i2 = d.dispositivos.find(x => x.id === a2.id).instalacion;
-  assert.deepEqual(plano([i2.grabador, i2.canal, i2.descripcion]), [null, null, "Dos"]);
-  assert.equal(d.dispositivos.find(x => x.id === a1.id).instalacion.canal, 1);
+  assert.deepEqual(plano([i2.asignaciones, i2.descripcion]), [[], "Dos"]);
+  assert.equal(d.dispositivos.find(x => x.id === a1.id).instalacion.asignaciones[0].canal, 1);
   // un archivo sin cámaras de ese NVR no vacía nada
   const vacio = P.parsPlanCanales(d, archivo([nvrArch()], []), { modo: "reemplazar" });
   assert.equal(vacio.acciones.length, 0);
@@ -173,4 +172,27 @@ test("canales: un fallo de una cámara no tira el resto (queda en el informe)", 
   const r = P.parsAplicarCanales(d, plan, ctx());
   assert.equal(r.asignados, 1);
   assert.equal(r.fallos.length, 1);
+});
+
+test("canales: la misma cámara en dos grabadores es redundancia, no conflicto (alta y asignación)", () => {
+  const { d, c, nvr } = stock();
+  const nvr2 = D.crearDispositivo(d, { tipo: "nvr", mac: "4c:bd:8f:00:00:02", canales: 8, instalacion: { descripcion: "NVR 2", ip: "10.105.0.197" } }, c);
+  const existente = D.crearDispositivo(d, { tipo: "domo", mac: "aa:bb:cc:00:00:01" }, c);
+  const a = archivo([nvrArch(), nvrArch({ nvr_name: "NVR-2", ip: "10.105.0.197", mac_address: "4c:bd:8f:00:00:02", nro_serie: "N2" })],
+    [camara({ channel_id: 3 }), camara({ nvr_name: "NVR-2", channel_id: 5 }),
+      camara({ mac_address: "aa:bb:cc:00:00:55", camera_name: "Nueva", channel_id: 4 }),
+      camara({ mac_address: "aa:bb:cc:00:00:55", camera_name: "Nueva (2)", nvr_name: "NVR-2", channel_id: 6 })]);
+  const plan = P.parsPlanCanales(d, a, { altas: true });
+  assert.equal(plan.conflictos.length, 0, plan.conflictos.map(x => x.motivo).join("|"));
+  const r = P.parsAplicarCanales(d, plan, ctx());
+  assert.deepEqual(plano(r.fallos), []);
+  const e = d.dispositivos.find(x => x.id === existente.id).instalacion;
+  assert.deepEqual(plano(e.asignaciones.map(x => [x.grabador, x.canal]).sort()), [[nvr.id, 3], [nvr2.id, 5]].sort());
+  const nueva = d.dispositivos.filter(x => x.mac === "aa:bb:cc:00:00:55");
+  assert.equal(nueva.length, 1, "una sola cámara, no dos");
+  assert.deepEqual(plano(nueva[0].instalacion.asignaciones.map(x => x.canal).sort()), [4, 6]);
+  assert.equal(nueva[0].instalacion.descripcion, "Nueva", "descripción e IP: la primera fila");
+  // dos canales del MISMO grabador para la misma MAC sí es un conflicto
+  const mal = P.parsPlanCanales(d, archivo([nvrArch()], [camara({ channel_id: 8 }), camara({ channel_id: 9 })]));
+  assert.ok(mal.conflictos.some(x => /más de un canal de este grabador/.test(x.motivo)));
 });

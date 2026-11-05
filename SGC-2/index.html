@@ -1387,24 +1387,14 @@
                             <!-- En producción solo un equipo operativo (static/stock.js: stockAvisoProduccion) -->
                             <div class="d-none" id="stock-f-aviso-produccion" role="status"></div>
                             <fieldset id="stock-f-inst" class="border-0 p-0 m-0 d-none">
-                                <!-- Producción manual: en qué canal de qué grabador está (js/stock.js; sin grabador =
+                                <!-- Producción manual: en qué canales de qué grabadores está (js/stock.js; ninguno =
                                      «Otros dispositivos»). No se muestra para un grabador. -->
-                                <div class="modal-disp-fila d-flex justify-content-between align-items-center gap-3 py-1"
-                                    id="stock-f-grabador-fila">
-                                    <label class="text-secondary small mb-0 flex-shrink-0" for="stock-f-grabador">Grabador
-                                        (NVR)</label>
-                                    <div class="modal-disp-val">
-                                        <select class="form-select form-select-sm modal-disp-select"
-                                            id="stock-f-grabador"></select>
-                                    </div>
-                                </div>
-                                <div class="modal-disp-fila d-flex justify-content-between align-items-center gap-3 py-1 d-none"
-                                    id="stock-f-canal-fila">
-                                    <label class="text-secondary small mb-0 flex-shrink-0" for="stock-f-canal">Canal</label>
-                                    <div class="modal-disp-val">
-                                        <select class="form-select form-select-sm modal-disp-select"
-                                            id="stock-f-canal"></select>
-                                    </div>
+                                <div class="py-1" id="stock-f-asig-fila">
+                                    <div class="text-secondary small mb-1">Canales (grabador y canal; puede estar en varios grabadores)</div>
+                                    <div id="stock-f-asignaciones"></div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="stock-f-asig-agregar">
+                                        <i class="bi bi-plus-lg me-1"></i>Agregar a un grabador
+                                    </button>
                                 </div>
                                 <div
                                     class="modal-disp-fila d-flex justify-content-between align-items-center gap-3 py-1">

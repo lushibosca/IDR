@@ -319,3 +319,30 @@ Al reemplazar a SGC: agregar `SGC-2/` al `sw.js` raíz de la suite, y más tarde
 - Tests: `tests/js/migrar_sgc.test.mjs` (10) y la prueba de humo (ventana → ensayo sin escribir → aplicar uniendo).
 - **Falta (entrega 6)**: probar con el export real de SGC, período de convivencia y renombrar `SGC-2` → `SGC` (con su `sw.js`,
   manifest e iconos de PWA, que SGC-2 todavía no tiene propios).
+
+## 17. Cambio de modelo: una cámara en varios grabadores
+
+Se había prohibido «un equipo, un canal» para evitar los duplicados por error de SGC (B14, B21), pero la grabación redundante
+(la misma cámara en dos NVR) es un caso real. Ahora la instalación guarda una **lista** de asignaciones, todas por igual (no hay
+principal ni respaldo):
+
+```jsonc
+"instalacion": { "descripcion": "…", "ip": "…", …, "asignaciones": [ { "grabador": "id-NVR-1", "canal": 7 }, { "grabador": "id-NVR-2", "canal": 3 } ] }
+```
+
+- **Reglas** (`datos-puro.js`, `_validarAsignaciones`): cada una con grabador y canal; el grabador es un NVR/DVR instalado y el
+  canal entra en su capacidad; un canal sigue siendo de UN solo equipo (409 «canal 3 de «NVR 2»: ya lo ocupa…»); el mismo
+  grabador no puede aparecer dos veces en un equipo (un equipo ocupa un solo canal de cada grabador); máximo 16. Un grabador con
+  asignaciones no sale de producción, no cambia de tipo, no baja de su canal más alto ocupado ni se borra, como antes.
+- **Compatibilidad**: lo guardado con el par `grabador`+`canal` (localStorage, exportaciones, el Gist) se lee como una
+  asignación. La API sigue dando `grabador` y `canal` (la primera) solo para lo que ya los leía; lo que se escribe es `asignaciones`
+  (el par suelto también se acepta). El historial registra `instalacion.asignaciones` como «id#canal, id#canal».
+- **Producción** (`/api/v2/datos`): una fila de cámara por asignación, así aparece en cada grabador.
+- **Ficha del dispositivo**: una fila por asignación (grabador + canal, con el ocupante de cada canal), «Agregar a un grabador» y
+  una ✕ para quitarla; un grabador ya elegido se deshabilita en las otras filas. «Asignar al canal» desde Producción suma la
+  asignación y conserva las que ya tenía en otros grabadores (reemplaza solo la de ese mismo grabador).
+- **Parseador de canales**: la misma MAC en canales de grabadores distintos ya no es conflicto (redundancia); sí lo es dos veces
+  en el mismo grabador o un equipo ya en otro canal del mismo grabador. Descripción e IP vienen de la primera fila de cada equipo.
+  Las altas de una cámara que aparece en dos grabadores crean UNA cámara con las dos asignaciones.
+- **Migración desde SGC**: una cámara en canales de dos grabadores conserva las dos; dos canales del mismo grabador, el primero
+  (con aviso).

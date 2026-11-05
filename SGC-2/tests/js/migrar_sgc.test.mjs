@@ -96,16 +96,16 @@ test("grabadores y canales: el equipo queda instalado en su grabador+canal con l
   const nvr = por(r, "nvr1");
   assert.equal(nvr.canales, 16, "la capacidad es la mayor entre el dispositivo y el grabador");
   assert.deepEqual(plano([nvr.instalacion.descripcion, nvr.instalacion.ip, nvr.instalacion.edificio, nvr.instalacion.piso, nvr.instalacion.rack,
-    nvr.instalacion.grabador, nvr.instalacion.canal]), ["NVR Anexo", "10.0.0.1", "Anexo A", "1", "R1", null, null]);
+    nvr.instalacion.asignaciones]), ["NVR Anexo", "10.0.0.1", "Anexo A", "1", "R1", []]);
   const c1 = por(r, "cam1").instalacion;
-  assert.deepEqual(plano([c1.grabador, c1.canal, c1.descripcion, c1.ip, c1.puerto, c1.edificio]), ["nvr1", 1, "Hall", "10.0.1.1", "3/0/21", "Anexo A"]);
+  assert.deepEqual(plano([c1.asignaciones, c1.descripcion, c1.ip, c1.puerto, c1.edificio]), [[{ grabador: "nvr1", canal: 1 }], "Hall", "10.0.1.1", "3/0/21", "Anexo A"]);
   const c2 = por(r, "cam2").instalacion;
-  assert.deepEqual(plano([c2.grabador, c2.canal, c2.descripcion, c2.ip, c2.puerto]), ["nvr1", 2, "Pasillo", null, ""]);
+  assert.deepEqual(plano([c2.asignaciones, c2.descripcion, c2.ip, c2.puerto]), [[{ grabador: "nvr1", canal: 2 }], "Pasillo", null, ""]);
   assert.match(por(r, "cam2").instalacion.comentario, /puerto: puerto raro/);
   assert.ok(r.avisos.some(a => /IP no válida \(no-ip\)/.test(a)));
   assert.ok(r.avisos.some(a => /está en dos canales/.test(a)));
   assert.ok(r.avisos.some(a => /un grabador no va en el canal de otro/.test(a)));
-  assert.equal(por(r, "cam1").instalacion.canal, 1, "el segundo canal no lo mueve");
+  assert.deepEqual(plano(por(r, "cam1").instalacion.asignaciones), [{ grabador: "nvr1", canal: 1 }], "el segundo canal del mismo grabador no se suma");
 });
 
 test("grabador sin dispositivo: se crea uno (tipo, marca, MAC) y sus canales quedan asignados a él", () => {
@@ -114,7 +114,7 @@ test("grabador sin dispositivo: se crea uno (tipo, marca, MAC) y sus canales que
   assert.ok(dvr);
   assert.deepEqual(plano([dvr.marca, dvr.modelo, dvr.mac, dvr.canales, dvr.instalacion.ip, dvr.instalacion.descripcion]), ["Dahua", "XVR", "aa:bb:cc:dd:ee:77", 4, "10.0.0.9", "DVR viejo"]);
   const dep = por(r, "dep1").instalacion;
-  assert.deepEqual(plano([dep.grabador, dep.canal, dep.descripcion]), [dvr.id, 1, "Entrada"]);
+  assert.deepEqual(plano([dep.asignaciones, dep.descripcion]), [[{ grabador: dvr.id, canal: 1 }], "Entrada"]);
   assert.equal(r.informe.grabadoresCreados, 1);
   assert.equal(r.informe.grabadoresVinculados, 1);
 });
@@ -125,14 +125,14 @@ test("grabador sin dispositivo pero con la MAC de un NVR del stock: se vincula a
   b.grabadores[1].canales_data[0].canal = 7;
   const r = migrar(b);
   assert.equal(r.informe.grabadoresCreados, 0);
-  assert.deepEqual(plano([por(r, "dep1").instalacion.grabador, por(r, "dep1").instalacion.canal]), ["nvr1", 7]);
+  assert.deepEqual(plano(por(r, "dep1").instalacion.asignaciones), [{ grabador: "nvr1", canal: 7 }]);
   assert.ok(r.avisos.some(a => /se vinculó al que tiene su MAC/.test(a)));
 });
 
 test("otros en producción, depósito, canales sin equipo y lápidas", () => {
   const r = migrar(sgc());
   const x1 = por(r, "x1").instalacion;
-  assert.deepEqual(plano([x1.descripcion, x1.edificio, x1.piso, x1.grabador, x1.canal]), ["Monitor guardia", "Anexo B", "PB", null, null]);
+  assert.deepEqual(plano([x1.descripcion, x1.edificio, x1.piso, x1.asignaciones]), ["Monitor guardia", "Anexo B", "PB", []]);
   assert.ok(r.datos.edificios.includes("Anexo B"));
   assert.ok(r.datos.edificios.includes("Anexo C"), "los espacios sobrantes se limpian");
   assert.equal(por(r, "sw1").instalacion, null);
@@ -150,8 +150,8 @@ test("lo migrado es un SGC-2 consistente: pasa por sanearDatos sin nuevos avisos
   const otra = D.sanearDatos(JSON.parse(JSON.stringify(r.datos)), AHORA);
   assert.equal(otra.avisos.filter(a => /asignación|canales no válidas/.test(a)).length, 0);
   assert.equal(otra.datos.dispositivos.length, r.datos.dispositivos.length);
-  const enCanal = r.datos.dispositivos.filter(d => d.instalacion && d.instalacion.canal);
-  assert.equal(new Set(enCanal.map(d => `${d.instalacion.grabador}#${d.instalacion.canal}`)).size, enCanal.length);
+  const enCanal = r.datos.dispositivos.flatMap(d => (d.instalacion ? d.instalacion.asignaciones.map(a => `${a.grabador}#${a.canal}`) : []));
+  assert.equal(new Set(enCanal).size, enCanal.length);
 });
 
 test("firma: coincide con la de SGC (hash calculado con cctv/stock_sgc.py), detecta alteraciones y archivos sin firma", async () => {
@@ -172,8 +172,18 @@ test("dos equipos en el mismo canal: el segundo queda sin canal y se avisa (no s
   const b = sgc();
   b.grabadores[0].canales_data = [{ canal: 1, dispositivoId: "cam1", descripcion: "A" }, { canal: 1, dispositivoId: "cam2", descripcion: "B" }];
   const r = migrar(b);
-  assert.equal(por(r, "cam1").instalacion.canal, 1);
-  assert.equal(por(r, "cam2").instalacion.canal, null);
+  assert.equal(por(r, "cam1").instalacion.asignaciones[0].canal, 1);
+  assert.deepEqual(plano(por(r, "cam2").instalacion.asignaciones), []);
   assert.equal(por(r, "cam2").instalacion.descripcion, "B", "conserva su descripción como instalado sin canal");
   assert.ok(r.avisos.some(a => /el canal ya lo ocupa/.test(a)));
+});
+
+test("una cámara en canales de dos grabadores (redundancia) conserva las dos asignaciones", () => {
+  const b = sgc();
+  b.grabadores[1].canales_data = [{ canal: 3, dispositivoId: "cam1", descripcion: "Hall (respaldo)", ip: "10.0.1.1" }];
+  const r = migrar(b);
+  const a = por(r, "cam1").instalacion.asignaciones;
+  const dvr = r.datos.dispositivos.find(d => d.tipo === "dvr");
+  assert.deepEqual(plano(a.map(x => [x.grabador, x.canal]).sort()), [["nvr1", 1], [dvr.id, 3]].sort());
+  assert.ok(!r.avisos.some(x => /dos canales/.test(x) && /Hall \(respaldo\)|cam1/.test(x) && /mismo grabador/.test(x) && x.includes("g2")));
 });

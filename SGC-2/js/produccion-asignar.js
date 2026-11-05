@@ -7,6 +7,12 @@
 const ASIGNAR_TIPOS_GRABADOR = ['nvr', 'dvr'];
 const ASIGNAR_MAX = 200;
 
+/** En cuántos grabadores está ya una instalación (con `asignaciones`, o el par grabador+canal de lo viejo). */
+function asignarCuantos(i) {
+    if (!i) return 0;
+    return Array.isArray(i.asignaciones) ? i.asignaciones.length : (i.grabador ? 1 : 0);
+}
+
 function asignarNormalizar(t) {
     return String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
@@ -27,14 +33,14 @@ function asignarCandidatos(dispositivos, texto, nombre) {
     const orden = (d) => {
         const i = d.instalacion;
         if (!i) return d.condicion === 'operativo' ? 0 : 1;
-        return i.grabador ? 3 : 2;
+        return asignarCuantos(i) ? 3 : 2;
     };
     const detalle = (d) => {
         const i = d.instalacion;
         const partes = [[d.marca, d.modelo].filter(Boolean).join(' ')];
         if (d.serie) partes.push(`serie ${d.serie}`);
         if (!i) partes.push(d.condicion === 'operativo' ? 'en depósito' : `en depósito (${d.condicion})`);
-        else if (i.grabador) partes.push(`en el CH ${i.canal} de otro grabador`);
+        else if (asignarCuantos(i)) partes.push(asignarCuantos(i) === 1 ? 'ya está en otro grabador' : `ya está en ${asignarCuantos(i)} grabadores`);
         else partes.push('instalado, sin canal');
         return partes.filter(Boolean).join(' · ');
     };

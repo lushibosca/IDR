@@ -20,7 +20,7 @@ catálogos, con los datos en el navegador. Reemplazará a `idr/SGC`. Análisis y
 - **Parseadores**: Ajustes > Parseadores lee el `cctv_online.json` del escáner y, con vista previa, completa serie/firmware/modelo
   por MAC y pone las cámaras en sus canales (`js/parseador.js`).
 - **Migración**: Ajustes > Datos > Migrar desde SGC convierte la exportación de SGC (ensayo con informe y después aplicar).
-- **Producción manual**: la instalación guarda en qué grabador y canal está un dispositivo. Se asigna con un clic en
+- **Producción manual**: la instalación guarda en qué grabadores y canales está un dispositivo (una cámara puede estar en varios, por redundancia). Se asigna con un clic en
   un canal libre de Producción o con los selectores «Grabador» y «Canal» de la ficha del dispositivo.
 
 Se quitó todo lo que necesitaba un servidor o la red de cámaras: monitoreo, alertas, disponibilidad, escaneo,

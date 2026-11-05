@@ -45,8 +45,17 @@ const MAX_LOTE = 200;
 const CANALES_MAX = 4096;
 const CAMPOS_DISPOSITIVO = ['tipo', 'condicion', 'marca', 'modelo', 'serie', 'mac', 'patrimonio', 'firmware', 'canales',
     'comentario'];
-// `grabador` (id del NVR/DVR) + `canal`: en qué canal está (los dos o ninguno); sin grabador = «Otros dispositivos»
-const CAMPOS_INSTALACION = ['descripcion', 'ip', 'edificio', 'piso', 'rack', 'puerto', 'comentario', 'grabador', 'canal'];
+// `asignaciones`: lista de {grabador (id del NVR/DVR), canal}: en qué canales está (una cámara puede estar en varios grabadores,
+// todas por igual; vacía = «Otros dispositivos»). La API además da `grabador`/`canal` de la primera, solo para quien lee.
+const CAMPOS_INSTALACION = ['descripcion', 'ip', 'edificio', 'piso', 'rack', 'puerto', 'comentario', 'asignaciones'];
+const MAX_ASIGNACIONES = 16;
+/** Las asignaciones de una instalación (siempre una lista). */
+const asignacionesDe = (i) => (i && Array.isArray(i.asignaciones) ? i.asignaciones : []);
+/** Texto estable de una lista de asignaciones (para comparar y para el historial): «id#3, id2#5» o null. */
+const textoAsignaciones = (lista) => {
+    const l = (Array.isArray(lista) ? lista : []).map(a => `${a.grabador}#${a.canal}`).sort();
+    return l.length ? l.join(', ') : null;
+};
 const CAMPOS_LOTE = ['tipo', 'condicion', 'edificio', 'piso', 'rack'];
 const EQUIVALENCIAS_MARCA = new Map([['bosh', 'Bosch']]);
 const NULOS_SERIE = new Set(['relevar', 'n/a', 's/n', 'sn', '-', 'no']);
@@ -319,8 +328,13 @@ function instalacionApi(i) {
     if (!i) return null;
     const r = {};
     for (const c of CAMPOS_INSTALACION) {
-        r[c] = i[c] === undefined ? (['ip', 'grabador', 'canal'].includes(c) ? null : '') : i[c];
+        if (c === 'asignaciones') continue;
+        r[c] = i[c] === undefined ? (c === 'ip' ? null : '') : i[c];
     }
+    const lista = asignacionesDe(i).map(a => ({ grabador: a.grabador, canal: a.canal }));
+    r.asignaciones = lista;
+    r.grabador = lista.length ? lista[0].grabador : null;      // solo lectura: la primera (lo viejo del front lee estos dos)
+    r.canal = lista.length ? lista[0].canal : null;
     return r;
 }
 
@@ -364,7 +378,7 @@ function _plano(d) {
     p.set('instalacion', d.instalacion ? 'sí' : null);
     if (d.instalacion) {
         for (const c of CAMPOS_INSTALACION) {
-            const v = d.instalacion[c];
+            const v = c === 'asignaciones' ? textoAsignaciones(d.instalacion[c]) : d.instalacion[c];
             p.set(`instalacion.${c}`, v === null || v === undefined || v === '' ? null : String(v));
         }
     }
@@ -492,9 +506,9 @@ function validarDispositivo(entrada, { id, datos, pisos = null }) {
         }
         const puerto = _t(bruta.puerto, 'puerto');
         if (puerto && !RE_PUERTO.test(puerto)) errores.push('puerto: formato no válido (p. ej. 3/0/21 o Fa0/1)');
-        const { grabador, canal } = _validarCanal(bruta, { id, tipo, datos, errores });
+        const asignaciones = _validarAsignaciones(bruta, { id, tipo, datos, errores });
         instalacion = { descripcion: _t(bruta.descripcion, 'descripcion'), ip, edificio, piso, rack: _t(bruta.rack, 'rack'),
-            puerto, comentario: _t(bruta.comentario, 'comentario'), grabador, canal };
+            puerto, comentario: _t(bruta.comentario, 'comentario'), asignaciones };
     }
     if (errores.length) throw errValidacion(errores.join('; '));
     return {
@@ -505,32 +519,43 @@ function validarDispositivo(entrada, { id, datos, pisos = null }) {
     };
 }
 
-/** El grabador y el canal de una instalación: los dos o ninguno; el grabador es un NVR/DVR instalado (no él mismo) y el
- *  canal entra en su capacidad (sin capacidad cargada, hasta CANALES_MAX). Que el canal esté libre lo ve `duplicados`. */
-function _validarCanal(bruta, { id, tipo, datos, errores }) {
+/** Las asignaciones de una instalación (`asignaciones: [{grabador, canal}]`, o el par suelto `grabador`+`canal` de antes):
+ *  cada una con grabador Y canal; el grabador es un NVR/DVR instalado (no él mismo) y el canal entra en su capacidad (sin
+ *  capacidad cargada, hasta CANALES_MAX); un mismo grabador no puede estar dos veces. Que el canal esté libre lo ve
+ *  `_exigirUnicos`. */
+function _validarAsignaciones(bruta, { id, tipo, datos, errores }) {
     const vacio = (v) => v === null || v === undefined || v === '';
-    const grabador = vacio(bruta.grabador) ? null : idValido(bruta.grabador);
-    const canal = vacio(bruta.canal) ? null : enteroAcotado(bruta.canal, 1, CANALES_MAX);
-    if (!vacio(bruta.grabador) && grabador === null) errores.push('grabador: no válido');
-    if (!vacio(bruta.canal) && canal === null) errores.push(`canal: entre 1 y ${CANALES_MAX}`);
-    if (grabador === null && canal === null) return { grabador: null, canal: null };
-    if (grabador === null || canal === null) {
-        errores.push('grabador y canal: van los dos juntos (o ninguno)');
-        return { grabador: null, canal: null };
+    let crudas;
+    if (Array.isArray(bruta.asignaciones)) crudas = bruta.asignaciones;
+    else if (bruta.asignaciones !== undefined && bruta.asignaciones !== null) { errores.push('asignaciones: formato no válido'); crudas = []; }
+    else crudas = vacio(bruta.grabador) && vacio(bruta.canal) ? [] : [{ grabador: bruta.grabador, canal: bruta.canal }];
+    if (crudas.length > MAX_ASIGNACIONES) { errores.push(`asignaciones: como máximo ${MAX_ASIGNACIONES}`); return []; }
+    const lista = [], usados = new Set();
+    for (const c of crudas) {
+        const x = c && typeof c === 'object' ? c : {};
+        const grabador = vacio(x.grabador) ? null : idValido(x.grabador);
+        const canal = vacio(x.canal) ? null : enteroAcotado(x.canal, 1, CANALES_MAX);
+        if (!vacio(x.grabador) && grabador === null) errores.push('grabador: no válido');
+        if (!vacio(x.canal) && canal === null) errores.push(`canal: entre 1 y ${CANALES_MAX}`);
+        if (grabador === null && canal === null) continue;
+        if (grabador === null || canal === null) { errores.push('grabador y canal: van los dos juntos (o ninguno)'); continue; }
+        if (TIPOS_GRABADOR.includes(tipo)) { errores.push('un grabador no va en el canal de otro grabador'); continue; }
+        const g = datos.dispositivos.find(d => d.id === grabador);
+        if (!g || g.id === id || !TIPOS_GRABADOR.includes(g.tipo) || !g.instalacion) {
+            errores.push('grabador: tiene que ser un NVR/DVR instalado');
+            continue;
+        }
+        if (g.canales && canal > g.canales) errores.push(`canal: «${etiquetaDispositivo(g)}» tiene ${g.canales} canales`);
+        if (usados.has(grabador)) { errores.push(`«${etiquetaDispositivo(g)}» está dos veces: un equipo ocupa un solo canal de cada grabador`); continue; }
+        usados.add(grabador);
+        lista.push({ grabador, canal });
     }
-    if (TIPOS_GRABADOR.includes(tipo)) errores.push('un grabador no va en el canal de otro grabador');
-    const g = datos.dispositivos.find(x => x.id === grabador);
-    if (!g || g.id === id || !TIPOS_GRABADOR.includes(g.tipo) || !g.instalacion) {
-        errores.push('grabador: tiene que ser un NVR/DVR instalado');
-    } else if (g.canales && canal > g.canales) {
-        errores.push(`canal: «${etiquetaDispositivo(g)}» tiene ${g.canales} canales`);
-    }
-    return { grabador, canal };
+    return lista;
 }
 
 /** Los dispositivos asignados a los canales del grabador `id`. */
 function asignadosA(datos, id) {
-    return datos.dispositivos.filter(x => x.instalacion && x.instalacion.grabador === id);
+    return datos.dispositivos.filter(x => asignacionesDe(x.instalacion).some(a => a.grabador === id));
 }
 
 /** Un grabador con cámaras en sus canales no sale de producción, no deja de ser grabador ni se achica por debajo del
@@ -543,7 +568,7 @@ function _exigirGrabadorConsistente(datos, actual, nuevo) {
     if (!nuevo || !nuevo.instalacion || !TIPOS_GRABADOR.includes(nuevo.tipo)) {
         throw errRegla(`Tiene ${cuantas} a sus canales: pasalos a otro grabador o sacalos de producción antes.`);
     }
-    const maximo = Math.max(...asignados.map(x => x.instalacion.canal || 0));
+    const maximo = Math.max(...asignados.map(x => asignacionesDe(x.instalacion).find(a => a.grabador === actual.id).canal));
     if (nuevo.canales && nuevo.canales < maximo) {
         throw errRegla(`El canal ${maximo} está ocupado: no se puede bajar a ${nuevo.canales} canales.`);
     }
@@ -574,12 +599,12 @@ function duplicados(datos, d, ademas = []) {
 function _exigirUnicos(datos, d) {
     const r = duplicados(datos, d);
     const i = d.instalacion;
-    if (i && i.grabador) {
-        const otro = datos.dispositivos.find(x => x.id !== d.id && x.instalacion && x.instalacion.grabador === i.grabador
-            && x.instalacion.canal === i.canal);
-        const g = datos.dispositivos.find(x => x.id === i.grabador);
+    for (const a of asignacionesDe(i)) {
+        const otro = datos.dispositivos.find(x => x.id !== d.id && asignacionesDe(x.instalacion)
+            .some(y => y.grabador === a.grabador && y.canal === a.canal));
+        const g = datos.dispositivos.find(x => x.id === a.grabador);
         if (otro) {
-            r.push([`canal ${i.canal} de «${g ? etiquetaDispositivo(g) : i.grabador}»`, `«${etiquetaDispositivo(otro)}»`]);
+            r.push([`canal ${a.canal} de «${g ? etiquetaDispositivo(g) : a.grabador}»`, `«${etiquetaDispositivo(otro)}»`]);
         }
     }
     if (r.length) {
@@ -598,7 +623,8 @@ function _guardado(d, actual, ctx) {
     return { ...d, instalacion: inst, creado: actual ? actual.creado : ahora, actualizado: ahora,
         version: actual ? actual.version + 1 : 1 };
 }
-const _instalacionCambio = (a, b) => CAMPOS_INSTALACION.some(c => (a[c] ?? null) !== (b[c] ?? null));
+const _instalacionCambio = (a, b) => CAMPOS_INSTALACION.some(c => (c === 'asignaciones'
+    ? textoAsignaciones(a[c]) !== textoAsignaciones(b[c]) : (a[c] ?? null) !== (b[c] ?? null)));
 
 /** Alta manual. Devuelve el dispositivo como la API. */
 function crearDispositivo(datos, entrada, ctx) {
@@ -678,7 +704,8 @@ function modificarDispositivo(datos, id, entrada, version, ctx) {
 function _formulario(d) {
     const r = {};
     for (const c of CAMPOS_DISPOSITIVO) r[c] = d[c];
-    r.instalacion = d.instalacion ? Object.fromEntries(CAMPOS_INSTALACION.map(c => [c, d.instalacion[c]])) : null;
+    r.instalacion = d.instalacion ? Object.fromEntries(CAMPOS_INSTALACION.map(c => [c, c === 'asignaciones'
+        ? asignacionesDe(d.instalacion).map(a => ({ ...a })) : d.instalacion[c]])) : null;
     return r;
 }
 
@@ -1019,12 +1046,12 @@ function datosProduccion(datos) {
             stock: stockDe(d), pagina_modelo: (paginas.get(claveModelo(d.modelo)) || {}).pagina || null }));
     const porId = new Map(datos.dispositivos.map(d => [d.id, d]));
     const camaras = datos.dispositivos
-        .filter(d => d.instalacion && d.instalacion.grabador && porId.has(d.instalacion.grabador))
-        .map(d => {
-            const g = porId.get(d.instalacion.grabador);
+        .flatMap(d => asignacionesDe(d.instalacion).filter(a => porId.has(a.grabador)).map(a => [d, a]))
+        .map(([d, a]) => {
+            const g = porId.get(a.grabador);
             return { ip_address: d.instalacion.ip || 'N/A', camera_name: etiquetaDispositivo(d),
                 nvr_ip: (g.instalacion && g.instalacion.ip) || '', nvr_name: etiquetaDispositivo(g),
-                channel_id: d.instalacion.canal, modelo: d.modelo || '-', firmware: d.firmware || '-',
+                channel_id: a.canal, modelo: d.modelo || '-', firmware: d.firmware || '-',
                 mac_address: d.mac || '-', is_offline: false, fallback_ping: false, sin_relevar: false,
                 sin_relevar_motivo: '', sin_senal: false, motivo: null, detalle: '', stock: stockDe(d) };
         })
@@ -1118,7 +1145,16 @@ function sanearDatos(bruto, ahora) {
             x.instalacion = { descripcion: _t(i.descripcion, 'descripcion'), ip: ipLiteralValida(i.ip), edificio, piso,
                 rack: _t(i.rack, 'rack'), puerto: RE_PUERTO.test(puerto) ? puerto : '',
                 comentario: _t(i.comentario, 'comentario'), actualizado: _fecha(i.actualizado, x.actualizado),
-                grabador: idValido(i.grabador), canal: enteroAcotado(i.canal, 1, CANALES_MAX) };
+                asignaciones: [] };
+            // asignaciones: la lista, o el par grabador+canal de los datos guardados antes de que hubiera lista
+            const crudas = Array.isArray(i.asignaciones) ? i.asignaciones
+                : i.grabador !== undefined || i.canal !== undefined ? [{ grabador: i.grabador, canal: i.canal }] : [];
+            const vistos = new Set();
+            for (const c of crudas.slice(0, MAX_ASIGNACIONES)) {
+                const g = c && typeof c === 'object' ? idValido(c.grabador) : null;
+                const canal = c && typeof c === 'object' ? enteroAcotado(c.canal, 1, CANALES_MAX) : null;
+                if (g && canal && !vistos.has(g)) { vistos.add(g); x.instalacion.asignaciones.push({ grabador: g, canal }); }
+            }
             if (x.condicion !== CONDICION_PRODUCCION) noOperativos++;
         }
         r.dispositivos.push(x);
@@ -1129,15 +1165,17 @@ function sanearDatos(bruto, ahora) {
     let canalesMal = 0;
     for (const x of r.dispositivos) {
         const i = x.instalacion;
-        if (!i || (i.grabador === null && i.canal === null)) continue;
-        const g = porId.get(i.grabador);
-        const clave = `${i.grabador}#${i.canal}`;
-        const valido = i.grabador !== null && i.canal !== null && g && g.id !== x.id && TIPOS_GRABADOR.includes(g.tipo)
-            && g.instalacion && !TIPOS_GRABADOR.includes(x.tipo) && (!g.canales || i.canal <= g.canales) && !ocupados.has(clave);
-        if (valido) ocupados.add(clave);
-        else { i.grabador = null; i.canal = null; canalesMal++; }
+        if (!i || !i.asignaciones.length) continue;
+        i.asignaciones = i.asignaciones.filter((a) => {
+            const g = porId.get(a.grabador);
+            const clave = `${a.grabador}#${a.canal}`;
+            const valido = g && g.id !== x.id && TIPOS_GRABADOR.includes(g.tipo) && g.instalacion
+                && !TIPOS_GRABADOR.includes(x.tipo) && (!g.canales || a.canal <= g.canales) && !ocupados.has(clave);
+            if (valido) ocupados.add(clave); else canalesMal++;
+            return valido;
+        });
     }
-    if (canalesMal) avisar(`${canalesMal} asignación(es) a canales no válidas (grabador inexistente, canal fuera de rango o repetido): quedaron sin canal`);
+    if (canalesMal) avisar(`${canalesMal} asignación(es) a canales no válidas (grabador inexistente, canal fuera de rango o repetido): se quitaron`);
     if (descartados) avisar(`${descartados} dispositivo(s) sin id válido o repetido: no se cargaron`);
     if (noOperativos) {
         avisar(`${noOperativos} dispositivo(s) instalados que no están operativos: al editarlos salen de producción`);
