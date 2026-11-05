@@ -173,7 +173,7 @@ const ApiLocal = (() => {
         let bruto;
         try { bruto = JSON.parse(texto); } catch (e) { throw new ErrorDatos('validacion', 'el archivo no es un JSON válido'); }
         if (!bruto || bruto.formato !== FORMATO_DATOS) {
-            throw new ErrorDatos('validacion', 'no es un archivo exportado de SGC-2 (la migración desde SGC llega más adelante)');
+            throw new ErrorDatos('validacion', 'no es un archivo exportado de SGC-2 (para el de SGC usá «Migrar desde SGC»)');
         }
         const r = sanearDatos(bruto, ahora());
         guardar(r.datos);

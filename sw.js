@@ -1,5 +1,5 @@
-const CACHE_NAME = 'idr-suite-260925.0120';
-const RUNTIME_CACHE = 'idr-runtime-260925.0120';
+const CACHE_NAME = 'idr-suite-261105.0300';
+const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
   // ── Launcher (Portada) ──
@@ -27,6 +27,75 @@ const PRECACHE_URLS = [
   './SGC/icons/icon-192.png',
   './SGC/icons/icon-512.png',
   './SGC/icons/icon-1024.png',
+
+  // ── SGC-2 (CCTV estático; las fotos de modelos se guardan al verlas) ──
+  './SGC-2/',
+  './SGC-2/css/app/activos.css',
+  './SGC-2/css/app/ajustes.css',
+  './SGC-2/css/app/animaciones.css',
+  './SGC-2/css/app/atajos.css',
+  './SGC-2/css/app/auditoria.css',
+  './SGC-2/css/app/estado.css',
+  './SGC-2/css/app/estructura.css',
+  './SGC-2/css/app/favoritos.css',
+  './SGC-2/css/app/interaccion.css',
+  './SGC-2/css/app/produccion.css',
+  './SGC-2/css/app/tema.css',
+  './SGC-2/css/base.css',
+  './SGC-2/css/componentes/acordeon.css',
+  './SGC-2/css/componentes/alertas.css',
+  './SGC-2/css/componentes/botones.css',
+  './SGC-2/css/componentes/desplegables.css',
+  './SGC-2/css/componentes/formularios.css',
+  './SGC-2/css/componentes/insignias.css',
+  './SGC-2/css/componentes/listas.css',
+  './SGC-2/css/componentes/modal.css',
+  './SGC-2/css/componentes/navegacion.css',
+  './SGC-2/css/componentes/progreso.css',
+  './SGC-2/css/componentes/spinner.css',
+  './SGC-2/css/componentes/tablas.css',
+  './SGC-2/css/componentes/tarjetas.css',
+  './SGC-2/css/componentes/toast.css',
+  './SGC-2/css/componentes/transiciones.css',
+  './SGC-2/css/grilla.css',
+  './SGC-2/css/tokens.css',
+  './SGC-2/css/utilidades.css',
+  './SGC-2/favicon.svg',
+  './SGC-2/js/ajustes.js',
+  './SGC-2/js/animaciones.js',
+  './SGC-2/js/api-local.js',
+  './SGC-2/js/app.js',
+  './SGC-2/js/atajos.js',
+  './SGC-2/js/auditoria-bd.js',
+  './SGC-2/js/busqueda.js',
+  './SGC-2/js/comun.js',
+  './SGC-2/js/datos-puro.js',
+  './SGC-2/js/datos-ui.js',
+  './SGC-2/js/favoritos.js',
+  './SGC-2/js/gist.js',
+  './SGC-2/js/migrar-sgc.js',
+  './SGC-2/js/parseador.js',
+  './SGC-2/js/preload.js',
+  './SGC-2/js/privacidad.js',
+  './SGC-2/js/produccion-asignar.js',
+  './SGC-2/js/produccion-seleccion.js',
+  './SGC-2/js/produccion.js',
+  './SGC-2/js/resumen.js',
+  './SGC-2/js/selector.js',
+  './SGC-2/js/sesion-local.js',
+  './SGC-2/js/stock-alta-lote.js',
+  './SGC-2/js/stock-catalogos.js',
+  './SGC-2/js/stock-listar.js',
+  './SGC-2/js/stock-puro.js',
+  './SGC-2/js/stock-seleccion.js',
+  './SGC-2/js/stock.js',
+  './SGC-2/js/ui.js',
+  './SGC-2/vendor/bootstrap-icons/bootstrap-icons.min.css',
+  './SGC-2/vendor/bootstrap-icons/fonts/bootstrap-icons.woff',
+  './SGC-2/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2',
+  './SGC-2/vendor/fonts/inter-latin-ext.woff2',
+  './SGC-2/vendor/fonts/inter-latin.woff2',
+  './SGC-2/vendor/fonts/inter.css',
 
   // ── SGI (Materiales) ──
   './SGI/',
@@ -147,6 +216,9 @@ self.addEventListener('fetch', event => {
         .catch(() => {
           if (event.request.mode === 'navigate') {
             const pathname = url.pathname;
+            if (pathname.includes('/SGC-2')) {
+              return caches.match('./SGC-2/index.html');
+            }
             if (pathname.includes('/SGC')) {
               return caches.match('./SGC/index.html');
             }

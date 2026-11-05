@@ -3,7 +3,7 @@
 Objetivo: una versión **estática** (GitHub Pages, sin backend) del front de `cctv_monitor`, con los datos en un JSON
 (localStorage) sincronizable con un **GitHub Gist**, igual que `idr/SGC`. Cuando esté completa reemplaza a `idr/SGC`.
 
-Fecha: 2026-11-05. Estado: **entregas 1 a 4 hechas** (ver §9 y §12–§15).
+Fecha: 2026-11-05. Estado: **entregas 1 a 5 hechas** (ver §9 y §12–§16); falta la 6 (convivencia y reemplazo).
 
 ---
 
@@ -174,7 +174,7 @@ Al reemplazar a SGC: agregar `SGC-2/` al `sw.js` raíz de la suite, y más tarde
    Activos, Favoritos).
 3. ✅ **Gist**: sync + merge + lápidas, cifrado AES-GCM con frase (P4).
 4. ✅ **Parseadores** de canales y de datos.
-5. **Migración desde SGC** y prueba con el JSON real; agregar al `sw.js` de la suite.
+5. ✅ **Migración desde SGC** y `sw.js` de la suite (falta probarla con el JSON real de SGC: no está en este equipo).
 6. Reemplazo: período de convivencia, luego `SGC-2` → `SGC`.
 
 ## 10. Riesgos
@@ -294,3 +294,28 @@ Al reemplazar a SGC: agregar `SGC-2/` al `sw.js` raíz de la suite, y más tarde
 - Con el `cctv_online.json` real (329 filas, 8 NVR) y un stock vacío: 8 grabadores, 289 altas y 40 filas en conflicto
   (las 22 MAC repetidas y sus canales); sin fallos.
 - Tests: `tests/js/parseador.test.mjs` (8) y la prueba de humo (ventana → archivo → vista previa → aplicar).
+
+## 16. Entrega 5: migración desde SGC y `sw.js`
+
+- `js/migrar-sgc.js`: bloque `MIGRAR SGC PURO` (conversión, firma) + ventana en Ajustes > Datos > **Migrar desde SGC**. Acepta
+  la exportación de SGC o el archivo de su Gist (misma forma). **Ensayo primero**: la vista previa cuenta lo que entra,
+  lista los avisos y los canales sin equipo, y recién «Aplicar» escribe. Modo **Unir** (por equipo gana la edición más
+  reciente, con `gistFusionar`; sirve para repetir la migración durante la convivencia) o **Reemplazar**.
+- Conversión (port de `cctv/stock_sgc.py` al modelo nuevo): `estado ''` → operativo; `forma` de la cámara → su tipo;
+  `software` → otro; `tiposCustom` → catálogo; cada **grabador** queda instalado con su ubicación y sus `canales_data`
+  con equipo pasan a `instalacion {grabador, canal, descripcion, ip, puerto, edificio, piso, rack}`; `otros_prod` →
+  instalación sin grabador. Un grabador sin dispositivo se vincula al NVR/DVR del stock que tiene su MAC o, si no hay,
+  se crea uno con su marca/modelo/MAC. Capacidad = la mayor entre el dispositivo y `canales_n`.
+- Nada se pierde sin avisar: MAC adicionales, MAC/serie/patrimonio repetidos y puertos con formato no válido pasan al
+  comentario; un equipo en dos canales conserva el primero; dos equipos en el mismo canal, el primero. Los canales con
+  descripción/IP pero sin equipo no tienen dónde ir (P5): se listan en el informe. Las lápidas de dispositivos de SGC se
+  conservan; las de grabadores y «otros» no (ya no son entidades).
+- **Firma**: `migFirmaSgc` reproduce `generarFirma` de SGC (verificada contra `firma_sgc` de `cctv/stock_sgc.py` con un
+  hash fijo en el test). Si no coincide, hay que tildar «Aplicar igual».
+- **`sw.js` de la suite**: precache de SGC-2 (html, js, css, vendor; las fotos de modelos se guardan al verlas), caché
+  `261105.0300` y el `/SGC-2/` ahora va antes que `/SGC` en el fallback de navegación (`includes('/SGC')` lo habría
+  mandado al otro). Tarjeta «CCTV 2» en el launcher. **Ojo**: el SW es cache-first con `ignoreSearch`: cada cambio en
+  SGC-2 pide subir la versión de `CACHE_NAME`.
+- Tests: `tests/js/migrar_sgc.test.mjs` (10) y la prueba de humo (ventana → ensayo sin escribir → aplicar uniendo).
+- **Falta (entrega 6)**: probar con el export real de SGC, período de convivencia y renombrar `SGC-2` → `SGC` (con su `sw.js`,
+  manifest e iconos de PWA, que SGC-2 todavía no tiene propios).

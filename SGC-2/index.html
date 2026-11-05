@@ -714,6 +714,14 @@
                                 </div>
                                 <span class="ajuste-accion-estado"><i class="bi bi-chevron-right"></i></span>
                             </div>
+                            <div class="ajuste-fila" id="mig-abrir" role="button" tabindex="0">
+                                <i class="bi bi-box-arrow-in-down ajuste-icono" aria-hidden="true"></i>
+                                <div class="ajuste-texto">
+                                    <span class="ajuste-titulo">Migrar desde SGC</span>
+                                    <span class="ajuste-desc">Convierte la exportación de SGC (o el archivo de su Gist) a este formato, con vista previa antes de aplicar.</span>
+                                </div>
+                                <span class="ajuste-accion-estado"><i class="bi bi-chevron-right"></i></span>
+                            </div>
                             <div class="ajuste-fila" id="datos-borrar" role="button" tabindex="0">
                                 <i class="bi bi-trash3 ajuste-icono" aria-hidden="true"></i>
                                 <div class="ajuste-texto">
@@ -982,6 +990,39 @@
                         <i class="bi bi-plus-lg me-1"></i>Nuevo dispositivo en este canal
                     </button>
                     <button type="button" class="btn btn-outline-secondary btn-sm" data-ui-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Migración desde SGC (js/migrar-sgc.js): ensayo con informe y aplicar -->
+    <div class="modal fade" id="migrarModal" tabindex="-1" aria-labelledby="mig-titulo-modal" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+            <div class="modal-content modal-tema border-0 shadow">
+                <div class="modal-header border-0 pb-1">
+                    <h5 class="modal-title fs-6 fw-bold text-primary" id="mig-titulo-modal">
+                        <i class="bi bi-box-arrow-in-down me-2"></i>Migrar desde SGC
+                    </h5>
+                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body py-2">
+                    <p class="small text-secondary mb-2">Elegí el JSON que exporta SGC (Datos &gt; Exportar) o el archivo de su Gist. Primero se muestra qué entraría; recién «Aplicar» escribe.</p>
+                    <div class="pars-barra">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="mig-elegir"><i class="bi bi-folder2-open me-1"></i>Elegir archivo de SGC</button>
+                        <span class="small text-secondary" id="mig-archivo-info"></span>
+                    </div>
+                    <input type="file" id="mig-archivo" class="d-none" accept=".json,application/json">
+                    <div class="pars-opciones d-none" id="mig-opciones">
+                        <label class="form-check gist-recordar"><input type="radio" class="form-check-input" name="mig-modo" value="unir" checked><span>Unir con lo que ya hay (por equipo gana la edición más reciente)</span></label>
+                        <label class="form-check gist-recordar"><input type="radio" class="form-check-input" name="mig-modo" value="reemplazar"><span>Reemplazar todo lo de este navegador</span></label>
+                        <label class="form-check gist-recordar d-none" id="mig-alterada-fila"><input type="checkbox" class="form-check-input" id="mig-alterada"><span>Aplicar igual aunque la firma no coincida</span></label>
+                        <span class="small text-secondary" id="mig-aviso-actual"></span>
+                    </div>
+                    <div id="mig-contenido"></div>
+                </div>
+                <div class="modal-footer border-0 pt-1 pb-3">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-ui-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="mig-aplicar" disabled>Aplicar</button>
                 </div>
             </div>
         </div>
@@ -2066,6 +2107,7 @@
     <script src="js/datos-ui.js?v=1"></script>
     <script src="js/gist.js?v=1"></script>
     <script src="js/parseador.js?v=1"></script>
+    <script src="js/migrar-sgc.js?v=1"></script>
     <script src="js/privacidad.js?v=2"></script>
 
 </body>

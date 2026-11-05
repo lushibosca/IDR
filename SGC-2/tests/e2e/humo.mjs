@@ -257,6 +257,35 @@ let mal = null;
 try { w.eval('ApiLocal').importar('{"formato":"otro"}'); } catch (e) { mal = e; }
 check('importar otro formato: se rechaza sin tocar nada', mal && (await api('/api/stock')).dispositivos.length === 6);
 
+// --- Migración desde SGC: ensayo (vista previa) y aplicar uniendo con lo que hay
+{
+    const sgc = JSON.stringify({
+        dispositivos: [{ id: 'sgcn1', tipo: 'nvr', estado: '', mac: 'de:ad:be:ef:00:01', serial: 'SGC-N1', canales: 8, marca: 'Hikvision', modelo: 'DS-X' },
+            { id: 'sgcc1', tipo: 'camara', forma: 'domo', estado: '', mac: 'de:ad:be:ef:00:02', serial: 'SGC-C1', modelo: 'CAM' }],
+        grabadores: [{ id: 'sgcg1', dispositivoId: 'sgcn1', canales_n: 8, descripcion: 'NVR de SGC', tipo: 'nvr', ip: '10.7.7.1', edificio: 'Anexo A',
+            canales_data: [{ canal: 2, dispositivoId: 'sgcc1', descripcion: 'Cámara SGC', ip: '10.7.7.2' },
+                { canal: 3, dispositivoId: null, descripcion: 'libre con nombre' }] }],
+        otros_prod: [], tiposCustom: {}, edificios: ['Anexo A'] });
+    $('mig-abrir').click();
+    await hasta(() => $('migrarModal').classList.contains('show'));
+    check('migración: se abre la ventana', $('migrarModal').classList.contains('show') && $('mig-aplicar').disabled);
+    Object.defineProperty($('mig-archivo'), 'files', { configurable: true,
+        value: [{ name: 'sgc.json', size: sgc.length, text: async () => sgc }] });
+    $('mig-archivo').dispatchEvent(new w.Event('change'));
+    await hasta(() => /Qué entra/.test($('mig-contenido').textContent));
+    check('migración: la vista previa cuenta lo que entra y lo que no encontró lugar', /2 dispositivo/.test($('mig-contenido').textContent)
+        && /1 cámara\(s\) asignadas/.test($('mig-contenido').textContent) && /sin equipo \(1\)/.test($('mig-contenido').textContent)
+        && !$('mig-aplicar').disabled, $('mig-contenido').textContent.slice(0, 300));
+    check('migración: el ensayo no escribe', (await api('/api/stock')).dispositivos.length === 6);
+    $('mig-aplicar').click();
+    await esperar(300);
+    const todos = (await api('/api/stock')).dispositivos;
+    const camSgc = todos.find((x) => x.id === 'sgcc1');
+    check('migración: se unió con lo existente (nada se perdió)', todos.length === 8 && todos.some((x) => x.id === nvr.id), String(todos.length));
+    check('migración: la cámara de SGC quedó en su grabador y canal', camSgc && camSgc.tipo === 'domo' && camSgc.instalacion.grabador === 'sgcn1'
+        && camSgc.instalacion.canal === 2 && camSgc.instalacion.descripcion === 'Cámara SGC', JSON.stringify(camSgc && camSgc.instalacion));
+}
+
 await esperar(300);
 check('sin errores de JavaScript', errores.length === 0, errores.join(' | '));
 console.log(fallos ? `\n${fallos} FALLO(S)` : '\nTODO OK');
