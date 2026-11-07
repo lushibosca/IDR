@@ -971,6 +971,9 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         const esGrabador = STOCK_TIPOS_GRABADOR.includes($('stock-f-tipo').value);
         if (esGrabador && asignaciones.length) { asignaciones = []; pintarAsignaciones(); }
         $('stock-f-asig-fila').classList.toggle('d-none', esGrabador);
+        // «Solo pantalla» es de los grabadores: en otro tipo no se ofrece y se apaga
+        $('stock-f-solo-pantalla-fila').classList.toggle('d-none', !esGrabador);
+        if (!esGrabador) $('stock-f-solo-pantalla').checked = false;
     }
 
     function sincronizarFormulario() {
@@ -1005,6 +1008,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         asignaciones = (v.asignaciones || []).map(a => ({ grabador: a.grabador, canal: a.canal }));
         pintarAsignaciones();
         $('stock-f-instalado').checked = v.instalado;
+        $('stock-f-solo-pantalla').checked = v.soloPantalla === true;
         $('stock-f-edificio-nuevo').value = '';
         $('stock-f-piso-nuevo').value = '';
         sugerirModelos();
@@ -1034,6 +1038,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         const v = Object.create(null);
         for (const [clave, id] of CAMPOS_FORM) v[clave] = $(id).value;
         v.instalado = $('stock-f-instalado').checked;
+        v.soloPantalla = $('stock-f-solo-pantalla').checked;
         v.asignaciones = asignaciones.filter(a => a.grabador).map(a => ({ grabador: a.grabador, canal: a.canal }));
         return v;
     }
@@ -1162,6 +1167,9 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         const can = (d && d.canales) ? String(d.canales) : (infoCam && infoCam.nvr_canales ? String(infoCam.nvr_canales) : '');
         if (can) {
             filas.push({ etiqueta: 'Canales', valor: can });
+        }
+        if (d && d.solo_pantalla === true) {
+            filas.push({ etiqueta: 'Grabación', valor: 'Solo pantalla', tenue: true });
         }
 
         if (d && d.comentario) {

@@ -186,8 +186,10 @@ function valorVisible(el) {
 // Celdas que cambian con el toggle: «En uso» y «Disponibles» (filas y totales). Cada valor va en un `.cap-valor`:
 // la mutación anima ese span y no la celda (escalar un <td> corre su texto y mueve sus bordes)
 const SELECTOR_CELDAS_CAPACIDAD = '#tabla-detalle-capacidad tbody td:nth-child(3), #tabla-detalle-capacidad tbody td:nth-child(4), '
+    + '#tabla-detalle-pantallas tbody td:nth-child(3), #tabla-detalle-pantallas tbody td:nth-child(4), '
     + '#cap-detalle-uso, #cap-detalle-libres';
-const SELECTOR_VALORES_CAPACIDAD = '#tabla-detalle-capacidad .cap-valor, .modal-detalle-tipos .cap-valor';
+const SELECTOR_VALORES_CAPACIDAD = '#tabla-detalle-capacidad .cap-valor, #tabla-detalle-pantallas .cap-valor, '
+    + '.modal-detalle-tipos .cap-valor';
 
 function envolverValoresCapacidad() {
     for (const td of document.querySelectorAll(SELECTOR_CELDAS_CAPACIDAD)) {
@@ -380,27 +382,37 @@ function repintarModoDetalles() {
     }
 }
 
+// Un grabador del detalle de canales (la tabla principal y la de «solo pantalla» van igual): columnas y fila.
+// Sin capacidad conocida muestra «-» (no 0) y sin porcentaje: no tiene base para calcularlo
+function columnasCapacidad(d, fmt, modo) {
+    return d.cap > 0 ? [d.cap, fmt(d.enUso, d.cap), fmt(d.libres, d.cap)] : ['-', modo === 'pct' ? '-' : d.enUso, '-'];
+}
+// Solo el nombre del grabador (la IP sale de la descripción); doble clic = buscarlo en Activos. `conNivel`: el borde y el
+// color de Disponibles según el uso (lo que se pide del parque; un solo pantalla no lo lleva)
+function ponerFilaCapacidad(tr, d, conNivel) {
+    tr.cells[0].textContent = d.nombre;
+    tr.dataset.nvrIp = d.ip;
+    tr.title = 'Doble clic: buscar en Activos';
+    if (conNivel && d.cap > 0) {
+        const pct = Math.min(100, Math.round((d.enUso / d.cap) * 100));
+        const nivel = typeof nivelCapacidad === 'function' ? nivelCapacidad(pct) : (pct >= 90 ? 'critico' : (pct >= 70 ? 'aviso' : 'ok'));
+        tr.classList.add(nivel === 'critico' ? 'cap-fila-critico' : (nivel === 'aviso' ? 'cap-fila-aviso' : 'cap-fila-ok'));
+    }
+}
+
 function pintarDetalleCapacidad() {
     const cap = _ultimaCapacidad;
     if (!cap) return;
     const modo = modoCapacidadValido(storage.get(CLAVE_MODO_CAPACIDAD));
     const fmt = (val, base) => formatoCapacidad(val, base, modo);
-    // Un grabador sin capacidad conocida muestra «-» (no 0) y sin porcentaje: no tiene base para calcularlo
-    pintarTablaResumen('#tabla-detalle-capacidad tbody', cap.detalle, d => d.cap > 0 ? [
-        d.cap,
-        fmt(d.enUso, d.cap),
-        fmt(d.libres, d.cap),
-    ] : ['-', modo === 'pct' ? '-' : d.enUso, '-'], (tr, d) => {
-        // Solo el nombre del grabador (la IP sale de la descripción); doble clic = su Auditoría > Grabador
-        tr.cells[0].textContent = d.nombre;
-        tr.dataset.nvrIp = d.ip;
-        tr.title = 'Doble clic: buscar en Activos';
-        if (d.cap > 0) {
-            const pct = Math.min(100, Math.round((d.enUso / d.cap) * 100));
-            const nivel = typeof nivelCapacidad === 'function' ? nivelCapacidad(pct) : (pct >= 90 ? 'critico' : (pct >= 70 ? 'aviso' : 'ok'));
-            tr.classList.add(nivel === 'critico' ? 'cap-fila-critico' : (nivel === 'aviso' ? 'cap-fila-aviso' : 'cap-fila-ok'));
-        }
-    });
+    pintarTablaResumen('#tabla-detalle-capacidad tbody', cap.detalle, d => columnasCapacidad(d, fmt, modo),
+        (tr, d) => ponerFilaCapacidad(tr, d, true));
+    // Los grabadores solo pantalla no suman en nada: tabla aparte, sin totales ni colores de uso, y oculta si no hay
+    const pantallas = cap.pantallas || new Map();
+    pintarTablaResumen('#tabla-detalle-pantallas tbody', pantallas, d => columnasCapacidad(d, fmt, modo),
+        (tr, d) => ponerFilaCapacidad(tr, d, false));
+    const seccionPantallas = document.getElementById('cap-pantallas-seccion');
+    if (seccionPantallas) seccionPantallas.classList.toggle('d-none', pantallas.size === 0);
     uiPonerTexto('cap-detalle-total', cap.total);      // fila de totales: las mismas sumas del chip
     // en porcentaje, el uso de los grabadores con capacidad conocida (los mismos que suman la capacidad total)
     uiPonerTexto('cap-detalle-uso', fmt(modo === 'pct' ? cap.enUsoMedido : cap.enUso, cap.total));
@@ -696,8 +708,11 @@ function pintarTablaTipos(selector, porTipo) {
 
 // Doble clic en un grabador del detalle de canales: cierra el modal y lo busca en Activos (por su IP)
 function iniciarIrAGrabadorDesdeCapacidad() {
-    const tbody = document.querySelector('#tabla-detalle-capacidad tbody');
-    if (!tbody) return;
+    for (const tbody of document.querySelectorAll('#tabla-detalle-capacidad tbody, #tabla-detalle-pantallas tbody')) {
+        irAGrabadorAlDobleClic(tbody);
+    }
+}
+function irAGrabadorAlDobleClic(tbody) {
     tbody.addEventListener('dblclick', (e) => {
         const fila = e.target instanceof Element ? e.target.closest('tr[data-nvr-ip]') : null;
         if (!fila) return;

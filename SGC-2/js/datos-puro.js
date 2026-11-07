@@ -44,7 +44,9 @@ const MAX_PROBLEMAS_LOTE = 8;
 const MAX_LOTE = 200;
 const CANALES_MAX = 4096;
 const CAMPOS_DISPOSITIVO = ['tipo', 'condicion', 'marca', 'modelo', 'serie', 'mac', 'patrimonio', 'firmware', 'canales',
-    'comentario'];
+    'solo_pantalla', 'comentario'];
+// `solo_pantalla` (solo NVR/DVR): un grabador sin disco que muestra cámaras de otros (como una PC con el IVMS). No es capacidad
+// de grabación: no suma a los canales del parque y Producción lo marca. Booleano; en cualquier otro tipo, siempre falso.
 // `asignaciones`: lista de {grabador (id del NVR/DVR), canal}: en qué canales está (una cámara puede estar en varios grabadores,
 // todas por igual; vacía = «Otros dispositivos»). La API además da `grabador`/`canal` de la primera, solo para quien lee.
 const CAMPOS_INSTALACION = ['descripcion', 'ip', 'edificio', 'piso', 'rack', 'puerto', 'comentario', 'asignaciones'];
@@ -343,7 +345,7 @@ function dispositivoApi(d, paginas) {
     return {
         id: d.id, tipo: d.tipo, condicion: d.condicion, marca: d.marca, modelo: d.modelo, serie: d.serie, mac: d.mac,
         patrimonio: d.patrimonio, firmware: d.firmware, pagina_modelo: p ? p.pagina : null, canales: d.canales,
-        comentario: d.comentario, instalacion: instalacionApi(d.instalacion), version: d.version,
+        solo_pantalla: d.solo_pantalla === true, comentario: d.comentario, instalacion: instalacionApi(d.instalacion), version: d.version,
         en_uso: !!d.instalacion, disponible: !d.instalacion && d.condicion === 'operativo'
     };
 }
@@ -374,7 +376,8 @@ const _cambioDispositivo = (c) => ({ objeto: 'dispositivo', dispositivo_id: c.di
 
 function _plano(d) {
     if (!d) return new Map();
-    const p = new Map(CAMPOS_DISPOSITIVO.map(c => [c, d[c] === null || d[c] === undefined ? null : String(d[c])]));
+    const p = new Map(CAMPOS_DISPOSITIVO.map(c => [c, c === 'solo_pantalla' ? (d[c] === true ? 'sí' : null)
+        : d[c] === null || d[c] === undefined ? null : String(d[c])]));
     p.set('instalacion', d.instalacion ? 'sí' : null);
     if (d.instalacion) {
         for (const c of CAMPOS_INSTALACION) {
@@ -489,6 +492,10 @@ function validarDispositivo(entrada, { id, datos, pisos = null }) {
         canales = enteroAcotado(e.canales, 1, CANALES_MAX);
         if (canales === null) errores.push(`canales: entre 1 y ${CANALES_MAX}`);
     }
+    if (e.solo_pantalla !== null && e.solo_pantalla !== undefined && typeof e.solo_pantalla !== 'boolean') {
+        errores.push('solo pantalla: sí o no');
+    }
+    const solo_pantalla = e.solo_pantalla === true && TIPOS_GRABADOR.includes(tipo);     // en otro tipo no significa nada
     let instalacion = null;
     const bruta = e.instalacion;
     if (bruta !== null && bruta !== undefined) {
@@ -515,7 +522,7 @@ function validarDispositivo(entrada, { id, datos, pisos = null }) {
         id, tipo, condicion, marca: normalizarMarca(e.marca), modelo: _t(e.modelo, 'modelo'),
         serie: _opcional(e.serie, 'serie', NULOS_SERIE), mac,
         patrimonio: _opcional(e.patrimonio, 'patrimonio', NULOS_PATRIMONIO), firmware: _opcional(e.firmware, 'firmware'),
-        canales, comentario: _t(e.comentario, 'comentario'), instalacion
+        canales, solo_pantalla, comentario: _t(e.comentario, 'comentario'), instalacion
     };
 }
 
@@ -1042,7 +1049,7 @@ function datosProduccion(datos) {
         .sort((a, b) => comparar(etiquetaDispositivo(a), etiquetaDispositivo(b)))
         .map(d => ({ ip: d.instalacion.ip || '', nvr_name: etiquetaDispositivo(d), modelo: d.modelo || 'N/A',
             firmware: d.firmware || 'N/A', nro_serie: d.serie || 'N/A', mac_address: d.mac || 'N/A',
-            protocolo_conexion: 'N/A', total_camaras: d.canales || 0, is_offline: false, motivo: null,
+            protocolo_conexion: 'N/A', total_camaras: d.canales || 0, graba: d.solo_pantalla !== true, is_offline: false, motivo: null,
             stock: stockDe(d), pagina_modelo: (paginas.get(claveModelo(d.modelo)) || {}).pagina || null }));
     const porId = new Map(datos.dispositivos.map(d => [d.id, d]));
     const camaras = datos.dispositivos
@@ -1126,6 +1133,7 @@ function sanearDatos(bruto, ahora) {
             serie: _opcional(d.serie, 'serie', NULOS_SERIE), mac: macNormalizada(d.mac),
             patrimonio: _opcional(d.patrimonio, 'patrimonio', NULOS_PATRIMONIO), firmware: _opcional(d.firmware, 'firmware'),
             canales: d.canales === null || d.canales === undefined ? null : enteroAcotado(d.canales, 1, CANALES_MAX),
+            solo_pantalla: d.solo_pantalla === true && TIPOS_GRABADOR.includes(tipo),
             comentario: _t(d.comentario, 'comentario'), instalacion: null,
             creado: _fecha(d.creado, ahora), actualizado: _fecha(d.actualizado, ahora),
             version: enteroAcotado(d.version, 1, 1e12) || 1

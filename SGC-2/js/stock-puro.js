@@ -654,7 +654,7 @@ function stockUbicacionesValidas(ub) {
 const STOCK_CAMPOS = new Map([
     ['alta', 'Alta'], ['tipo', 'Tipo'], ['condicion', 'Condición'], ['forma', 'Forma'], ['marca', 'Marca'],
     ['modelo', 'Modelo'], ['serie', 'Serie'], ['mac', 'MAC'], ['patrimonio', 'Patrimonio'], ['firmware', 'Firmware'],
-    ['pagina_modelo', 'Página del modelo'], ['canales', 'Canales'], ['comentario', 'Comentario'], ['instalacion', 'Instalado'],
+    ['pagina_modelo', 'Página del modelo'], ['canales', 'Canales'], ['solo_pantalla', 'Solo pantalla'], ['comentario', 'Comentario'], ['instalacion', 'Instalado'],
     ['instalacion.descripcion', 'Descripción'], ['instalacion.ip', 'IP'], ['instalacion.edificio', 'Edificio'],
     ['instalacion.piso', 'Piso'], ['instalacion.rack', 'Rack'], ['instalacion.puerto', 'Puerto'],
     ['instalacion.comentario', 'Comentario de la instalación'], ['eliminado', 'Eliminado']
@@ -687,7 +687,7 @@ function stockValoresDeDispositivo(d) {
     return {
         tipo: d ? d.tipo : 'camara', condicion: d ? d.condicion : 'operativo',
         marca: t(d && d.marca), modelo: t(d && d.modelo), serie: t(d && d.serie), mac: stockMacTexto(d && d.mac),
-        patrimonio: t(d && d.patrimonio), firmware: t(d && d.firmware), canales: t(d && d.canales),
+        patrimonio: t(d && d.patrimonio), firmware: t(d && d.firmware), canales: t(d && d.canales), soloPantalla: !!(d && d.solo_pantalla === true),
         comentario: t(d && d.comentario), instalado: !!(d && d.instalacion), descripcion: t(i.descripcion),
         ip: t(i.ip), edificio: t(i.edificio), piso: t(i.piso), rack: t(i.rack), puerto: t(i.puerto),
         instComentario: t(i.comentario),
@@ -705,6 +705,7 @@ function stockPayload(v) {
         tipo: txt(v.tipo), condicion: txt(v.condicion) || 'operativo',
         marca: txt(v.marca), modelo: txt(v.modelo), serie: opt(v.serie), mac: opt(v.mac), patrimonio: opt(v.patrimonio),
         firmware: opt(v.firmware), canales: canales === '' ? null : (/^[0-9]{1,4}$/.test(canales) ? Number(canales) : canales),
+        solo_pantalla: v.soloPantalla === true && STOCK_TIPOS_GRABADOR.includes(txt(v.tipo)),
         comentario: txt(v.comentario),
         instalacion: v.instalado ? {
             descripcion: txt(v.descripcion), ip: opt(v.ip), edificio: txt(v.edificio), piso: txt(v.piso),

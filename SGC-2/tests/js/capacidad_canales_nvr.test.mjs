@@ -153,3 +153,22 @@ test("resumirCapacidad: un grabador sin capacidad conocida cuenta en uso pero no
   assert.equal(r.pct, 25, "16 de 64, sin los 50 que no tienen capacidad");
   assert.equal(r.pct + Math.round(r.libres / r.total * 100), 100, "en uso % + disponibles % = 100 %");
 });
+
+test("resumirCapacidad: un grabador solo pantalla no suma en nada y va aparte, con la forma del detalle", () => {
+  const nvrs = [
+    { ip: "10.0.0.1", nvr_name: "Central" },
+    { ip: "10.0.0.2", nvr_name: "PC IVMS", graba: false },
+    { ip: "10.0.0.3", nvr_name: "Otro", graba: true },
+  ];
+  const cams = [{ nvr_ip: "10.0.0.1" }, { nvr_ip: "10.0.0.2" }, { nvr_ip: "10.0.0.2" }, { nvr_ip: "10.0.0.3" }];
+  const caps = new Map([["10.0.0.1", 4], ["10.0.0.2", 16], ["10.0.0.3", 8]]);
+  const r = api.resumirCapacidad(nvrs, cams, n => caps.get(n.ip));
+  assert.equal(r.total, 12, "los 16 canales de la PC no cuentan");
+  assert.equal(r.enUso, 2);
+  assert.equal(r.libres, 10);
+  assert.deepEqual(plano([...r.detalle.keys()]), ["Central (10.0.0.1)", "Otro (10.0.0.3)"]);
+  assert.deepEqual(plano([...r.pantallas.entries()]), [
+    ["PC IVMS (10.0.0.2)", { cap: 16, enUso: 2, libres: 14, nombre: "PC IVMS", ip: "10.0.0.2" }],
+  ]);
+  assert.equal(api.resumirCapacidad([], [], () => 1).pantallas.size, 0);
+});

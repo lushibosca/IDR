@@ -356,6 +356,9 @@ function modeloProduccion(camaras, e) {
         if (data.offline > 0) insignias.push({ texto: `${data.offline} Caídas`, clase: 'bg-danger' });
         if (data.sinSenal > 0) insignias.push({ texto: `${data.sinSenal} Sin señal`, clase: 'bg-secondary-subtle text-secondary border border-secondary-subtle' });
         if (data.sinRelevar > 0) insignias.push({ texto: `${data.sinRelevar} Sin relevar`, clase: 'bg-info-subtle text-info border border-info-subtle' });
+        if (nvrObj && nvrObj.graba === false) {
+            insignias.push({ texto: 'Solo pantalla', clase: 'bg-info-subtle text-info border border-info-subtle' });
+        }
         if (nvrCaido) insignias.push({ texto: 'Grabador offline', clase: 'bg-danger' });
         const items = lista.map((cam) => {
             const chNum = uiNumeroCanal(cam.channel_id);
@@ -1571,23 +1574,31 @@ function completarCanalesDisponibles(camarasConfiguradas, capacidad, nvrNombre =
 // suma de los grabadores (las mismas cuentas que el detalle) y los libres se suman por grabador (uno lleno no descuenta
 // de otro con lugar). Un grabador sin capacidad conocida (caído y sin modelo que la estime) cuenta en «en uso» pero NO en los
 // porcentajes (`enUsoMedido`, `sinCapacidad`): su uso no tiene base y mezclarlo daba más de 100 % entre en uso y libres.
+// Un grabador SOLO PANTALLA (`graba === false`, sin disco: como una PC con el IVMS) no es capacidad del parque: no suma en
+// nada (ni en el total, ni en uso, ni en libres, ni en los anillos) y va aparte en `pantallas`, con la forma del detalle.
 function resumirCapacidad(nvrs, camaras, capacidadDe) {
     const detalle = new Map();
+    const pantallas = new Map();
     let total = 0, enUso = 0, enUsoMedido = 0, libres = 0, sinCapacidad = 0;
     for (const n of Array.isArray(nvrs) ? nvrs : []) {
         if (!n) continue;
         const cap = capacidadDe(n) || 0;
         const uso = (Array.isArray(camaras) ? camaras : []).filter(c => c && c.nvr_ip === n.ip).length;
         const disp = calcularCanalesDisponibles(uso, cap) || 0;
+        const conNombre = Boolean(n.nvr_name && n.nvr_name !== 'N/A');
+        const fila = { cap, enUso: uso, libres: disp, nombre: conNombre ? String(n.nvr_name) : String(n.ip), ip: String(n.ip) };
+        const clave = conNombre ? `${n.nvr_name} (${n.ip})` : String(n.ip);
+        if (n.graba === false) {                 // solo `false` explícito: sin el dato, graba
+            pantallas.set(clave, fila);
+            continue;
+        }
         total += cap;
         enUso += uso;
         if (cap > 0) enUsoMedido += uso; else sinCapacidad++;
         libres += disp;
-        const conNombre = Boolean(n.nvr_name && n.nvr_name !== 'N/A');
-        detalle.set(conNombre ? `${n.nvr_name} (${n.ip})` : String(n.ip),
-            { cap, enUso: uso, libres: disp, nombre: conNombre ? String(n.nvr_name) : String(n.ip), ip: String(n.ip) });
+        detalle.set(clave, fila);
     }
-    return { total, enUso, enUsoMedido, sinCapacidad, libres, detalle,
+    return { total, enUso, enUsoMedido, sinCapacidad, libres, detalle, pantallas,
         pct: total > 0 ? Math.min(100, Math.round((enUsoMedido / total) * 100)) : 0 };
 }
 // Color del anillo de canales según lo usado: verde por debajo del umbral de aviso, naranja desde ahí y rojo cuando casi no

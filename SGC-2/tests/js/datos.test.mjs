@@ -339,3 +339,42 @@ test("datos guardados con el par grabador+canal suelto se leen como una asignaci
   assert.deepEqual(plano(r.datos.dispositivos[1].instalacion.asignaciones), [{ grabador: "g", canal: 2 }]);
   assert.equal(r.avisos.length, 0);
 });
+
+// ---------------------------------------------------------------- grabador «solo pantalla»
+test("solo pantalla: solo un NVR/DVR lo tiene; en otro tipo se ignora; el valor debe ser booleano", () => {
+  const { datos, ctx } = base();
+  const nvr = D.crearDispositivo(datos, { tipo: "nvr", canales: 8, solo_pantalla: true,
+    instalacion: { descripcion: "PC IVMS", ip: "10.0.0.5" } }, ctx);
+  assert.equal(nvr.solo_pantalla, true);
+  assert.equal(D.crearDispositivo(datos, { tipo: "nvr", instalacion: { descripcion: "NVR 2", ip: "10.0.0.6" } }, ctx).solo_pantalla, false);
+  assert.equal(D.crearDispositivo(datos, { tipo: "domo", solo_pantalla: true }, ctx).solo_pantalla, false);
+  rechaza(() => D.crearDispositivo(datos, { tipo: "nvr", solo_pantalla: "si" }, ctx), 422, /solo pantalla/);
+});
+
+test("solo pantalla: Producción lo informa como `graba: false` y el historial registra el cambio", () => {
+  const { datos, ctx } = base();
+  const a = D.crearDispositivo(datos, { tipo: "nvr", canales: 8, instalacion: { descripcion: "NVR A", ip: "10.0.0.1" } }, ctx);
+  const b = D.crearDispositivo(datos, { tipo: "nvr", canales: 4, solo_pantalla: true, instalacion: { descripcion: "PC B", ip: "10.0.0.2" } }, ctx);
+  const graba = Object.fromEntries(D.datosProduccion(datos).nvrs.map((n) => [n.ip, n.graba]));
+  assert.deepEqual(plano(graba), { "10.0.0.1": true, "10.0.0.2": false });
+  const actual = D.listado(datos).dispositivos.find((x) => x.id === a.id);
+  D.modificarDispositivo(datos, a.id, { ...actual, solo_pantalla: true }, actual.version, ctx);
+  const h = D.historialDispositivo(datos, a.id).entradas.filter((x) => x.campo === "solo_pantalla");
+  assert.equal(h.length, 1);
+  assert.deepEqual([h[0].antes, h[0].despues], [null, "sí"]);
+  assert.ok(b);
+});
+
+test("solo pantalla: lo que entra de afuera se revisa (solo true y solo en NVR/DVR) y sobrevive a exportar", () => {
+  const { datos, ctx } = base();
+  D.crearDispositivo(datos, { tipo: "nvr", solo_pantalla: true, instalacion: { descripcion: "PC", ip: "10.0.0.5" } }, ctx);
+  const copia = JSON.parse(JSON.stringify(datos));
+  copia.dispositivos.push({ ...copia.dispositivos[0], id: "x1", tipo: "domo", mac: null, serie: null, patrimonio: null, instalacion: null });
+  copia.dispositivos[1].solo_pantalla = true;
+  copia.dispositivos.push({ ...copia.dispositivos[0], id: "x2", mac: null, serie: null, patrimonio: null, instalacion: null, solo_pantalla: "true" });
+  const { datos: sano } = D.sanearDatos(copia, "2026-11-07T10:00:00Z");
+  const por = Object.fromEntries(sano.dispositivos.map((x) => [x.id, x.solo_pantalla]));
+  assert.equal(por[copia.dispositivos[0].id], true);
+  assert.equal(por.x1, false);
+  assert.equal(por.x2, false);
+});

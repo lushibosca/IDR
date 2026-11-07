@@ -1366,6 +1366,17 @@
                                         inputmode="numeric" maxlength="4" placeholder="Ej. 16">
                                 </div>
                             </div>
+                            <!-- Solo NVR/DVR (js/stock.js: sincronizarCanal): un grabador sin disco que muestra cámaras de otros -->
+                            <div class="modal-disp-fila d-flex justify-content-between align-items-center gap-3 py-1 d-none"
+                                id="stock-f-solo-pantalla-fila">
+                                <label class="text-secondary small mb-0 flex-shrink-0" for="stock-f-solo-pantalla"
+                                    title="No graba (sin disco, como una PC con el IVMS): no suma a la capacidad de canales">Solo
+                                    pantalla</label>
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        id="stock-f-solo-pantalla">
+                                </div>
+                            </div>
                             <div class="modal-disp-fila d-flex justify-content-between align-items-center gap-3 py-1">
                                 <label class="text-secondary small mb-0 flex-shrink-0"
                                     for="stock-f-comentario">Comentario</label>
@@ -1902,6 +1913,22 @@
                             </tfoot>
                         </table>
                     </div>
+                    <div class="d-none px-3 mt-3 pb-3" id="cap-pantallas-seccion">
+                        <h6 class="small text-uppercase text-secondary fw-semibold mb-1">Grabadores solo pantalla</h6>
+                        <p class="small text-secondary mb-2">No suman a la capacidad ni al chip: solo muestran las
+                            cámaras de otros grabadores.</p>
+                        <table class="table table-hover table-sm align-middle mb-0" id="tabla-detalle-pantallas">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Grabador</th>
+                                    <th class="text-center">Capacidad</th>
+                                    <th class="text-center">En uso</th>
+                                    <th class="text-center">Disponibles</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
                 <div class="modal-footer py-2 px-3 border-top">
                     <span class="small text-secondary me-auto d-none" id="cap-detalle-nota"></span>
@@ -2077,18 +2104,18 @@
     <!-- Lógica Externa (Hardening) con versionado para evitar caché -->
     <script src="js/animaciones.js?v=18"></script>
     <script src="js/busqueda.js?v=8"></script>
-    <script src="js/datos-puro.js?v=2"></script>
+    <script src="js/datos-puro.js?v=3"></script>
     <script src="js/api-local.js?v=3"></script>
     <script src="js/comun.js?v=55"></script>
     <script src="js/app.js?v=273"></script>
     <script src="js/sesion-local.js?v=1"></script>
     <script src="js/selector.js?v=2"></script>
-    <script src="js/produccion.js?v=59"></script>
-    <script src="js/resumen.js?v=73"></script>
+    <script src="js/produccion.js?v=60"></script>
+    <script src="js/resumen.js?v=74"></script>
     <script src="js/favoritos.js?v=20"></script>
     <script src="js/atajos.js?v=27"></script>
-    <script src="js/stock-puro.js?v=4"></script>
-    <script src="js/stock.js?v=127"></script>
+    <script src="js/stock-puro.js?v=5"></script>
+    <script src="js/stock.js?v=128"></script>
     <script src="js/stock-listar.js?v=9"></script>
     <script src="js/stock-catalogos.js?v=14"></script>
     <script src="js/stock-seleccion.js?v=17"></script>

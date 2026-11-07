@@ -267,7 +267,7 @@ test("payload: recorta, vacíos opcionales a null, sin forma (ya es el tipo), in
   assert.equal(plano(api.stockPayload({ ...v, canales: "12a" })).canales, "12a");   // el servidor responde 422
   assert.equal(plano(api.stockPayload({ ...v, ip: "" })).instalacion.ip, null);
   assert.deepEqual(Object.keys(p).sort(), ["canales", "comentario", "condicion", "firmware", "instalacion",
-    "mac", "marca", "modelo", "patrimonio", "serie", "tipo"]);
+    "mac", "marca", "modelo", "patrimonio", "serie", "solo_pantalla", "tipo"]);
 });
 
 test("sugerencias únicas y edificio tal como quedó en el catálogo", () => {
@@ -788,4 +788,14 @@ test("modelo: avisa de un parecido (mayúsculas, una letra) y no molesta si es i
   assert.equal(api.stockModeloParecido("P32", s), null);                           // muy corto para comparar
   assert.equal(api.stockModeloParecido("Totalmente otro", s), null);
   assert.equal(api.stockModeloParecido("", s), null);
+});
+
+test("stockPayload / stockValoresDeDispositivo: solo pantalla va solo en un NVR/DVR", () => {
+  const v = api.stockValoresDeDispositivo(d({ tipo: "nvr", solo_pantalla: true }));
+  assert.equal(v.soloPantalla, true);
+  assert.equal(api.stockValoresDeDispositivo(d({ tipo: "nvr" })).soloPantalla, false);
+  assert.equal(api.stockValoresDeDispositivo(null).soloPantalla, false);
+  assert.equal(api.stockPayload({ ...v, tipo: "nvr" }).solo_pantalla, true);
+  assert.equal(api.stockPayload({ ...v, tipo: "domo" }).solo_pantalla, false);
+  assert.equal(api.stockPayload({ ...v, tipo: "nvr", soloPantalla: false }).solo_pantalla, false);
 });
