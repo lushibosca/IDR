@@ -216,6 +216,55 @@
         pointer-events: none;
     }
 
+    /* Para las pestañas con el panel a un costado: prolongación del botón (mismo alto y color, borde recto del lado del botón),
+       solo con el nombre. La pestaña activa lleva el mismo resaltado que en el panel. */
+    .sidebar-tip-fila {
+        display: flex;
+        align-items: center;
+        gap: var(--esp-2);
+        min-height: 44px;
+        padding: 0 var(--esp-4) 0 var(--esp-2);
+        border: 0;                  /* sin borde: se funde con el botón (mismo fondo que el panel + su resaltado) */
+        border-radius: 0 var(--radio-medio) var(--radio-medio) 0;
+        color: var(--color-texto);
+        font-weight: 500;
+        background-color: var(--bg-main);
+        background-image: linear-gradient(var(--nav-hover), var(--nav-hover));
+        box-shadow: none;           /* es parte del botón: sin sombra propia */
+        animation: sidebar-tip-abrir var(--dur-pop-soft) var(--ease-panel);
+        transform-origin: left center;
+    }
+
+    .sidebar-tip-fila.sidebar-tip-activa {
+        background-image: linear-gradient(var(--nav-active-bg), var(--nav-active-bg));
+        color: var(--nav-active-text);
+    }
+
+    .sidebar-tip-fila.sidebar-tip-der {
+        padding: 0 var(--esp-2) 0 var(--esp-4);
+        border-radius: var(--radio-medio) 0 0 var(--radio-medio);
+        transform-origin: right center;
+    }
+
+    /* El botón al que se une: lado recto hacia la prolongación, sin costura */
+    #sidebar-col .nav-link.sidebar-tip-origen {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    #sidebar-col .nav-link.sidebar-tip-origen.sidebar-tip-origen-der {
+        border-radius: 0 var(--radio-medio) var(--radio-medio) 0;
+    }
+
+    @keyframes sidebar-tip-abrir {
+        from { opacity: 0; transform: scaleX(0.6); }
+        to { opacity: 1; transform: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .sidebar-tip-fila { animation: none; }
+    }
+
     /* ─── Dispositivos móviles y ventanas chicas (< 768px): botones horizontales arriba solo con íconos */
 
     @media (max-width: 767.98px) {

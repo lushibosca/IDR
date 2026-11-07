@@ -185,7 +185,7 @@
         color: var(--nav-active-text);
     }
 
-    /* ─── Pestañas horizontales (estilo pills estandarizado: Ayuda, Auditoría, Modal Listar) */
+    /* ─── Pestañas horizontales (estilo pills estandarizado: Ayuda, Auditoría, modales Listar y Catálogos) */
 
     .nav-subtabs,
     #auditoria-subtabs,

@@ -20,22 +20,22 @@
     <link rel="stylesheet" href="css/componentes/formularios.css?v=14">
     <link rel="stylesheet" href="css/componentes/botones.css?v=15">
     <link rel="stylesheet" href="css/componentes/desplegables.css?v=18">
-    <link rel="stylesheet" href="css/componentes/navegacion.css?v=15">
+    <link rel="stylesheet" href="css/componentes/navegacion.css?v=16">
     <link rel="stylesheet" href="css/componentes/tarjetas.css?v=11">
     <link rel="stylesheet" href="css/componentes/acordeon.css?v=17">
-    <link rel="stylesheet" href="css/componentes/insignias.css?v=11">
+    <link rel="stylesheet" href="css/componentes/insignias.css?v=12">
     <link rel="stylesheet" href="css/componentes/alertas.css?v=8">
     <link rel="stylesheet" href="css/componentes/progreso.css?v=9">
     <link rel="stylesheet" href="css/componentes/listas.css?v=8">
     <link rel="stylesheet" href="css/componentes/toast.css?v=11">
     <link rel="stylesheet" href="css/componentes/modal.css?v=23">
     <link rel="stylesheet" href="css/componentes/spinner.css?v=6">
-    <link rel="stylesheet" href="css/app/estructura.css?v=35">
+    <link rel="stylesheet" href="css/app/estructura.css?v=36">
     <link rel="stylesheet" href="css/app/tema.css?v=4">
     <link rel="stylesheet" href="css/app/estado.css?v=54">
     <link rel="stylesheet" href="css/app/produccion.css?v=50">
     <link rel="stylesheet" href="css/app/auditoria.css?v=25">
-    <link rel="stylesheet" href="css/app/activos.css?v=44">
+    <link rel="stylesheet" href="css/app/activos.css?v=45">
     <link rel="stylesheet" href="css/app/favoritos.css?v=11">
     <link rel="stylesheet" href="css/app/atajos.css?v=6">
     <link rel="stylesheet" href="css/app/ajustes.css?v=9">
@@ -1128,22 +1128,25 @@
                     <div class="alert alert-danger d-none" id="stock-cat-error" role="alert"></div>
                     <div class="alert alert-danger d-none" id="stock-ubi-error" role="alert"></div>
 
-                    <!-- Pestañas segmentadas -->
-                    <div class="stock-cat-nav" role="tablist">
-                        <button type="button" class="stock-cat-tab active" id="stock-cat-tab-edificio"
-                            data-stock-cat-tab="edificio">
-                            Edificios · <span id="stock-cat-conteo-edificios">0</span>
+                    <!-- Pestañas horizontales (estilo estandarizado `nav-subtabs`, como Ayuda y Listar) -->
+                    <div class="nav nav-pills nav-subtabs gap-1 pb-2 mb-3 border-bottom" role="tablist"
+                        aria-label="Catálogos">
+                        <button type="button" class="nav-link py-1 px-3 active" id="stock-cat-tab-edificio"
+                            data-stock-cat-tab="edificio" role="tab" aria-selected="true">
+                            <i class="bi bi-building me-1"></i> <span>Edificios · <span id="stock-cat-conteo-edificios">0</span></span>
                         </button>
-                        <button type="button" class="stock-cat-tab" id="stock-cat-tab-piso" data-stock-cat-tab="piso">
-                            Pisos · <span id="stock-cat-conteo-pisos">0</span>
+                        <button type="button" class="nav-link py-1 px-3" id="stock-cat-tab-piso"
+                            data-stock-cat-tab="piso" role="tab" aria-selected="false">
+                            <i class="bi bi-layers me-1"></i> <span>Pisos · <span id="stock-cat-conteo-pisos">0</span></span>
                         </button>
-                        <button type="button" class="stock-cat-tab" id="stock-cat-tab-dispositivos"
-                            data-stock-cat-tab="dispositivos">
-                            Dispositivos · <span id="stock-cat-conteo-dispositivos">0</span>
+                        <button type="button" class="nav-link py-1 px-3" id="stock-cat-tab-dispositivos"
+                            data-stock-cat-tab="dispositivos" role="tab" aria-selected="false">
+                            <i class="bi bi-hdd-network me-1"></i>
+                            <span>Dispositivos · <span id="stock-cat-conteo-dispositivos">0</span></span>
                         </button>
-                        <button type="button" class="stock-cat-tab" id="stock-cat-tab-modelos"
-                            data-stock-cat-tab="modelos">
-                            Modelos · <span id="stock-cat-conteo-modelos">0</span>
+                        <button type="button" class="nav-link py-1 px-3" id="stock-cat-tab-modelos"
+                            data-stock-cat-tab="modelos" role="tab" aria-selected="false">
+                            <i class="bi bi-tags me-1"></i> <span>Modelos · <span id="stock-cat-conteo-modelos">0</span></span>
                         </button>
                     </div>
 
@@ -1586,7 +1589,7 @@
     </button>
 
     <!-- Popup Dispositivo Producción -->
-    <div id="popup-dispositivo-produccion" class="popup-dispositivo shadow-lg position-fixed d-none" role="dialog"
+    <div id="popup-dispositivo-produccion" class="popup-dispositivo shadow-lg position-fixed d-none" data-ui-sobre-modal role="dialog"
         aria-label="Opciones del canal">
         <div class="popup-disp-header d-flex align-items-center justify-content-between p-2 pb-1 border-bottom">
             <div class="d-flex align-items-center gap-2 min-w-0">
@@ -2070,24 +2073,24 @@
     </div>
 
     <!-- Componentes propios (pestañas, modales, desplegables): reemplazan al JS de Bootstrap -->
-    <script src="js/ui.js?v=12"></script>
+    <script src="js/ui.js?v=13"></script>
     <!-- Lógica Externa (Hardening) con versionado para evitar caché -->
     <script src="js/animaciones.js?v=18"></script>
     <script src="js/busqueda.js?v=8"></script>
     <script src="js/datos-puro.js?v=2"></script>
     <script src="js/api-local.js?v=3"></script>
     <script src="js/comun.js?v=55"></script>
-    <script src="js/app.js?v=272"></script>
+    <script src="js/app.js?v=273"></script>
     <script src="js/sesion-local.js?v=1"></script>
-    <script src="js/selector.js?v=1"></script>
-    <script src="js/produccion.js?v=58"></script>
-    <script src="js/resumen.js?v=72"></script>
+    <script src="js/selector.js?v=2"></script>
+    <script src="js/produccion.js?v=59"></script>
+    <script src="js/resumen.js?v=73"></script>
     <script src="js/favoritos.js?v=20"></script>
     <script src="js/atajos.js?v=27"></script>
-    <script src="js/stock-puro.js?v=3"></script>
-    <script src="js/stock.js?v=126"></script>
+    <script src="js/stock-puro.js?v=4"></script>
+    <script src="js/stock.js?v=127"></script>
     <script src="js/stock-listar.js?v=9"></script>
-    <script src="js/stock-catalogos.js?v=13"></script>
+    <script src="js/stock-catalogos.js?v=14"></script>
     <script src="js/stock-seleccion.js?v=17"></script>
     <script src="js/stock-alta-lote.js?v=4"></script>
     <script src="js/produccion-seleccion.js?v=7"></script>

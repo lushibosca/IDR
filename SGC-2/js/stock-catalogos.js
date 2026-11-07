@@ -89,6 +89,9 @@ function stockModelosVisibles(modelos, { soloSinPagina = false, texto = '' } = {
     const estUbi = crearEstadoLista(() => renderUbicaciones());  // ids 'edificio:<nombre>' | 'piso:<nombre>'
     const estMod = crearEstadoLista(() => renderModelos());      // id: clave del modelo (stockClaveModelo)
     let pestanaCatActual = 'edificio'; // 'edificio' | 'piso' | 'dispositivos' | 'modelos'
+    const PESTANAS_CAT = ['edificio', 'piso', 'dispositivos', 'modelos'];   // en el orden en que se ven
+    const ID_TAB_CAT = {edificio: 'stock-cat-tab-edificio', piso: 'stock-cat-tab-piso',
+        dispositivos: 'stock-cat-tab-dispositivos', modelos: 'stock-cat-tab-modelos'};
     let filtroUbi = 'todos';           // 'todos' | 'sin-uso'
     let ordenUbiMasUsados = false;     // true: más usados, false: alfabético (por defecto)
     let busquedaUbi = '';              // búsqueda en edificios / pisos
@@ -600,14 +603,12 @@ function stockModelosVisibles(modelos, { soloSinPagina = false, texto = '' } = {
         busquedaMod = '';
         mostrarErrorCat('');
 
-        const tabEdif = $('stock-cat-tab-edificio');
-        const tabPiso = $('stock-cat-tab-piso');
-        const tabDisp = $('stock-cat-tab-dispositivos');
-        if (tabEdif) tabEdif.classList.toggle('active', pestana === 'edificio');
-        if (tabPiso) tabPiso.classList.toggle('active', pestana === 'piso');
-        if (tabDisp) tabDisp.classList.toggle('active', pestana === 'dispositivos');
-        const tabMod = $('stock-cat-tab-modelos');
-        if (tabMod) tabMod.classList.toggle('active', pestana === 'modelos');
+        for (const clave of PESTANAS_CAT) {
+            const tab = $(ID_TAB_CAT[clave]);
+            if (!tab) continue;
+            tab.classList.toggle('active', clave === pestana);
+            tab.setAttribute('aria-selected', String(clave === pestana));
+        }
 
         const subtitulo = $('stock-cat-subtitulo');
         if (subtitulo) {
@@ -682,21 +683,16 @@ function stockModelosVisibles(modelos, { soloSinPagina = false, texto = '' } = {
             }
         });
     }
-    const tabEdifBtn = $('stock-cat-tab-edificio');
-    const tabPisoBtn = $('stock-cat-tab-piso');
-    const tabDispBtn = $('stock-cat-tab-dispositivos');
-    const tabModBtn = $('stock-cat-tab-modelos');
-    const PESTANAS_CAT = ['edificio', 'piso', 'dispositivos', 'modelos'];
     const mostrarPestanaCat = (pestana) => {
         if (pestana === pestanaCatActual) return;
         const paso = Math.sign(PESTANAS_CAT.indexOf(pestana) - PESTANAS_CAT.indexOf(pestanaCatActual)) || 1;
         uiDeslizarCambio($('stock-cat-contenido'),
             () => animarModal('stockCatalogoModal', () => actualizarPestanaCat(pestana)), paso);
     };
-    if (tabEdifBtn) tabEdifBtn.addEventListener('click', () => mostrarPestanaCat('edificio'));
-    if (tabPisoBtn) tabPisoBtn.addEventListener('click', () => mostrarPestanaCat('piso'));
-    if (tabDispBtn) tabDispBtn.addEventListener('click', () => mostrarPestanaCat('dispositivos'));
-    if (tabModBtn) tabModBtn.addEventListener('click', () => mostrarPestanaCat('modelos'));
+    for (const clave of PESTANAS_CAT) {
+        const tab = $(ID_TAB_CAT[clave]);
+        if (tab) tab.addEventListener('click', () => mostrarPestanaCat(clave));
+    }
     for (const [id, filtro] of [['stock-mod-filtro-todos', 'todos'], ['stock-mod-filtro-sin-pagina', 'sin-pagina']]) {
         $(id).addEventListener('click', () => {
             filtroMod = filtro;

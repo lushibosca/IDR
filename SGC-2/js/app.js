@@ -108,7 +108,8 @@ function restaurarPestanaGuardada() {
 function irAPestana(tabId) {
     const tabBtn = document.getElementById(tabId);
     if (!tabBtn) return;
-    
+    UI.modal.cerrarTodos();                                                // se va a otra sección: ningún modal queda tapándola
+
     const parentPane = tabBtn.closest('.tab-pane');
     if (parentPane && parentPane.id !== 'v-pills-tabContent') {
         const parentTabBtn = document.querySelector(`[data-ui-target="#${parentPane.id}"]`);
@@ -1093,6 +1094,31 @@ function posicionEtiquetaPanel(rectIcono, tamPopup, ventana, posicion = 'left') 
     }
 
     return { left: Math.round(left), top: Math.round(top) };
+}
+
+/**
+ * Dónde va la prolongación de un botón del panel colapsado (el nombre pegado al botón, como si este se alargara): a la
+ * izquierda del panel, desde el borde derecho del botón hacia la derecha; a la derecha del panel, terminando en el borde
+ * izquierdo del botón. A su misma altura y sin salirse de la ventana. (Con el panel arriba o abajo no hay costado: es el
+ * popup de siempre, `posicionEtiquetaPanel`.)
+ *
+ * @param {{ left: number, right: number, top: number, height: number }} rectBoton
+ * @param {{ width: number, height: number }} tam
+ * @param {{ width: number, height: number }} ventana
+ * @param {'left' | 'right' | 'top' | 'bottom'} [posicion='left']
+ * @returns {{ left: number, top: number }}
+ */
+function posicionFilaPanel(rectBoton, tam, ventana, posicion = 'left') {
+    const pos = posicionPanelValida(posicion);
+    if (pos === 'top' || pos === 'bottom') return posicionEtiquetaPanel(rectBoton, tam, ventana, pos);
+    const ancho = (tam && tam.width) || 0;
+    const alto = (tam && tam.height) || 0;
+    const anchoVentana = (ventana && ventana.width) || 0;
+    const altoVentana = (ventana && ventana.height) || 0;
+    const deseadoLeft = pos === 'right' ? rectBoton.left - ancho : rectBoton.right;
+    const left = anchoVentana > 0 ? Math.min(deseadoLeft, anchoVentana - ancho - 4) : deseadoLeft;
+    const top = altoVentana > 0 ? Math.min(rectBoton.top, altoVentana - alto - 4) : rectBoton.top;
+    return { left: Math.round(Math.max(4, left)), top: Math.round(Math.max(4, top)) };
 }
 
 // Dónde se ubica el panel lateral (solo escritorio): izquierda (de fábrica), derecha, arriba o abajo. Se elige manteniendo

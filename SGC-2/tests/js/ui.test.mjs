@@ -6,7 +6,7 @@ import { cargarBloque, plano } from "./_bloque.mjs";
 
 const ui = cargarBloque("ui.js", "UI PURO", { Number, Math, String }, [
   "uiDuracionTransicion", "uiIndiceVecino", "uiPosicionDesplegable", "uiDebeCerrarDesplegable", "uiLeerOffset",
-  "uiPosicionFlotante", "uiTransformacionRecorrido", "uiReduceMovimiento",
+  "uiPosicionFlotante", "uiTransformacionRecorrido", "uiReduceMovimiento", "uiCapasModal",
 ]);
 
 test("uiDuracionTransicion: segundos y milisegundos, primer valor de la lista, inválidos = 0", () => {
@@ -113,4 +113,13 @@ test("uiReduceMovimiento: el ajuste de la persona o el del sistema", () => {
   assert.equal(ui.uiReduceMovimiento(null, true), true);
   assert.equal(ui.uiReduceMovimiento(null, false), false);
   assert.equal(ui.uiReduceMovimiento("otro", false), false);      // solo el valor exacto cuenta
+});
+
+test("uiCapasModal: el primero usa las capas del CSS; cada nivel sube dos con el fondo justo debajo", () => {
+  assert.equal(ui.uiCapasModal(0, 1055), null);
+  assert.equal(ui.uiCapasModal(-1, 1055), null);
+  assert.equal(ui.uiCapasModal("x", 1055), null);
+  assert.equal(ui.uiCapasModal(1, 0), null);
+  assert.deepEqual(plano(ui.uiCapasModal(1, 1055)), { fondo: 1056, modal: 1057 });
+  assert.deepEqual(plano(ui.uiCapasModal(2, 1055)), { fondo: 1058, modal: 1059 });
 });

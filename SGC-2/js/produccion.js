@@ -1180,17 +1180,24 @@ function abrirPopupDispositivo(cam, triggerEl, coords = null, opciones = {}) {
     const equipoRed = equipoRedDelPopup(cam, uiDatosCargados('equipos_red'));
     const acciones = popupAcciones({ enProduccion, esGrabador, nvrIp: cam.nvr_ip, canal: cam.channel_id,
         ip: cam.ip_address, equipoRed: !!equipoRed });
-    const accion = (boton, visible, hacer) => {
+    // `navega`: la acción lleva a otra sección: si el popup se abrió dentro de un modal, ese modal se cierra; «Ver datos» y
+    // «Ir a la página» no (el primero abre su modal encima, el segundo es otra pestaña del navegador)
+    const accion = (boton, visible, hacer, navega = false) => {
         if (!boton) return;
         boton.classList.toggle('d-none', !visible);
-        boton.onclick = visible ? (e) => { e.stopPropagation(); ocultarPopupProduccion(); hacer(); } : null;
+        boton.onclick = visible ? (e) => {
+            e.stopPropagation();
+            ocultarPopupProduccion();
+            if (navega) UI.modal.cerrarTodos();
+            hacer();
+        } : null;
     };
     accion(btnPagina, acciones.pagina, () => {
         const url = urlPaginaEquipo(cam.ip_address);
         if (url) window.open(url, '_blank', 'noopener,noreferrer');
     });
     accion(btnDatos, true, () => (typeof verDatos === 'function' ? verDatos() : abrirModalDetalleProduccion(cam)));
-    accion(document.getElementById('popup-disp-btn-seleccionar'), typeof seleccionar === 'function', () => seleccionar());
+    accion(document.getElementById('popup-disp-btn-seleccionar'), typeof seleccionar === 'function', () => seleccionar(), true);
     // La estrella de favoritos (favoritos.js): solo para un equipo que el sistema monitorea; no cierra el popup
     if (typeof window.favoritosConfigurarBoton === 'function') {
         window.favoritosConfigurarBoton(document.getElementById('popup-disp-btn-favorito'), cam, esGrabador);
@@ -1242,6 +1249,7 @@ function abrirPopupDispositivo(cam, triggerEl, coords = null, opciones = {}) {
             b.onclick = (e) => {
                 e.stopPropagation();
                 ocultarPopupProduccion();
+                UI.modal.cerrarTodos();                       // la búsqueda lleva a Activos: no queda un modal tapándola
                 buscarDatoDeEquipo(campo, valores.get(campo));
             };
         }

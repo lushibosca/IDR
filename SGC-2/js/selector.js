@@ -53,8 +53,20 @@ function crearCustomDropdownSelect(selectEl) {
 
         menu.replaceChildren();
         const opciones = selectEl.options;
+        let rotuloActual = '';
         for (let i = 0; i < opciones.length; i++) {
             const opt = opciones[i];
+            // las opciones de un <optgroup> llevan su rótulo (una vez por grupo, no seleccionable)
+            const rotulo = opt.parentElement && opt.parentElement.tagName === 'OPTGROUP' ? opt.parentElement.label : '';
+            if (rotulo && rotulo !== rotuloActual) {
+                const cabecera = document.createElement('li');
+                const titulo = document.createElement('h6');
+                titulo.className = 'dropdown-header';
+                titulo.textContent = rotulo;
+                cabecera.appendChild(titulo);
+                menu.appendChild(cabecera);
+            }
+            rotuloActual = rotulo;
             const li = document.createElement('li');
             const itemBtn = document.createElement('button');
             itemBtn.type = 'button';

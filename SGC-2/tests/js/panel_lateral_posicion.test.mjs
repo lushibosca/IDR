@@ -2,11 +2,11 @@
 // «Ocultar» y ícono del botón según dónde está el panel.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cargarBloque } from "./_bloque.mjs";
+import { cargarBloque, plano } from "./_bloque.mjs";
 
 const p = cargarBloque("app.js", "PANEL LATERAL PURO", { Number, Math, Array }, [
   "POSICIONES_PANEL", "posicionPanelValida", "zonaPanelDestino", "iconoTogglePanel", "accionAtajoFlechaCtrl",
-  "calcularPestanaRueda", "panelDesborda",
+  "calcularPestanaRueda", "panelDesborda", "posicionEtiquetaPanel", "posicionFilaPanel",
 ]);
 
 test("posicionPanelValida: las cuatro, y cualquier otra cosa vuelve a la izquierda", () => {
@@ -80,4 +80,25 @@ test("panelDesborda: solo si el contenido supera el ancho más la tolerancia; me
   assert.equal(p.panelDesborda([null, { ancho: NaN, contenido: 900 }, { ancho: 10 }]), false);
   assert.equal(p.panelDesborda(undefined), false);
   assert.equal(p.panelDesborda([]), false);
+});
+
+test("posicionFilaPanel: pegada al botón (a la derecha con el panel a la izquierda, a la izquierda si está a la derecha)", () => {
+  const boton = { left: 8, right: 56, top: 120, height: 44 };
+  const tam = { width: 120, height: 44 };
+  const ventana = { width: 1400, height: 900 };
+  assert.deepEqual(plano(p.posicionFilaPanel(boton, tam, ventana, "left")), { left: 56, top: 120 });
+  const botonDer = { left: 1344, right: 1392, top: 120, height: 44 };
+  assert.deepEqual(plano(p.posicionFilaPanel(botonDer, tam, ventana, "right")), { left: 1224, top: 120 });
+});
+
+test("posicionFilaPanel: no se sale de la ventana, y arriba/abajo cae en el popup de siempre", () => {
+  const tam = { width: 120, height: 44 };
+  const ventana = { width: 1400, height: 900 };
+  assert.deepEqual(plano(p.posicionFilaPanel({ left: 1300, right: 1380, top: 880, height: 44 }, tam, ventana, "left")),
+    { left: 1276, top: 852 });
+  assert.deepEqual(plano(p.posicionFilaPanel({ left: 0, right: 10, top: 0, height: 44 }, tam, ventana, "right")), { left: 4, top: 4 });
+  const icono = { left: 600, right: 640, top: 4, bottom: 48, width: 40, height: 44 };
+  assert.deepEqual(plano(p.posicionFilaPanel(icono, tam, ventana, "top")), plano(p.posicionEtiquetaPanel(icono, tam, ventana, "top")));
+  assert.deepEqual(plano(p.posicionFilaPanel({ left: 8, right: 56, top: 120, height: 44 }, tam, ventana, "rara")),
+    { left: 56, top: 120 });                                   // posición inválida = izquierda
 });

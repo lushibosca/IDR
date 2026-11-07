@@ -100,6 +100,12 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         }
         return mapa;
     }
+    // Claves físicas de las cámaras que están en más de un grabador (su insignia va violeta): se rearma con el mapa de cámaras
+    let camarasMulti = new Set();
+    function armarCamarasMulti() {
+        return typeof camarasEnVariosGrabadores === 'function'
+            ? camarasEnVariosGrabadores(uiCamarasCargadas(), limpiarNombreNvr) : new Set();
+    }
     let cargaEnCurso = null;     // promesa de la carga de /api/stock en vuelo
     let cargaSiguiente = null;   // la que se encadena si piden otra mientras esa vuela
     let editando = null;         // dispositivo abierto en el modal (null = alta)
@@ -506,7 +512,8 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
             null
         ) : null;
 
-        const cardInfo = stockTarjetaDatos(item, camara, etiquetasTipo);
+        const cardInfo = stockTarjetaDatos(item, camara, etiquetasTipo,
+            Boolean(camara) && camarasMulti.has(produccionClaveFisica(camara)));
 
         const card = document.createElement('div');
         card.className = 'stock-card';
@@ -554,7 +561,8 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
             const pillSpan = document.createElement('span');
             pillSpan.className = `badge rounded-pill stock-card-pill stock-pill-${cardInfo.badgeClase}`;
             pillSpan.textContent = cardInfo.badgeTexto;
-            pillSpan.title = cardInfo.badgeTexto;
+            pillSpan.title = cardInfo.multiGrabador ? `${cardInfo.badgeTexto} · Cámara asignada a varios grabadores`
+                : cardInfo.badgeTexto;
             fila1.appendChild(pillSpan);
         }
         info.appendChild(fila1);
@@ -762,6 +770,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         const abiertos = buscando ? null : leerAcordeonAbierto(acordeon);
         const usados = new Set();
         const mapaCamaras = modoVista === 'tarjetas' ? armarMapaCamaras() : null;
+        camarasMulti = mapaCamaras ? armarCamarasMulti() : new Set();
 
         // «Sin agrupar» es un grupo más, «Todos», con su contador; abierto al elegirlo (después se recuerda como cualquier grupo)
         const sinAgrupar = criterio === 'ninguno';
@@ -1393,6 +1402,9 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
                     chBadgeEl.classList.add('bg-danger');
                 } else if (cam.fallback_ping) {
                     chBadgeEl.classList.add('bg-warning');
+                } else if (armarCamarasMulti().has(produccionClaveFisica(cam))) {
+                    chBadgeEl.classList.add('canal-ch-badge-multi');         // como el canal violeta de Producción
+                    chBadgeEl.title = 'Cámara asignada a varios grabadores';
                 } else {
                     chBadgeEl.classList.add('bg-primary');
                 }

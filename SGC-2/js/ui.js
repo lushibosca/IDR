@@ -119,6 +119,15 @@ function uiTransformacionRecorrido(vieja, nueva) {
 function uiReduceMovimiento(atributo, sistemaPide) {
     return atributo === 'reducido' || Boolean(sistemaPide);
 }
+// Capas de los modales apilados (uno abre a otro: el de detalle abre el del dispositivo). El primero usa las de siempre (null:
+// las pone el CSS); cada nivel más sube dos: el fondo queda entre el modal de abajo y el de arriba. Sin pasarse de los
+// popups y desplegables (`--capa-popup`, 5 por encima del modal base: aguanta tres niveles).
+function uiCapasModal(nivel, base) {
+    const n = Math.floor(Number(nivel));
+    const b = Math.floor(Number(base));
+    if (!(n >= 1) || !(b > 0)) return null;
+    return { fondo: b + 2 * n - 1, modal: b + 2 * n };
+}
 // ==== UI PURO END ====
 
 /** ¿Hay que evitar las animaciones? ÚNICA lectura de la preferencia (ajuste de la persona o del sistema). */
@@ -287,7 +296,8 @@ const UI = (() => {
         s.inertes = [];
         for (const hijo of document.body.children) {
             if (hijo === modal || hijo === s.fondo || hijo.inert || hijo.tagName === 'SCRIPT') continue;
-            if (abiertos.includes(hijo)) continue;
+            if (abiertos.includes(hijo) && estado(hijo).flotante) continue;        // un modal flotante no bloquea nada ni se bloquea
+            if (hijo.hasAttribute('data-ui-sobre-modal')) continue;     // un popup que se abre desde el modal (p. ej. el de un dispositivo)
             hijo.inert = true;
             s.inertes.push(hijo);
         }
@@ -323,6 +333,12 @@ const UI = (() => {
         abiertos.push(modal);
         actualizarBloqueoScroll();
         mostrarFondo(modal, s);
+        // un modal que abre a otro queda debajo (a igual capa gana el que está más abajo en el DOM, y los de armado a demanda
+        // se agregan al final: el de arriba se vería tapado)
+        const capas = uiCapasModal(abiertos.length - 1,
+            parseInt(getComputedStyle(document.documentElement).getPropertyValue('--capa-modal'), 10) || 1055);
+        modal.style.zIndex = capas ? String(capas.modal) : '';
+        if (s.fondo) s.fondo.style.zIndex = capas ? String(capas.fondo) : '';
 
         if (!modal.isConnected) document.body.append(modal);
         modal.style.display = 'block';
@@ -332,6 +348,9 @@ const UI = (() => {
         modal.scrollTop = 0;
         const cuerpo = modal.querySelector('.modal-body');
         if (cuerpo) cuerpo.scrollTop = 0;
+        // el modal que abre otro modal lo deja inerte (el de abajo no se toca), y este, que el de abajo había vuelto inerte
+        // junto con el resto de la página (estaba en el DOM antes), vuelve a responder
+        modal.inert = false;
         volverInerte(modal, s);
         reflujo(modal);
         modal.classList.add('show');
@@ -342,6 +361,12 @@ const UI = (() => {
             if (!modal.contains(document.activeElement)) enfocar(modal);
             emitir(modal, 'ui:modal-abierto', { disparador: disparador || null });
         }, modal.classList.contains('fade'));
+    }
+
+    // Cierra todos los modales abiertos (de arriba hacia abajo; los flotantes no cuentan): al irse a otra sección desde un popup
+    // que se abrió dentro de un modal, el modal no tiene por qué quedar tapando la pantalla a la que se fue.
+    function cerrarTodosModales() {
+        for (const m of [...abiertos].reverse()) if (!estado(m).flotante) cerrarModal(m);
     }
 
     // Cerrar no espera a que termine la apertura: se puede interrumpir en cualquier momento.
@@ -490,6 +515,11 @@ const UI = (() => {
         if (estado(modal).abierto) cerrarModal(modal); else abrirModal(modal, disparador);
     }
 
+    // ¿Está dentro de algo marcado `data-ui-sobre-modal` (popup que convive con el modal abierto, fuera de él en el DOM)?
+    function deSobreModal(nodo) {
+        return nodo instanceof Element && nodo.closest('[data-ui-sobre-modal]') !== null;
+    }
+
     // Tab y Shift+Tab dan la vuelta dentro del modal de arriba (con `inert` el foco ya no puede salir; esto es para
     // que tampoco se escape a la barra del navegador).
     function atraparFoco(e) {
@@ -500,6 +530,7 @@ const UI = (() => {
         const primero = lista[0];
         const ultimo = lista[lista.length - 1];
         const actual = document.activeElement;
+        if (deSobreModal(actual)) return;                       // el foco está en un popup abierto desde el modal
         if (e.shiftKey && (actual === primero || actual === modal || !modal.contains(actual))) {
             e.preventDefault();
             enfocar(ultimo);
@@ -695,7 +726,7 @@ const UI = (() => {
     // El foco no sale del modal de arriba (respaldo de `inert` para navegadores viejos).
     function alEnfocar(e) {
         const modal = modalArriba();
-        if (modal && e.target instanceof Node && !modal.contains(e.target)) enfocar(modal);
+        if (modal && e.target instanceof Node && !modal.contains(e.target) && !deSobreModal(e.target)) enfocar(modal);
     }
 
     function iniciar() {
@@ -720,7 +751,7 @@ const UI = (() => {
 
     return Object.freeze({
         pestana: Object.freeze({ mostrar: mostrarPestana }),
-        modal: Object.freeze({ abrir: abrirModal, cerrar: cerrarModal, alternar: alternarModal,
+        modal: Object.freeze({ abrir: abrirModal, cerrar: cerrarModal, cerrarTodos: cerrarTodosModales, alternar: alternarModal,
             abierto: (m) => Boolean(m && estado(m).abierto), arriba: modalArriba, flotar: flotarModal,
             flotante: (m) => Boolean(m && estado(m).flotante) }),
         desplegable: Object.freeze({ abrir: abrirDesplegable, cerrar: cerrarDesplegable, alternar: alternarDesplegable,

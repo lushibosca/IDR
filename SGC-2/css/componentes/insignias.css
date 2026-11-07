@@ -115,6 +115,12 @@
         color: var(--color-blue-on);
     }
 
+    /* Cámara asignada a varios grabadores: el mismo violeta que su canal en Producción */
+    .stock-pill-multi {
+        background-color: var(--canal-multi-bg);
+        color: #ffffff;
+    }
+
     .stock-pill-success {
         background-color: var(--color-green);
         color: var(--color-green-on);

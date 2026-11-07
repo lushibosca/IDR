@@ -935,7 +935,10 @@ function stockHistorialValido(h) {
         && h.entradas.every(e => !!e && typeof e.cuando === 'string' && typeof e.campo === 'string');
 }
 
-function stockTarjetaDatos(dispositivo, camara, etiquetasTipo) {
+// `enVariosGrabadores`: la cámara de esa tarjeta está en más de un grabador (mismo criterio que el canal violeta de
+// Producción, `camarasEnVariosGrabadores`). Solo cambia la insignia «normal» (azul); una condición a revisar o averiada
+// sigue avisando con su color.
+function stockTarjetaDatos(dispositivo, camara, etiquetasTipo, enVariosGrabadores = false) {
     const prefijo = (etiquetasTipo && etiquetasTipo.get ? etiquetasTipo.get(dispositivo.tipo) : dispositivo.tipo)
         || 'Equipo';
     const macTxt = stockMacTexto(dispositivo.mac);
@@ -961,6 +964,9 @@ function stockTarjetaDatos(dispositivo, camara, etiquetasTipo) {
         badgeClase = dispositivo.disponible ? 'success' : 'secondary';
     }
 
+    const multiGrabador = Boolean(camara) && enVariosGrabadores === true && badgeClase === 'primary';
+    if (multiGrabador) badgeClase = 'multi';
+
     const modelo = dispositivo.modelo || dispositivo.marca || STOCK_ND;
 
     let nvrCanal = '';
@@ -982,6 +988,7 @@ function stockTarjetaDatos(dispositivo, camara, etiquetasTipo) {
         titulo,
         badgeTexto,
         badgeClase,
+        multiGrabador,
         modelo,
         nvrCanal,
         seriePat,

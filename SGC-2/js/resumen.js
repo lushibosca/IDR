@@ -1053,6 +1053,22 @@ function animarCargaDashboard() {
 
 // Con el panel lateral colapsado (solo íconos), pasar el mouse (o el foco) por un ícono muestra un popup con el nombre de su
 // sección. Va fuera del panel, que recorta lo que sobresale. Las etiquetas están en `data-etiqueta` (texto, nunca HTML).
+// Para las pestañas del panel (Estado, Activos...) con el panel a un costado no es un popup aparte sino una PROLONGACIÓN del
+// botón: pegada a su borde exterior, de su misma altura y color, con solo el nombre (el ícono y el contador de la búsqueda
+// ya están en el botón). El resto de los botones (buscar, ocultar) y el panel arriba o abajo llevan el texto de siempre.
+function llenarEtiquetaPanel(tip, el, prolonga) {
+    tip.replaceChildren();
+    tip.classList.remove('sidebar-tip-fila', 'sidebar-tip-activa');
+    tip.style.removeProperty('min-height');
+    if (!prolonga) {
+        tip.textContent = el.dataset.etiqueta;
+        return;
+    }
+    tip.classList.add('sidebar-tip-fila');
+    tip.classList.toggle('sidebar-tip-activa', el.classList.contains('active'));
+    tip.appendChild(uiNodo('span', '', el.dataset.etiqueta));
+}
+
 function inicializarEtiquetasPanelLateral() {
     const panel = document.getElementById('sidebar-col');
     if (!panel) return;
@@ -1062,6 +1078,8 @@ function inicializarEtiquetasPanelLateral() {
     let origen = null;                 // el elemento que lo muestra y cómo: { el, modo: 'mouse' | 'foco' }
     const ocultar = () => {
         tip.classList.add('d-none');
+        // el botón al que se une la prolongación vuelve a tener sus esquinas redondeadas
+        panel.querySelectorAll('.sidebar-tip-origen').forEach(b => b.classList.remove('sidebar-tip-origen', 'sidebar-tip-origen-der'));
         origen = null;
     };
     const mostrar = (el, modo) => {
@@ -1070,11 +1088,17 @@ function inicializarEtiquetasPanelLateral() {
             || (panel.classList.contains('sidebar-etiquetas-ocultas') && !el.closest('.search-container'));
         if (!sinTexto || !el.dataset.etiqueta) return;
         origen = { el, modo };
-        tip.textContent = el.dataset.etiqueta;
-        tip.classList.remove('d-none');
         const posPanel = typeof posicionPanelActual === 'function' ? posicionPanelActual() : 'left';
-        const pos = posicionEtiquetaPanel(
-            el.getBoundingClientRect(),
+        const rect = el.getBoundingClientRect();
+        const esFila = el.matches('.nav-link') && (posPanel === 'left' || posPanel === 'right');
+        llenarEtiquetaPanel(tip, el, esFila);
+        if (esFila) tip.style.minHeight = `${Math.round(rect.height)}px`;
+        tip.classList.toggle('sidebar-tip-der', esFila && posPanel === 'right');
+        el.classList.toggle('sidebar-tip-origen', esFila);
+        el.classList.toggle('sidebar-tip-origen-der', esFila && posPanel === 'right');
+        tip.classList.remove('d-none');
+        const pos = (esFila ? posicionFilaPanel : posicionEtiquetaPanel)(
+            rect,
             { width: tip.offsetWidth, height: tip.offsetHeight },
             { width: window.innerWidth, height: window.innerHeight },
             posPanel

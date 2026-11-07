@@ -407,6 +407,21 @@ test("stockTarjetaDatos: sin MAC el título dice «MAC sin relevar» (nunca el i
   assert.equal(tarjeta.modelo, "DS-9664NI-I8");
 });
 
+test("stockTarjetaDatos: cámara en varios grabadores → insignia violeta; una condición a revisar sigue avisando", () => {
+  const cam = { nvr_name: "NVR-5", channel_id: "42", ip_address: "10.3.30.2" };
+  const base = { tipo: "bullet", mac: "64:db:8b:49:9c:8c", condicion: "operativo",
+    instalacion: { descripcion: "PAL 1P", ip: "10.3.30.2", edificio: "Palacio", piso: "1" } };
+  const multi = api.stockTarjetaDatos(d(base), cam, tipos, true);
+  assert.equal(multi.badgeClase, "multi");
+  assert.equal(multi.multiGrabador, true);
+  const una = api.stockTarjetaDatos(d(base), cam, tipos, false);
+  assert.equal(una.badgeClase, "primary");
+  assert.equal(una.multiGrabador, false);
+  assert.equal(api.stockTarjetaDatos(d(base), cam, tipos).badgeClase, "primary");        // sin el parámetro: como siempre
+  assert.equal(api.stockTarjetaDatos(d({ ...base, condicion: "revisar" }), cam, tipos, true).badgeClase, "warning");
+  assert.equal(api.stockTarjetaDatos(d(base), null, tipos, true).badgeClase, "primary");  // sin cámara no hay violeta
+});
+
 test("stockInsigniaLista: dispositivo en producción operativo no muestra insignia", () => {
   assert.equal(api.stockInsigniaLista(enUso()), null);
 });
