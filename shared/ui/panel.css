@@ -286,14 +286,14 @@
     .panel-destino[data-zona="left"] {
         left: 8px;
         top: calc(var(--navbar-height, 58px) + 8px);
-        width: 215px;
+        width: var(--ancho-panel);
         height: calc(100vh - var(--navbar-height, 58px) - 16px);
     }
 
     .panel-destino[data-zona="right"] {
-        left: calc(100vw - 215px - 8px);
+        left: calc(100vw - var(--ancho-panel) - 8px);
         top: calc(var(--navbar-height, 58px) + 8px);
-        width: 215px;
+        width: var(--ancho-panel);
         height: calc(100vh - var(--navbar-height, 58px) - 16px);
     }
 
@@ -331,13 +331,13 @@
             bottom: 6.25rem;
         }
 
-        /* Panel a la derecha: el botón se corre a su izquierda (a la vista: 215 px de panel; oculto: la franja de íconos de 68 px) */
+        /* Panel a la derecha: el botón se corre a su izquierda (a la vista: el ancho del panel, --ancho-panel; oculto: la franja de íconos de 68 px) */
         html[data-panel-pos="right"] .btn-scroll-top {
             right: 8rem;
         }
 
         html[data-panel-pos="right"]:has(#sidebar-col:not(.sidebar-collapsed)) .btn-scroll-top {
-            right: 17rem;
+            right: calc(var(--ancho-panel) + 3.5rem);
         }
     }
 }
