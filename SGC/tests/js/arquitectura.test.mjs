@@ -15,7 +15,7 @@ const sinComentarios = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:
 // o borrar la entrada cuando queden por debajo de 500).
 const MAX_LINEAS = 500;
 const TOPES = {
-  "animaciones.js": 809,
+  "animaciones.js": 653,
   "app.js": 2099,
   "busqueda.js": 523,
   "comun.js": 1931,

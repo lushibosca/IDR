@@ -154,7 +154,7 @@ aplicándolo en SGC, SGR y SGI. **La guía paso a paso, con archivos y líneas, 
 - [x] Paso 1 — `<head>` de referencia en SGC, SGR y SGI, con test (hecho, 2026-11-11).
 - [x] Paso 2 — un solo arranque (SGC pasa a `arranque.js` + `apariencia.js`) (hecho, 2026-11-11).
 - [x] Paso 3 — avisos (`toast.js`) y «volver arriba» comunes (hecho; SGR y SGI conservan en su CSS el `right` de `.btn-scroll-top` porque tienen FAB).
-- [ ] Paso 4 — transición de cambio de pestaña común (decisión 8).
+- [x] Paso 4 — transición de cambio de pestaña común (decisión 8) (hecho; `shared/ui/js/transicion-pestanas.js`, también aloja `DUR_ANIM_MS`, `fijarAlturaAnimable` y `animarAlturaAlContenido`).
 - [ ] Paso 5 — panel plegable y personalizable común (decisión 7).
 - [ ] Paso 6 — barra superior única: menú ⚙ como en SGC + deshacer/rehacer (decisiones 9 y 11).
 - [ ] Paso 6b — deshacer/rehacer en SGC (decisión 10; función nueva).

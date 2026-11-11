@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261111.1259';
+const CACHE_NAME = 'idr-suite-v261111.1302';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -134,6 +134,7 @@ const PRECACHE_URLS = [
   './shared/ui/utilidades.css',
   './shared/ui/js/apariencia.js',
   './shared/ui/js/toast.js',
+  './shared/ui/js/transicion-pestanas.js',
   './shared/ui/js/volver-arriba.js',
   './shared/ui/js/arranque.js',
   './shared/ui/js/atras-modales.js',

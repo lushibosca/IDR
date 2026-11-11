@@ -10,7 +10,12 @@ const aqui = path.dirname(fileURLToPath(import.meta.url));
 const appSrc = fs.readFileSync(path.join(aqui, "../../js/animaciones.js"), "utf8");
 
 // Extraer el bloque de animación de mutación
-const match = appSrc.match(/const DUR_ANIM_MS[\s\S]*?window\.alternarBannerMutacion = alternarBannerMutacion;/);
+// (DUR_ANIM_MS y las alturas animables viven en ../shared/ui/js/transicion-pestanas.js: se les antepone su bloque)
+const compartido = fs.readFileSync(path.join(aqui, "../../../shared/ui/js/transicion-pestanas.js"), "utf8")
+  .match(/\/\/ ==== PRIMITIVAS DE ANIMACION BEGIN ====([\s\S]*?)\/\/ ==== PRIMITIVAS DE ANIMACION END ====/);
+assert.ok(compartido, "no se encontró el bloque de primitivas de animación");
+const match = appSrc.match(/function prefiereMovimientoReducido[\s\S]*?window\.alternarBannerMutacion = alternarBannerMutacion;/);
+if (match) match[0] = compartido[1] + "\n" + match[0];
 assert.ok(match, "no se encontró el bloque de animarMutacion / alternarBannerMutacion");
 
 function crearElementoFalso(clasesIniciales = []) {

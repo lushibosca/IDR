@@ -1,9 +1,9 @@
-// Fantasma de la pestaña que sale (bloque CLON ACOTADO PURO de static/animaciones.js): copia con tope de nodos.
+// Fantasma de la pestaña que sale (bloque CLON ACOTADO PURO de shared/ui/js/transicion-pestanas.js): copia con tope de nodos.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { cargarBloque } from "./_bloque.mjs";
 
-const { clonarAcotado } = cargarBloque("animaciones.js", "CLON ACOTADO PURO", { Array }, ["clonarAcotado"]);
+const { clonarAcotado } = cargarBloque("../shared/ui/js/transicion-pestanas.js", "CLON ACOTADO PURO", { Array }, ["clonarAcotado"]);
 
 // Nodo mínimo: lo que usa clonarAcotado (cloneNode(false), childNodes, appendChild)
 const nodo = (nombre, hijos = []) => ({

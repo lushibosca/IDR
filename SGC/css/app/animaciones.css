@@ -127,12 +127,6 @@
         animation: mutacionSalida var(--dur-anim) ease forwards;
     }
 
-    /* Copia de la pestaña principal que sale mientras desliza (animaciones.js): va dentro del contenedor, que recorta lo que se sale */
-    .slide-pestana-saliente {
-        z-index: 1;
-        will-change: transform, opacity;
-    }
-
     /* ─── ANIMACIÓN DE SLIDE LATERAL ESTILO CALENDARIO (Subpestañas de Auditoría) */
 
     .slide-subtabs-wrapper {

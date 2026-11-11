@@ -1,11 +1,11 @@
-// Posición del contenedor de las pestañas mientras se deslizan (bloque DESLIZE POSICION PURO de static/animaciones.js).
+// Posición del contenedor de las pestañas mientras se deslizan (bloque DESLIZE POSICION PURO de shared/ui/js/transicion-pestanas.js).
 // Un cambio de pestaña rápido arranca el segundo deslizamiento antes de que termine el primero: la posición original solo se
 // restaura al terminar el ÚLTIMO (antes se restauraba a mitad del segundo y quedaba `relative` para siempre).
 import test from "node:test";
 import assert from "node:assert/strict";
 import { cargarBloque } from "./_bloque.mjs";
 
-const { crearPosicionCompartida } = cargarBloque("animaciones.js", "DESLIZE POSICION PURO", { Math },
+const { crearPosicionCompartida } = cargarBloque("../shared/ui/js/transicion-pestanas.js", "DESLIZE POSICION PURO", { Math },
   ["crearPosicionCompartida"]);
 
 test("un solo deslizamiento: al terminar vuelve a la posición que tenía", () => {
