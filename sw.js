@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261111.0056';
+const CACHE_NAME = 'idr-suite-v261111.0110';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -100,9 +100,8 @@ const PRECACHE_URLS = [
   // ── SGR (Racks) ──
   './SGR/',
   './SGR/index.html',
-  './SGR/flash.js',
   './SGR/manifest.json',
-  './SGR/styles.css',
+  './SGR/css/sgr.css',
   './SGR/app.js',
   './SGR/icon.svg',
   './SGR/icons/icon-192.png',
@@ -135,6 +134,8 @@ const PRECACHE_URLS = [
   './shared/ui/grilla.css',
   './shared/ui/tokens.css',
   './shared/ui/utilidades.css',
+  './shared/ui/js/apariencia.js',
+  './shared/ui/js/arranque.js',
   './shared/ui/js/atras-modales.js',
   './shared/ui/js/busqueda-movil.js',
   './shared/ui/js/swipe-pestanas.js',

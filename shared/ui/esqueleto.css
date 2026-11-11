@@ -267,6 +267,27 @@
         }
     }
 
+    /* ─── Acciones de la barra superior (deshacer, rehacer: SGR, SGI, SGP). En móvil la marca va centrada (navegacion.css):
+       las acciones quedan a la derecha, fuera del flujo, para no correrla ni pisarla. */
+    @media (max-width: 767.98px) {
+        .navbar > .container-fluid {
+            position: relative;
+        }
+
+        .navbar-acciones {
+            position: absolute;
+            top: 50%;
+            right: var(--esp-3);
+            transform: translateY(-50%);
+            gap: var(--esp-1);
+        }
+
+        .navbar-acciones .btn {
+            padding: 0 var(--esp-2);
+            line-height: 1.5;
+        }
+    }
+
     /* ─── Insignias de coincidencia de búsqueda en el panel lateral */
 
     .nav-pills .nav-link:hover .sidebar-search-badge {

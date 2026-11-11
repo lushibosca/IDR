@@ -1,6 +1,6 @@
 # Porte del estilo de SGC a SGR, SGI y SGP
 
-**Inicio:** 2026-11-11 · **Estado:** fase 0 hecha; sigue la fase 1 (SGR).
+**Inicio:** 2026-11-11 · **Estado:** fases 0 y 1 (SGR) hechas; siguen SGI y SGP.
 
 Objetivo: que SGR (Racks), SGI (Materiales) y SGP (Patcheras) usen el mismo diseño que SGC: panel lateral de pestañas,
 buscador con filtro de campos, Ajustes como pestaña y la vista móvil (barra fija abajo, swipe, tablas en tarjetas,
@@ -16,7 +16,7 @@ botón «atrás»). Es un porte **de estilo y estructura de pantalla**: los dato
 | 1 | ¿Copiar el estilo en cada app o compartirlo? | **Compartido** en `shared/ui/`: una sola copia, un solo precache, un ajuste llega a todas. |
 | 2 | ¿Íconos? | **bootstrap-icons compartido** en `shared/vendor/` (con la fuente Inter). Los sprites SVG de cada app se dejan de usar a medida que se porta. La regla de «vendorizado dentro de la app» de `CLAUDE.md` ahora admite `shared/vendor/`. |
 | 3 | SGP no tiene pestañas ni búsqueda | Pestañas **Estado** (resumen por edificio, como el dashboard de SGR), **Racks** (la lista actual) y **Ajustes**, más búsqueda por rack, patchera, puerto y etiqueta. |
-| 4 | ¿Alcance? | **Solo estilo y estructura.** Lo que se reescribe por el porte (lo que hoy se arma con `innerHTML` y clases viejas) pasa a `createElement`/`textContent`. Partir `app.js` y los bloques puros con tests de SGC quedan para después. |
+| 4 | ¿Alcance? | **Solo estilo y estructura.** El esqueleto, los modales y Ajustes se reescriben con el marcado de SGC. Las plantillas del contenido (tablas, tarjetas, dashboard; todas escapan con `esc()`) se **reestilan por CSS** con los tokens de la suite y quedan con `innerHTML` (ajustado el 2026-11-11: convertirlas multiplicaba el trabajo; se pasan a `createElement` cuando se toquen). Partir `app.js` y los bloques puros con tests de SGC, para después. |
 
 Orden: **SGR → SGI → SGP** (de la más parecida a SGC a la que necesita diseño propio).
 
@@ -40,9 +40,9 @@ con `.show` (una sola función por app, cerca de las líneas 300–600 de `app.j
 Por eso el porte es el mismo procedimiento en las tres.
 
 ### Problemas encontrados (se arreglan en el porte)
-- [ ] Versión escrita a mano y vieja en los Ajustes (`v260610` SGI, `v260612` SGR, `v260921` SGP) → `data-idr-version`.
-- [ ] Sin manejo del botón «atrás»: con un modal abierto, vuelve al launcher → `IDRAtras` vía `UI.modal`.
-- [ ] Tema a mano (`IDR_dark` + `flash.js` propio), no sigue en vivo el cambio hecho en otra app → `IDRTema`.
+- [ ] Versión escrita a mano y vieja en los Ajustes (`v260610` SGI, `v260612` SGR, `v260921` SGP) → `data-idr-version`. *(SGR: hecho)*
+- [ ] «Atrás» del sistema con modales: SGI y SGP no lo manejaban, y SGR tenía su propio `pushState` → `IDRAtras` vía `UI.modal`. *(SGR: hecho)*
+- [ ] Tema a mano (`IDR_dark` + `flash.js` propio), no sigue en vivo el cambio hecho en otra app → `IDRTema`. *(SGR: hecho)*
 - [ ] SGP lee `RCK_data` directamente (`SGP/app.js:1117`); tiene que pasar por `IDRInfra.getRacks`.
 - [x] SGP no tenía fallback offline de navegación en `sw.js` (caía en el launcher). Arreglado en la fase 0; lo vigila `tests/suite.test.mjs`.
 
@@ -72,13 +72,23 @@ tests de CSS de SGC (`SGC/tests/js/css_limpio.test.mjs`, `clases_css.test.mjs`),
 SGR cargue la base**, una clase que solo use SGR va a parecer muerta desde SGC: en ese momento la revisión de CSS muerto de
 `shared/ui/` pasa a un test de la suite que junte las clases usadas por todas las apps que la cargan.
 
-**Falta extraer (fase 1, con SGR como segundo consumidor):**
-- Lo general de `SGC/css/app/estructura.css` (navbar, panel lateral, `tab-content`), `ajustes.css` (secciones, filas,
-  interruptor), `barra-movil.css` y `detalle-movil.css` (tablas como tarjetas, selectores genéricos `:where()`).
-- JS genérico: `ui.js` (`UI.modal`, pills, desplegables), `atras-modales.js`, `swipe-pestanas.js`, `busqueda-movil.js`,
-  `doble-toque.js` y lo que haga falta de `animaciones.js`, parametrizando los ids propios de SGC. Al moverlos hay que
-  mantener cubiertas las normas de SGC (sin `innerHTML`, bloques puros con su test): los tests de esos archivos se mudan
-  con ellos a `tests/` de la suite.
+**Esqueleto común (fase 1):**
+- `shared/ui/esqueleto.css`: panel lateral y su versión plegada, buscador, vista móvil (barra fija abajo, buscador que baja,
+  lo flotante sobre la barra), «volver arriba», acciones de la barra superior (`.navbar-acciones`) y la pestaña Ajustes
+  (`.ajuste-seccion`, `.ajuste-fila`, `.interruptor`). Lo propio de SGC (dashboard, posición del panel, kiosco) quedó en `SGC/css/app/`.
+- `shared/ui/js/`: `ui.js` (`UI.pestana`, `UI.modal`, `UI.desplegable`), `atras-modales.js`, `busqueda-movil.js`,
+  `swipe-pestanas.js` (de SGC, sin cambios) y, para las apps portadas, `arranque.js` (tema y «reducir animaciones» antes de
+  pintar; reemplaza a `flash.js`) y `apariencia.js` (interruptores de Ajustes).
+- Ids que espera el esqueleto: `#app-main-row`, `#sidebar-col`, `#main-content-col`, `#v-pills-tab`, `#v-pills-tabContent`,
+  `#sidebar-search-container`, `#global-search`, `#btn-buscar-movil` (más `#btn-theme` y `#btn-movimiento` en Ajustes).
+- Tests: `tests/estilo.test.mjs` (normas de los JS compartidos, CSS sin `!important` ni muerto contra todas las apps de
+  `tests/_apps.mjs`, esqueleto completo en cada app portada), `tests/ui|busqueda_movil|swipe_pestanas.test.mjs` y la humo
+  `tests/e2e/humo-apps.mjs` (jsdom; una función por app).
+
+**Receta de una app portada** (la de SGR, `SGR/index.html`): en el `<head>` `idr-tema.js`, `idr-version.js`, `idr-atras.js` y
+`ui/js/arranque.js` (con `data-prefijo` y `data-tema`), las hojas en el orden de capas (la de la app entre `esqueleto.css` y
+`utilidades.css`); al final `ui.js`, `atras-modales.js`, lo de la app, `busqueda-movil.js`, `swipe-pestanas.js` y
+`apariencia.js`. Las variables viejas de la app se mantienen como alias de los tokens de la suite al principio de su hoja.
 
 ---
 
@@ -91,18 +101,21 @@ SGR cargue la base**, una clase que solo use SGR va a parecer muerta desde SGC: 
 - [x] Tests de CSS de SGC leen también `../shared/ui/`; test de suite: todo `shared/` precacheado y fallback offline de cada app.
 - [x] SGC sin cambios visibles: `npm run test:sgc`, `npm test` y `node tests/e2e/humo.mjs` en verde.
 
-### Fase 1 — SGR
-- [ ] Extraer a `shared/ui/` lo general de estructura, ajustes, barra móvil y detalle móvil; y el JS genérico (sección 3).
-- [ ] Esqueleto: navbar (ícono → launcher, deshacer/rehacer a la derecha), panel lateral con buscador + filtro de campos y
+### Fase 1 — SGR (hecha, 2026-11-11)
+- [x] Extraer a `shared/ui/` lo general de estructura, ajustes y barra móvil, y el JS genérico (sección 3). *(El «detalle
+      móvil» de SGC usa selectores de sus modales: quedó en SGC.)*
+- [x] Esqueleto: navbar (ícono → launcher, deshacer/rehacer a la derecha), panel lateral con buscador + filtro de campos y
       pestañas **Dashboard · Inventario · Servicio · Ajustes**, `tab-content`.
-- [ ] Ajustes como pestaña: *Apariencia* (modo oscuro, reducir animaciones), *Datos* (exportar, importar, restablecer),
+- [x] Ajustes como pestaña: *Apariencia* (modo oscuro, reducir animaciones), *Datos* (exportar, importar, restablecer),
       *Edificios*, *Sincronización (Gist)*, versión `data-idr-version="SGR"`.
-- [ ] Modales al marcado y API de `UI.modal` (reemplaza la función propia de abrir/cerrar).
-- [ ] Tablas de inventario y servicio con `tablas.css`; en móvil, tarjetas.
-- [ ] Móvil: barra fija abajo, buscador por ícono, swipe, «atrás».
-- [ ] `IDRTema` (sale `flash.js` y el botón de tema), `idr-version`, `idr-atras`.
-- [ ] `styles.css` → solo lo propio (gráfico del rack, unidades), en capa `app` y con los tokens de SGC.
-- [ ] Prueba de humo en jsdom (como la de SGC) para ids huérfanos y errores de JS.
+- [x] Modales al marcado y API de `UI.modal` (reemplaza la función propia de abrir/cerrar).
+- [x] Tablas de inventario y servicio: las de SGR, reestiladas con los tokens (en móvil ya usaba tarjetas).
+- [x] Móvil: barra fija abajo, buscador por ícono, swipe, «atrás».
+- [x] `IDRTema` (sale `flash.js` y el botón de tema), `idr-version`, `idr-atras`.
+- [x] `styles.css` → `css/sgr.css`: solo lo propio, en capa `app`, sin `!important`, con alias a los tokens.
+- [x] El selector de módulos del título (popup) no está en el diseño de SGC: la marca lleva al launcher.
+- [x] `MM` (modales) sobre `UI.modal`, con la misma API; el objeto propio `UI` pasó a llamarse `Vistas`.
+- [x] Prueba de humo en jsdom (`tests/e2e/humo-apps.mjs SGR`) y capturas en Firefox headless (escritorio, oscuro, móvil).
 
 ### Fase 2 — SGI
 Igual que la fase 1, más: filtro por año y búsqueda por fechas/duplicados dentro del buscador del panel (o como filtro

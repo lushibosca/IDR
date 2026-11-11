@@ -3,7 +3,7 @@
 Suite en GitHub Pages, sin servidor ni build: launcher en la raíz (`index.html`, `app.js`) y una carpeta por app
 (`SGC`, `SGI`, `SGL`, `SGP`, `SGR`); lo compartido está en `shared/`. Idioma del proyecto: español (código,
 mensajes, commits, docs). Lo que pida el usuario manda sobre lo de este archivo.
-Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se documentó (hoy: `SGC`).
+Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se documentó (hoy: `SGC`; `SGR` tiene su `CLAUDE.md`).
 
 ## Flujo de trabajo (vale para todas las apps)
 - **Un solo Service Worker, el de la raíz (`sw.js`).** Es cache-first con `ignoreSearch`: los `?v=` de los `<script>` no
@@ -47,9 +47,10 @@ Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se document�
 
 ## Tests
 - Suite (precache de cada app y de `shared/`, versión, actualización, tema, fallback offline de cada app): `npm test` desde la raíz.
-- Cada app trae los suyos (SGC: `npm run test:sgc`, ver `SGC/CLAUDE.md`).
+- Cada app trae los suyos (SGC: `npm run test:sgc`, ver `SGC/CLAUDE.md`). Las portadas al diseño de SGC (`tests/_apps.mjs`) tienen
+  una prueba de humo en jsdom: `node tests/e2e/humo-apps.mjs [APP]` (usa el jsdom de `SGC/tests/e2e`).
 
 ## Versión visible en cada app
 Cada app muestra la versión de la suite en sus Ajustes con un elemento `<span data-idr-version="NOMBRE"></span>` y el script
-`<script src="../shared/idr-version.js">` (nada de código por app; hoy lo hace SGC). Al portar SGR, SGI y SGP al diseño de SGC,
-agregar esas dos líneas en sus Ajustes.
+`<script src="../shared/idr-version.js">` (nada de código por app; hoy SGC y SGR). Al portar SGI y SGP al diseño de SGC,
+agregar esas dos líneas en sus Ajustes (receta completa: `docs/PORTE-ESTILO-SGC.md`, sección 3).

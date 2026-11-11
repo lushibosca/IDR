@@ -133,3 +133,15 @@ test("apps portadas: cargan la base (tokens primero, utilidades al final), el es
     }
   }
 });
+
+// ─── arranque.js (antes de pintar): el tema de la suite manda; si nadie eligió, el de la app
+test("arranque.js: tema inicial", async () => {
+  const { cargarBloque } = await import("./_bloque.mjs");
+  const { idrTemaInicial: f } = cargarBloque("arranque.js", "ARRANQUE PURO", {}, ["idrTemaInicial"]);
+  assert.equal(f(true, "light"), "dark");
+  assert.equal(f(false, "dark"), "light");
+  assert.equal(f(null, "dark"), "dark");
+  assert.equal(f(null, "light"), "light");
+  assert.equal(f(null, null), "light");
+  assert.equal(f(null, "cualquiera"), "light");
+});

@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
+import { APPS_PORTADAS } from "./_apps.mjs";
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), "utf8");
@@ -60,9 +61,11 @@ test("sin almacenamiento (modo privado, bloqueado) no rompe: devuelve null y gua
 });
 
 test("el launcher y todas las apps leen la misma clave IDR_dark (o usan IDRTema)", () => {
+  // Las portadas al diseño de SGC (tests/_apps.mjs) lo hacen con ../shared/ui/js/arranque.js (antes de pintar) y apariencia.js
   const fuentes = { launcher: ["flash.js", "app.js"], SGI: ["SGI/flash.js", "SGI/app.js"], SGR: ["SGR/flash.js", "SGR/app.js"],
     SGL: ["SGL/flash.js", "SGL/app.js"], SGP: ["SGP/flash.js", "SGP/app.js"] };
   for (const [app, archivos] of Object.entries(fuentes)) {
+    if (APPS_PORTADAS.includes(app)) continue;
     const texto = archivos.map((f) => leer(f)).join("\n");
     assert.ok(/IDR_dark/.test(texto), `${app} no usa IDR_dark`);
   }
@@ -70,6 +73,17 @@ test("el launcher y todas las apps leen la misma clave IDR_dark (o usan IDRTema)
   assert.ok(/IDRTema/.test(sgc), "SGC debe usar IDRTema");
   assert.ok(leer("SGC/index.html").includes('src="../shared/idr-tema.js"'), "SGC carga el módulo en el <head>");
   assert.ok(leer("SGC/index.html").indexOf("idr-tema.js") < leer("SGC/index.html").indexOf("js/preload.js"), "antes de preload.js");
+  for (const app of APPS_PORTADAS.filter((a) => a !== "SGC")) {
+    const html = leer(`${app}/index.html`);
+    const cabeza = html.slice(0, html.indexOf("</head>"));
+    assert.ok(cabeza.includes('src="../shared/idr-tema.js"'), `${app}: idr-tema.js en el <head>`);
+    assert.ok(cabeza.indexOf("idr-tema.js") < cabeza.indexOf("ui/js/arranque.js"), `${app}: arranque.js después de idr-tema.js`);
+    assert.ok(cabeza.indexOf("ui/js/arranque.js") < cabeza.indexOf('rel="stylesheet"'), `${app}: el tema se pone antes de las hojas`);
+    assert.ok(html.includes('src="../shared/ui/js/apariencia.js"'), `${app}: el interruptor del tema (apariencia.js)`);
+    assert.ok(!fs.existsSync(path.join(RAIZ, app, "flash.js")), `${app}: flash.js ya no hace falta (lo reemplaza arranque.js)`);
+  }
+  assert.match(leer("shared/ui/js/apariencia.js"), /IDRTema\.guardar/);
+  assert.match(leer("shared/ui/js/arranque.js"), /IDRTema\.oscuro/);
 });
 
 test("el precache incluye el módulo del tema", () => {

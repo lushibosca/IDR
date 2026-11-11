@@ -126,7 +126,8 @@ function actualizarRack(id, cambios) {
 // Se popula en _initDOMRefs() una vez que el DOM está listo.
 const DOM = {};
 function _initDOMRefs() {
-    DOM.busqGlobal = document.getElementById('busq-global');
+    DOM.busqGlobal = document.getElementById('global-search');
+    DOM.busqCaja = document.getElementById('sidebar-search-container');
     DOM.tablaServicio = document.getElementById('tabla-servicio');
     DOM.tablaInventario = document.getElementById('tabla-inventario');
     DOM.servCardsWrap = document.getElementById('serv-cards-wrap');
@@ -140,9 +141,9 @@ function _initDOMRefs() {
     DOM.btnUndo = document.getElementById('btn-undo');
     DOM.btnRedo = document.getElementById('btn-redo');
     DOM.fabRackServicio = document.getElementById('fab-rack-servicio');
-    DOM.busqClearBtn = document.getElementById('busq-clear-btn');
-    DOM.filtroMenu = document.getElementById('busq-filtro-menu');
-    DOM.filtroBtn = document.getElementById('busq-filtro-btn');
+    DOM.busqClearBtn = document.getElementById('search-clear');
+    DOM.filtroMenu = document.getElementById('search-filter-menu');
+    DOM.filtroBtn = document.getElementById('searchFilterBtn');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -182,236 +183,105 @@ const historial = (() => {
 })();
 
 // ═══════════════════════════════════════════════════════
-//  MODAL MANAGER (PATRÓN HORARIOS UNIFICADO)
+//  MODAL MANAGER (sobre UI.modal de ../shared/ui/js/ui.js)
 // ═══════════════════════════════════════════════════════
+// La misma API de siempre (abrir, cerrar, alternar, padres...) pero los modales los abre y cierra `UI.modal`: animación,
+// foco atrapado, fondo, Escape y modales apilados. El botón «atrás» lo maneja ../shared/ui/js/atras-modales.js.
+// «Descartar» un modal (Escape, clic en el fondo, la X o «atrás») respeta lo de antes: si tiene acción de volver se ejecuta,
+// y si se abrió desde otro (alternar) vuelve a ese. Cerrarlo desde el código (guardar, cancelar) solo lo cierra.
 const MM = (() => {
     const _padres = {};
     const _accionesVolver = {};
+    let _interno = 0;                       // > 0: el cierre lo pidió el código, no es «descartar»
 
-    let _navegandoHaciaAtras = false;
-    let _ignorandoPopstate = false;
-    let _enAlternanciaHaciaAdelante = false;
-    let _enAlternanciaHaciaAtras = false;
-    let _mdDown = false;
+    const $m = (id) => (id ? document.getElementById(id) : null);
+    const _abierto = (id) => { const m = $m(id); return Boolean(m) && UI.modal.abierto(m); };
 
-    // ── Focus trap ──────────────────────────────────────────
-    const FOCUSABLE = [
-        'a[href]', 'button:not([disabled])', 'input:not([disabled])',
-        'select:not([disabled])', 'textarea:not([disabled])',
-        '[tabindex]:not([tabindex="-1"])'
-    ].join(',');
-    const _trapHandlers = new Map();
-    const _prevFocus = new Map();
-
-    function _instalarTrap(m) {
-        _prevFocus.set(m.id, document.activeElement);
-        const focusables = () => Array.from(m.querySelectorAll(FOCUSABLE)).filter(el => !el.closest('[hidden]'));
-        setTimeout(() => { focusables()[0]?.focus(); }, 50);
-
-        function _onTab(e) {
-            if (e.key !== 'Tab') return;
-            const elems = focusables();
-            if (!elems.length) { e.preventDefault(); return; }
-            const first = elems[0], last = elems[elems.length - 1];
-            if (e.shiftKey) {
-                if (document.activeElement === first) { e.preventDefault(); last.focus(); }
-            } else {
-                if (document.activeElement === last) { e.preventDefault(); first.focus(); }
-            }
-        }
-        m.addEventListener('keydown', _onTab);
-        _trapHandlers.set(m.id, _onTab);
+    function _cerrarUI(id) {
+        const m = $m(id);
+        if (!m) return;
+        _interno++;
+        try { UI.modal.cerrar(m); } finally { _interno--; }
     }
 
-    function _removerTrap(m) {
-        const handler = _trapHandlers.get(m.id);
-        if (handler) { m.removeEventListener('keydown', handler); _trapHandlers.delete(m.id); }
-        const prev = _prevFocus.get(m.id);
-        if (prev && typeof prev.focus === 'function') { try { prev.focus(); } catch (_) { } }
-        _prevFocus.delete(m.id);
-    }
-    // ────────────────────────────────────────────────────────
-
-    function registrarAccionVolver(modalId, fn) {
-        _accionesVolver[modalId] = fn;
-    }
-
-    function _getAccionVolver(modalId) {
-        return _accionesVolver[modalId] || null;
-    }
+    function registrarAccionVolver(modalId, fn) { _accionesVolver[modalId] = fn; }
 
     function _ejecutarAccionCierre(modalId) {
-        const accionVolver = _getAccionVolver(modalId);
-        if (typeof accionVolver === 'function') {
-            accionVolver();
-            return;
-        }
+        const accionVolver = _accionesVolver[modalId];
+        if (typeof accionVolver === 'function') { accionVolver(); return; }
         const padreId = _padres[modalId];
-        if (padreId) {
-            const padreEl = document.getElementById(padreId);
-            if (padreEl && !padreEl.classList.contains('show')) {
-                alternar(modalId, padreId);
-                return;
-            }
-        }
+        if (padreId && $m(padreId) && !_abierto(padreId)) { alternar(modalId, padreId); return; }
         cerrar(modalId);
     }
 
-    window.addEventListener('popstate', () => {
-        if (_ignorandoPopstate) {
-            _ignorandoPopstate = false;
-            return;
-        }
-
-        _navegandoHaciaAtras = true;
-        const abiertos = Array.from(document.querySelectorAll('.modal.show'));
-        if (abiertos.length > 0) {
-            const topModal = abiertos[abiertos.length - 1];
-            _ejecutarAccionCierre(topModal.id);
-        }
-        setTimeout(() => { _navegandoHaciaAtras = false; }, 50);
-    });
-
-    function _onMD(e) { _mdDown = e.target === e.currentTarget; }
-    function _onClick(e) {
-        if (!_mdDown) return;
-        if (e.target === e.currentTarget) {
-            _ejecutarAccionCierre(e.target.id);
-        }
-    }
+    // En captura: corre antes que atras-modales.js, que solo saca la entrada del historial si el cierre no se frenó
+    document.addEventListener('ui:modal-cerrar', (e) => {
+        const m = e.target;
+        if (_interno || !(m instanceof HTMLElement) || !m.id) return;
+        if (!_accionesVolver[m.id] && !_padres[m.id]) return;      // sin nada especial: cierra como siempre
+        e.preventDefault();
+        _ejecutarAccionCierre(m.id);
+    }, true);
 
     function abrir(modalId, optsOrCb) {
-        const modal = document.getElementById(modalId);
+        const modal = $m(modalId);
         if (!modal) return;
-
         let cb, onEscape, padre;
-        if (typeof optsOrCb === 'function') {
-            cb = optsOrCb;
-        } else if (optsOrCb && typeof optsOrCb === 'object') {
-            cb = optsOrCb.cb;
-            onEscape = optsOrCb.onEscape;
-            padre = optsOrCb.padre;
-        }
-
-        if (onEscape) {
-            _accionesVolver[modalId] = onEscape;
-        } else {
-            delete _accionesVolver[modalId];
-        }
-
-        if (padre) {
-            _padres[modalId] = padre;
-        }
-
-        modal.classList.add('show');
-        document.body.classList.add('modal-open');
-
-        if (!_navegandoHaciaAtras && !_enAlternanciaHaciaAtras) {
-            history.pushState({ modalId }, '');
-        }
-
-        setTimeout(() => {
-            modal.addEventListener('mousedown', _onMD);
-            modal.addEventListener('click', _onClick);
-        }, 100);
-
-        _instalarTrap(modal);
+        if (typeof optsOrCb === 'function') cb = optsOrCb;
+        else if (optsOrCb && typeof optsOrCb === 'object') ({ cb, onEscape, padre } = optsOrCb);
+        if (onEscape) _accionesVolver[modalId] = onEscape;
+        else delete _accionesVolver[modalId];
+        if (padre) _padres[modalId] = padre;
+        UI.modal.abrir(modal);
         if (typeof cb === 'function') cb();
     }
 
-    function cerrar(modalId, callback = null) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-
-        const estabaAbierto = modal.classList.contains('show');
+    // Cerrado desde el código, el modal olvida de dónde vino (si después se abre solo, descartarlo no reabre un padre viejo);
+    // alternar sí lo conserva, porque el que se cierra puede volver a abrirse en la misma cadena.
+    function _cerrar(modalId, callback, olvidarPadre) {
         delete _accionesVolver[modalId];
-        modal.classList.remove('show');
-
-        if (document.querySelectorAll('.modal.show').length === 0) {
-            document.body.classList.remove('modal-open');
-        }
-
-        modal.removeEventListener('mousedown', _onMD);
-        modal.removeEventListener('click', _onClick);
-        _removerTrap(modal);
-
-        if (estabaAbierto && !_navegandoHaciaAtras && !_enAlternanciaHaciaAdelante) {
-            _ignorandoPopstate = true;
-            history.back();
-        }
-
+        if (olvidarPadre) delete _padres[modalId];
+        _cerrarUI(modalId);
         if (typeof callback === 'function') callback();
     }
 
+    function cerrar(modalId, callback = null) { _cerrar(modalId, callback, true); }
+
     function alternar(modalIdCerrar, modalIdAbrir, callbackCerrar = null, callbackAbrir = null) {
-        const esHaciaAtras = (_padres[modalIdCerrar] === modalIdAbrir);
-
-        if (esHaciaAtras) {
-            _enAlternanciaHaciaAtras = true;
-            delete _padres[modalIdCerrar];
-        } else {
-            _enAlternanciaHaciaAdelante = true;
-            if (modalIdCerrar && modalIdAbrir) {
-                _padres[modalIdAbrir] = modalIdCerrar;
-            }
-        }
-
-        cerrar(modalIdCerrar, callbackCerrar);
+        if (_padres[modalIdCerrar] === modalIdAbrir) delete _padres[modalIdCerrar];      // vuelve al padre
+        else if (modalIdCerrar && modalIdAbrir) _padres[modalIdAbrir] = modalIdCerrar;
+        _cerrar(modalIdCerrar, callbackCerrar, false);
         abrir(modalIdAbrir, callbackAbrir);
-
-        _enAlternanciaHaciaAdelante = false;
-        _enAlternanciaHaciaAtras = false;
     }
 
     function abrirConPadre(modalId, setupFn = null) {
-        const modalAbierto = document.querySelector('.modal.show');
-        const padre = modalAbierto ? modalAbierto.id : null;
+        const arriba = UI.modal.arriba();
         if (typeof setupFn === 'function') setupFn();
-        if (padre) {
-            alternar(padre, modalId);
-        } else {
-            abrir(modalId);
-        }
+        if (arriba && arriba.id) alternar(arriba.id, modalId);
+        else abrir(modalId);
     }
 
     function cerrarConPadre(modalId, callbackAbrirPadre = null) {
         const padre = _padres[modalId];
-        if (padre) {
-            alternar(modalId, padre, null, callbackAbrirPadre ? () => callbackAbrirPadre(padre) : null);
-        } else {
-            cerrar(modalId);
-        }
+        if (padre) alternar(modalId, padre, null, callbackAbrirPadre ? () => callbackAbrirPadre(padre) : null);
+        else cerrar(modalId);
     }
 
     function cerrarTodos() {
-        document.querySelectorAll('.modal.show').forEach(modal => {
-            delete _accionesVolver[modal.id];
-            modal.classList.remove('show');
-            modal.removeEventListener('mousedown', _onMD);
-            modal.removeEventListener('click', _onClick);
-            _removerTrap(modal);
-        });
-        Object.keys(_padres).forEach(k => delete _padres[k]);
-        document.body.classList.remove('modal-open');
+        Object.keys(_accionesVolver).forEach((k) => delete _accionesVolver[k]);
+        Object.keys(_padres).forEach((k) => delete _padres[k]);
+        _interno++;
+        try { UI.modal.cerrarTodos(); } finally { _interno--; }
     }
 
     function cerrarTop() {
-        const abiertos = Array.from(document.querySelectorAll('.modal.show'));
-        if (!abiertos.length) return;
-        const topModal = abiertos[abiertos.length - 1];
-        _ejecutarAccionCierre(topModal.id);
+        const arriba = UI.modal.arriba();
+        if (arriba && arriba.id) _ejecutarAccionCierre(arriba.id);
     }
 
     // Compatibilidad para transiciones legacy
     function nav(desde, fn) {
-        if (desde) {
-            const mDesde = document.getElementById(desde);
-            if (mDesde && mDesde.classList.contains('show')) {
-                _enAlternanciaHaciaAdelante = true;
-                cerrar(desde);
-                _enAlternanciaHaciaAdelante = false;
-            }
-        }
+        if (desde && _abierto(desde)) cerrar(desde);
         if (typeof fn === 'function') fn();
     }
 
@@ -557,16 +427,6 @@ function confirmar(titulo, texto, cb) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  DARK MODE
-// ═══════════════════════════════════════════════════════
-function toggleDarkMode() {
-    const dark = document.documentElement.classList.toggle('dark-mode');
-    const iconUse = document.getElementById('dark-icon-use');
-    if (iconUse) iconUse.setAttribute('href', dark ? '#icon-sun' : '#icon-moon');
-    try { localStorage.setItem('IDR_dark', dark ? '1' : '0'); } catch (_) { } // Actualizado
-}
-
-// ═══════════════════════════════════════════════════════
 //  FAB DROPDOWN
 // ═══════════════════════════════════════════════════════
 let _fabOpen = false;
@@ -576,7 +436,7 @@ function _getFabOverlay() {
     if (!el) {
         el = document.createElement('div');
         el.id = 'fab-overlay';
-        el.className = 'modal fab-overlay';
+        el.className = 'fab-overlay';
         el.addEventListener('click', cerrarFab);
         document.body.appendChild(el);
     }
@@ -590,10 +450,7 @@ function cerrarFab() {
     document.getElementById('fab-overlay')?.classList.remove('show');
 }
 function _cerrarFiltro() {
-    const m = document.getElementById('busq-filtro-menu');
-    const b = document.getElementById('busq-filtro-btn');
-    if (m) m.classList.remove('open');
-    if (b) b.classList.remove('activo');
+    UI.desplegable.cerrarTodos();           // el menú de campos del buscador (ui.js)
 }
 function _cerrarVistaSafe() {
     const menuInv = document.getElementById('inv-vista-menu');
@@ -713,60 +570,60 @@ function _animarMutacion(elementos, fn, duracion = 220) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  TABS
+//  PESTAÑAS (panel lateral; ui.js las cambia con data-ui-toggle="pill")
 // ═══════════════════════════════════════════════════════
 let _tabActual = 'dashboard';
-const TAB_ICONS = { dashboard: '#icon-dashboard', servicio: '#icon-rack', inventario: '#icon-inventory' };
-const TAB_LABELS = { dashboard: 'Dashboard', servicio: 'Servicio', inventario: 'Inventario' };
+const TABS = ['dashboard', 'inventario', 'servicio', 'ajustes'];
 
 function switchTab(tab) {
     cerrarFab();
     if (_tabActual === tab) {
-        if (document.getElementById('busq-global').value) { limpiarBusqueda(); return; }
+        if (DOM.busqGlobal && DOM.busqGlobal.value && tab !== 'ajustes') limpiarBusqueda();
         return;
     }
+    const boton = document.getElementById(`tab-${tab}`);
+    if (boton) UI.pestana.mostrar(boton);
+}
 
-    const saliente = document.getElementById(`panel-${_tabActual}`);
-    const entrante = document.getElementById(`panel-${tab}`);
-
-    _animarMutacion([saliente, entrante], () => {
-        ['dashboard', 'servicio', 'inventario'].forEach(t =>
-            document.getElementById(`tab-${t}`)?.classList.toggle('activa', t === tab)
-        );
-        try { localStorage.setItem(APP_KEY + 'tab', tab); } catch (_) { }
-        const headerTabTitle = document.getElementById('header-tab-title');
-        if (headerTabTitle) headerTabTitle.textContent = TAB_LABELS[tab] || tab;
-
-        _tabActual = tab;
-        if (saliente) saliente.classList.remove('activa');
-        if (entrante) entrante.classList.add('activa');
-        renderTodo();
-    });
+// Cada cambio de pestaña (clic, flechas, swipe en móvil o switchTab): se recuerda y se redibuja
+function _alMostrarPestana(e) {
+    const tab = e.target && e.target.dataset ? e.target.dataset.tab : null;
+    if (!tab || !TABS.includes(tab)) return;
+    _tabActual = tab;
+    cerrarFab();
+    try { localStorage.setItem(APP_KEY + 'tab', tab); } catch (_) { }
+    if (tab !== 'ajustes') renderTodo();
+    window.scrollTo({ top: 0 });
 }
 
 // ═══════════════════════════════════════════════════════
 //  BÚSQUEDA
 // ═══════════════════════════════════════════════════════
 let _busqTimer = null;
+function _marcarBusqueda(val) {
+    DOM.busqCaja?.classList.toggle('search-active', !!val);
+    DOM.busqGlobal?.classList.toggle('search-active', !!val);
+}
 function onBusqGlobal() {
     const val = DOM.busqGlobal.value;
-    if (DOM.busqClearBtn) DOM.busqClearBtn.classList.toggle('visible', !!val);
+    _marcarBusqueda(val);
     // Si hay búsqueda activa y estamos en dashboard, ir a inventario
-    if (val && _tabActual === 'dashboard') switchTab('inventario');
+    if (val && (_tabActual === 'dashboard' || _tabActual === 'ajustes')) switchTab('inventario');
     if (_busqTimer) clearTimeout(_busqTimer);
     _busqTimer = setTimeout(renderTodo, 300);
 }
 function limpiarBusqueda() {
     if (_busqTimer) clearTimeout(_busqTimer);
     DOM.busqGlobal.value = '';
-    if (DOM.busqClearBtn) DOM.busqClearBtn.classList.remove('visible');
+    _marcarBusqueda('');
+    DOM.busqGlobal.dispatchEvent(new Event('input'));     // el ícono del buscador móvil deja de marcar texto
     renderTodo();
 }
 
 // ═══════════════════════════════════════════════════════
-//  UI (modales y navegación)
+//  VISTAS (modales y navegación; antes `UI`, nombre que ahora es de ../shared/ui/js/ui.js)
 // ═══════════════════════════════════════════════════════
-const UI = {
+const Vistas = {
     abrirServicio() {
         cerrarFab();
         const disponibles = state.racks.filter(r => r.estado === 'inventario');
@@ -796,13 +653,12 @@ const UI = {
     cerrarNuevoRack() { MM.cerrar('modal-rack-nuevo'); },
     abrirGist() {
         GistSync.poblarModal();
-        MM.alternar('modal-ajustes', 'modal-gist');
+        MM.abrir('modal-gist');
     },
     cerrarGist() {
-        MM.alternar('modal-gist', 'modal-ajustes');
+        MM.cerrar('modal-gist');
     },
-    abrirAjustes() { MM.abrir('modal-ajustes'); },
-    cerrarAjustes() { MM.cerrar('modal-ajustes'); },
+    abrirAjustes() { switchTab('ajustes'); },
     abrirImportar() {
         document.getElementById('importar-file-input').value = '';
         document.getElementById('importar-dropzone-label').textContent = 'Seleccioná o arrastrá un archivo .json';
@@ -811,14 +667,14 @@ const UI = {
         document.getElementById('importar-confirmar-btn').disabled = true;
         document.getElementById('importar-combinar-btn').disabled = true;
         _importarParsed = null;
-        MM.alternar('modal-ajustes', 'modal-importar');
+        MM.abrir('modal-importar');
 
         setTimeout(() => {
             document.getElementById('importar-file-input')?.click();
         }, 400);
     },
     cerrarImportar() {
-        MM.alternar('modal-importar', 'modal-ajustes');
+        MM.cerrar('modal-importar');
     },
 };
 
@@ -833,7 +689,10 @@ const GestorEdificios = (() => {
         if (typeof IDRInfra !== 'undefined') state.edificios = IDRInfra.getEdificios();
         const eds = state.edificios;
         if (!eds.length) {
-            lista.innerHTML = '<div class="dash-empty-text dash-empty-text--sm-pad">Sin edificios declarados</div>';
+            const vacio = document.createElement('div');
+            vacio.className = 'dash-empty-text dash-empty-text--sm-pad';
+            vacio.textContent = 'Sin edificios declarados';
+            lista.appendChild(vacio);
             return;
         }
         eds.forEach((ed, i) => {
@@ -843,9 +702,13 @@ const GestorEdificios = (() => {
             span.className = 'tipo-custom-label';
             span.textContent = ed;
             const btn = document.createElement('button');
-            btn.className = 'icon-btn btn-delete btn-delete--sm';
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-outline-danger';
             btn.title = 'Eliminar edificio';
-            btn.innerHTML = '<svg class="svg-icon"><use href="#icon-trash"/></svg>';
+            btn.setAttribute('aria-label', `Eliminar el edificio ${ed}`);
+            const ico = document.createElement('i');
+            ico.className = 'bi bi-trash3';
+            btn.appendChild(ico);
             btn.addEventListener('click', () => eliminar(i));
             row.appendChild(span);
             row.appendChild(btn);
@@ -872,12 +735,12 @@ const GestorEdificios = (() => {
 
     function abrir() {
         _renderLista();
-        MM.alternar('modal-ajustes', 'modal-edificios');
+        MM.abrir('modal-edificios');
         setTimeout(() => document.getElementById('edificios-nuevo-input')?.focus(), 50);
     }
 
     function cerrar() {
-        MM.alternar('modal-edificios', 'modal-ajustes');
+        MM.cerrar('modal-edificios');
     }
 
     function agregar() {
@@ -999,8 +862,8 @@ const ModalLocker = (() => {
         if (lockBtn) {
             lockBtn.classList.toggle('btn-input-side--baja', bloqueado);
             lockBtn.title = bloqueado ? 'Desbloquear edición' : 'Bloquear edición';
-            const useEl = lockBtn.querySelector('use');
-            if (useEl) useEl.setAttribute('href', bloqueado ? '#icon-lock' : '#icon-unlock');
+            const ico = lockBtn.querySelector('i');
+            if (ico) ico.className = bloqueado ? 'bi bi-lock' : 'bi bi-unlock';
         }
 
         // Deshabilitar/habilitar todos los interactivos excepto los exentos
@@ -1300,9 +1163,10 @@ function _badgeEstado(r) {
     return ESTADO_BADGE[r.estado] || '';
 }
 
+// Campos del buscador: los botones del menú de filtros (.search-filter-item, data-field; activos = .active)
+const _itemsCamposBusq = () => Array.from(document.querySelectorAll('#search-filter-menu .search-filter-item'));
 function _getCamposBusq() {
-    const checks = document.querySelectorAll('#busq-filtro-menu input[type="checkbox"]:checked');
-    return Array.from(checks).map(c => c.value); // [] si no hay ninguno
+    return _itemsCamposBusq().filter(b => b.classList.contains('active')).map(b => b.dataset.field); // [] si no hay ninguno
 }
 function _guardarCamposBusq() {
     try {
@@ -1310,18 +1174,20 @@ function _guardarCamposBusq() {
         localStorage.setItem(APP_KEY + 'busq_campos', JSON.stringify(vals));
     } catch (_) { }
 }
+// Marca el menú según los campos activos: el texto de «Desactivar/Activar todo» y el botón resaltado si no están todos
+function _sincronizarMenuCampos() {
+    const items = _itemsCamposBusq();
+    const activos = items.filter(b => b.classList.contains('active')).length;
+    const toggleAll = document.getElementById('btn-toggle-all-filtros');
+    if (toggleAll) toggleAll.textContent = activos > 0 ? 'Desactivar todo' : 'Activar todo';
+    DOM.filtroBtn?.classList.toggle('active-filter', activos < items.length);
+}
 function _restaurarCamposBusq() {
     try {
         const saved = JSON.parse(localStorage.getItem(APP_KEY + 'busq_campos'));
         if (!Array.isArray(saved)) return;
-        const allChecks = document.querySelectorAll('#busq-filtro-menu input[type="checkbox"]');
-        allChecks.forEach(cb => { cb.checked = saved.includes(cb.value); });
-        const total = allChecks.length;
-        const checked = saved.length;
-        const filtroToggleAll = document.getElementById('busq-filtro-toggle-all');
-        if (filtroToggleAll) filtroToggleAll.textContent = checked > 0 ? 'Desactivar todo' : 'Activar todo';
-        const filtroBtn = document.getElementById('busq-filtro-btn');
-        if (filtroBtn) filtroBtn.classList.toggle('con-filtro', checked < total);
+        _itemsCamposBusq().forEach(b => b.classList.toggle('active', saved.includes(b.dataset.field)));
+        _sincronizarMenuCampos();
     } catch (_) { }
 }
 function _coincideToken(h, token) {
@@ -1397,7 +1263,7 @@ function _coincideBusqueda(r, busqRaw, campos) {
 
 function _getRacksFiltrados() {
     // Tomamos el valor crudo sin normalizar acá, para no destruir las comillas
-    const busqRaw = document.getElementById('busq-global')?.value || '';
+    const busqRaw = document.getElementById('global-search')?.value || '';
     let racks = [...state.racks];
 
     if (busqRaw.trim()) {
@@ -1451,7 +1317,7 @@ function _cardRackServicio(r) {
 
     return `<div class="rack-card rack-estado-${r.estado}" data-rack-id="${esc(r.id)}">
         <div class="rack-card-thumb">
-            <svg class="svg-icon"><use href="#icon-rack"/></svg>
+            <i class="bi bi-hdd-rack"></i>
         </div>
         <div class="rack-card-info">
             <div class="rack-card-titulo">
@@ -1513,7 +1379,7 @@ function _cardRackInv(r) {
 
     return `<div class="rack-card rack-estado-${r.estado}" data-rack-id="${esc(r.id)}">
         <div class="rack-card-thumb">
-            <svg class="svg-icon"><use href="#icon-rack"/></svg>
+            <i class="bi bi-hdd-rack"></i>
         </div>
         <div class="rack-card-info">
             <div class="rack-card-titulo">
@@ -1832,7 +1698,7 @@ function _renderResumenListaEdificios(contenedor, edificios, enServicio, totalSe
             <td class="resumen-td-total">
                 <div class="resumen-td-total-inner">
                     <span>${total}${pct}</span>
-                    <svg class="svg-icon resumen-chevron-icon"><use href="#icon-chevron-right"/></svg>
+                    <i class="bi bi-chevron-right resumen-chevron-icon"></i>
                 </div>
             </td>
         </tr>
@@ -1967,7 +1833,7 @@ function _buildGrupoAccordionRows(grupos, { colspan, tablaClass, filaBuilder, ab
                         <div class="inv-grupo-header inv-grupo-header-sub">
                             <span class="inv-grupo-titulo">${subtitulo}: ${esc(sg.titulo)}</span>
                             <span class="inv-grupo-badge">${sg.racks.length}</span>
-                            <svg class="svg-icon inv-grupo-chevron"><use href="#icon-chevron-right"/></svg>
+                            <i class="bi bi-chevron-right inv-grupo-chevron"></i>
                         </div>
                     </td>
                 </tr>
@@ -1987,7 +1853,7 @@ function _buildGrupoAccordionRows(grupos, { colspan, tablaClass, filaBuilder, ab
                     <div class="inv-grupo-header">
                         <span class="inv-grupo-titulo">${esc(g.titulo)}</span>
                         <span class="inv-grupo-badge">${g.totalCount}</span>
-                        <svg class="svg-icon inv-grupo-chevron"><use href="#icon-chevron-right"/></svg>
+                        <i class="bi bi-chevron-right inv-grupo-chevron"></i>
                     </div>
                 </td>
             </tr>
@@ -2009,7 +1875,7 @@ function _buildGrupoAccordionRows(grupos, { colspan, tablaClass, filaBuilder, ab
                     <div class="inv-grupo-header">
                         <span class="inv-grupo-titulo">${esc(g.titulo)}</span>
                         <span class="inv-grupo-badge">${g.racks.length}</span>
-                        <svg class="svg-icon inv-grupo-chevron"><use href="#icon-chevron-right"/></svg>
+                        <i class="bi bi-chevron-right inv-grupo-chevron"></i>
                     </div>
                 </td>
             </tr>
@@ -2350,7 +2216,7 @@ function renderInventario() {
         gruposWrap?.removeAttribute('hidden');
 
         // ── NUEVO: Determinar qué grupos mostrar abiertos (Búsqueda vs LocalStorage) ──
-        const busq = normalizarTexto(document.getElementById('busq-global')?.value || '');
+        const busq = normalizarTexto(document.getElementById('global-search')?.value || '');
         let abiertos = null;
 
         if (!busq) {
@@ -2415,7 +2281,6 @@ function renderTodo() {
 //  EXPORTAR / IMPORTAR
 // ═══════════════════════════════════════════════════════
 async function exportarDatos() {
-    MM.cerrar('modal-ajustes');
     const firma = await generarFirma(state);
     const exp = { ...state, _firma: firma };
     const blob = new Blob([JSON.stringify(exp, null, 2)], { type: 'application/json' });
@@ -2519,8 +2384,7 @@ function restablecerDatos() {
         state.racks = [];
         state.edificios = [];
         GistSync.desactivarAuto();
-        MM.cerrar('modal-ajustes');
-        guardar(); renderTodo(); toast('Datos restablecidos');
+            guardar(); renderTodo(); toast('Datos restablecidos');
     });
 }
 
@@ -2537,8 +2401,8 @@ const GistSync = (() => {
 
     function _cargarCfg() { try { const c = parseSeguro(localStorage.getItem(CFG_KEY) || 'null'); if (c) _cfg = { ..._cfg, ...c }; } catch (_) { } _actualizarBotonesAjustes(); }
     function _guardarCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(_cfg)); } catch (_) { } }
-    function _spinStart() { document.getElementById('btn-ajustes')?.classList.add('icon-btn-spinning'); }
-    function _spinStop() { document.getElementById('btn-ajustes')?.classList.remove('icon-btn-spinning'); }
+    function _spinStart() { document.getElementById('ajustes-gist-main-btn')?.classList.add('ajuste-ocupada'); }
+    function _spinStop() { document.getElementById('ajustes-gist-main-btn')?.classList.remove('ajuste-ocupada'); }
     function _setBusy(busy) {
         _subiendo = busy;
         ['btn-gist-subir', 'btn-gist-bajar'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = busy; });
@@ -2561,7 +2425,7 @@ const GistSync = (() => {
         const inp = document.getElementById('gist-token'), icon = document.getElementById('gist-eye-icon');
         if (!inp) return;
         const show = inp.type === 'password'; inp.type = show ? 'text' : 'password';
-        if (icon) icon.setAttribute('href', show ? '#icon-eye-off' : '#icon-eye');
+        if (icon) icon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
     }
     function toggleAuto() { document.getElementById('gist-autosync-toggle')?.classList.toggle('on'); }
     function guardarConfig() {
@@ -2569,10 +2433,10 @@ const GistSync = (() => {
         const g = document.getElementById('gist-id')?.value.trim() || '';
         const a = document.getElementById('gist-autosync-toggle')?.classList.contains('on') ?? false;
         if (g && !RE_GIST.test(g)) { toast('El Gist ID tiene un formato inválido', 'error'); document.getElementById('gist-id')?.classList.add('error'); return; }
-        if (_cfg.token === t && _cfg.gistId === g && !!_cfg.auto === a) { UI.cerrarGist(); toast('Sin cambios', 'info'); return; }
+        if (_cfg.token === t && _cfg.gistId === g && !!_cfg.auto === a) { Vistas.cerrarGist(); toast('Sin cambios', 'info'); return; }
         _cfg.token = t; _cfg.gistId = g; _cfg.auto = a;
         _guardarCfg(); _actualizarBotonesAjustes();
-        toast('Configuración guardada'); UI.cerrarGist();
+        toast('Configuración guardada'); Vistas.cerrarGist();
     }
     async function _ejecutarSubida(silent = false) {
         const token = _cfg.token, gistId = _cfg.gistId;
@@ -2785,10 +2649,10 @@ document.addEventListener('keydown', e => {
     const modalOpen = document.body.classList.contains('modal-open');
 
     if (e.key === 'Escape') {
-        if (modalOpen) { MM.cerrarTop(); return; }
+        if (modalOpen) return;
         if (_fabOpen) { cerrarFab(); return; }
 
-        const b = document.getElementById('busq-global');
+        const b = document.getElementById('global-search');
         if (b) {
             if (b.value) {
                 limpiarBusqueda();
@@ -2843,10 +2707,10 @@ document.addEventListener('keydown', e => {
         const enInput = tag === 'INPUT' || tag === 'TEXTAREA';
 
         // 3. MODIFICADO: La tecla "+" ahora abre el modal "Poner en Servicio"
-        if (e.key === '+' || e.key === '=') { e.preventDefault(); UI.abrirServicio(); return; }
+        if (e.key === '+' || e.key === '=') { e.preventDefault(); Vistas.abrirServicio(); return; }
 
         if (!enInput && (e.key === 'Backspace' || (e.key.length === 1 && /[a-zA-Z0-9]/.test(e.key)))) {
-            const b = document.getElementById('busq-global');
+            const b = document.getElementById('global-search');
             if (b) { b.focus(); if (e.key === 'Backspace') { e.preventDefault(); b.value = b.value.slice(0, -1); onBusqGlobal(); } }
         }
     }
@@ -2855,14 +2719,6 @@ document.addEventListener('keydown', e => {
 window.addEventListener('scroll', () => {
     const btn = document.getElementById('btn-scroll-top');
     if (btn) btn.classList.toggle('show', window.scrollY > window.innerHeight);
-    const h = document.getElementById('main-header');
-    if (h) {
-        const htt = document.getElementById('header-tab-title');
-        if (htt && TAB_LABELS[_tabActual] && htt.textContent !== TAB_LABELS[_tabActual]) {
-            htt.textContent = TAB_LABELS[_tabActual];
-        }
-        h.classList.toggle('scrolled', window.scrollY > 50);
-    }
     _cerrarTodosDropdowns();
 }, { passive: true });
 
@@ -2877,21 +2733,10 @@ function _init() {
     cargar();
 
     try {
-        if (localStorage.getItem('IDR_dark') === '1') {
-            document.getElementById('dark-icon-use')?.setAttribute('href', '#icon-sun');
-        }
-    } catch (_) { }
-
-    try {
         const t = localStorage.getItem(APP_KEY + 'tab');
         if (t && ['servicio', 'inventario'].includes(t)) {
-            document.getElementById('panel-dashboard').classList.remove('activa');
-            document.getElementById(`panel-${t}`).classList.add('activa');
-            document.getElementById('tab-dashboard').classList.remove('activa');
-            document.getElementById(`tab-${t}`).classList.add('activa');
-            _tabActual = t;
-            const htt = document.getElementById('header-tab-title');
-            if (htt) htt.textContent = TAB_LABELS[t] || t;
+            const boton = document.getElementById(`tab-${t}`);
+            if (boton) UI.pestana.mostrar(boton);
         }
     } catch (_) { }
 
@@ -2974,7 +2819,7 @@ function generarReporteInventario(gruposFiltrados) {
     const _agrupLabel = typeof _agrupInv !== 'undefined' && _agrupInv !== 'ninguno' ? _agrupInv : 'sin agrupar';
 
     // ── NUEVO: Capturar texto de búsqueda ──
-    const terminoBusqueda = document.getElementById('busq-global')?.value.trim() || '';
+    const terminoBusqueda = document.getElementById('global-search')?.value.trim() || '';
     const infoFiltro = terminoBusqueda ? `<br>Filtrado por: <strong>"${esc(terminoBusqueda)}"</strong>` : '';
 
     // 4. Armar el HTML completo con CSS para pantalla e impresión (print)
@@ -3039,215 +2884,27 @@ function generarReporteInventario(gruposFiltrados) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  SELECTOR DE MÓDULOS (App Switcher)
-// ═══════════════════════════════════════════════════════
-function _initMenuModulos(moduloActual) {
-    const modulos = [
-        { id: 'cctv', nombre: 'CCTV', sub: 'Cámaras y switches', icon: 'icon-camera', cls: 'c-cctv', href: '../SGC/index.html' },
-        { id: 'materiales', nombre: 'Materiales', sub: 'Gestión de inventario', icon: 'icon-box', cls: 'c-materiales', href: '../SGI/index.html' },
-        { id: 'racks', nombre: 'Racks', sub: 'Gestión de racks', icon: 'icon-rack', cls: 'c-racks', href: '../SGR/index.html' },
-        { id: 'patcheras', nombre: 'Patcheras', sub: 'Bocas de red en racks', icon: 'icon-plug', cls: 'c-patcheras', href: '../SGP/index.html' }
-    ];
-
-    const overlay = document.createElement('div');
-    overlay.className = 'menu-modulos-overlay';
-
-    const menu = document.createElement('div');
-    menu.className = 'menu-modulos';
-    menu.setAttribute('role', 'menu');
-    menu.setAttribute('aria-label', 'Selector de módulos');
-
-    let html = '<div class="menu-modulos-header">Módulos IDR</div>';
-
-    modulos.forEach(m => {
-        const esActual = m.id === moduloActual;
-        html += `
-            <a href="${m.href}" class="menu-modulo-item ${esActual ? 'es-actual' : ''}" role="menuitem" data-modulo="${m.id}">
-                <div class="menu-modulo-icon ${m.cls}">
-                    <svg><use href="#${m.icon}"/></svg>
-                </div>
-                <div class="menu-modulo-info">
-                    <span class="menu-modulo-name">${m.nombre}</span>
-                    <span class="menu-modulo-sub">${m.sub}</span>
-                </div>
-                ${esActual ? '<span class="menu-modulo-badge">Actual</span>' : ''}
-            </a>
-        `;
-    });
-
-    html += `
-        <div class="menu-modulos-divider"></div>
-        <a href="../index.html" class="menu-modulo-item" role="menuitem">
-            <div class="menu-modulo-icon c-launcher">
-                <svg><use href="#icon-launcher"/></svg>
-            </div>
-            <div class="menu-modulo-info">
-                <span class="menu-modulo-name">Launcher</span>
-                <span class="menu-modulo-sub">Menú principal</span>
-            </div>
-        </a>
-    `;
-
-    menu.innerHTML = html;
-    document.body.appendChild(overlay);
-    document.body.appendChild(menu);
-
-    let isOpen = false;
-    const items = Array.from(menu.querySelectorAll('.menu-modulo-item'));
-
-    function enfocarItem(index) {
-        if (items.length === 0) return;
-        const idx = ((index % items.length) + items.length) % items.length;
-        items[idx].focus();
-    }
-
-    function abrirMenu(enfocar = false) {
-        isOpen = true;
-        overlay.classList.add('open');
-        menu.classList.add('open');
-        if (enfocar) {
-            const idx = items.findIndex(el => el.classList.contains('es-actual'));
-            enfocarItem(idx !== -1 ? idx : 0);
-        }
-    }
-
-    function cerrarMenu() {
-        if (!isOpen) return;
-        isOpen = false;
-        overlay.classList.remove('open');
-        menu.classList.remove('open');
-        if (menu.contains(document.activeElement)) {
-            document.activeElement.blur();
-        }
-    }
-
-    function toggleMenu(enfocar = false) {
-        if (isOpen) cerrarMenu();
-        else abrirMenu(enfocar);
-    }
-
-    overlay.addEventListener('click', cerrarMenu);
-
-    menu.querySelector('.es-actual')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        cerrarMenu();
-    });
-
-    document.addEventListener('keydown', (e) => {
-        // Atajo global: Ctrl + Flecha Abajo abre el menú rápido
-        if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowDown') {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!isOpen) {
-                abrirMenu(true);
-            } else {
-                const current = items.indexOf(document.activeElement);
-                if (current === -1) {
-                    const actualIdx = items.findIndex(el => el.classList.contains('es-actual'));
-                    enfocarItem(actualIdx !== -1 ? (actualIdx + 1) : 0);
-                } else {
-                    enfocarItem(current + 1);
-                }
-            }
-            return;
-        }
-
-        // Atajos cuando el menú rápido está abierto
-        if (isOpen) {
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                e.stopPropagation();
-                cerrarMenu();
-                return;
-            }
-
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                e.stopPropagation();
-                const current = items.indexOf(document.activeElement);
-                if (current === -1) {
-                    const actualIdx = items.findIndex(el => el.classList.contains('es-actual'));
-                    enfocarItem(actualIdx !== -1 ? (actualIdx + 1) : 0);
-                } else {
-                    enfocarItem(current + 1);
-                }
-                return;
-            }
-
-            if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                e.stopPropagation();
-                const current = items.indexOf(document.activeElement);
-                if (current === -1) {
-                    const actualIdx = items.findIndex(el => el.classList.contains('es-actual'));
-                    enfocarItem(actualIdx !== -1 ? (actualIdx - 1) : (items.length - 1));
-                } else {
-                    enfocarItem(current - 1);
-                }
-                return;
-            }
-
-            if (e.key === 'Enter') {
-                const focused = document.activeElement;
-                if (items.includes(focused)) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    focused.click();
-                    return;
-                }
-            }
-        }
-    });
-
-    // Vincular EXCLUSIVAMENTE al label (título principal y título de pestaña al scroll)
-    const labelElements = [
-        document.getElementById('btn-inicio-titulo'),
-        document.getElementById('header-tab-title')
-    ].filter(Boolean);
-
-    labelElements.forEach(el => {
-        el.style.cursor = 'pointer';
-        el.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleMenu();
-        });
-    });
-
-    document.addEventListener('click', (e) => {
-        if (isOpen && !menu.contains(e.target) && !labelElements.some(el => el.contains(e.target))) {
-            cerrarMenu();
-        }
-    });
-}
-
-// ═══════════════════════════════════════════════════════
 //  BINDINGS
 // ═══════════════════════════════════════════════════════
 function _initBindings() {
     _initDOMRefs();
     _init();
 
-    // Selector de módulos en header (solo en label)
-    _initMenuModulos('racks');
+    // Pestañas del panel lateral (el clic lo maneja ui.js; acá, lo que pasa al cambiar)
+    document.getElementById('v-pills-tab')?.addEventListener('ui:pestana-mostrada', _alMostrarPestana);
+    // Tocar la pestaña que ya está activa con una búsqueda escrita la limpia (como antes)
+    document.getElementById('v-pills-tab')?.addEventListener('click', e => {
+        const b = e.target.closest('[data-tab]');
+        if (b && b.dataset.tab === _tabActual && b.dataset.tab !== 'ajustes' && DOM.busqGlobal?.value) limpiarBusqueda();
+    }, true);
 
-    // Logo vuelve al launcher
-    document.getElementById('btn-inicio-logo')?.addEventListener('click', () => window.location.href = '../index.html');
-
-    // Tabs
-    document.getElementById('tab-dashboard')?.addEventListener('click', () => switchTab('dashboard'));
-    document.getElementById('tab-servicio')?.addEventListener('click', () => switchTab('servicio'));
-    document.getElementById('tab-inventario')?.addEventListener('click', () => switchTab('inventario'));
-
-    // Header
-    document.getElementById('btn-dark-mode')?.addEventListener('click', toggleDarkMode);
-    document.getElementById('btn-ajustes')?.addEventListener('click', () => UI.abrirAjustes());
+    // Barra superior
     document.getElementById('btn-undo')?.addEventListener('click', () => historial.undo());
     document.getElementById('btn-redo')?.addEventListener('click', () => historial.redo());
 
     // Búsqueda
-    document.getElementById('busq-global')?.addEventListener('input', onBusqGlobal);
-    document.getElementById('busq-clear-btn')?.addEventListener('click', limpiarBusqueda);
+    document.getElementById('global-search')?.addEventListener('input', onBusqGlobal);
+    document.getElementById('search-clear')?.addEventListener('click', () => { limpiarBusqueda(); DOM.busqGlobal?.focus(); });
 
     // Chips clickeables del dashboard → activan búsqueda por estado
     document.getElementById('stats-grid')?.addEventListener('click', e => {
@@ -3261,8 +2918,8 @@ function _initBindings() {
 
     // FAB dropdown
     document.getElementById('btn-fab-main')?.addEventListener('click', toggleFab);
-    document.getElementById('fab-nuevo-rack')?.addEventListener('click', () => UI.abrirNuevoRack());
-    document.getElementById('fab-rack-servicio')?.addEventListener('click', () => UI.abrirServicio());
+    document.getElementById('fab-nuevo-rack')?.addEventListener('click', () => Vistas.abrirNuevoRack());
+    document.getElementById('fab-rack-servicio')?.addEventListener('click', () => Vistas.abrirServicio());
     document.getElementById('servicio-confirmar-btn')?.addEventListener('click', confirmarPonerEnServicio);
     document.getElementById('servicio-cancelar-btn')?.addEventListener('click', () => MM.cerrar('modal-rack-servicio'));
 
@@ -3285,7 +2942,7 @@ function _initBindings() {
 
     // Modal nuevo rack
     document.getElementById('rack-nuevo-guardar-btn')?.addEventListener('click', guardarNuevoRack);
-    document.getElementById('rack-nuevo-cancelar-btn')?.addEventListener('click', () => UI.cerrarNuevoRack());
+    document.getElementById('rack-nuevo-cancelar-btn')?.addEventListener('click', () => Vistas.cerrarNuevoRack());
 
     // Modal editar rack
     document.getElementById('rack-editar-guardar-btn')?.addEventListener('click', guardarEditarRack);
@@ -3317,19 +2974,20 @@ function _initBindings() {
     });
 
     document.getElementById('ajustes-edificios-btn')?.addEventListener('click', () => GestorEdificios.abrir());
+    document.getElementById('ajustes-nuevo-rack-btn')?.addEventListener('click', () => Vistas.abrirNuevoRack());
+    document.getElementById('ajustes-servicio-btn')?.addEventListener('click', () => Vistas.abrirServicio());
 
     // (selector de edificio eliminado)
     // Ajustes
-    document.getElementById('ajustes-cerrar-btn')?.addEventListener('click', () => UI.cerrarAjustes());
     document.getElementById('ajustes-exportar-btn')?.addEventListener('click', exportarDatos);
-    document.getElementById('ajustes-importar-btn')?.addEventListener('click', () => UI.abrirImportar());
+    document.getElementById('ajustes-importar-btn')?.addEventListener('click', () => Vistas.abrirImportar());
     document.getElementById('ajustes-restablecer-btn')?.addEventListener('click', restablecerDatos);
-    document.getElementById('ajustes-gist-main-btn')?.addEventListener('click', () => UI.abrirGist());
+    document.getElementById('ajustes-gist-main-btn')?.addEventListener('click', () => Vistas.abrirGist());
     document.getElementById('btn-ajustes-gist-subir')?.addEventListener('click', () => GistSync.subir());
     document.getElementById('btn-ajustes-gist-bajar')?.addEventListener('click', () => GistSync.bajar());
 
     // Modal Gist
-    document.getElementById('gist-cerrar-btn')?.addEventListener('click', () => UI.cerrarGist());
+    document.getElementById('gist-cerrar-btn')?.addEventListener('click', () => Vistas.cerrarGist());
     document.getElementById('gist-token-eye')?.addEventListener('click', () => GistSync.toggleToken());
     document.getElementById('gist-autosync-label')?.addEventListener('click', () => GistSync.toggleAuto());
     document.getElementById('gist-id')?.addEventListener('input', () => GistSync._linkBtn());
@@ -3338,7 +2996,7 @@ function _initBindings() {
     document.getElementById('btn-gist-bajar')?.addEventListener('click', () => GistSync.bajar());
 
     // Modal importar
-    document.getElementById('importar-cerrar-btn')?.addEventListener('click', () => UI.cerrarImportar());
+    document.getElementById('importar-cerrar-btn')?.addEventListener('click', () => Vistas.cerrarImportar());
     document.getElementById('importar-file-input')?.addEventListener('change', onImportarFileChange);
     document.getElementById('importar-dropzone')?.addEventListener('click', () => document.getElementById('importar-file-input').click());
     document.getElementById('importar-confirmar-btn')?.addEventListener('click', () => importarDatos('reemplazar'));
@@ -3394,71 +3052,21 @@ function _initBindings() {
         renderServicio();
     });
 
-    // Filtro de Búsqueda — botón icono con dropdown multi-select
-    const filtroBtn = document.getElementById('busq-filtro-btn');
-    const filtroMenu = document.getElementById('busq-filtro-menu');
-    const filtroToggleAll = document.getElementById('busq-filtro-toggle-all');
-
-    if (filtroBtn && filtroMenu) {
-        filtroBtn.addEventListener('click', e => {
-            e.stopPropagation();
-            const abierto = filtroMenu.classList.contains('open');
-            cerrarFab();
-            _cerrarVistaSafe();
-            filtroBtn.classList.toggle('activo', !abierto);
-            if (!abierto) {
-                const rect = filtroBtn.getBoundingClientRect();
-                const menuW = filtroMenu.offsetWidth || 380;
-                const menuH = filtroMenu.offsetHeight || 280;
-                const spaceBelow = window.innerHeight - rect.bottom;
-                const left = Math.max(8, Math.min(rect.right - menuW, window.innerWidth - menuW - 8));
-                filtroMenu.style.left = left + 'px';
-                filtroMenu.style.right = 'auto';
-                if (spaceBelow < menuH + 12 && rect.top > menuH + 12) {
-                    filtroMenu.style.top = 'auto';
-                    filtroMenu.style.bottom = (window.innerHeight - rect.top + 6) + 'px';
-                } else {
-                    filtroMenu.style.top = (rect.bottom + 6) + 'px';
-                    filtroMenu.style.bottom = 'auto';
-                }
-            }
-            filtroMenu.classList.toggle('open', !abierto);
-        });
-
-        filtroMenu.addEventListener('click', e => e.stopPropagation());
-
-        document.addEventListener('click', () => {
-            if (filtroMenu.classList.contains('open')) {
-                filtroMenu.classList.remove('open');
-                filtroBtn.classList.remove('activo');
-            }
-        });
-
-        const _allChecks = Array.from(filtroMenu.querySelectorAll('input[type="checkbox"]'));
-        const _total = _allChecks.length;
-
-        _allChecks.forEach(cb => {
-            cb.addEventListener('change', () => {
-                const checked = _allChecks.filter(c => c.checked).length;
-                if (filtroToggleAll) filtroToggleAll.textContent = checked > 0 ? 'Desactivar todo' : 'Activar todo';
-                filtroBtn.classList.toggle('con-filtro', checked < _total);
-                _guardarCamposBusq();
-                onBusqGlobal();
-            });
-        });
-
-        if (filtroToggleAll) {
-            filtroToggleAll.addEventListener('click', e => {
-                e.stopPropagation();
-                const anyChecked = _allChecks.some(c => c.checked);
-                _allChecks.forEach(c => { c.checked = !anyChecked; });
-                filtroToggleAll.textContent = anyChecked ? 'Activar todo' : 'Desactivar todo';
-                filtroBtn.classList.toggle('con-filtro', anyChecked);
-                _guardarCamposBusq();
-                onBusqGlobal();
-            });
+    // Campos del buscador: el menú lo abre y cierra ui.js (data-ui-toggle="dropdown"); cada campo se prende y apaga
+    DOM.filtroMenu?.addEventListener('click', e => {
+        const item = e.target.closest('.search-filter-item');
+        const todos = e.target.closest('#btn-toggle-all-filtros');
+        if (!item && !todos) return;
+        if (item) item.classList.toggle('active');
+        else {
+            const algunoActivo = _itemsCamposBusq().some(b => b.classList.contains('active'));
+            _itemsCamposBusq().forEach(b => b.classList.toggle('active', !algunoActivo));
         }
-    }
+        _sincronizarMenuCampos();
+        _guardarCamposBusq();
+        onBusqGlobal();
+    });
+
     // ── Botón vista inventario ──
     const btnVista = document.getElementById('btn-vista-inv');
     const vistaMenu = document.getElementById('inv-vista-menu');
@@ -3469,11 +3077,11 @@ function _initBindings() {
             <p class="inv-vista-label">Diseño</p>
             <div class="inv-vista-toggle-row">
                 <button class="inv-vista-modo-btn" data-modo="tabla">
-                    <svg class="svg-icon"><use href="#icon-table"/></svg>
+                    <i class="bi bi-table"></i>
                     <span>Tabla</span>
                 </button>
                 <button class="inv-vista-modo-btn" data-modo="tarjetas">
-                    <svg class="svg-icon"><use href="#icon-layout"/></svg>
+                    <i class="bi bi-grid-3x2-gap"></i>
                     <span>Tarjetas</span>
                 </button>
             </div>
@@ -3564,11 +3172,11 @@ function _initBindings() {
             <p class="inv-vista-label">Diseño</p>
             <div class="inv-vista-toggle-row">
                 <button class="inv-vista-modo-btn" data-modo="tabla">
-                    <svg class="svg-icon"><use href="#icon-table"/></svg>
+                    <i class="bi bi-table"></i>
                     <span>Tabla</span>
                 </button>
                 <button class="inv-vista-modo-btn" data-modo="tarjetas">
-                    <svg class="svg-icon"><use href="#icon-layout"/></svg>
+                    <i class="bi bi-grid-3x2-gap"></i>
                     <span>Tarjetas</span>
                 </button>
             </div>
@@ -3735,7 +3343,7 @@ function _initBindings() {
         const localStorageKey = wrap.id === 'inv-grupos-wrap' ? 'grupos_abiertos' : 'grupos_serv_abiertos';
 
         const guardarGruposAbiertos = () => {
-            const busq = normalizarTexto(document.getElementById('busq-global')?.value || '');
+            const busq = normalizarTexto(document.getElementById('global-search')?.value || '');
             if (busq) return; 
 
             const arr = [];
