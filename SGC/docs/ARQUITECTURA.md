@@ -77,6 +77,8 @@ muestran u ocultan por ancho: son el mecanismo para lo que existe en una sola vi
 
 **Canales de Producción en móvil:** un canal ocupado va en dos líneas (`.canal-item-dos-lineas`): canal e IP arriba, la descripción completa abajo. Un canal en producción no muestra estado (siempre es operativo); solo «Disponible» en los libres.
 
+**Cambio de pestaña en móvil:** el contenido desliza de lado (eje X), porque la barra de pestañas es horizontal (abajo); en escritorio el eje sale de dónde esté el panel (izquierda o derecha: vertical; arriba o abajo: horizontal). `_ejeDeslizePestanas` en `animaciones.js`.
+
 ### Comunicación entre archivos
 - **Globales de página**: `storage`, `apiFetch`, `mostrarToast`, `UI`, `globalData`, `StockNucleo`. Lo que otro archivo necesita
   se expone explícitamente en uno de esos objetos; no se esparcen funciones sueltas nuevas sin motivo.

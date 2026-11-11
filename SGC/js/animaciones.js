@@ -497,7 +497,7 @@ function initTransicionesTabs() {
     const EASING_DESLIZE = 'cubic-bezier(0.4, 0, 0.2, 1)';
     const _ejeDeslizePestanas = () => {
         const pos = typeof posicionPanelActual === 'function' ? posicionPanelActual() : 'left';
-        return pos === 'top' || pos === 'bottom' ? 'x' : 'y';
+        return pos === 'top' || pos === 'bottom' || (window.matchMedia && window.matchMedia('(max-width: 767.98px)').matches) ? 'x' : 'y';   // móvil: la barra va abajo
     };
     const _keyframeDeslizar = (eje, px, opacidad) => ({
         transform: eje === 'x' ? `translateX(${px}px)` : `translateY(${px}px)`, opacity: opacidad });
