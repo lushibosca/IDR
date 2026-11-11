@@ -261,7 +261,7 @@ tests. Nada de esto está hecho; cada punto dice qué falta decidir o hacer.
 **Hecho y commiteado:** fases 0, 1 y 2 (SGC sin cambios visibles; SGR y SGI con el diseño de SGC). Todo en verde:
 `npm test`, `npm run test:sgc`, `node SGC/tests/e2e/humo.mjs` (desde `SGC/`) y `node tests/e2e/humo-apps.mjs`.
 
-**Siguiente paso: fase 2.5 (unificar la base)**, con las decisiones 5 a 11 ya tomadas y sin preguntas abiertas. Después SGP, que se porta sobre la base ya unificada (con panel plegable, transición de pestañas y
+**Siguiente paso: fase 2.5 (unificar la base)**, con las decisiones 5 a 11 ya tomadas (queda un detalle menor por consultar: qué acciones propias lleva el menú ⚙ en SGR y SGI, paso 6). Después SGP, que se porta sobre la base ya unificada (con panel plegable, transición de pestañas y
 barra superior con deshacer/rehacer desde el primer día), y por último el launcher (fase 4).
 
 **Falta: fase 3, SGP (Patcheras).** Mismo procedimiento que SGR y SGI (sección 5 y la receta de la sección 3), más:
