@@ -1,7 +1,9 @@
-# Porte del estilo de SGC a SGR, SGI y SGP
+# Porte del estilo de SGC al resto de la suite (SGR, SGI, SGP; pendientes de planificar: SGL y launcher)
 
 **Inicio:** 2026-11-11 · **Estado:** fases 0, 1 (SGR) y 2 (SGI) hechas; **pausado antes de la fase 3 (SGP)**: ver
-«Para retomar» al final.
+«Para retomar» al final. La revisión de cobertura del 2026-11-11 (sección 6) encontró partes de la base que este plan
+no contemplaba: **SGL y el launcher quedaron afuera**, y entre SGC, SGR y SGI todavía hay piezas de la base que no son
+la misma (cabecera `<head>`, arranque del tema, avisos, panel plegable). Conviene resolverlas antes de portar SGP.
 
 Objetivo: que SGR (Racks), SGI (Materiales) y SGP (Patcheras) usen el mismo diseño que SGC: panel lateral de pestañas,
 buscador con filtro de campos, Ajustes como pestaña y la vista móvil (barra fija abajo, swipe, tablas en tarjetas,
@@ -68,10 +70,10 @@ shared/
 Orden de los `<link>` en una app: `tokens`, `base`, `grilla`, `../shared/idr-actualizacion.css`, `componentes/*`, las hojas
 propias de la app (capa `app`), `utilidades`, `vendor/fonts/inter.css`. Ver `SGC/index.html`.
 
-**Reglas de la base:** sin `!important` (la capa decide), cada selector en un solo lugar, sin CSS muerto. Hoy lo vigilan los
-tests de CSS de SGC (`SGC/tests/js/css_limpio.test.mjs`, `clases_css.test.mjs`), que leen también `../shared/ui/`. **Cuando
-SGR cargue la base**, una clase que solo use SGR va a parecer muerta desde SGC: en ese momento la revisión de CSS muerto de
-`shared/ui/` pasa a un test de la suite que junte las clases usadas por todas las apps que la cargan.
+**Reglas de la base:** sin `!important` (la capa decide), cada selector en un solo lugar, sin CSS muerto. Lo vigila
+`tests/estilo.test.mjs` contra todas las apps de `tests/_apps.mjs` (una clase cuenta como usada si la usa al menos una app
+portada), además de los tests de CSS de SGC (`SGC/tests/js/css_limpio.test.mjs`, `clases_css.test.mjs`). Ojo: por eso mismo
+una regla que solo usa SGC (p. ej. el panel plegado) pasa el test aunque las otras apps no la puedan usar: ver sección 6.
 
 **Esqueleto común (fase 1):**
 - `shared/ui/esqueleto.css`: panel lateral y su versión plegada, buscador, vista móvil (barra fija abajo, buscador que baja,
@@ -135,23 +137,104 @@ entre `esqueleto.css` y `utilidades.css`); al final `ui.js`, `atras-modales.js`,
 Además del porte: pestañas **Estado · Racks · Ajustes**, búsqueda nueva (rack, patchera, puerto, etiqueta) y el tooltip de
 jack, que hoy es por *hover*, abierto con un toque en móvil. Pasar la lectura de `RCK_data` a `IDRInfra.getRacks`.
 
+### Fase 4 — SGL (sin planificar)
+No estaba en el plan original (ver 6.1). Falta definir pestañas y buscador; el resto es el procedimiento de la sección 5.
+
+### Fase 5 — Launcher (a decidir)
+Sin esqueleto; solo tokens, fuente, íconos, `IDRTema` y versión de la suite (ver 6.1).
+
 ---
 
 ## 5. Procedimiento por app (para no olvidar nada)
 
 1. **Mantener los `id`** de inputs y botones que usa `app.js`: el cableado de eventos casi no cambia.
-2. Lo que se dibuja desde JS con clases viejas se reescribe con `createElement`/`textContent`.
+2. Lo que se dibuja desde JS con clases viejas se reestila por CSS y queda con `innerHTML` + `esc()` (decisión 4); se pasa a
+   `createElement`/`textContent` cuando se toque.
 3. Las claves de `localStorage` no se tocan (los datos de los usuarios siguen igual).
 4. Cada archivo nuevo o borrado → `PRECACHE_URLS` en `sw.js`; `npm run release`; `npm test` y los tests de la app.
 5. Probar en el teléfono: sin scroll horizontal, la barra de abajo no tapa contenido, «atrás» cierra el modal de arriba.
 6. Marcar acá lo hecho y anotar en el `CLAUDE.md` de la app (crearlo si no existe) lo que quede como norma.
+7. Antes de copiar algo de SGR o SGI a la app nueva, revisar la lista 6.3: si ya está dos veces, va a `shared/ui/`.
 
 ---
 
-## 6. Para retomar (estado al 2026-11-11)
+## 6. Revisión de cobertura (2026-11-11): lo que el plan no contemplaba
+
+Se comparó este documento contra las seis páginas de la suite (launcher, SGC, SGR, SGI, SGP, SGL), `shared/`, `sw.js` y los
+tests. Nada de esto está hecho; cada punto dice qué falta decidir o hacer.
+
+### 6.1 Páginas que quedaron fuera del plan
+- [ ] **SGL (Licencias)**: no aparece en ninguna fase ni en la tabla de la sección 2. Tiene la misma base vieja que SGP:
+      `flash.js`, `styles.css` (2.259 líneas, sin ningún `@media`), `app.js` (3.509 líneas, 26 `innerHTML`), sprite SVG
+      (53 símbolos), Ajustes en modal (`#modal-config`), `pushState`/`popstate` propios para «atrás», tema leyendo `IDR_dark` a
+      mano, sin versión visible y sin pestañas ni buscador. Prefijo de claves: `sgl_`. **Falta una fase 4 — SGL**, con el mismo
+      procedimiento, y antes definir sus pestañas (como se hizo con SGP en la decisión 3).
+- [ ] **Launcher (raíz)**: `index.html`, `styles.css` (596 líneas), `flash.js` y `app.js` propios, sprite SVG, tema con
+      `IDR_dark` a mano (no `IDRTema`, no sigue en vivo el cambio hecho en otra pestaña) y sin versión visible. No lleva el
+      esqueleto (no tiene pestañas), pero para que la base sea la misma debería tomar de `shared/`: `tokens.css` (colores y
+      tipografía), la fuente Inter, bootstrap-icons, `idr-tema.js` y `idr-version.js`. **Decidir** si entra como fase 5 o si
+      queda con diseño propio a propósito (y anotarlo acá).
+- [ ] El launcher **no tiene tarjeta de SGL** (enlaza SGC, SGI, SGR, SGP y SGM deshabilitada): a SGL solo se llega por URL.
+
+### 6.2 La base que todavía no es la misma en SGC, SGR y SGI
+- [ ] **`<head>` distinto en cada app y sin test.** `viewport`: SGR y SGI llevan `viewport-fit=cover`, SGC no, y
+      `esqueleto.css` usa `env(safe-area-inset-*)` en la barra móvil (en SGC vale siempre 0: en teléfonos con muesca la barra
+      queda distinta). `color-scheme`: solo SGC. `mobile-web-app-capable` / `apple-mobile-web-app-*`: SGR los tres, SGI dos, SGC
+      ninguno. `theme-color`: ninguna. CSP: SGC sin `frame-ancestors` ni `upgrade-insecure-requests`; SGR/SGI con
+      `font-src 'self' data:` que ya no hace falta (la fuente es un archivo). `?v=` en los `<link>`/`<script>`: solo SGC (no
+      sirve con el Service Worker `ignoreSearch`). → Definir **un `<head>` de referencia** en la receta de la sección 3 y
+      vigilarlo en `tests/estilo.test.mjs`.
+- [ ] **Dos arranques de tema.** SGR y SGI usan `shared/ui/js/arranque.js` + `apariencia.js`; SGC sigue con
+      `js/preload.js` + `js/tema-suite.js` + `initTheme` en `app.js`. Lo común (tema y «reducir animaciones» antes de pintar,
+      interruptores de Ajustes) debería ser una sola implementación; `preload.js` quedaría solo con lo de SGC (panel, privacidad,
+      pestaña recordada, `data-cargando`).
+- [ ] **Panel plegable y movible**: el CSS del panel plegado está en `esqueleto.css`, pero el botón `#btn-toggle-sidebar` y su
+      JS solo existen en SGC. En SGR y SGI el panel no se puede plegar. **Decidir**: portar el botón (y su JS a
+      `shared/ui/js/`) o declararlo propio de SGC y mover ese CSS a `SGC/css/app/estructura.css`.
+- [ ] **Avisos (toast)**: `toast.css` es común, pero `mostrarToast` está escrito tres veces (`SGC/js/comun.js`, `SGR/app.js`,
+      `SGI/app.js`) y el `#toast` de SGC no lleva `role="status"` ni `aria-live`. → `shared/ui/js/toast.js`.
+- [ ] **«Volver arriba»**: CSS común, JS repetido en las tres apps, y `sgr.css` y `sgi.css` vuelven a definir `.btn-scroll-top`.
+- [ ] **Barra superior**: SGC tiene el menú ⚙ (`#menu-config`: listar, tema, ayuda y atajos) y `#last-update`; SGR y SGI tienen
+      `.navbar-acciones` (deshacer, rehacer, instalar). **Decidir** qué es base (propuesta: marca → launcher + `.navbar-acciones`)
+      y qué es de cada app; el botón «Instalar» hoy solo lo tiene SGI (y el launcher).
+- [ ] **Ajustes**: las secciones cambian de app en app. Mínimo común a exigir: *Apariencia* (`#btn-theme`, `#btn-movimiento`),
+      *Datos* (exportar, importar, restablecer), *Sincronización* y la versión (`data-idr-version`). La ayuda de atajos está en un
+      modal en SGC, en Ajustes en SGI y no existe en SGR.
+- [ ] **Buscador**: el filtro de campos (`#searchFilterBtn`, `#search-filter-menu`) es opcional (SGI no lo tiene); `#search-clear`
+      sí está en las tres. Anotarlo en la lista de ids de la sección 3 como «obligatorios» y «opcionales».
+- [ ] **Manifiestos**: `theme_color` es `#1f2937` en todos menos SGP (`#ea580c`). Unificar al portar SGP.
+- [ ] **Service Workers viejos por app**: `SGR/sw.js`, `SGI/sw.js`, `SGP/sw.js` y `SGL/sw.js` siguen en el repo (se
+      desregistran solos; no están en el precache) aunque `CLAUDE.md` dice que no hay un `sw.js` por app. Decidir cuándo se
+      borran (cuando ya no queden instalaciones viejas) o anotar en `CLAUDE.md` por qué siguen.
+
+### 6.3 Repetido entre SGR y SGI (pasarlo a `shared/ui/` antes de que SGP y SGL hagan la tercera y cuarta copia)
+- [ ] CSS propio con los mismos selectores en `sgr.css` (1.908 líneas) y `sgi.css` (1.680): `.empty-state`, `.card-header`,
+      `.table-wrap`, `.dash-layout`, el FAB y `.btn-scroll-top`. Son parte de la base (estado vacío, encabezado de tarjeta,
+      tabla, botón flotante): van a `shared/ui/componentes/`.
+- [ ] Funciones con el mismo nombre en los dos `app.js` (comparar y unificar): `mostrarToast`/`toast`, `confirmar`, `esc`,
+      `switchTab`/`_alMostrarPestana`, `_animarMutacion`, `limpiarBusqueda`/`_marcarBusqueda`/`onBusqGlobal`,
+      `exportarDatos`/`importarDatos`/`restablecerDatos`, `generarFirma`/`verificarFirma`, `normalizarTexto`, `uid`.
+- [ ] SGC tiene piezas genéricas que las otras no usan y que conviene evaluar como base: `selector.js` (select propio),
+      `doble-toque.js`, `arrastre-tactil.js`, `animaciones.js` (mutaciones) y la confirmación en dos pasos de `datos-ui.js`.
+
+### 6.4 Tests que faltan para que «la misma base» no dependa de la memoria
+`tests/estilo.test.mjs` hoy exige las hojas, cuatro scripts (`ui.js`, `atras-modales.js`, `busqueda-movil.js`,
+`swipe-pestanas.js`), tema, versión y ocho ids. No exige:
+- [ ] `arranque.js`, `apariencia.js` y `mm.js` (hoy SGC no los carga: depende del punto «dos arranques»).
+- [ ] `#btn-theme`, `#btn-movimiento`, `#toast` (con `role="status"`), `#btn-scroll-top`, `#search-clear`.
+- [ ] El `<head>` de referencia (viewport, `color-scheme`, metas de PWA, CSP base).
+- [ ] La marca de la barra superior con enlace al launcher (`.brand-launcher`).
+- [ ] Manifiestos con los mismos `theme_color`, `background_color`, `display` y `orientation`.
+
+---
+
+## 7. Para retomar (estado al 2026-11-11)
 
 **Hecho y commiteado:** fases 0, 1 y 2 (SGC sin cambios visibles; SGR y SGI con el diseño de SGC). Todo en verde:
 `npm test`, `npm run test:sgc`, `node SGC/tests/e2e/humo.mjs` (desde `SGC/`) y `node tests/e2e/humo-apps.mjs`.
+
+**Antes de seguir:** resolver las decisiones de la sección 6 (SGL, launcher, panel plegable, barra superior) y, de ser
+posible, 6.2 y 6.3, para que SGP se porte sobre la base ya unificada y no haya que tocarla dos veces.
 
 **Falta: fase 3, SGP (Patcheras).** Mismo procedimiento que SGR y SGI (sección 5 y la receta de la sección 3), más:
 1. **Estructura nueva**: hoy es una sola lista de racks con `#btn-nuevo-rack`, `#btn-importar-planilla` y
