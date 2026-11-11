@@ -26,6 +26,10 @@ Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se document�
   por su cuenta** (lo vigila `tests/actualizacion.test.mjs`). `sw.js` descarga todo en paralelo, informa el avance y es todo o nada:
   si falla un archivo se conserva la versión anterior, así que un archivo listado en `PRECACHE_URLS` que no exista rompe las
   actualizaciones (el test de la suite lo vigila). Una app nueva: agregar esa línea y su hoja en su `index.html`.
+- **Botón «atrás» (Android, gesto de volver):** cierra el modal o la capa de arriba en vez de volver al launcher.
+  `shared/idr-atras.js` (`IDRAtras.abrir(id, cerrar)` / `cerrada(id)`) guarda una entrada del historial por capa abierta; cada app lo
+  conecta a sus modales (SGC: `js/atras-modales.js`, por los eventos de `UI.modal`). Una capa nueva que tape la pantalla (panel,
+  buscador, vista previa) tiene que registrarse; sin capas abiertas, «atrás» sale como siempre (`tests/atras.test.mjs`).
 - **Tema claro/oscuro compartido:** la clave `IDR_dark` (`'1'` oscuro, `'0'` claro) es de TODA la suite: el launcher y cada app la
   leen al cargar y la escriben al cambiar el tema, así que se cambia en una y se ve en todas. Las apps nuevas usan
   `shared/idr-tema.js` (`IDRTema.oscuro()` / `guardar()` / `alCambiar()`), cargado en el `<head>` antes de pintar el tema; sin

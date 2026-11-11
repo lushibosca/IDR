@@ -581,8 +581,8 @@ function pintarTablaResumen(selector, grupos, columnas = c => [c.t, c.u, c.d, c.
 
 // Tipos con sus modelos plegables (mismas columnas). Lo que estaba desplegado sigue así al repintar con cada
 // /api/v2/datos. Claves de los datos: Set/Map, nunca {}. Solo textContent. Los modelos de un tipo se abren y cierran
-// como acordeón (uiFilaPlegable: cada fila anima su alto y el modal la acompaña); pulsación larga o Shift + clic en un
-// tipo abre o cierra todos.
+// como acordeón (uiFilaPlegable: cada fila anima su alto y el modal la acompaña) y se abre un tipo a la vez: al abrir uno
+// se cierra el que estaba abierto (como los grupos de Activos y Producción).
 const _tiposDesplegados = new Map();      // selector -> Set de tipos abiertos
 
 // Abre o cierra los modelos de los tipos `tipos` de esa tabla
@@ -638,20 +638,18 @@ function pintarTablaTipos(selector, porTipo) {
     const abiertos = _tiposDesplegados.get(selector);
     const clases = ['', 'text-center fw-semibold', 'text-center', 'text-center', 'text-center text-muted'];
     const porNombre = ([a], [b]) => String(a).localeCompare(String(b));
-    const todosLosTipos = new Set(porTipo.keys());
     const filas = [];
     for (const [tipo, { c, modelos }] of [...porTipo.entries()].sort(porNombre)) {
         const abierto = abiertos.has(tipo);
         const tr = document.createElement('tr');
         tr.className = 'resumen-tipo';                  // toda la fila abre o cierra el tipo (no solo el nombre)
-        tr.title = 'Clic para abrir o cerrar; mantené presionado (o Shift + clic) para todos';
+        tr.title = 'Clic para abrir o cerrar (se abre un tipo a la vez)';
         const td = document.createElement('td');
         td.className = 'ps-3';
         const boton = document.createElement('button');
         boton.type = 'button';
         boton.className = 'resumen-tipo-btn';
         boton.setAttribute('aria-expanded', String(abierto));
-        boton.title = 'Mantené presionado (o Shift + clic) para abrir o cerrar todos';
         boton.dataset.resumenTipo = tipo;
         const icono = document.createElement('i');
         icono.className = 'bi bi-chevron-right resumen-tipo-chevron me-2';
@@ -663,9 +661,6 @@ function pintarTablaTipos(selector, porTipo) {
         cant.textContent = String(modelos.size);
         cant.title = `${modelos.size} ${modelos.size === 1 ? 'modelo' : 'modelos'}`;
         boton.append(icono, nombre, cant);
-        // pulsación larga en cualquier parte de la fila: todos los tipos de la tabla quedan como el contrario de este
-        uiAtajoPulsacionLarga(tr, () => fijarTiposDesplegados(tbody, abiertos, todosLosTipos,
-            boton.getAttribute('aria-expanded') !== 'true'));
         td.appendChild(boton);
         tr.appendChild(td);
         celdasContador(tr, c, clases.slice(1), modo);
@@ -691,7 +686,11 @@ function pintarTablaTipos(selector, porTipo) {
             const fila = e.target instanceof Element ? e.target.closest('tr.resumen-tipo') : null;
             const b = fila ? fila.querySelector('.resumen-tipo-btn') : null;
             if (!b) return;
-            fijarTiposDesplegados(tbody, abiertos, new Set([b.dataset.resumenTipo]), b.getAttribute('aria-expanded') !== 'true');
+            const tipo = b.dataset.resumenTipo, abrir = b.getAttribute('aria-expanded') !== 'true';
+            // uno a la vez, como los grupos de Activos y Producción: abrir uno cierra el que estaba abierto
+            if (abrir) fijarTiposDesplegados(tbody, abiertos, new Set([...tbody.querySelectorAll('.resumen-tipo-btn')]
+                .map((x) => x.dataset.resumenTipo).filter((t) => t !== tipo)), false);
+            fijarTiposDesplegados(tbody, abiertos, new Set([tipo]), abrir);
         });
         // doble clic en un modelo: cierra el modal y busca ese modelo en Activos
         tbody.addEventListener('dblclick', (e) => {

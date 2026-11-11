@@ -35,7 +35,7 @@ const ATAJOS = [
     { donde: 'Panel Estado', tipo: 'teclado', teclas: ['Alt', '← → ↑ ↓'], accion: 'En el encabezado de una sección: reubicarla (entre las zonas y dentro de ellas)' },
     { donde: 'Panel Estado', tipo: 'teclado', teclas: ['Alt', '← → ↑ ↓'], accion: 'En un tile de Favoritos o un chip de Activos: reubicarlo' },
     { donde: 'Panel lateral', tipo: 'teclado', teclas: ['Alt', '← → ↑ ↓'], accion: 'En «Ocultar / Mover»: llevar el panel a la izquierda, derecha, arriba o abajo (solo escritorio)' },
-    { donde: 'Acordeones', tipo: 'teclado', teclas: ['Shift', 'Enter'], accion: 'En un encabezado o un tipo del detalle de stock: abrir o cerrar todos' },
+    { donde: 'Acordeones', tipo: 'teclado', teclas: ['Shift', 'Enter'], accion: 'En un encabezado de grupo: abrir o cerrar todos' },
 
     // ---- Mouse y toque
     { donde: 'Equipos', tipo: 'mouse', gesto: 'Clic', accion: 'Abrir el popup del equipo (Activos, Producción y Favoritos); en el modo selección, marcarlo' },
@@ -56,7 +56,7 @@ const ATAJOS = [
     { donde: 'Panel Estado', tipo: 'mouse', gesto: 'Mantener presionado un tile o chip', accion: 'Reubicar un favorito o un chip de Activos' },
     { donde: 'Panel Estado', tipo: 'mouse', gesto: 'Doble clic en un modelo', accion: 'En el detalle de stock: ir a Activos con ese modelo buscado' },
     { donde: 'Panel Estado', tipo: 'mouse', gesto: 'Doble clic en un grabador', accion: 'En el detalle de canales: buscarlo en Activos' },
-    { donde: 'Panel Estado', tipo: 'mouse', gesto: 'Mantener presionado un tipo', accion: 'En el detalle de stock: abrir o cerrar todos los tipos (o Shift + clic)' },
+    { donde: 'Panel Estado', tipo: 'mouse', gesto: 'Clic en un tipo', accion: 'En el detalle de stock: abrir sus modelos (se abre un tipo a la vez: el anterior se cierra)' },
     { donde: 'Panel lateral', tipo: 'mouse', gesto: 'Rueda sobre el panel', accion: 'Recorrer las pestañas: Estado, Activos, Producción, Historial y Ajustes (se apaga en Ajustes > «Rueda sobre el panel lateral»)' },
     { donde: 'Panel lateral', tipo: 'mouse', gesto: 'Mantener presionado «Ocultar / Mover»', accion: 'Arrastrar el panel a otro borde y soltar (solo escritorio)' },
     { donde: 'Panel lateral', tipo: 'mouse', gesto: 'Clic en «Ocultar / Mover»', accion: 'Ocultar o mostrar el panel (solo íconos)' },

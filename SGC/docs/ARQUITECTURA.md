@@ -87,6 +87,10 @@ muestran u ocultan por ancho: son el mecanismo para lo que existe en una sola vi
 
 **Doble toque** (`doble-toque.js`): dentro de lo marcado con `data-doble-toque` (los modales de detalle) dos toques seguidos emiten un `dblclick` propio y se descarta el nativo, que en los teléfonos no es confiable.
 
+**Botón «atrás»:** `atras-modales.js` conecta `UI.modal` (eventos `ui:modal-abrir` / `ui:modal-cerrar`) y el buscador móvil con `IDRAtras` (`../shared/idr-atras.js`): cada capa abierta guarda una entrada del historial, cerrar por la X, el fondo o Escape la saca (varias juntas, con un solo `go(-n)`) y «atrás» del sistema cierra la de arriba; si una capa no se deja cerrar, recupera su entrada.
+
+**Detalles de stock (acordeón):** los modelos de un tipo se abren y cierran con animación (en móvil, `max-height`/relleno/margen/borde de la tarjeta en `detalle-movil.css`; en escritorio, el colapso por celdas) y **se abre un tipo a la vez**: abrir uno cierra el anterior, como los grupos de Activos y Producción.
+
 **Versión visible:** en Ajustes (`.ajustes-version`, `data-idr-version="SGC"` → «SGC-vAAMMDD»); la escribe `../shared/idr-version.js` y `npm run release` la sube junto con `CACHE_NAME`.
 
 **Actualización de la PWA:** la registra `../shared/idr-actualizacion.js` (toast con barra de progreso); SGC no registra el worker por su cuenta.

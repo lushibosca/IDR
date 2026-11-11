@@ -36,6 +36,10 @@ function busquedaMovilCierraAlTocarFuera({ abierta, texto, tocoDentro }) {
         raiz.classList.toggle(CLASE, ahora);
         boton.classList.toggle('busqueda-activa', ahora);
         boton.setAttribute('aria-expanded', String(ahora));
+        if (typeof IDRAtras !== 'undefined') {            // «atrás» del sistema cierra el buscador (shared/idr-atras.js)
+            if (ahora && !antes) IDRAtras.abrir('busqueda-movil', () => { aplicar('cerrar'); return !abierta(); });
+            else if (!ahora && antes) IDRAtras.cerrada('busqueda-movil');
+        }
         if (ahora && !antes) {
             // Un campo oculto no recibe el foco, y `visibility` pasa por transiciones (la de la caja y la del propio campo, que tiene
             // `transition: all`): se muestran YA, sin transición, solo el instante del foco; después manda la clase.

@@ -93,8 +93,25 @@
             background-color: transparent;
         }
 
+        /* Abrir y cerrar un tipo anima la tarjeta del modelo como el acordeón de Activos y Producción: el alto (max-height), el
+           relleno, el margen y el borde llegan juntos a cero; plegada no se ve ni se toca */
+        .modal-detalle-tipos tbody tr.fila-plegable {
+            max-height: 9rem;
+            overflow: hidden;
+            transition: max-height var(--dur-colapso) var(--ease-colapso), padding var(--dur-colapso) var(--ease-colapso),
+                margin var(--dur-colapso) var(--ease-colapso), border-width var(--dur-colapso) var(--ease-colapso),
+                row-gap var(--dur-colapso) var(--ease-colapso), opacity var(--dur-colapso) var(--ease-colapso);
+        }
+
         .modal-detalle-tipos tbody tr.fila-plegable.plegada {
-            display: none;
+            max-height: 0;
+            margin-bottom: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-width: 0;
+            row-gap: 0;
+            opacity: 0;
+            pointer-events: none;
         }
 
         .modal-detalle-tipos tbody tr.resumen-modelo > .resumen-modelo-nombre {

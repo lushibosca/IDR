@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261111.0028';
+const CACHE_NAME = 'idr-suite-v261111.0034';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -63,6 +63,7 @@ const PRECACHE_URLS = [
   './SGC/js/app.js',
   './SGC/js/arrastre-tactil.js',
   './SGC/js/atajos.js',
+  './SGC/js/atras-modales.js',
   './SGC/js/auditoria-bd.js',
   './SGC/js/busqueda-movil.js',
   './SGC/js/busqueda.js',
@@ -153,6 +154,7 @@ const PRECACHE_URLS = [
   // ── Recursos Compartidos Suite ──
   './shared/idr-actualizacion.css',
   './shared/idr-actualizacion.js',
+  './shared/idr-atras.js',
   './shared/idr-infra.js',
   './shared/idr-tema.js',
   './shared/idr-version.js'
