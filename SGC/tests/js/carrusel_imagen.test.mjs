@@ -18,8 +18,12 @@ const precargas = [];
 class ImagenFalsa { constructor() { precargas.push(this); } }
 
 const { uiNumeroCanal } = cargarBloque("comun.js", "VALOR INFORMADO PURO", { String }, ["uiNumeroCanal"]);
+// uiAmpliarImagenPermitido (js/imagen-ampliada.js): solo en escritorio. Acá se cambia por pantalla para probar los dos casos.
+let escritorio = true;
+const uiAmpliarImagenPermitido = () => escritorio;
 const { uiCarruselImagen, uiRutaCaptura } = cargarBloque("comun.js", "UI COMUN",
-  { String, Boolean, Object, encodeURIComponent, setTimeout, Image: ImagenFalsa, uiNumeroCanal }, ["uiCarruselImagen", "uiRutaCaptura"]);
+  { String, Boolean, Object, encodeURIComponent, setTimeout, Image: ImagenFalsa, uiNumeroCanal, uiAmpliarImagenPermitido },
+  ["uiCarruselImagen", "uiRutaCaptura"]);
 
 function armar(opciones = {}) {
   precargas.length = 0;
@@ -91,4 +95,25 @@ test("una respuesta de otro equipo (ya no vigente) se ignora", () => {
   vigente = false;
   precargas[0].onload();
   assert.ok(!visible(c.next));
+});
+
+test("escritorio: tocar la foto del modelo la amplía y avisa que se puede (cursor y título)", () => {
+  escritorio = true;
+  const t = armar();
+  assert.ok(t.img.classList.contains("popup-disp-img-clickable"));
+  assert.equal(t.img.title, "Clic para ampliar");
+  t.img.onclick({ stopPropagation() {} });
+  assert.deepEqual(t.ampliados, [["modelo", false]]);
+});
+
+test("móvil: tocar la foto no hace nada (ni cursor ni título), pero el toque no se propaga", () => {
+  escritorio = false;
+  const t = armar();
+  assert.ok(!t.img.classList.contains("popup-disp-img-clickable"));
+  assert.equal(t.img.title, "");
+  let parado = false;
+  t.img.onclick({ stopPropagation() { parado = true; } });
+  assert.deepEqual(t.ampliados, []);
+  assert.ok(parado, "el toque no debe llegar al modal (lo cerraría)");
+  escritorio = true;
 });

@@ -1940,7 +1940,7 @@ function uiCarruselImagen({ wrapper, img, placeholder = null, prev, next, rutaMo
             }
         } else {
             if (img) {
-                const ampliable = Boolean(alAmpliar && rutaModelo && modeloOk);       // la foto del modelo también se amplía
+                const ampliable = Boolean(alAmpliar && uiAmpliarImagenPermitido() && rutaModelo && modeloOk);       // la foto del modelo también se amplía
                 img.classList.toggle('popup-disp-img-clickable', ampliable);
                 img.title = ampliable ? 'Clic para ampliar' : '';
             }
@@ -1980,7 +1980,7 @@ function uiCarruselImagen({ wrapper, img, placeholder = null, prev, next, rutaMo
         };
         img.onclick = (e) => {
             if (e) e.stopPropagation();
-            if (!alAmpliar) return;
+            if (!alAmpliar || !uiAmpliarImagenPermitido()) return;       // en el móvil tocar la imagen no hace nada
             if (modo === 'snapshot' && tieneSnapshot && rutaSnapshot) alAmpliar('captura', true);
             else if (modo === 'modelo' && rutaModelo && modeloOk) alAmpliar('modelo', tieneSnapshot);
         };

@@ -1722,6 +1722,28 @@
         </div>
     </div>
 
+    <!-- Imagen ampliada (solo escritorio: js/imagen-ampliada.js decide; produccion.js abre el modal). Foto del modelo, o captura si hay -->
+    <div class="modal fade" id="snapshotModal" tabindex="-1" aria-labelledby="snapshotModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content modal-tema border-0 shadow">
+                <div class="modal-header py-2 px-3 border-bottom align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2 min-w-0">
+                        <span class="badge rounded-pill bg-primary canal-ch-badge font-monospace flex-shrink-0"
+                            id="snapshot-modal-ch">CH</span>
+                        <h5 class="modal-title fs-6 fw-bold mb-0 text-truncate text-primary" id="snapshotModalLabel">
+                            <i class="bi bi-camera me-2"></i><span id="snapshot-modal-nombre">Cámara</span>
+                        </h5>
+                    </div>
+                    <button type="button" class="btn-close ms-1" data-ui-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body text-center bg-dark bg-opacity-25 d-flex align-items-center justify-content-center"
+                    id="snapshot-modal-contenedor">
+                    <img id="snapshot-modal-img" class="w-100 snapshot-modal-img" src="" alt="Imagen del dispositivo">
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="modal-atajos" tabindex="-1" aria-labelledby="modalAtajosLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content modal-tema">
@@ -2151,7 +2173,7 @@
     <script src="js/busqueda.js?v=8"></script>
     <script src="js/datos-puro.js?v=3"></script>
     <script src="js/api-local.js?v=3"></script>
-    <script src="js/comun.js?v=55"></script>
+    <script src="js/comun.js?v=56"></script>
     <script src="js/app.js?v=273"></script>
     <script src="js/sesion-local.js?v=1"></script>
     <script src="js/selector.js?v=2"></script>
@@ -2171,6 +2193,7 @@
     <script src="js/auditoria-bd.js?v=4"></script>
     <script src="js/historial-modal.js?v=1"></script>
     <script src="js/busqueda-movil.js?v=1"></script>
+    <script src="js/imagen-ampliada.js?v=1"></script>
     <script src="js/barra-superior.js?v=1"></script>
     <script src="js/ajustes.js?v=6"></script>
     <script src="js/datos-ui.js?v=1"></script>

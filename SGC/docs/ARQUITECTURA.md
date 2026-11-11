@@ -59,7 +59,7 @@ Cada capa solo usa las de arriba. `app.js` es el eje histórico (heredado de cct
 | **2. API local** | `api-local.js`, `sesion-local.js` | Responde `/api/stock*` y `/api/v2/datos` sobre el JSON guardado, con los mismos estados (422, 404, 409). `sesion-local` reemplaza al login de cctv_monitor. | Reglas de negocio (las llama de la capa 1). |
 | **3. Infraestructura UI** | `ui.js`, `animaciones.js`, `busqueda.js`, `comun.js` | `UI` (pestañas, modales, desplegables), animaciones de mutación, búsqueda tokenizada, `storage`, `apiFetch`, toasts y los bloques `UI COMUN`, `FECHAS Y CSV`. | Conocer pestañas concretas. |
 | **4. Núcleo de la app** | `app.js`, `selector.js` | Pestañas, panel lateral, búsqueda global, tema, select propio. | Reglas del stock. |
-| **5. Pestañas y funciones** | `produccion*.js`, `resumen.js`, `favoritos.js`, `atajos.js`, `stock*.js`, `consultas.js`, `auditoria-bd.js`, `historial-modal.js`, `busqueda-movil.js`, `barra-superior.js`, `ajustes.js`, `datos-ui.js`, `privacidad.js` | Una vista o función cada uno; el DOM con `textContent`. | Hablar con `localStorage` directo: pasan por `storage` o `apiFetch`. |
+| **5. Pestañas y funciones** | `produccion*.js`, `resumen.js`, `favoritos.js`, `atajos.js`, `stock*.js`, `consultas.js`, `auditoria-bd.js`, `historial-modal.js`, `busqueda-movil.js`, `barra-superior.js`, `imagen-ampliada.js`, `ajustes.js`, `datos-ui.js`, `privacidad.js` | Una vista o función cada uno; el DOM con `textContent`. | Hablar con `localStorage` directo: pasan por `storage` o `apiFetch`. |
 | **6. Servicios sin vista propia** | `gist.js`, `parseador.js`, `migrar-sgc.js` | Sincronización cifrada (AES-GCM), parseadores de `cctv_online.json` y migración desde SGC; cada uno con su bloque puro y su ventana. | Escribir datos sin vista previa ni confirmar. |
 
 `stock-puro.js` (puras de la pestaña Stock) se carga antes que `stock.js`; los hijos `stock-*.js` y `produccion-*.js`
@@ -72,6 +72,8 @@ lo abre el ícono (`busqueda-movil.js`, `html.busqueda-movil-abierta`). Sin men�
 Ajustes (sección `.solo-movil`). La barra superior se oculta al bajar y vuelve al subir (`barra-superior.js`, `html.navbar-oculta`): `--navbar-height` (registrada con `@property`, así se anima) pasa a 0 y los encabezados pegajosos suben con ella; `--navbar-alto` es lo que mide siempre. En móvil el `.row` de `#app-main-row` va sin márgenes negativos: con el padding de 8 px del contenedor se pasaba 4 px y causaba scroll horizontal (y movía lo fijo). **Historial** es una ventana (`#modal-historial`): `historial-modal.js` mueve ahí la tarjeta
 `#bd-card` de la pestaña (que sigue en el escritorio) mientras está abierta. `.solo-escritorio` / `.solo-movil` (utilidades.css)
 muestran u ocultan por ancho: son el mecanismo para lo que existe en una sola vista.
+
+**Imagen ampliada** (`#snapshotModal`): tocar la foto de un equipo la abre grande solo en escritorio (`uiAmpliarImagenPermitido`, `imagen-ampliada.js`); en móvil el toque no hace nada. Solo se ofrece si el equipo está instalado (hay cámara asociada). Sin video en vivo ni ventana flotante: no hay servidor.
 
 ### Comunicación entre archivos
 - **Globales de página**: `storage`, `apiFetch`, `mostrarToast`, `UI`, `globalData`, `StockNucleo`. Lo que otro archivo necesita

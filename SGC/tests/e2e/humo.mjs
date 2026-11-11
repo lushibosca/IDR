@@ -366,6 +366,18 @@ check('importar otro formato: se rechaza sin tocar nada', mal && (await api('/ap
     check('historial: al cerrar la tarjeta vuelve a su pestaña', !!$('bd-card').closest('#auditoria-bd'));
 }
 
+// --- imagen ampliada: la ventana existe y abre con la foto del modelo (el JS la invocaba y faltaba su HTML)
+{
+    check('imagen ampliada: existe #snapshotModal', !!$('snapshotModal'));
+    w.abrirModalSnapshot({ camera_name: 'Domo 1', channel_id: 3 }, '', 3, { rutaModelo: 'img/devices/DS-1200KL.png', vista: 'modelo' });
+    await hasta(() => $('snapshotModal').classList.contains('show'));
+    check('imagen ampliada: abre con la foto del modelo y el nombre', $('snapshotModal').classList.contains('show')
+        && /DS-1200KL/.test($('snapshot-modal-img').getAttribute('src')) && $('snapshot-modal-nombre').textContent === 'Domo 1'
+        && $('snapshot-modal-ch').textContent === 'CH 3', $('snapshot-modal-ch').textContent);
+    $('snapshotModal').querySelector('[data-ui-dismiss="modal"]').click();
+    await hasta(() => !$('snapshotModal').classList.contains('show'));
+}
+
 // --- móvil: el ícono de búsqueda abre y cierra el buscador
 {
     const raiz = d.documentElement;
