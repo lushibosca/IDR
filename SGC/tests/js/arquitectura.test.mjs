@@ -18,7 +18,7 @@ const TOPES = {
   "animaciones.js": 653,
   "app.js": 2099,
   "busqueda.js": 523,
-  "comun.js": 1931,
+  "comun.js": 1786,
   "datos-puro.js": 1242,
   "favoritos.js": 501,
   "gist.js": 561,

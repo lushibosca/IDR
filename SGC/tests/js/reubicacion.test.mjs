@@ -1,4 +1,4 @@
-// Reubicar con recorrido visible (uiAnimarReubicacion, bloque UI COMUN de static/comun.js): lo comparten las columnas
+// Reubicar con recorrido visible (uiAnimarReubicacion, bloque REUBICACION de shared/ui/js/gestos.js): lo comparten las columnas
 // del modal Listar y las secciones reubicables del panel de Estado. DOM mínimo falso.
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -6,8 +6,8 @@ import { cargarBloque } from "./_bloque.mjs";
 
 const cuadros = [];
 let reducido = false;
-const { uiAnimarReubicacion } = cargarBloque("comun.js", "UI COMUN", {
-  Map, Math, requestAnimationFrame: (f) => cuadros.push(f), prefiereMovimientoReducido: () => reducido,
+const { uiAnimarReubicacion } = cargarBloque("../shared/ui/js/gestos.js", "REUBICACION", {
+  Map, Math, requestAnimationFrame: (f) => cuadros.push(f), uiMovimientoReducido: () => reducido,
 }, ["uiAnimarReubicacion"]);
 
 function armar() {

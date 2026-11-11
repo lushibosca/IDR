@@ -3,7 +3,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { cargarBloque } from "./_bloque.mjs";
 
-const api = cargarBloque("comun.js", "PULSACION LARGA PURO", { Number }, ["esPulsacionLarga", "PULSACION_LARGA_MS"]);
+const api = cargarBloque("../shared/ui/js/gestos.js", "PULSACION LARGA PURO", { Number }, ["esPulsacionLarga", "PULSACION_LARGA_MS"]);
 
 test("desde 300 ms es una pulsación larga; un clic normal no", () => {
   assert.equal(api.PULSACION_LARGA_MS, 300);

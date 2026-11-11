@@ -83,7 +83,7 @@ muestran u ocultan por ancho: son el mecanismo para lo que existe en una sola vi
 
 **Cambio de pestaña en móvil:** el contenido desliza de lado (eje X), porque la barra de pestañas es horizontal (abajo); en escritorio el eje sale de dónde esté el panel (izquierda o derecha: vertical; arriba o abajo: horizontal). `_ejeDeslizePestanas` en `animaciones.js`.
 
-**Reubicar con el dedo (móvil):** durante una pulsación larga y arrastre (`html.arrastrando-largo`) `arrastre-tactil.js` cancela los `touchmove`: `touch-action: none` fijado al empezar llega tarde (el navegador decide el gesto al tocar) y la página hacía scroll.
+**Reubicar con el dedo (móvil):** durante una pulsación larga y arrastre (`html.arrastrando-largo`) `shared/ui/js/gestos.js` cancela los `touchmove`: `touch-action: none` fijado al empezar llega tarde (el navegador decide el gesto al tocar) y la página hacía scroll.
 
 **Detalles en tarjetas (móvil):** los modales de detalle de stock (cámaras, servidores, otros, grupos) y de canales muestran cada fila como una tarjeta (nombre arriba, números en columnas con su rótulo; los modelos, sub-tarjetas; el total, una tarjeta fija abajo). Es solo CSS (`css/app/detalle-movil.css`, selectores genéricos con `:where()`); el JS arma las mismas filas de tabla.
 

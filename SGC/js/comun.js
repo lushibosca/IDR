@@ -354,12 +354,6 @@ function uiPosicionEtiquetaArriba(rect, tam, ventana, separacion = 6) {
 }
 // ==== ETIQUETA ICONO PURO END ====
 
-/** ¿El foco de `el` es de teclado (`:focus-visible`)? El de un clic, o el que vuelve al regresar a la ventana, no cuenta: con ese el
- *  popup de una etiqueta quedaba pegado. Un navegador sin `:focus-visible`: como antes (sí). */
-function uiFocoDeTeclado(el) {
-    try { return el.matches(':focus-visible'); } catch (_) { return true; }
-}
-
 /** Etiqueta flotante (la misma del panel lateral colapsado: `.sidebar-tip`) para los botones de solo ícono de `raiz` que
  *  cumplan `selector` y traigan su texto en `data-etiqueta` (solo textContent). `activa(el)` (opcional) apaga la etiqueta
  *  cuando el botón ya muestra su texto. Devuelve { ocultar } para cerrar la etiqueta desde afuera. */
@@ -414,15 +408,7 @@ function uiConfirmacionTemporizada(alVencer, ms = CONFIRMACION_MS, reloj = null)
 }
 // ==== CONFIRMACION TEMPORIZADA PURO END ====
 
-// ==== PULSACION LARGA PURO BEGIN ====
-// Mantener presionado (y soltar) un encabezado plegable abre o cierra TODOS los de su lista (subgrupos de Activos, tipos
-// de los modales de detalle de stock). Sin temporizadores: se mide la duración al soltar (instantes en ms, como
-// `event.timeStamp`).
-const PULSACION_LARGA_MS = 300;
-function esPulsacionLarga(inicio, fin) {
-    return Number.isFinite(inicio) && Number.isFinite(fin) && fin - inicio >= PULSACION_LARGA_MS;
-}
-// ==== PULSACION LARGA PURO END ====
+// (PULSACION_LARGA_MS y esPulsacionLarga: ../shared/ui/js/gestos.js)
 
 // Engancha el atajo a un encabezado: pulsación larga, Shift + clic o Shift + Enter llaman a `alLargo` (abrir/cerrar
 // todos). Se registra ANTES del clic que abre/cierra uno solo: frena ese clic (stopImmediatePropagation) tras una
@@ -431,7 +417,6 @@ function esPulsacionLarga(inicio, fin) {
 // no llega ningún clic, la marca de «tragar el clic» vence sola (si no, se comía el siguiente clic, de cualquier equipo).
 // Con `selector` el atajo es delegado: `el` es un contenedor y solo cuentan las pulsaciones largas sobre los elementos que
 // coinciden (se llama a `alLargo(elemento)`; sin Shift, porque ahí el Shift + clic ya tiene otro uso).
-const UMBRAL_MOVIMIENTO_PULSACION_PX = 6;
 const VIGENCIA_TRAGAR_CLIC_MS = 150;
 function uiAtajoPulsacionLarga(el, alLargo, selector = null) {
     let inicio = null;
@@ -996,54 +981,6 @@ function uiSeccionPlegable(cabecera, cuerpo, abierta) {
     return seccion;
 }
 
-/** Reubicar con recorrido visible (FLIP): mide dónde están los elementos de `obtener()` (por `clave(el)`), aplica
- *  `cambiar()` (mover o repintar el DOM), los devuelve con `transform` a donde estaban y los anima a su lugar nuevo.
- *  Lo comparten el modal Listar (fichas de columnas) y las secciones reubicables del panel de Estado. Mide la
- *  posición visual (con la animación anterior a medias, si la hay) y la final sin transform: un movimiento encadenado
- *  sigue desde donde iba, sin saltos. Con menos movimiento, solo `cambiar()`. Devuelve los elementos que se animan. */
-const REUBICACION_TRANSICION = 'transform 0.28s cubic-bezier(0.2, 0, 0, 1)';
-function uiAnimarReubicacion(obtener, clave, cambiar, { encima = null } = {}) {
-    const antes = new Map();
-    for (const el of obtener()) antes.set(clave(el), el.getBoundingClientRect());
-    cambiar();
-    if (antes.size === 0 || (typeof prefiereMovimientoReducido === 'function' && prefiereMovimientoReducido())) return [];
-    const animables = [];
-    for (const el of obtener()) {
-        const r0 = antes.get(clave(el));
-        if (!r0) continue;
-        el.style.transition = 'none';
-        el.style.transform = '';
-        const r1 = el.getBoundingClientRect();
-        const dx = r0.left - r1.left;
-        const dy = r0.top - r1.top;
-        if (Math.abs(dx) <= 0.5 && Math.abs(dy) <= 0.5) {
-            el.style.transition = '';
-            continue;
-        }
-        el.style.transform = `translate(${dx}px, ${dy}px)`;
-        el.style.zIndex = el === encima ? '3' : '2';
-        animables.push(el);
-    }
-    if (!animables.length) return [];
-    void animables[0].offsetHeight;                       // reflow: la posición invertida queda fijada
-    requestAnimationFrame(() => {
-        for (const el of animables) {
-            el.style.transition = REUBICACION_TRANSICION;
-            el.style.transform = '';
-            const limpiar = (e) => {
-                if (e.propertyName !== 'transform') return;
-                el.style.transition = '';
-                el.style.zIndex = '';
-                el.removeEventListener('transitionend', limpiar);
-                el.removeEventListener('transitioncancel', limpiar);
-            };
-            el.addEventListener('transitionend', limpiar);
-            el.addEventListener('transitioncancel', limpiar);
-        }
-    });
-    return animables;
-}
-
 /** Los elementos que se corren cuando `el` aparece, desaparece o cambia de alto: sus hermanos y los de cada ancestro hasta la
  *  pestaña (otros chips, las secciones de abajo). Solo los que hoy se ven. */
 function uiVecinosQueSeMueven(el) {
@@ -1500,88 +1437,6 @@ function indiceEnPunto(rects, x, y, margen = 0) {
     return exacto >= 0 || !margen ? exacto : rects.findIndex(r => en(r, margen));
 }
 // ==== REORDEN GRILLA PURO END ====
-
-/** Pulsación larga y arrastre (lo común a reubicar chips y tiles, las secciones del panel y el panel lateral). Sobre `raiz`,
- *  `elegir(ev)` dice qué se arrastra (o null: ese `pointerdown` no es para esto). Tras PULSACION_LARGA_MS sin moverse más de
- *  UMBRAL_MOVIMIENTO_PULSACION_PX (si se mueve antes, es un scroll) empieza el arrastre: el elemento toma el puntero (en `capturar(el)`, por defecto él
- *  mismo), sin gestos táctiles del navegador, con una vibración corta, y `alEmpezar(el, inicio)`. Mientras dura, cada
- *  movimiento es `alMover(ev, el)`. Al soltar, `alTerminar(el, true)`; con Escape o si el navegador cancela el puntero,
- *  `alTerminar(el, false)`. El clic que sigue a soltar no llega a nadie (en captura, sobre `raiz`).
- *  Devuelve `{ activo }`: ¿hay un arrastre en curso? (no repintar debajo). */
-function uiArrastreLargo(raiz, { elegir, capturar = (el) => el, alEmpezar = () => {}, alMover = () => {}, alTerminar = () => {} }) {
-    let timer = null;
-    let arrastrando = false;
-    let el = null;
-    let pointerId = null;
-    let inicio = null;
-    let tragarClic = false;
-
-    function terminar(confirmar) {
-        clearTimeout(timer);
-        timer = null;
-        window.removeEventListener('pointermove', alMoverPuntero);
-        window.removeEventListener('pointerup', alSoltar);
-        window.removeEventListener('pointercancel', alCancelar);
-        const arrastrado = arrastrando ? el : null;
-        arrastrando = false;
-        el = null;
-        if (arrastrado) {
-            arrastrado.style.touchAction = ''; document.documentElement.classList.remove('arrastrando-largo');
-            try { capturar(arrastrado).releasePointerCapture(pointerId); } catch (_) { /* ya soltado */ }
-            tragarClic = true;
-            setTimeout(() => { tragarClic = false; }, 100);
-            alTerminar(arrastrado, confirmar);
-        }
-        pointerId = null;
-    }
-    function alMoverPuntero(e) {
-        if (e.pointerId !== pointerId) return;
-        if (!arrastrando) {
-            if (timer && Math.hypot(e.clientX - inicio.x, e.clientY - inicio.y) > UMBRAL_MOVIMIENTO_PULSACION_PX) terminar(false);    // scroll: no es pulsación larga
-            return;
-        }
-        e.preventDefault();
-        alMover(e, el);
-    }
-    function alSoltar(e) {
-        if (e.pointerId === pointerId) terminar(true);
-    }
-    function alCancelar(e) {
-        if (e.pointerId === pointerId) terminar(false);
-    }
-
-    // en captura: el clic que sigue a soltar un arrastre no abre (ni pliega) lo que había debajo
-    raiz.addEventListener('click', (e) => {
-        if (!tragarClic) return;
-        e.stopPropagation();
-        e.preventDefault();
-    }, true);
-    raiz.addEventListener('pointerdown', (e) => {
-        if (e.button !== 0 || el) return;
-        const elegido = elegir(e);
-        if (!elegido) return;
-        el = elegido;
-        pointerId = e.pointerId;
-        inicio = { x: e.clientX, y: e.clientY };
-        timer = setTimeout(() => {
-            timer = null;
-            arrastrando = true;
-            el.style.touchAction = 'none'; document.documentElement.classList.add('arrastrando-largo');   // (js/arrastre-tactil.js: sin scroll)
-            try { capturar(el).setPointerCapture(pointerId); } catch (_) { /* sin captura: sigue con la ventana */ }
-            if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                try { navigator.vibrate(35); } catch (_) { /* sin vibración */ }
-            }
-            alEmpezar(el, inicio);
-        }, PULSACION_LARGA_MS);
-        window.addEventListener('pointermove', alMoverPuntero, { passive: false });
-        window.addEventListener('pointerup', alSoltar);
-        window.addEventListener('pointercancel', alCancelar);
-    });
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && arrastrando) terminar(false);
-    });
-    return { activo: () => arrastrando };
-}
 
 /** Elementos de un contenedor que se reubican: pulsación larga y arrastre (`uiArrastreLargo`), o Alt + flechas con el foco en
  *  uno. Los demás se deslizan a su lugar con `uiAnimarReubicacion` (el recorrido de las fichas de Listar). `selector`: qué
