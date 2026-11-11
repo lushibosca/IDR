@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-261107.1500';
+const CACHE_NAME = 'idr-suite-261110.2313';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -30,6 +30,7 @@ const PRECACHE_URLS = [
 
   // ── SGC-2 (CCTV estático; las fotos de modelos se guardan al verlas) ──
   './SGC-2/',
+  './SGC-2/index.html',
   './SGC-2/css/app/activos.css',
   './SGC-2/css/app/ajustes.css',
   './SGC-2/css/app/animaciones.css',
