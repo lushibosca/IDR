@@ -5,6 +5,15 @@
    (../../shared/ui/legado/variables.css). */
 
 @layer app {
+
+    /* Fondo de página (la foto de SGI; el resto en ../shared/ui/fondo.css) */
+    .bg-layer.bg-light {
+        background-image: url('../../img/SGI-light.jpeg');
+    }
+
+    .bg-layer.bg-dark {
+        background-image: url('../../img/SGI-dark.jpeg');
+    }
     /* ─── Tarjetas de las pestañas (la base trae .card sin relleno: SGC usa .card-body) */
     #panel-dashboard .card,
     #panel-movimientos > .card {

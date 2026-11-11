@@ -122,7 +122,7 @@ test("apps portadas: cargan la base (tokens primero, utilidades al final), el es
     const propias = hojas.filter((h) => !h.startsWith("../shared/"));
     assert.ok(propias.every((h) => hojas.indexOf(h) > hojas.indexOf("../shared/ui/esqueleto.css")
       && hojas.indexOf(h) < hojas.indexOf("../shared/ui/utilidades.css")), `${app}: sus hojas van entre el esqueleto y utilidades`);
-    for (const js of ["ui.js", "atras-modales.js", "busqueda-movil.js", "swipe-pestanas.js", "toast.js", "volver-arriba.js", "transicion-pestanas.js", "instalar.js", "ayuda.js", "ajustes-columnas.js", "gestos.js", "panel.js", "panel-mover.js", "panel-etiquetas.js", "apariencia.js"]) {
+    for (const js of ["ui.js", "atras-modales.js", "busqueda-movil.js", "swipe-pestanas.js", "toast.js", "volver-arriba.js", "transicion-pestanas.js", "instalar.js", "ayuda.js", "ajustes-columnas.js", "fondo.js", "gestos.js", "panel.js", "panel-mover.js", "panel-etiquetas.js", "apariencia.js"]) {
       assert.ok(html.includes(`src="../shared/ui/js/${js}`), `${app}: falta ../shared/ui/js/${js}`);
     }
     assert.ok(html.includes('src="../shared/idr-tema.js"') && html.includes('src="../shared/idr-version.js"'), `${app}: tema y versión de la suite`);
@@ -144,6 +144,8 @@ test("apps portadas: cargan la base (tokens primero, utilidades al final), el es
       assert.ok(html.includes(`id="${id}"`), `${app}: falta #${id} (modal de ayuda)`);
     }
     if (app !== "SGC") assert.ok(html.includes('src="../shared/ui/js/navegacion.js"') && html.includes('id="btn-rueda-pestanas"'), `${app}: navegacion.js y su interruptor en Ajustes`);
+    assert.match(html, /<body>\s*<div class="bg-backdrop"[\s\S]*?bg-light[\s\S]*?bg-dark[\s\S]*?bg-overlay/, `${app}: fondo de página (.bg-backdrop) justo después de <body>`);
+    assert.ok(hojas.some((h) => !h.startsWith("../shared/") && new RegExp(`img/${app}-light\\.jpeg`).test(leer(path.posix.normalize(`${app}/${h}`)))), `${app}: su hoja define la foto de fondo img/${app}-light.jpeg`);
     assert.match(html, /id="toast"[^>]*role="status"|role="status"[^>]*id="toast"/, `${app}: #toast con role="status"`);
     for (const id of ["app-main-row", "sidebar-col", "main-content-col", "v-pills-tab", "v-pills-tabContent",
       "sidebar-search-container", "global-search", "btn-buscar-movil"]) {

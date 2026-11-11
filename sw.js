@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261111.1328';
+const CACHE_NAME = 'idr-suite-v261111.1340';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -132,6 +132,7 @@ const PRECACHE_URLS = [
   './shared/ui/esqueleto.css',
   './shared/ui/panel.css',
   './shared/ui/ayuda.css',
+  './shared/ui/fondo.css',
   './shared/ui/legado/variables.css',
   './shared/ui/legado/comunes.css',
   './shared/ui/grilla.css',
@@ -140,6 +141,7 @@ const PRECACHE_URLS = [
   './shared/ui/js/apariencia.js',
   './shared/ui/js/ajustes-columnas.js',
   './shared/ui/js/ayuda.js',
+  './shared/ui/js/fondo.js',
   './shared/ui/js/navegacion.js',
   './shared/ui/js/busqueda-tokens.js',
   './shared/ui/js/gestos.js',

@@ -2,6 +2,15 @@
 
 @layer app {
 
+    /* Fondo de página (la foto de SGC; el resto en ../shared/ui/fondo.css) */
+    .bg-layer.bg-light {
+        background-image: url('../../../img/SGC-light.jpeg');
+    }
+
+    .bg-layer.bg-dark {
+        background-image: url('../../../img/SGC-dark.jpeg');
+    }
+
     /* «Última act» / «Actualizando...»: ancho fijo, así el cambio de texto no corre lo que tiene al lado (con el panel en el
        encabezado movía los botones) */
     #last-update {

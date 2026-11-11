@@ -40,6 +40,7 @@
     <link rel="stylesheet" href="../shared/ui/componentes/spinner.css">
     <link rel="stylesheet" href="../shared/ui/esqueleto.css">
     <link rel="stylesheet" href="../shared/ui/panel.css">
+    <link rel="stylesheet" href="../shared/ui/fondo.css">
     <link rel="stylesheet" href="../shared/ui/ayuda.css">
     <link rel="stylesheet" href="../shared/ui/legado/variables.css">
     <link rel="stylesheet" href="../shared/ui/legado/comunes.css">
@@ -49,6 +50,12 @@
 </head>
 
 <body>
+
+    <div class="bg-backdrop" aria-hidden="true">
+        <div class="bg-layer bg-light"></div>
+        <div class="bg-layer bg-dark"></div>
+        <div class="bg-overlay"></div>
+    </div>
 
     <!-- Barra superior: la marca lleva al launcher; instalar, deshacer y rehacer a la derecha -->
     <nav class="navbar navbar-expand-lg shadow-sm">
@@ -793,6 +800,7 @@
     <script src="../shared/ui/js/ajustes-columnas.js"></script>
     <script src="../shared/ui/js/navegacion.js"></script>
     <script src="../shared/ui/js/ayuda.js"></script>
+    <script src="../shared/ui/js/fondo.js"></script>
 </body>
 
 </html>

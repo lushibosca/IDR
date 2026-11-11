@@ -44,6 +44,7 @@
     <link rel="stylesheet" href="../shared/ui/componentes/spinner.css?v=6">
     <link rel="stylesheet" href="../shared/ui/esqueleto.css?v=1">
     <link rel="stylesheet" href="../shared/ui/panel.css">
+    <link rel="stylesheet" href="../shared/ui/fondo.css">
     <link rel="stylesheet" href="../shared/ui/ayuda.css">
     <link rel="stylesheet" href="css/app/estructura.css?v=41">
         <link rel="stylesheet" href="css/app/estado.css?v=54">
@@ -61,6 +62,12 @@
 </head>
 
 <body>
+
+    <div class="bg-backdrop" aria-hidden="true">
+        <div class="bg-layer bg-light"></div>
+        <div class="bg-layer bg-dark"></div>
+        <div class="bg-overlay"></div>
+    </div>
 
     <!-- Top Navbar -->
     <nav class="navbar navbar-expand-lg shadow-sm">
@@ -2215,6 +2222,7 @@
     <script src="js/historial.js"></script>
     <script src="js/atajos.js?v=29"></script>
     <script src="../shared/ui/js/ayuda.js"></script>
+    <script src="../shared/ui/js/fondo.js"></script>
     <script src="js/stock-puro.js?v=5"></script>
     <script src="js/stock.js?v=128"></script>
     <script src="js/stock-listar.js?v=9"></script>

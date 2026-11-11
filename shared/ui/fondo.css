@@ -1,0 +1,95 @@
+/* fondo.css: el fondo de página de cada app (la foto propia, desenfocada, con un velo del color del tema) y su aparición suave al cargar.
+   Marcado, justo después de <body>: <div class="bg-backdrop" aria-hidden="true"><div class="bg-layer bg-light"></div>
+   <div class="bg-layer bg-dark"></div><div class="bg-overlay"></div></div>. La imagen de cada app va en SU hoja
+   (`.bg-layer.bg-light { background-image: url('../../img/SGx-light.jpeg') }` y lo mismo con -dark): acá solo lo común.
+   Al irse al launcher (js/fondo.js) se agrega `.exiting` y el fondo se desvanece. Va después de panel.css. */
+
+@layer app {
+    :root {
+        --bg-blur: 6px;
+        --bg-overlay: color-mix(in srgb, var(--bg-main) 74%, transparent);
+    }
+
+    /* el cuerpo deja ver el fondo; el color de la página queda en <html> (menos con un modal abierto: ahí manda base.css) */
+    html:not(.ui-modal-abierto) {
+        background-color: var(--bg-main);
+    }
+
+    body {
+        background-color: transparent;
+    }
+
+    .bg-backdrop {
+        position: fixed;
+        top: -24px;
+        left: -24px;
+        right: -24px;
+        bottom: -24px;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+        animation: bgFadeIn 0.5s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+    }
+
+    .bg-layer {
+        position: absolute;
+        inset: 0;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        filter: blur(var(--bg-blur));
+        transform: scale(1.05);
+        transition: opacity 0.4s ease;
+        will-change: opacity, transform;
+        animation: bgZoom 0.5s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+    }
+
+    .bg-layer.bg-light {
+        opacity: 1;
+    }
+
+    .bg-layer.bg-dark {
+        opacity: 0;
+    }
+
+    [data-tema="dark"] .bg-layer.bg-light {
+        opacity: 0;
+    }
+
+    [data-tema="dark"] .bg-layer.bg-dark {
+        opacity: 1;
+    }
+
+    .bg-overlay {
+        position: absolute;
+        inset: 0;
+        background: var(--bg-overlay);
+        transition: background-color 0.4s ease;
+    }
+
+    .bg-backdrop.exiting {
+        animation: bgFadeOut 0.25s cubic-bezier(0.25, 1, 0.5, 1) both;
+    }
+
+    @keyframes bgFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes bgFadeOut {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(1.04); }
+    }
+
+    @keyframes bgZoom {
+        from { transform: scale(1); }
+        to { transform: scale(1.05); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .bg-backdrop, .bg-backdrop.exiting, .bg-layer, .bg-overlay {
+            animation: none;
+            transition: none;
+        }
+    }
+}
