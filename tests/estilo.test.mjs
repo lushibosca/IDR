@@ -115,7 +115,8 @@ test("apps portadas: cargan la base (tokens primero, utilidades al final), el es
     const ui = hojas.filter((h) => h.startsWith("../shared/ui/"));
     assert.equal(ui[0], "../shared/ui/tokens.css", `${app}: tokens.css tiene que ser la primera hoja de la base`);
     assert.equal(ui.at(-1), "../shared/ui/utilidades.css", `${app}: utilidades.css va al final`);
-    for (const f of CSS_UI.filter((c) => !c.includes("/js/"))) {
+    // (legado/: solo las apps con variables viejas de SGR/SGI/SGP; SGC no la carga)
+    for (const f of CSS_UI.filter((c) => !c.includes("/js/") && !c.includes("/legado/"))) {
       assert.ok(hojas.includes(`../${f}`), `${app}: falta <link> a ../${f}`);
     }
     const propias = hojas.filter((h) => !h.startsWith("../shared/"));

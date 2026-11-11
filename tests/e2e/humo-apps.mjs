@@ -180,7 +180,65 @@ async function sgr() {
     check(app, 'móvil: sin errores de JavaScript', movil.errores.length === 0, movil.errores.join(' | '));
 }
 
-const ESCENARIOS = { SGR: sgr };
+// ─── SGI
+async function sgi() {
+    const app = 'SGI';
+    const ctx = await cargar(app);
+    const { w, $, errores } = ctx;
+    await comunes(app, ctx, ['movimientos', 'dashboard']);
+
+    // alta de un material desde Ajustes
+    clic($('tab-ajustes'));
+    clic($('ajustes-btn-material'));
+    check(app, 'Nuevo material: abre el modal', await hasta(() => abierto(w, $('modal-material-nuevo'))));
+    $('mat-nombre-nuevo').value = 'Patchcord cat6';
+    clic($('mat-nuevo-guardar-btn'));
+    check(app, 'Nuevo material: guarda y cierra', await hasta(() => !abierto(w, $('modal-material-nuevo'))));
+    clic($('tab-dashboard'));
+    check(app, 'Dashboard: el material aparece en la tabla', await hasta(() => /Patchcord cat6/.test($('tabla-materiales').textContent)));
+
+    // búsqueda
+    escribir($('global-search'), 'nada-que-coincida');
+    check(app, 'buscador: marca la búsqueda activa', $('sidebar-search-container').classList.contains('search-active'));
+    check(app, 'buscador: filtra', await hasta(() => !/Patchcord cat6/.test($('tabla-materiales').textContent)));
+    clic($('search-clear'));
+    check(app, 'buscador: limpiar vuelve a mostrar', await hasta(() => /Patchcord cat6/.test($('tabla-materiales').textContent)));
+
+    // modales: editar (clic en la fila), entrada con su primera línea, y desde Ajustes
+    await modalBasico(app, ctx, () => clic($('tabla-materiales').querySelector('[data-mat-id]')), 'modal-material-editar');
+    clic($('tab-ajustes'));
+    clic($('ajustes-btn-entrada'));
+    check(app, 'entrada: abre con una línea de material', await hasta(() => abierto(w, $('modal-entrada'))
+        && $('lineas-container-entrada').children.length > 0));
+    tecla(w, 'Escape');
+    await hasta(() => !abierto(w, $('modal-entrada')));
+    await modalBasico(app, ctx, () => clic($('ajustes-btn-categorias')), 'modal-categorias');
+    await modalBasico(app, ctx, () => clic($('ajustes-btn-herramientas')), 'modal-herramientas');
+    await modalBasico(app, ctx, () => clic($('ajustes-btn-gist')), 'modal-gist');
+
+    // confirmar sobre otro modal: Escape vuelve al de abajo
+    clic($('tab-dashboard'));
+    clic($('tabla-materiales').querySelector('[data-mat-id]'));
+    await hasta(() => abierto(w, $('modal-material-editar')));
+    clic($('mat-editar-lock-btn'));
+    clic($('mat-editar-eliminar-btn'));
+    check(app, 'eliminar: pide confirmación encima del modal', await hasta(() => abierto(w, $('modal-confirmar'))));
+    tecla(w, 'Escape');
+    check(app, 'confirmar: Escape vuelve al modal de edición', await hasta(() => !abierto(w, $('modal-confirmar')))
+        && abierto(w, $('modal-material-editar')));
+    tecla(w, 'Escape');
+    await hasta(() => !abierto(w, $('modal-material-editar')));
+
+    check(app, 'datos: se guardan en SGI_activos', /Patchcord cat6/.test(w.localStorage.getItem('SGI_activos') || ''));
+    check(app, 'sin errores de JavaScript', errores.length === 0, errores.join(' | '));
+
+    const movil = await cargar(app, { ancho: 390 });
+    clic(movil.$('btn-buscar-movil'));
+    check(app, 'móvil: el ícono abre el buscador', movil.d.documentElement.classList.contains('busqueda-movil-abierta'));
+    check(app, 'móvil: sin errores de JavaScript', movil.errores.length === 0, movil.errores.join(' | '));
+}
+
+const ESCENARIOS = { SGR: sgr, SGI: sgi };
 const pedidas = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(ESCENARIOS);
 for (const app of pedidas) {
     if (!ESCENARIOS[app]) { console.log(`FAIL  ${app}: sin escenario`); fallos++; continue; }

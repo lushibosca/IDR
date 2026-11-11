@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261111.0110';
+const CACHE_NAME = 'idr-suite-v261111.0119';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -76,9 +76,8 @@ const PRECACHE_URLS = [
   // ── SGI (Materiales) ──
   './SGI/',
   './SGI/index.html',
-  './SGI/flash.js',
   './SGI/manifest.json',
-  './SGI/styles.css',
+  './SGI/css/sgi.css',
   './SGI/app.js',
   './SGI/icon.svg',
   './SGI/icons/icon-192.png',
@@ -131,6 +130,7 @@ const PRECACHE_URLS = [
   // base de estilo común (porte del estilo de SGC: docs/PORTE-ESTILO-SGC.md)
   './shared/ui/base.css',
   './shared/ui/esqueleto.css',
+  './shared/ui/legado/variables.css',
   './shared/ui/grilla.css',
   './shared/ui/tokens.css',
   './shared/ui/utilidades.css',
@@ -138,6 +138,7 @@ const PRECACHE_URLS = [
   './shared/ui/js/arranque.js',
   './shared/ui/js/atras-modales.js',
   './shared/ui/js/busqueda-movil.js',
+  './shared/ui/js/mm.js',
   './shared/ui/js/swipe-pestanas.js',
   './shared/ui/js/ui.js',
   './shared/ui/componentes/acordeon.css',

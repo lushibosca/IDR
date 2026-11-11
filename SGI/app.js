@@ -466,255 +466,9 @@ const historial = (() => {
 
 // ═══════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════
-//  MODAL MANAGER (PATRÓN HORARIOS UNIFICADO)
+//  MODALES: `MM`, de ../shared/ui/js/mm.js (sobre UI.modal). Al cerrar cualquier modal se cierra el portal de sugerencias.
 // ═══════════════════════════════════════════════════════
-const MM = (() => {
-    const _padres = {};
-    const _accionesVolver = {};
-
-    let _navegandoHaciaAtras = false;
-    let _ignorandoPopstate = false;
-    let _enAlternanciaHaciaAdelante = false;
-    let _enAlternanciaHaciaAtras = false;
-    let _mdDown = false;
-
-    // ── Focus trap ──────────────────────────────────────────
-    const FOCUSABLE = [
-        'a[href]', 'button:not([disabled])', 'input:not([disabled])',
-        'select:not([disabled])', 'textarea:not([disabled])',
-        '[tabindex]:not([tabindex="-1"])'
-    ].join(',');
-    const _trapHandlers = new Map();
-    const _prevFocus = new Map();
-
-    function _instalarTrap(m) {
-        _prevFocus.set(m.id, document.activeElement);
-        const focusables = () => Array.from(m.querySelectorAll(FOCUSABLE)).filter(el => !el.closest('[hidden]'));
-        setTimeout(() => { focusables()[0]?.focus(); }, 50);
-
-        function _onTab(e) {
-            if (e.key !== 'Tab') return;
-            const elems = focusables();
-            if (!elems.length) { e.preventDefault(); return; }
-            const first = elems[0], last = elems[elems.length - 1];
-            if (e.shiftKey) {
-                if (document.activeElement === first) { e.preventDefault(); last.focus(); }
-            } else {
-                if (document.activeElement === last) { e.preventDefault(); first.focus(); }
-            }
-        }
-        m.addEventListener('keydown', _onTab);
-        _trapHandlers.set(m.id, _onTab);
-    }
-
-    function _removerTrap(m) {
-        const handler = _trapHandlers.get(m.id);
-        if (handler) { m.removeEventListener('keydown', handler); _trapHandlers.delete(m.id); }
-        const prev = _prevFocus.get(m.id);
-        if (prev && typeof prev.focus === 'function') { try { prev.focus(); } catch (_) { } }
-        _prevFocus.delete(m.id);
-    }
-    // ────────────────────────────────────────────────────────
-
-    function registrarAccionVolver(modalId, fn) {
-        _accionesVolver[modalId] = fn;
-    }
-
-    function _getAccionVolver(modalId) {
-        return _accionesVolver[modalId] || null;
-    }
-
-    function _ejecutarAccionCierre(modalId) {
-        const accionVolver = _getAccionVolver(modalId);
-        if (typeof accionVolver === 'function') {
-            accionVolver();
-            return;
-        }
-        const padreId = _padres[modalId];
-        if (padreId) {
-            const padreEl = document.getElementById(padreId);
-            if (padreEl && !padreEl.classList.contains('show')) {
-                alternar(modalId, padreId);
-                return;
-            }
-        }
-        cerrar(modalId);
-    }
-
-    window.addEventListener('popstate', () => {
-        if (_ignorandoPopstate) {
-            _ignorandoPopstate = false;
-            return;
-        }
-
-        _navegandoHaciaAtras = true;
-        const abiertos = Array.from(document.querySelectorAll('.modal.show'));
-        if (abiertos.length > 0) {
-            const topModal = abiertos[abiertos.length - 1];
-            _ejecutarAccionCierre(topModal.id);
-        }
-        setTimeout(() => { _navegandoHaciaAtras = false; }, 50);
-    });
-
-    function _onMD(e) { _mdDown = e.target === e.currentTarget; }
-    function _onClick(e) {
-        if (!_mdDown) return;
-        if (e.target === e.currentTarget) {
-            _ejecutarAccionCierre(e.target.id);
-        }
-    }
-
-    function abrir(modalId, optsOrCb) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-
-        let cb, onEscape, padre;
-        if (typeof optsOrCb === 'function') {
-            cb = optsOrCb;
-        } else if (optsOrCb && typeof optsOrCb === 'object') {
-            cb = optsOrCb.cb;
-            onEscape = optsOrCb.onEscape;
-            padre = optsOrCb.padre;
-        }
-
-        if (onEscape) {
-            _accionesVolver[modalId] = onEscape;
-        } else {
-            delete _accionesVolver[modalId];
-        }
-
-        if (padre) {
-            _padres[modalId] = padre;
-        }
-
-        modal.classList.add('show');
-        document.body.classList.add('modal-open');
-
-        if (!_navegandoHaciaAtras && !_enAlternanciaHaciaAtras) {
-            history.pushState({ modalId }, '');
-        }
-
-        setTimeout(() => {
-            modal.addEventListener('mousedown', _onMD);
-            modal.addEventListener('click', _onClick);
-        }, 100);
-
-        _instalarTrap(modal);
-        if (typeof cb === 'function') cb();
-    }
-
-    function cerrar(modalId, callback = null) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-
-        const estabaAbierto = modal.classList.contains('show');
-        delete _accionesVolver[modalId];
-        modal.classList.remove('show');
-        if (typeof cerrarPortalSugerencias === 'function') cerrarPortalSugerencias();
-
-        if (document.querySelectorAll('.modal.show').length === 0) {
-            document.body.classList.remove('modal-open');
-        }
-
-        modal.removeEventListener('mousedown', _onMD);
-        modal.removeEventListener('click', _onClick);
-        _removerTrap(modal);
-
-        if (estabaAbierto && !_navegandoHaciaAtras && !_enAlternanciaHaciaAdelante) {
-            _ignorandoPopstate = true;
-            history.back();
-        }
-
-        if (typeof callback === 'function') callback();
-    }
-
-    function alternar(modalIdCerrar, modalIdAbrir, callbackCerrar = null, callbackAbrir = null) {
-        const esHaciaAtras = (_padres[modalIdCerrar] === modalIdAbrir);
-
-        if (esHaciaAtras) {
-            _enAlternanciaHaciaAtras = true;
-            delete _padres[modalIdCerrar];
-        } else {
-            _enAlternanciaHaciaAdelante = true;
-            if (modalIdCerrar && modalIdAbrir) {
-                _padres[modalIdAbrir] = modalIdCerrar;
-            }
-        }
-
-        cerrar(modalIdCerrar, callbackCerrar);
-        abrir(modalIdAbrir, callbackAbrir);
-
-        _enAlternanciaHaciaAdelante = false;
-        _enAlternanciaHaciaAtras = false;
-    }
-
-    function abrirConPadre(modalId, setupFn = null) {
-        const modalAbierto = document.querySelector('.modal.show');
-        const padre = modalAbierto ? modalAbierto.id : null;
-        if (typeof setupFn === 'function') setupFn();
-        if (padre) {
-            alternar(padre, modalId);
-        } else {
-            abrir(modalId);
-        }
-    }
-
-    function cerrarConPadre(modalId, callbackAbrirPadre = null) {
-        const padre = _padres[modalId];
-        if (padre) {
-            alternar(modalId, padre, null, callbackAbrirPadre ? () => callbackAbrirPadre(padre) : null);
-        } else {
-            cerrar(modalId);
-        }
-    }
-
-    function cerrarTodos() {
-        document.querySelectorAll('.modal.show').forEach(modal => {
-            delete _accionesVolver[modal.id];
-            modal.classList.remove('show');
-            modal.removeEventListener('mousedown', _onMD);
-            modal.removeEventListener('click', _onClick);
-            _removerTrap(modal);
-        });
-        Object.keys(_padres).forEach(k => delete _padres[k]);
-        document.body.classList.remove('modal-open');
-    }
-
-    function cerrarTop() {
-        const abiertos = Array.from(document.querySelectorAll('.modal.show'));
-        if (!abiertos.length) return;
-        const topModal = abiertos[abiertos.length - 1];
-        _ejecutarAccionCierre(topModal.id);
-    }
-
-    // Compatibilidad para transiciones legacy
-    function nav(desde, fn) {
-        if (desde) {
-            const mDesde = document.getElementById(desde);
-            if (mDesde && mDesde.classList.contains('show')) {
-                _enAlternanciaHaciaAdelante = true;
-                cerrar(desde);
-                _enAlternanciaHaciaAdelante = false;
-            }
-        }
-        if (typeof fn === 'function') fn();
-    }
-
-    return {
-        abrir,
-        cerrar,
-        alternar,
-        abrirConPadre,
-        cerrarConPadre,
-        cerrarTodos,
-        cerrarTop,
-        registrarAccionVolver,
-        ejecutarAccionCierre: _ejecutarAccionCierre,
-        getPadre: (id) => _padres[id] || null,
-        setPadre: (id, padreId) => { if (id && padreId) _padres[id] = padreId; },
-        nav
-    };
-})();
+document.addEventListener('ui:modal-cerrar', () => { if (typeof cerrarPortalSugerencias === 'function') cerrarPortalSugerencias(); });
 
 // ═══════════════════════════════════════════════════════
 //  MODAL LOCKER
@@ -745,8 +499,8 @@ const ModalLocker = (() => {
         if (lockBtn) {
             lockBtn.classList.toggle('btn-input-side--baja', bloqueado);
             lockBtn.title = bloqueado ? 'Desbloquear edición' : 'Bloquear edición';
-            const useEl = lockBtn.querySelector('use');
-            if (useEl) useEl.setAttribute('href', bloqueado ? '#icon-lock' : '#icon-unlock');
+            const useEl = lockBtn.querySelector('i');
+            if (useEl) useEl.className = bloqueado ? 'bi bi-lock' : 'bi bi-unlock';
         }
 
         modal.querySelectorAll('input, select, textarea, button').forEach(el => {
@@ -893,23 +647,6 @@ function _volverAlPadre() {
 // Handlers de confirmar registrados en el IIFE de init (ver abajo)
 
 // ═══════════════════════════════════════════════════════
-//  DARK MODE
-// ═══════════════════════════════════════════════════════
-function toggleDarkMode() {
-    // Cambiar document.body por document.documentElement
-    const dark = document.documentElement.classList.toggle('dark-mode');
-    const btn = document.getElementById('btn-dark-mode');
-    if (btn) {
-        btn.title = dark ? 'Modo claro' : 'Modo oscuro';
-        const iconUse = btn.querySelector('use');
-        if (iconUse) {
-            iconUse.setAttribute('href', dark ? '#icon-sun' : '#icon-moon');
-        }
-    }
-    try { localStorage.setItem('IDR_dark', dark ? '1' : '0'); } catch (_) { }
-}
-
-// ═══════════════════════════════════════════════════════
 //  CATEGORÍAS
 // ═══════════════════════════════════════════════════════
 function agregarCategoria() {
@@ -952,7 +689,7 @@ function renderCategorias() {
         <div class="cat-item">
             <span>${esc(c)}</span>
             <button class="icon-btn btn-cat-delete" data-cat="${esc(c)}" title="Eliminar">
-                <svg class="svg-icon"><use href="#icon-x"/></svg>
+                <i class="bi bi-x-lg"></i>
             </button>
         </div>
     `).join('');
@@ -1251,7 +988,6 @@ function restablecerDatos() {
         '¿Restablecer todos los datos?',
         'Se eliminarán todos los materiales, movimientos y categorías. Esta acción se puede deshacer antes de cerrar la página',
         () => {
-            MM.cerrar('modal-ajustes');
             historial.empujar('Restablecer todos los datos');
             state.materiales = [];
             state.movimientos = [];
@@ -1270,10 +1006,15 @@ function restablecerDatos() {
 // ═══════════════════════════════════════════════════════
 let _busqTimer = null;
 
+// Búsqueda activa: el aspecto del buscador de SGC (caja e input con .search-active muestran la X)
+function _marcarBusqueda(val) {
+    document.getElementById('sidebar-search-container')?.classList.toggle('search-active', !!val);
+    document.getElementById('global-search')?.classList.toggle('search-active', !!val);
+}
+
 function onBusqGlobal() {
-    const val = document.getElementById('busq-global').value;
-    const btn = document.getElementById('busq-clear-btn');
-    if (btn) btn.style.display = val ? 'flex' : 'none';
+    const val = document.getElementById('global-search').value;
+    _marcarBusqueda(val);
 
     // 1. Cancelamos la búsqueda anterior si el usuario sigue escribiendo
     if (_busqTimer) clearTimeout(_busqTimer);
@@ -1289,10 +1030,10 @@ function limpiarBusqueda() {
     // Cancelamos cualquier búsqueda pendiente por seguridad
     if (_busqTimer) clearTimeout(_busqTimer);
 
-    const inp = document.getElementById('busq-global');
-    const btn = document.getElementById('busq-clear-btn');
+    const inp = document.getElementById('global-search');
     inp.value = '';
-    if (btn) btn.style.display = 'none';
+    _marcarBusqueda('');
+    inp.dispatchEvent(new Event('input'));             // el ícono del buscador móvil deja de marcar texto
 
     // Si hay filtro de año activo, también lo limpiamos (setAnioFiltro ya re-renderiza todo)
     if (_anioFiltro) {
@@ -1319,11 +1060,9 @@ function buscarMovimientosMaterialEditar() {
     const textoBusqueda = nombre;
 
     // 3. Escribimos en el buscador global y mostramos el botón de limpiar (la "X")
-    const busqEl = document.getElementById('busq-global');
-    const btnClear = document.getElementById('busq-clear-btn');
-
+    const busqEl = document.getElementById('global-search');
     busqEl.value = textoBusqueda;
-    if (btnClear) btnClear.style.display = 'flex';
+    _marcarBusqueda(textoBusqueda);
 
     if (_busqTimer) clearTimeout(_busqTimer);
 
@@ -1366,7 +1105,7 @@ function renderHerramientas() {
             </div>
             <span class="herr-item-cantidad">${esc(String(h.cantidad))}</span>
             <button class="icon-btn btn-cat-delete btn-herr-delete" data-id="${esc(h.id)}" title="Eliminar">
-                <svg class="svg-icon"><use href="#icon-x"/></svg>
+                <i class="bi bi-x-lg"></i>
             </button>
         </div>
     `).join('');
@@ -1414,7 +1153,7 @@ function agregarHerramienta() {
     _lineasState.herramienta.lineas = [];
     _lineasState.herramienta.counter = 0;
 
-    UI.cerrarNuevaHerramienta();
+    Vistas.cerrarNuevaHerramienta();
     toast('Herramientas registradas');
 }
 
@@ -1431,7 +1170,7 @@ function eliminarHerramienta(id) {
 // ═══════════════════════════════════════════════════════
 //  UI — NAVEGACIÓN DE MODALES CON PADRE (patrón CCTV)
 // ═══════════════════════════════════════════════════════
-const UI = {
+const Vistas = {
     // Helper: cierra `desde`, espera 150ms, ejecuta `fn`
     _nav(desde, fn) {
         if (desde) {
@@ -1443,22 +1182,22 @@ const UI = {
         if (typeof fn === 'function') fn();
     },
 
-    // Helper: cierra un modal hijo y vuelve a ajustes
+    // Helper: cierra un modal abierto desde la pestaña Ajustes
     _cerrarAjustesHijo(id) {
-        MM.alternar(id, 'modal-ajustes');
+        MM.cerrar(id);
     },
 
     abrirAjustes() {
-        MM.abrir('modal-ajustes');
+        switchTab('ajustes');
     },
 
     abrirCategorias() {
         renderCategorias();
-        MM.alternar('modal-ajustes', 'modal-categorias');
+        MM.abrir('modal-categorias');
     },
 
     cerrarCategorias() {
-        UI._cerrarAjustesHijo('modal-categorias');
+        Vistas._cerrarAjustesHijo('modal-categorias');
     },
 
     abrirImportar() {
@@ -1470,7 +1209,7 @@ const UI = {
         document.getElementById('importar-combinar-btn').disabled = true;
         _importarParsed = null;
 
-        MM.alternar('modal-ajustes', 'modal-importar');
+        MM.abrir('modal-importar');
 
         setTimeout(() => {
             document.getElementById('importar-file-input')?.click();
@@ -1478,34 +1217,34 @@ const UI = {
     },
 
     cerrarImportar() {
-        UI._cerrarAjustesHijo('modal-importar');
+        Vistas._cerrarAjustesHijo('modal-importar');
     },
 
     abrirGist() {
         GistSync.poblarModal();
-        MM.alternar('modal-ajustes', 'modal-gist');
+        MM.abrir('modal-gist');
     },
 
     cerrarGist() {
-        UI._cerrarAjustesHijo('modal-gist');
+        Vistas._cerrarAjustesHijo('modal-gist');
     },
 
     abrirShortcuts() {
-        MM.alternar('modal-ajustes', 'modal-shortcuts');
+        MM.abrir('modal-shortcuts');
     },
 
     cerrarShortcuts() {
-        UI._cerrarAjustesHijo('modal-shortcuts');
+        Vistas._cerrarAjustesHijo('modal-shortcuts');
     },
 
     abrirReporte() {
         generarReporte();
         if (!state.materiales.length) return; // generarReporte ya emitió el toast
-        MM.alternar('modal-ajustes', 'modal-reporte');
+        MM.abrir('modal-reporte');
     },
 
     cerrarReporte() {
-        UI._cerrarAjustesHijo('modal-reporte');
+        Vistas._cerrarAjustesHijo('modal-reporte');
     },
 
     _herrPadreId: null, // <--- Variable para recordar origen si fuera necesario
@@ -1515,7 +1254,7 @@ const UI = {
         renderHerramientas();
 
         if (this._herrPadreId === 'ajustes' && origen === 'ajustes') {
-            MM.alternar('modal-ajustes', 'modal-herramientas');
+            MM.abrir('modal-herramientas');
         } else {
             MM.abrir('modal-herramientas');
         }
@@ -1524,7 +1263,7 @@ const UI = {
     cerrarHerramientas() {
         if (this._herrPadreId === 'ajustes') {
             this._herrPadreId = null;
-            UI._cerrarAjustesHijo('modal-herramientas');
+            Vistas._cerrarAjustesHijo('modal-herramientas');
         } else {
             this._herrPadreId = null;
             MM.cerrar('modal-herramientas');
@@ -1566,11 +1305,11 @@ const UI = {
         // Solo reaccionar al botón principal (0 = izquierdo/toque)
         if (e.button !== 0) return;
 
-        UI._mesLongPressed = false;
+        Vistas._mesLongPressed = false;
 
         // Arrancamos el cronómetro (800 milisegundos)
-        UI._mesPressTimer = setTimeout(() => {
-            UI._mesLongPressed = true;
+        Vistas._mesPressTimer = setTimeout(() => {
+            Vistas._mesLongPressed = true;
 
             // Si el celu soporta vibración, hace un "tact" sutil
             if (navigator.vibrate) navigator.vibrate(40);
@@ -1611,13 +1350,13 @@ const UI = {
 
     handleMesUp(e, el) {
         // Si soltó el dedo antes del segundo, cancelamos el timer
-        if (UI._mesPressTimer) clearTimeout(UI._mesPressTimer);
+        if (Vistas._mesPressTimer) clearTimeout(Vistas._mesPressTimer);
 
         // Solo reaccionar al botón principal (0 = izquierdo/toque)
         if (e.button !== 0) return;
 
         // Si NO fue un long press, lo tratamos como un click normal
-        if (!UI._mesLongPressed) {
+        if (!Vistas._mesLongPressed) {
             const mg = el.parentElement;
             const abrioAhora = !mg.classList.contains('open');
 
@@ -1664,92 +1403,52 @@ const UI = {
 
     handleMesCancel() {
         // Si el usuario movió el dedo para scrollear, cancelamos todo
-        if (UI._mesPressTimer) clearTimeout(UI._mesPressTimer);
+        if (Vistas._mesPressTimer) clearTimeout(Vistas._mesPressTimer);
     }
 };
 
 // ═══════════════════════════════════════════════════════
-//  TABS  (con animación fade-out → fade-in, igual que CCTV)
+//  PESTAÑAS (panel lateral; ui.js las cambia con data-ui-toggle="pill")
 // ═══════════════════════════════════════════════════════
 // Configuración centralizada de pestañas: para agregar una pestaña nueva a
 // futuro alcanza con sumar un objeto acá (el id debe coincidir con
 // "tab-<id>" y "panel-<id>" en el HTML). switchTab(), el título dinámico
-// del header y el toggle por tap (toggleHeaderTab) se adaptan solos.
+// (sus botones están en el panel lateral de index.html: `tab-<id>` y `panel-<id>`).
 const TABS_CONFIG = [
-    { id: 'dashboard', icon: '#icon-dashboard', label: 'Dashboard' },
-    { id: 'movimientos', icon: '#icon-movements', label: 'Movimientos' },
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'movimientos', label: 'Movimientos' },
 ];
 
 let _tabActual = 'dashboard';
 
-function actualizarHeaderTabTitle() {
-    const headerTabTitle = document.getElementById('header-tab-title');
-    if (headerTabTitle) {
-        const cfg = TABS_CONFIG.find(t => t.id === _tabActual);
-        if (cfg && headerTabTitle.textContent !== cfg.label) {
-            headerTabTitle.textContent = cfg.label;
-        }
-    }
-}
+const TABS_VALIDAS = [...TABS_CONFIG.map(t => t.id), 'ajustes'];
 
 function switchTab(tab) {
     if (_tabActual === tab) {
-        let limpioAlgo = false;
-        if (document.getElementById('busq-global').value) {
-            limpiarBusqueda();
-            limpioAlgo = true;
-        }
-        if (_anioFiltro) {
-            setAnioFiltro(null);
-            limpioAlgo = true;
-        }
+        if (tab === 'ajustes') return;
+        if (document.getElementById('global-search').value) limpiarBusqueda();
+        if (_anioFiltro) setAnioFiltro(null);
         return;
     }
-
-    if (tab === 'movimientos' && _anioFiltro && !document.getElementById('busq-global').value) {
-        setAnioFiltro(null);
-    }
-
-    const saliente = document.getElementById(`panel-${_tabActual}`);
-    const entrante = document.getElementById(`panel-${tab}`);
-
-    // Aplicamos la mutación a ambos paneles en simultáneo
-    _animarMutacion([saliente, entrante], () => {
-        TABS_CONFIG.forEach(t =>
-            document.getElementById(`tab-${t.id}`)?.classList.toggle('activa', t.id === tab)
-        );
-        try {
-            localStorage.setItem('SGI_tab', tab);
-            localStorage.setItem('SGI_tab_time', Date.now().toString());
-        } catch (_) { }
-
-        _tabActual = tab;
-        actualizarHeaderTabTitle();
-
-        saliente.classList.remove('activa');
-        entrante.classList.add('activa');
-
-        if (tab === 'dashboard') { renderStats(); renderMateriales(); }
-        // 'movimientos' ya se mantiene actualizado en tiempo real por cada mutación
-        // de datos/búsqueda/filtro (ver historial.refrescarTodo, onBusqGlobal, setAnioFiltro,
-        // eliminarMovimiento, etc.), así que NO hace falta re-renderizarlo acá.
-        // Volver a llamar renderMovimientos() en cada cambio de pestaña era un trabajo
-        // 100% redundante con ~1200 movimientos y era la causa principal del lag.
-    });
+    const boton = document.getElementById(`tab-${tab}`);
+    if (boton) UI.pestana.mostrar(boton);
 }
 
-// Se dispara al tocar el título de pestaña que aparece en el header al
-// hacer scroll (ver CSS ".header.scrolled .header-tab-title"). Avanza a la
-// siguiente pestaña en TABS_CONFIG de forma circular, así que con 2
-// pestañas funciona como un toggle simple y si a futuro se suman más se
-// van recorriendo una por una sin tocar este código.
-function toggleHeaderTab() {
-    if (TABS_CONFIG.length < 2) return;
-    const idx = TABS_CONFIG.findIndex(t => t.id === _tabActual);
-    const siguiente = TABS_CONFIG[(idx + 1) % TABS_CONFIG.length];
-    switchTab(siguiente.id);
-    // Volvemos arriba: quedarse a mitad de scroll de la pestaña anterior
-    // desorienta, y además así el header vuelve a su estado normal.
+// Cada cambio de pestaña (clic, flechas, swipe en móvil o switchTab): se recuerda y se redibuja lo que hace falta
+function _alMostrarPestana(e) {
+    const tab = e.target && e.target.dataset ? e.target.dataset.tab : null;
+    if (!tab || !TABS_VALIDAS.includes(tab)) return;
+    const anterior = _tabActual;
+    _tabActual = tab;
+    if (tab === 'movimientos' && anterior !== 'movimientos' && _anioFiltro && !document.getElementById('global-search').value) {
+        setAnioFiltro(null);
+    }
+    try {
+        localStorage.setItem('SGI_tab', tab);
+        localStorage.setItem('SGI_tab_time', Date.now().toString());
+    } catch (_) { }
+    if (tab === 'dashboard') { renderStats(); renderMateriales(); }
+    // 'movimientos' ya se mantiene al día con cada cambio de datos, búsqueda o filtro (redibujarlo acá era el lag)
     subirArriba();
 }
 
@@ -1785,7 +1484,7 @@ function abrirModalMaterial(id = null, padreId = null) {
 function cerrarModalMaterial(sufijo) {
     if (_materialPadreId === 'ajustes') {
         _materialPadreId = null; // Limpiamos el estado
-        UI._nav(`modal-material-${sufijo}`, () => UI.abrirAjustes()); // Volvemos a ajustes
+        Vistas._nav(`modal-material-${sufijo}`, () => Vistas.abrirAjustes()); // Volvemos a ajustes
     } else {
         MM.cerrar(`modal-material-${sufijo}`);
     }
@@ -2034,7 +1733,7 @@ function getMovsFiltrados() {
 let _modoAnioAnterior = null;
 
 function renderMateriales() {
-    const busq = (document.getElementById('busq-global')?.value || '').toLowerCase().trim();
+    const busq = (document.getElementById('global-search')?.value || '').toLowerCase().trim();
     const tbody = document.getElementById('tabla-materiales');
     const empty = document.getElementById('materiales-empty');
     const modoAnio = !!_anioFiltro;
@@ -2127,8 +1826,8 @@ function renderMateriales() {
     });
 
     // PASO 3: Headers dinámicos
-    const svgAsc = `<svg class="svg-icon sort-chevron"><use href="#icon-chevron-up"/></svg>`;
-    const svgDesc = `<svg class="svg-icon sort-chevron"><use href="#icon-chevron-down"/></svg>`;
+    const svgAsc = `<i class="bi bi-chevron-up sort-chevron"></i>`;
+    const svgDesc = `<i class="bi bi-chevron-down sort-chevron"></i>`;
     const svgHidden = `<span class="sort-chevron-hidden"></span>`;
 
     const labels = modoAnio
@@ -2141,11 +1840,11 @@ function renderMateriales() {
         if (modoAnio) {
             thInd.classList.remove('th-sortable');
             const indIcon = svgHidden;
-            thInd.innerHTML = `<svg viewBox="0 0 10 14" width="14" height="18" class="svg-th-umbral-hidden"><use href="#icon-umbral"/></svg>${indIcon}`;
+            thInd.innerHTML = `<i class="bi bi-box-seam svg-th-umbral-hidden"></i>${indIcon}`;
         } else {
             thInd.classList.add('th-sortable');
             const indIcon = _sortMat.col === 'indicador' ? (_sortMat.dir === 'asc' ? svgAsc : svgDesc) : svgHidden;
-            thInd.innerHTML = `<svg viewBox="0 0 10 14" width="14" height="18" class="svg-th-umbral-dim"><use href="#icon-umbral"/></svg>${indIcon}`;
+            thInd.innerHTML = `<i class="bi bi-box-seam svg-th-umbral-dim"></i>${indIcon}`;
         }
     }
 
@@ -2297,7 +1996,7 @@ function renderStats() {
         .sort((a, b) => (a.stockActual - a.umbralBajo) - (b.stockActual - b.umbralBajo)); // más críticos primero
 
     let stockBajoHtml = `
-                <span class="stat-chip-label stat-chip-label-stock-bajo"><svg class="svg-icon"><use href="#icon-umbral"/></svg> Stock bajo</span>
+                <span class="stat-chip-label stat-chip-label-stock-bajo"><i class="bi bi-exclamation-triangle"></i> Stock bajo</span>
                 <span class="stat-chip-value">0</span>
                 <span class="stat-chip-sub">sin alertas</span>
             `;
@@ -2315,17 +2014,17 @@ function renderStats() {
 
     document.getElementById('stats-grid').innerHTML = `
                 <div class="stat-chip">
-                    <span class="stat-chip-label"><svg class="svg-icon"><use href="#icon-table"/></svg> Materiales</span>
+                    <span class="stat-chip-label"><i class="bi bi-table"></i> Materiales</span>
                     <span class="stat-chip-value">${totalMats}</span>
                     <span class="stat-chip-sub">registrados</span>
                 </div>
                 <div class="stat-chip">
-                    <span class="${labelFiltroClass}"><svg class="svg-icon"><use href="#icon-movements"/></svg> Movimientos</span>
+                    <span class="${labelFiltroClass}"><i class="bi bi-arrow-left-right"></i> Movimientos</span>
                     <span class="stat-chip-value">${totalMovs}</span>
                     <span class="stat-chip-sub">${labelMovs}</span>
                 </div>
                 <div class="stat-chip${ultimo ? ' stat-chip-clickable' : ''}"${ultimo ? ` data-mov-id="${esc(ultimo.id)}"` : ''}>
-                    <span class="${labelFiltroClass}"><svg class="svg-icon"><use href="#icon-back"/></svg> Último movimiento</span>
+                    <span class="${labelFiltroClass}"><i class="bi bi-clock-history"></i> Último movimiento</span>
                     ${ultimoHtml}
                 </div>
                 <div class="stat-chip chip-top5" id="chip-top5">
@@ -2504,7 +2203,7 @@ function renderLineas(tipo) {
                     data-linea-tipo="herramienta" data-linea-lid="${l.lid}" class="linea-qty-input"
                 >
                 <button class="icon-btn btn-linea-delete" data-linea-tipo="herramienta" data-linea-lid="${l.lid}" title="Quitar">
-                    <svg class="svg-icon"><use href="#icon-x"/></svg>
+                    <i class="bi bi-x-lg"></i>
                 </button>
             </div>
         `).join('');
@@ -2531,7 +2230,7 @@ function renderLineas(tipo) {
                     data-linea-tipo="${tipo}" data-linea-lid="${l.lid}" class="linea-qty-input"
                 >
                 <button class="icon-btn btn-linea-delete" data-linea-tipo="${tipo}" data-linea-lid="${l.lid}" title="Quitar">
-                    <svg class="svg-icon"><use href="#icon-x"/></svg>
+                    <i class="bi bi-x-lg"></i>
                 </button>
             </div>
         `).join('');
@@ -3122,7 +2821,7 @@ function _cargarMesLazy(monthGroupEl) {
 }
 
 function renderMovimientos() {
-    const busqOriginal = document.getElementById('busq-global')?.value || '';
+    const busqOriginal = document.getElementById('global-search')?.value || '';
     const busqText = busqOriginal.toLowerCase().trim();
     const lista = document.getElementById('lista-movimientos');
     const empty = document.getElementById('movimientos-empty');
@@ -3243,7 +2942,7 @@ function renderMovimientos() {
         <div class="month-group ${isOpenMes}" data-mes-key="${mesKey}" data-loaded="${abiertoMes ? '1' : '0'}">
             <div class="mes-separador">
                 <span>${NOMBRES_MESES[mesIdx]} ${anio}</span>
-                <svg class="svg-icon month-arrow"><use href="#icon-chevron-down"/></svg>
+                <i class="bi bi-chevron-down month-arrow"></i>
             </div>
             <div class="month-content-wrapper">
                 <div class="month-content">
@@ -3257,7 +2956,7 @@ function renderMovimientos() {
         <div class="year-group ${isOpenAnio}">
             <div class="year-summary">
                 <div class="year-summary-inner">
-                    <svg class="svg-icon year-arrow"><use href="#icon-chevron-right"/></svg>
+                    <i class="bi bi-chevron-right year-arrow"></i>
                     ${anio}
                 </div>
                 <span class="year-count">${movimientosDelAnio.length}</span>
@@ -3286,7 +2985,7 @@ document.addEventListener('keydown', e => {
     const modalId = modal?.id ?? '';
     const tag = document.activeElement?.tagName;
     const enInput = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
-    const busqActivo = document.activeElement?.id === 'busq-global';
+    const busqActivo = document.activeElement?.id === 'global-search';
 
     // ── Ctrl+Z / Ctrl+Y ──────────────────────────────────
     if (e.ctrlKey && !e.altKey && !e.shiftKey) {
@@ -3296,9 +2995,9 @@ document.addEventListener('keydown', e => {
 
     // ── Escape ───────────────────────────────────────────
     if (e.key === 'Escape') {
-        if (modalOpen) { MM.cerrarTop(); return; }
+        if (modalOpen) return;
 
-        const busqEl = document.getElementById('busq-global');
+        const busqEl = document.getElementById('global-search');
 
         // 1. Limpiar buscador y siempre quitar el foco del elemento
         if (busqActivo) {
@@ -3351,7 +3050,7 @@ document.addEventListener('keydown', e => {
         // Enfocar búsqueda con cualquier tecla alfanumérica
         if (!e.ctrlKey && !e.altKey && !e.metaKey &&
             (e.key === 'Backspace' || (e.key.length === 1 && /[a-zA-Z0-9]/.test(e.key)))) {
-            const busqEl = document.getElementById('busq-global');
+            const busqEl = document.getElementById('global-search');
             if (busqEl) {
                 busqEl.focus();
                 if (e.key === 'Backspace') {
@@ -3420,18 +3119,6 @@ window.addEventListener('scroll', () => {
             btn.classList.add('show');
         } else {
             btn.classList.remove('show');
-        }
-    }
-
-    // 2. Lógica del Header Dinámico
-    const header = document.getElementById('main-header');
-    if (header) {
-        actualizarHeaderTabTitle();
-        // Si bajamos más de 50px (aprox. la altura de las tabs), activamos el cambio
-        if (window.scrollY > 50) {
-            header.classList.add('scrolled');
-        } else {
-            header.classList.remove('scrolled');
         }
     }
 }, { passive: true });
@@ -3531,7 +3218,7 @@ const GistSync = (() => {
         if (!inp) return;
         const mostrar = inp.type === 'password';
         inp.type = mostrar ? 'text' : 'password';
-        if (icon) icon.setAttribute('href', mostrar ? '#icon-eye-off' : '#icon-eye');
+        if (icon) icon.className = mostrar ? 'bi bi-eye-slash' : 'bi bi-eye';
     }
 
     // ── Toggle auto-sync ─────────────────────────────────
@@ -3564,7 +3251,7 @@ const GistSync = (() => {
 
         // Ahora comparamos también el estado del switch
         if (tokenActual === nuevoToken && idActual === nuevoGistId && autoActual === nuevoAuto) {
-            UI.cerrarGist();
+            Vistas.cerrarGist();
             toast('Sin cambios', 'info');
             return;
         }
@@ -3584,7 +3271,7 @@ const GistSync = (() => {
             toast('Configuración guardada');
         }
 
-        UI.cerrarGist();
+        Vistas.cerrarGist();
     }
 
     // ── Núcleo de subida (compartido por manual y auto) ──
@@ -3760,7 +3447,7 @@ const GistSync = (() => {
         const eyeIcon = document.getElementById('gist-eye-icon');
         if (tokenEl) { tokenEl.value = _cfg.token || ''; tokenEl.type = 'password'; }
         if (idEl) idEl.value = _cfg.gistId || '';
-        if (eyeIcon) eyeIcon.setAttribute('href', '#icon-eye');
+        if (eyeIcon) eyeIcon.className = 'bi bi-eye';
         _actualizarLinkBtn();
         _actualizarToggleUI();
         if (_cfg.lastSync) {
@@ -4094,7 +3781,7 @@ function _ejecutarReporte() {
         // Guardamos el evento para dispararlo cuando el usuario toque nuestro botón
         deferredPrompt = e;
         // Mostramos nuestro botón en el header (usamos flex para que respete el diseño)
-        if (btnInstallApp) btnInstallApp.style.display = 'flex';
+        if (btnInstallApp) btnInstallApp.hidden = false;
     });
 
     // Qué pasa cuando el usuario toca nuestro botón
@@ -4113,252 +3800,17 @@ function _ejecutarReporte() {
             deferredPrompt = null;
 
             // Ocultamos el botón
-            btnInstallApp.style.display = 'none';
+            btnInstallApp.hidden = true;
         });
     }
 
     // Si el usuario la instaló exitosamente (o ya la tenía instalada y la abrió)
     window.addEventListener('appinstalled', () => {
-        if (btnInstallApp) btnInstallApp.style.display = 'none';
+        if (btnInstallApp) btnInstallApp.hidden = true;
         deferredPrompt = null;
         toast('Aplicación instalada con éxito', 'success');
     });
 }());
-
-// ═══════════════════════════════════════════════════════
-//  GESTOR DE SWIPE (Navegación Táctil Móvil)
-// ═══════════════════════════════════════════════════════
-(function initSwipe() {
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let isSwipeValid = false;
-
-    document.addEventListener('touchstart', e => {
-        // Desactivamos el swipe solo si hay un modal abierto
-        if (document.body.classList.contains('modal-open')) {
-            isSwipeValid = false;
-            return;
-        }
-
-        isSwipeValid = true;
-        touchStartX = e.changedTouches[0].screenX;
-        touchStartY = e.changedTouches[0].screenY;
-    }, { passive: true });
-
-    document.addEventListener('touchend', e => {
-        if (!isSwipeValid) return;
-
-        const touchEndX = e.changedTouches[0].screenX;
-        const touchEndY = e.changedTouches[0].screenY;
-
-        const distX = touchEndX - touchStartX;
-        const distY = touchEndY - touchStartY;
-        const absDistX = Math.abs(distX);
-        const absDistY = Math.abs(distY);
-
-        // Configuramos umbrales: Mínimo 60px de recorrido horizontal, y máximo 40px de desvío vertical
-        if (absDistX > 60 && absDistY < 40) {
-            // Buscamos el índice actual
-            const idx = TABS_CONFIG.findIndex(t => t.id === _tabActual);
-            let nextIdx;
-
-            if (distX < 0) {
-                // Swipe a la izquierda (←) -> Avanzar a la siguiente
-                nextIdx = (idx + 1) % TABS_CONFIG.length;
-            } else {
-                // Swipe a la derecha (→) -> Retroceder a la anterior
-                nextIdx = (idx - 1 + TABS_CONFIG.length) % TABS_CONFIG.length;
-            }
-            
-            // Cambiamos a la pestaña calculada
-            switchTab(TABS_CONFIG[nextIdx].id);
-        }
-    }, { passive: true });
-}());
-
-// ═══════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════
-//  SELECTOR DE MÓDULOS (App Switcher)
-// ═══════════════════════════════════════════════════════
-function _initMenuModulos(moduloActual) {
-    const modulos = [
-        { id: 'cctv', nombre: 'CCTV', sub: 'Cámaras y switches', icon: 'icon-camera', cls: 'c-cctv', href: '../SGC/index.html' },
-        { id: 'materiales', nombre: 'Materiales', sub: 'Gestión de inventario', icon: 'icon-box', cls: 'c-materiales', href: '../SGI/index.html' },
-        { id: 'racks', nombre: 'Racks', sub: 'Gestión de racks', icon: 'icon-rack', cls: 'c-racks', href: '../SGR/index.html' },
-        { id: 'patcheras', nombre: 'Patcheras', sub: 'Bocas de red en racks', icon: 'icon-plug', cls: 'c-patcheras', href: '../SGP/index.html' }
-    ];
-
-    const overlay = document.createElement('div');
-    overlay.className = 'menu-modulos-overlay';
-
-    const menu = document.createElement('div');
-    menu.className = 'menu-modulos';
-    menu.setAttribute('role', 'menu');
-    menu.setAttribute('aria-label', 'Selector de módulos');
-
-    let html = '<div class="menu-modulos-header">Módulos IDR</div>';
-
-    modulos.forEach(m => {
-        const esActual = m.id === moduloActual;
-        html += `
-            <a href="${m.href}" class="menu-modulo-item ${esActual ? 'es-actual' : ''}" role="menuitem" data-modulo="${m.id}">
-                <div class="menu-modulo-icon ${m.cls}">
-                    <svg><use href="#${m.icon}"/></svg>
-                </div>
-                <div class="menu-modulo-info">
-                    <span class="menu-modulo-name">${m.nombre}</span>
-                    <span class="menu-modulo-sub">${m.sub}</span>
-                </div>
-                ${esActual ? '<span class="menu-modulo-badge">Actual</span>' : ''}
-            </a>
-        `;
-    });
-
-    html += `
-        <div class="menu-modulos-divider"></div>
-        <a href="../index.html" class="menu-modulo-item" role="menuitem">
-            <div class="menu-modulo-icon c-launcher">
-                <svg><use href="#icon-launcher"/></svg>
-            </div>
-            <div class="menu-modulo-info">
-                <span class="menu-modulo-name">Launcher</span>
-                <span class="menu-modulo-sub">Menú principal</span>
-            </div>
-        </a>
-    `;
-
-    menu.innerHTML = html;
-    document.body.appendChild(overlay);
-    document.body.appendChild(menu);
-
-    let isOpen = false;
-    const items = Array.from(menu.querySelectorAll('.menu-modulo-item'));
-
-    function enfocarItem(index) {
-        if (items.length === 0) return;
-        const idx = ((index % items.length) + items.length) % items.length;
-        items[idx].focus();
-    }
-
-    function abrirMenu(enfocar = false) {
-        isOpen = true;
-        overlay.classList.add('open');
-        menu.classList.add('open');
-        if (enfocar) {
-            const idx = items.findIndex(el => el.classList.contains('es-actual'));
-            enfocarItem(idx !== -1 ? idx : 0);
-        }
-    }
-
-    function cerrarMenu() {
-        if (!isOpen) return;
-        isOpen = false;
-        overlay.classList.remove('open');
-        menu.classList.remove('open');
-        if (menu.contains(document.activeElement)) {
-            document.activeElement.blur();
-        }
-    }
-
-    function toggleMenu(enfocar = false) {
-        if (isOpen) cerrarMenu();
-        else abrirMenu(enfocar);
-    }
-
-    overlay.addEventListener('click', cerrarMenu);
-
-    menu.querySelector('.es-actual')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        cerrarMenu();
-    });
-
-    document.addEventListener('keydown', (e) => {
-        // Atajo global: Ctrl + Flecha Abajo abre el menú rápido
-        if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowDown') {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!isOpen) {
-                abrirMenu(true);
-            } else {
-                const current = items.indexOf(document.activeElement);
-                if (current === -1) {
-                    const actualIdx = items.findIndex(el => el.classList.contains('es-actual'));
-                    enfocarItem(actualIdx !== -1 ? (actualIdx + 1) : 0);
-                } else {
-                    enfocarItem(current + 1);
-                }
-            }
-            return;
-        }
-
-        // Atajos cuando el menú rápido está abierto
-        if (isOpen) {
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                e.stopPropagation();
-                cerrarMenu();
-                return;
-            }
-
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                e.stopPropagation();
-                const current = items.indexOf(document.activeElement);
-                if (current === -1) {
-                    const actualIdx = items.findIndex(el => el.classList.contains('es-actual'));
-                    enfocarItem(actualIdx !== -1 ? (actualIdx + 1) : 0);
-                } else {
-                    enfocarItem(current + 1);
-                }
-                return;
-            }
-
-            if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                e.stopPropagation();
-                const current = items.indexOf(document.activeElement);
-                if (current === -1) {
-                    const actualIdx = items.findIndex(el => el.classList.contains('es-actual'));
-                    enfocarItem(actualIdx !== -1 ? (actualIdx - 1) : (items.length - 1));
-                } else {
-                    enfocarItem(current - 1);
-                }
-                return;
-            }
-
-            if (e.key === 'Enter') {
-                const focused = document.activeElement;
-                if (items.includes(focused)) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    focused.click();
-                    return;
-                }
-            }
-        }
-    });
-
-    // Vincular EXCLUSIVAMENTE al label (título principal y título de pestaña al scroll)
-    const labelElements = [
-        document.getElementById('btn-inicio-titulo'),
-        document.getElementById('header-tab-title')
-    ].filter(Boolean);
-
-    labelElements.forEach(el => {
-        el.style.cursor = 'pointer';
-        el.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleMenu();
-        });
-    });
-
-    document.addEventListener('click', (e) => {
-        if (isOpen && !menu.contains(e.target) && !labelElements.some(el => el.contains(e.target))) {
-            cerrarMenu();
-        }
-    });
-}
 
 // ═══════════════════════════════════════════════════════
 //  INIT
@@ -4367,16 +3819,9 @@ function _initMenuModulos(moduloActual) {
     // ── Listeners migrados desde atributos inline del HTML ──
     const _on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
 
-    // Selector de módulos en header (solo en label)
-    _initMenuModulos('materiales');
-
-    // Logo vuelve al launcher
-    _on('btn-inicio-logo', 'click', () => window.location.href = '../index.html');
-
-    // Header
+    // Barra superior
     _on('btn-undo', 'click', () => historial.undo());
     _on('btn-redo', 'click', () => historial.redo());
-    _on('btn-ajustes', 'click', () => MM.abrir('modal-ajustes'));
 
     // Modal confirmar
     _on('confirmar-ok', 'click', () => {
@@ -4388,13 +3833,17 @@ function _initMenuModulos(moduloActual) {
     });
     _on('confirmar-cancelar', 'click', () => _volverAlPadre());
 
-    // Tabs
-    _on('tab-dashboard', 'click', () => switchTab('dashboard'));
-    _on('tab-movimientos', 'click', () => switchTab('movimientos'));
+    // Pestañas del panel lateral (el clic lo maneja ui.js; acá, lo que pasa al cambiar)
+    _on('v-pills-tab', 'ui:pestana-mostrada', _alMostrarPestana);
+    // Tocar la pestaña que ya está activa limpia la búsqueda y el filtro por año (como antes)
+    document.getElementById('v-pills-tab')?.addEventListener('click', e => {
+        const b = e.target.closest('[data-tab]');
+        if (b && b.dataset.tab === _tabActual) switchTab(_tabActual);
+    }, true);
 
-    // Barra búsqueda
-    _on('busq-global', 'input', () => onBusqGlobal());
-    _on('busq-clear-btn', 'click', () => limpiarBusqueda());
+    // Buscador
+    _on('global-search', 'input', () => onBusqGlobal());
+    _on('search-clear', 'click', () => { limpiarBusqueda(); document.getElementById('global-search')?.focus(); });
 
     // ── LÓGICA DEL MENÚ FLOTANTE (FAB) ──
     const fabContainer = document.getElementById('fab-container');
@@ -4453,7 +3902,7 @@ function _initMenuModulos(moduloActual) {
 
     _on('fab-btn-herramienta', 'click', () => {
         closeFabMenu();
-        UI.abrirNuevaHerramienta('fab');
+        Vistas.abrirNuevaHerramienta('fab');
     });
 
     _on('fab-btn-material', 'click', () => {
@@ -4504,32 +3953,33 @@ function _initMenuModulos(moduloActual) {
     _on('salida-cancelar-btn', 'click', () => MM.cerrar('modal-salida'));
 
     // Modal ajustes
-    _on('ajustes-btn-reporte', 'click', () => UI.abrirReporte());
-    _on('ajustes-btn-categorias', 'click', () => UI.abrirCategorias());
-    _on('ajustes-btn-herramientas', 'click', () => UI.abrirHerramientas('ajustes'));
-    _on('ajustes-btn-gist', 'click', () => UI.abrirGist());
+    _on('ajustes-btn-reporte', 'click', () => Vistas.abrirReporte());
+    _on('ajustes-btn-categorias', 'click', () => Vistas.abrirCategorias());
+    _on('ajustes-btn-herramientas', 'click', () => Vistas.abrirHerramientas('ajustes'));
+    _on('ajustes-btn-gist', 'click', () => Vistas.abrirGist());
     _on('btn-ajustes-gist-subir', 'click', () => GistSync.subir());
     _on('btn-ajustes-gist-bajar', 'click', () => GistSync.bajar());
-    _on('ajustes-btn-shortcuts', 'click', () => UI.abrirShortcuts());
-    _on('ajustes-btn-exportar', 'click', () => { MM.cerrar('modal-ajustes'); exportarDatos(); });
-    _on('ajustes-btn-importar', 'click', () => UI.abrirImportar());
+    _on('ajustes-btn-shortcuts', 'click', () => Vistas.abrirShortcuts());
+    _on('ajustes-btn-exportar', 'click', () => exportarDatos());
+    _on('ajustes-btn-entrada', 'click', () => abrirModalMovimiento('entrada'));
+    _on('ajustes-btn-salida', 'click', () => abrirModalMovimiento('salida'));
+    _on('ajustes-btn-material', 'click', () => abrirModalMaterial());
+    _on('ajustes-btn-importar', 'click', () => Vistas.abrirImportar());
     _on('ajustes-btn-restablecer', 'click', () => restablecerDatos());
-    _on('ajustes-btn-cerrar', 'click', () => MM.cerrar('modal-ajustes'));
-    _on('btn-dark-mode', 'click', () => toggleDarkMode());
 
     // Modal categorías
     _on('cat-nueva-input', 'keydown', e => { if (e.key === 'Enter') { e.preventDefault(); agregarCategoria(); } });
     _on('cat-agregar-btn', 'click', () => agregarCategoria());
-    _on('cat-cerrar-btn', 'click', () => UI.cerrarCategorias());
+    _on('cat-cerrar-btn', 'click', () => Vistas.cerrarCategorias());
 
     // Modal herramientas
-    _on('herr-abrir-nuevo-btn', 'click', () => UI.abrirNuevaHerramienta());
+    _on('herr-abrir-nuevo-btn', 'click', () => Vistas.abrirNuevaHerramienta());
     _on('btn-add-linea-herramienta', 'click', () => agregarLinea('herramienta'));
     _on('herr-guardar-btn', 'click', () => agregarHerramienta());
-    _on('herr-nuevo-cancelar-btn', 'click', () => UI.cerrarNuevaHerramienta());
+    _on('herr-nuevo-cancelar-btn', 'click', () => Vistas.cerrarNuevaHerramienta());
     _on('herr-nombre-input', 'keydown', e => { if (e.key === 'Enter') { e.preventDefault(); agregarHerramienta(); } });
     _on('herr-cantidad-input', 'keydown', e => { if (e.key === 'Enter') { e.preventDefault(); agregarHerramienta(); } });
-    _on('herr-cerrar-btn', 'click', () => UI.cerrarHerramientas());
+    _on('herr-cerrar-btn', 'click', () => Vistas.cerrarHerramientas());
 
 
     // Delegación: eliminar herramienta
@@ -4546,7 +3996,7 @@ function _initMenuModulos(moduloActual) {
     _on('importar-file-input', 'change', e => onImportarFileChange(e));
     _on('importar-confirmar-btn', 'click', () => importarDatos('reemplazar'));
     _on('importar-combinar-btn', 'click', () => importarDatos('combinar'));
-    _on('importar-cerrar-btn', 'click', () => UI.cerrarImportar());
+    _on('importar-cerrar-btn', 'click', () => Vistas.cerrarImportar());
 
     // Modal gist
     _on('gist-token-eye', 'click', () => GistSync.toggleToken());
@@ -4554,17 +4004,17 @@ function _initMenuModulos(moduloActual) {
     _on('btn-gist-bajar', 'click', () => GistSync.bajar());
     _on('gist-autosync-toggle', 'click', () => GistSync.toggleAuto());
     _on('gist-guardar-btn', 'click', () => GistSync.guardarConfig());
-    _on('gist-cerrar-btn', 'click', () => UI.cerrarGist());
+    _on('gist-cerrar-btn', 'click', () => Vistas.cerrarGist());
 
     // Modal gist novedades
     _on('gist-novedades-ignorar-btn', 'click', () => MM.cerrar('modal-gist-novedades'));
 
     // Modal shortcuts
-    _on('shortcuts-cerrar-btn', 'click', () => UI.cerrarShortcuts());
+    _on('shortcuts-cerrar-btn', 'click', () => Vistas.cerrarShortcuts());
 
     // Modal reporte
     _on('rpt-btn-generar', 'click', () => _ejecutarReporte());
-    _on('reporte-cerrar-btn', 'click', () => UI.cerrarReporte());
+    _on('reporte-cerrar-btn', 'click', () => Vistas.cerrarReporte());
 
     // Scroll top
     _on('btn-scroll-top', 'click', () => subirArriba());
@@ -4574,17 +4024,17 @@ function _initMenuModulos(moduloActual) {
     if (listaMov) {
         listaMov.addEventListener('pointerdown', e => {
             const sep = e.target.closest('.mes-separador');
-            if (sep) UI.handleMesDown(e, sep);
+            if (sep) Vistas.handleMesDown(e, sep);
         });
         listaMov.addEventListener('pointerup', e => {
             const sep = e.target.closest('.mes-separador');
-            if (sep) UI.handleMesUp(e, sep);
+            if (sep) Vistas.handleMesUp(e, sep);
         });
         listaMov.addEventListener('pointerleave', e => {
-            if (e.target.closest('.mes-separador')) UI.handleMesCancel();
+            if (e.target.closest('.mes-separador')) Vistas.handleMesCancel();
         });
         listaMov.addEventListener('pointercancel', e => {
-            if (e.target.closest('.mes-separador')) UI.handleMesCancel();
+            if (e.target.closest('.mes-separador')) Vistas.handleMesCancel();
         });
     }
 
@@ -4592,45 +4042,20 @@ function _initMenuModulos(moduloActual) {
 
     cargar();
 
-    // dark mode
-    try {
-        if (localStorage.getItem('IDR_dark') === '1') {
-            // Cambiar document.body por document.documentElement
-            document.documentElement.classList.add('dark-mode');
-            const btnDark = document.getElementById('btn-dark-mode');
-            if (btnDark) {
-                btnDark.title = 'Modo claro';
-                const iconUse = btnDark.querySelector('use');
-                if (iconUse) iconUse.setAttribute('href', '#icon-sun');
-            }
-        }
-    } catch (_) { }
-
-    // panel inicial visible — validación de 1 hora (3600000 ms)
+    // Pestaña inicial: la de la última vez si fue hace menos de una hora (si no, Dashboard)
     try {
         const lastTime = parseInt(localStorage.getItem('SGI_tab_time') || '0');
         const now = Date.now();
-
-        // Si pasaron menos de 1 hora (3.600.000 ms), respetamos la pestaña guardada
         if (now - lastTime <= 3600000) {
-            const t = localStorage.getItem('SGI_tab');
-            if (t === 'movimientos') {
-                document.getElementById('panel-dashboard').classList.remove('activa');
-                document.getElementById('panel-movimientos').classList.add('activa');
-                document.getElementById('tab-dashboard').classList.remove('activa');
-                document.getElementById('tab-movimientos').classList.add('activa');
-                _tabActual = 'movimientos';
+            if (localStorage.getItem('SGI_tab') === 'movimientos') {
+                const boton = document.getElementById('tab-movimientos');
+                if (boton) UI.pestana.mostrar(boton);
             }
         } else {
-            // Si pasó más de 1 hora, limpiamos la memoria para que arranque en Dashboard
             localStorage.setItem('SGI_tab', 'dashboard');
         }
-
-        // Renovamos el temporizador desde "ahora"
         localStorage.setItem('SGI_tab_time', now.toString());
     } catch (_) { }
-
-    actualizarHeaderTabTitle();
 
     // fechas por defecto = hoy en los dos modales
     const hoy = getHoyLocal();

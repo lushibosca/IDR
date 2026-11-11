@@ -1,64 +1,9 @@
 /* SGR/css/sgr.css: lo propio de Racks sobre la base y el esqueleto comunes de la suite (../shared/ui, diseño de SGC):
    dashboard (chips y composición por edificio), tablas agrupadas y tarjetas de racks, insignias de estado, menú de vista,
    bloqueo de edición, Gist, importar, reporte y el botón flotante (FAB). Todo en la capa `app` (sin !important); los colores,
-   radios y sombras salen de los tokens de la suite a través de los alias de abajo (los nombres viejos de SGR). */
+   radios y sombras salen de los tokens de la suite con los nombres viejos (../../shared/ui/legado/variables.css). */
 
 @layer app {
-    /* ─── Alias: las variables de siempre de SGR, apuntando a los tokens de la suite (claro y oscuro salen solos) */
-    :root {
-        --bg-body: var(--bg-main);
-        --text-main: var(--color-texto);
-        --text-muted: var(--color-texto-suave);
-        --text-disabled: color-mix(in srgb, var(--color-texto-suave) 65%, transparent);
-        --border: var(--border-color);
-        --input-bg: var(--search-bg);
-        --accent: var(--color-blue);
-        --c-blue: var(--color-blue);
-        --c-green: var(--color-green);
-        --c-red: var(--color-red);
-        --c-gold: var(--color-yellow);
-        --c-purple: var(--color-purple);
-        --c-orange: var(--color-orange);
-        --c-white: rgba(255, 255, 255, 0.8);
-        --c-blue-bg: color-mix(in srgb, var(--color-blue) 12%, transparent);
-        --c-green-bg: color-mix(in srgb, var(--color-green) 12%, transparent);
-        --c-red-bg: color-mix(in srgb, var(--color-red) 12%, transparent);
-        --c-orange-bg: color-mix(in srgb, var(--color-orange) 12%, transparent);
-        --c-accent-bg: var(--blue-12);
-        --c-gray-btn: var(--search-bg);
-        --shadow: var(--sombra-tarjeta);
-        --shadow-dropdown: var(--dropdown-shadow);
-        --radius: var(--radio-grande);
-        --radius-sm: var(--radio-medio);
-        --border-w: 1px;
-        --sgr-hover: brightness(0.94);
-        --t-fast: 0.15s ease;
-        --t-ui: 0.2s ease;
-        --t-popup: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        --t-modal: 0.25s ease;
-        --t-collapse: 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-        --t-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-        --t-spring-soft: cubic-bezier(0.34, 1.3, 0.64, 1);
-        --t-theme: 0.3s ease;
-        --fs-xs: var(--texto-xs);
-        --fs-sm: var(--texto-xs);
-        --fs-base: var(--texto-sm);
-        --fs-md: var(--texto-sm);
-        --fs-lg: var(--texto-md);
-        --fs-xl: var(--texto-base);
-        --fs-2xl: 1.1rem;
-        --btn-fs: var(--texto-md);
-        --btn-fw: 600;
-        --btn-pad-y: 0.6rem;
-        --btn-pad-x: 1rem;
-        --btn-padding: var(--btn-pad-y) var(--btn-pad-x);
-        --btn-icon-size: 38px;
-    }
-
-    [data-tema="dark"] {
-        --sgr-hover: brightness(1.15);
-    }
-
     /* ─── Tarjetas de las pestañas (la base trae .card sin relleno: SGC usa .card-body) */
     #panel-inventario > .card,
     #panel-servicio > .card,
@@ -824,7 +769,7 @@
         .btn-gist-action:not(:disabled):hover,
         .th-sortable:hover,
         .rack-card:hover {
-            filter: var(--sgr-hover);
+            filter: var(--legado-hover);
         }
 
         /* Elementos que comparten el mismo fondo al hacer hover */
@@ -1251,7 +1196,7 @@
     }
 
     .rack-card:hover {
-        filter: var(--sgr-hover);
+        filter: var(--legado-hover);
     }
 
     .rack-card:active {

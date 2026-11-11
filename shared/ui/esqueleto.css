@@ -288,6 +288,11 @@
         }
     }
 
+    /* Un botón de la barra con el atributo hidden (p. ej. «Instalar» hasta que el navegador lo ofrece): el display de .btn le ganaba */
+    .navbar-acciones [hidden] {
+        display: none;
+    }
+
     /* ─── Insignias de coincidencia de búsqueda en el panel lateral */
 
     .nav-pills .nav-link:hover .sidebar-search-badge {

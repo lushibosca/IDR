@@ -3,7 +3,7 @@
 Suite en GitHub Pages, sin servidor ni build: launcher en la raíz (`index.html`, `app.js`) y una carpeta por app
 (`SGC`, `SGI`, `SGL`, `SGP`, `SGR`); lo compartido está en `shared/`. Idioma del proyecto: español (código,
 mensajes, commits, docs). Lo que pida el usuario manda sobre lo de este archivo.
-Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se documentó (hoy: `SGC`; `SGR` tiene su `CLAUDE.md`).
+Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se documentó (hoy: `SGC`; `SGR` y `SGI` tienen su `CLAUDE.md`).
 
 ## Flujo de trabajo (vale para todas las apps)
 - **Un solo Service Worker, el de la raíz (`sw.js`).** Es cache-first con `ignoreSearch`: los `?v=` de los `<script>` no
@@ -52,5 +52,5 @@ Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se document�
 
 ## Versión visible en cada app
 Cada app muestra la versión de la suite en sus Ajustes con un elemento `<span data-idr-version="NOMBRE"></span>` y el script
-`<script src="../shared/idr-version.js">` (nada de código por app; hoy SGC y SGR). Al portar SGI y SGP al diseño de SGC,
+`<script src="../shared/idr-version.js">` (nada de código por app; hoy SGC, SGR y SGI). Al portar SGP al diseño de SGC,
 agregar esas dos líneas en sus Ajustes (receta completa: `docs/PORTE-ESTILO-SGC.md`, sección 3).
