@@ -37,13 +37,16 @@ Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se document�
 - Las apps comparten el origen: todas las claves de `localStorage` llevan el prefijo de su app (`sgc2/`, `RCK_`, `PCH_`,
   ...). Lo común entre apps vive solo en `shared/` (hoy `idr-infra.js`: edificios y racks) y se carga con `<script>`;
   una app no lee las claves de otra directamente, pasa por `shared/`.
-- Sin dependencias en el cliente que no estén vendorizadas dentro de la app; CSP estricta en cada `index.html`
-  (`script-src 'self'`, sin handlers inline, sin `eval`).
+- Sin dependencias en el cliente que no estén vendorizadas (dentro de la app o, si las comparte la suite, en `shared/vendor/`:
+  hoy bootstrap-icons y la fuente Inter); CSP estricta en cada `index.html` (`script-src 'self'`, sin handlers inline, sin `eval`).
+- **Estilo común (diseño de SGC):** `shared/ui/` tiene la base de estilo de la suite (tokens, base, grilla, `componentes/`,
+  utilidades, por `@layer`); cada app carga esas hojas y pone lo suyo en su propio CSS. Un cambio en `shared/ui/` se ve en
+  todas las apps que la cargan. El porte de SGR, SGI y SGP a este diseño se sigue en `docs/PORTE-ESTILO-SGC.md`.
 - `Utilidades/`: scripts Python sueltos (escáner, monitor, etc.), no forman parte del front ni del precache.
 - No subir datos de usuario: `.gitignore` ya excluye `*.json` (salvo manifests), `*.env` y `Utilidades/datos/*`.
 
 ## Tests
-- Suite (precache, versión, actualización, tema, fallback offline): `npm test` desde la raíz.
+- Suite (precache de cada app y de `shared/`, versión, actualización, tema, fallback offline de cada app): `npm test` desde la raíz.
 - Cada app trae los suyos (SGC: `npm run test:sgc`, ver `SGC/CLAUDE.md`).
 
 ## Versión visible en cada app

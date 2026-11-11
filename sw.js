@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261111.0034';
+const CACHE_NAME = 'idr-suite-v261111.0047';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -32,25 +32,6 @@ const PRECACHE_URLS = [
   './SGC/css/app/interaccion.css',
   './SGC/css/app/produccion.css',
   './SGC/css/app/tema.css',
-  './SGC/css/base.css',
-  './SGC/css/componentes/acordeon.css',
-  './SGC/css/componentes/alertas.css',
-  './SGC/css/componentes/botones.css',
-  './SGC/css/componentes/desplegables.css',
-  './SGC/css/componentes/formularios.css',
-  './SGC/css/componentes/insignias.css',
-  './SGC/css/componentes/listas.css',
-  './SGC/css/componentes/modal.css',
-  './SGC/css/componentes/navegacion.css',
-  './SGC/css/componentes/progreso.css',
-  './SGC/css/componentes/spinner.css',
-  './SGC/css/componentes/tablas.css',
-  './SGC/css/componentes/tarjetas.css',
-  './SGC/css/componentes/toast.css',
-  './SGC/css/componentes/transiciones.css',
-  './SGC/css/grilla.css',
-  './SGC/css/tokens.css',
-  './SGC/css/utilidades.css',
   './SGC/favicon.svg',
   './SGC/icon.svg',
   './SGC/icons/icon-192.png',
@@ -95,12 +76,6 @@ const PRECACHE_URLS = [
   './SGC/js/tema-suite.js',
   './SGC/js/swipe-pestanas.js',
   './SGC/js/ui.js',
-  './SGC/vendor/bootstrap-icons/bootstrap-icons.min.css',
-  './SGC/vendor/bootstrap-icons/fonts/bootstrap-icons.woff',
-  './SGC/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2',
-  './SGC/vendor/fonts/inter-latin-ext.woff2',
-  './SGC/vendor/fonts/inter-latin.woff2',
-  './SGC/vendor/fonts/inter.css',
 
   // ── SGI (Materiales) ──
   './SGI/',
@@ -157,7 +132,33 @@ const PRECACHE_URLS = [
   './shared/idr-atras.js',
   './shared/idr-infra.js',
   './shared/idr-tema.js',
-  './shared/idr-version.js'
+  './shared/idr-version.js',
+  // base de estilo común (porte del estilo de SGC: docs/PORTE-ESTILO-SGC.md)
+  './shared/ui/base.css',
+  './shared/ui/grilla.css',
+  './shared/ui/tokens.css',
+  './shared/ui/utilidades.css',
+  './shared/ui/componentes/acordeon.css',
+  './shared/ui/componentes/alertas.css',
+  './shared/ui/componentes/botones.css',
+  './shared/ui/componentes/desplegables.css',
+  './shared/ui/componentes/formularios.css',
+  './shared/ui/componentes/insignias.css',
+  './shared/ui/componentes/listas.css',
+  './shared/ui/componentes/modal.css',
+  './shared/ui/componentes/navegacion.css',
+  './shared/ui/componentes/progreso.css',
+  './shared/ui/componentes/spinner.css',
+  './shared/ui/componentes/tablas.css',
+  './shared/ui/componentes/tarjetas.css',
+  './shared/ui/componentes/toast.css',
+  './shared/ui/componentes/transiciones.css',
+  './shared/vendor/bootstrap-icons/bootstrap-icons.min.css',
+  './shared/vendor/bootstrap-icons/fonts/bootstrap-icons.woff',
+  './shared/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2',
+  './shared/vendor/fonts/inter-latin-ext.woff2',
+  './shared/vendor/fonts/inter-latin.woff2',
+  './shared/vendor/fonts/inter.css'
 ];
 
 // Avisa a las páginas abiertas cómo va la descarga de la versión nueva (shared/idr-actualizacion.js muestra el toast con la barra)
@@ -252,6 +253,9 @@ self.addEventListener('fetch', event => {
             }
             if (pathname.includes('/SGL')) {
               return caches.match('./SGL/index.html');
+            }
+            if (pathname.includes('/SGP')) {
+              return caches.match('./SGP/index.html');
             }
             if (pathname.includes('/SGR')) {
               return caches.match('./SGR/index.html');

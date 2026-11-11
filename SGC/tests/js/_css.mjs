@@ -10,9 +10,14 @@ const _ruta = (rel) => path.join(STATIC, /^[^/]+\.js$/.test(rel) ? `js/${rel}` :
 
 export const leer = (rel) => fs.readFileSync(_ruta(rel), "utf8");
 
-/** Archivos .css de static/ (relativos), sin vendor/. */
+/** Hojas de la base común de la suite (../shared/ui/) que carga index.html, relativas a SGC/. */
+export function hojasCompartidas() {
+  return [...leer("index.html").matchAll(/<link rel="stylesheet" href="(\.\.\/shared\/ui\/[^"?]+)/g)].map((m) => m[1]);
+}
+
+/** Archivos .css de SGC (relativos), sin vendor/, más los de la base común que carga (../shared/ui/). */
 export function hojasCss() {
-  const out = [];
+  const out = hojasCompartidas();
   const recorrer = (rel) => {
     for (const e of fs.readdirSync(path.join(STATIC, rel), { withFileTypes: true })) {
       const r = rel ? `${rel}/${e.name}` : e.name;

@@ -31,9 +31,9 @@ capturas, video en vivo, Auditoría (queda solo **Historial**, los cambios del s
 ```
 index.html        CSP en <meta>: script/style 'self', connect-src solo GitHub (para el Gist)
 js/               front (vanilla, sin módulos); capa local: datos-puro.js, api-local.js, sesion-local.js, datos-ui.js
-css/              CSS propio (sin Bootstrap, sin !important)
+css/app/          CSS propio de SGC (sin Bootstrap, sin !important); la base común está en ../shared/ui/
 img/devices/      fotos de los modelos
-vendor/           bootstrap-icons y fuentes
+                  (bootstrap-icons y fuentes: ../shared/vendor/, compartidos por la suite)
 tests/js/         node --test (lógica pura de cada js, entre marcadores // ==== X BEGIN/END ====)
 tests/e2e/        prueba de humo en jsdom (la página real, sin servidor)
 ```

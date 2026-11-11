@@ -14,8 +14,8 @@ const leer = (rel) => fs.readFileSync(path.join(STATIC, /^[^/]+\.js$/.test(rel) 
 
 // Hojas que aportan clases (las que carga index.html), todas propias (docs/diseno/CSS-Y-UI.md).
 const HOJAS = [
-  ...[...leer("index.html").matchAll(/<link rel="stylesheet" href="(css\/[^"?]+)/g)].map((m) => m[1]),
-  "vendor/bootstrap-icons/bootstrap-icons.min.css",          // la importa tokens.css (capa iconos)
+  ...[...leer("index.html").matchAll(/<link rel="stylesheet" href="((?:\.\.\/shared\/ui\/|css\/)[^"?]+)/g)].map((m) => m[1]),
+  "../shared/vendor/bootstrap-icons/bootstrap-icons.min.css", // la importa tokens.css (capa iconos)
 ];
 // Clases sin estilo propio a propósito: ganchos para JS/tests o marcadores de estado.
 const GANCHOS = new Set([
@@ -98,7 +98,7 @@ test("clases CSS: las listas de excepciones no tienen entradas viejas", () => {
 });
 
 test("clases CSS: ninguna hoja viene de Bootstrap (solo quedan sus íconos)", () => {
-  assert.deepEqual(HOJAS.filter((h) => h.startsWith("vendor/") && !h.startsWith("vendor/bootstrap-icons/")), []);
+  assert.deepEqual(HOJAS.filter((h) => h.includes("vendor/") && !h.startsWith("../shared/vendor/bootstrap-icons/")), []);
   const html = leer("index.html");
   assert.ok(!/vendor\/bootstrap\//.test(html), "index.html todavía carga algo de static/vendor/bootstrap/");
 });

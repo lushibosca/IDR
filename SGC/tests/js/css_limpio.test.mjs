@@ -20,11 +20,12 @@ function exigir(t, nombre, lista) {
 }
 
 test("css limpio 1: todo el CSS vive en static/css/ y index.html solo carga de ahí (más íconos y fuentes)", (t) => {
-  const fuera = hojas.filter((h) => !h.startsWith("css/"));
+  // css/ (lo propio de SGC) o ../shared/ui/ (la base común de la suite)
+  const fuera = hojas.filter((h) => !h.startsWith("css/") && !h.startsWith("../shared/ui/"));
   const enlaces = [...leer("index.html").matchAll(/<link rel="stylesheet" href="([^"?]+)/g)].map((m) => m[1]);
-  // (la hoja del aviso de actualización es de la suite: ../shared/)
-  const ajenos = enlaces.filter((e) => !e.startsWith("css/") && !/^vendor\/(bootstrap-icons|fonts)\//.test(e)
-    && e !== "../shared/idr-actualizacion.css");
+  // (la hoja del aviso de actualización y los íconos y fuentes también son de la suite: ../shared/)
+  const ajenos = enlaces.filter((e) => !e.startsWith("css/") && !e.startsWith("../shared/ui/")
+    && !/^\.\.\/shared\/vendor\/(bootstrap-icons|fonts)\//.test(e) && e !== "../shared/idr-actualizacion.css");
   exigir(t, "hojas fuera de static/css/", fuera);
   exigir(t, "hojas cargadas desde fuera de static/css/", ajenos);
 });

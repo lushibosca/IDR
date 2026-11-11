@@ -14,27 +14,28 @@
     <script src="../shared/idr-version.js"></script>
     <script src="../shared/idr-atras.js"></script>
     <script src="js/preload.js?v=8"></script>
-    <!-- CSS: todo en static/css/, por capas (@layer en tokens.css): tokens, base, iconos, grilla, componentes,
-         app, utilidades. Sin !important (docs/diseno/CSS-Y-UI.md). El orden de los <link> es el de las capas. -->
-    <link rel="stylesheet" href="css/tokens.css?v=27">
-    <link rel="stylesheet" href="css/base.css?v=16">
-    <link rel="stylesheet" href="css/grilla.css?v=5">
+    <!-- CSS por capas (@layer en tokens.css): tokens, base, iconos, grilla, componentes, app, utilidades. La base común de
+         la suite (tokens, base, grilla, componentes, utilidades, íconos y fuentes) está en ../shared/ui y ../shared/vendor;
+         lo propio de SGC, en css/app/. Sin !important. El orden de los <link> es el de las capas. -->
+    <link rel="stylesheet" href="../shared/ui/tokens.css?v=27">
+    <link rel="stylesheet" href="../shared/ui/base.css?v=16">
+    <link rel="stylesheet" href="../shared/ui/grilla.css?v=5">
     <link rel="stylesheet" href="../shared/idr-actualizacion.css">
-    <link rel="stylesheet" href="css/componentes/transiciones.css?v=12">
-    <link rel="stylesheet" href="css/componentes/tablas.css?v=12">
-    <link rel="stylesheet" href="css/componentes/formularios.css?v=14">
-    <link rel="stylesheet" href="css/componentes/botones.css?v=15">
-    <link rel="stylesheet" href="css/componentes/desplegables.css?v=18">
-    <link rel="stylesheet" href="css/componentes/navegacion.css?v=21">
-    <link rel="stylesheet" href="css/componentes/tarjetas.css?v=11">
-    <link rel="stylesheet" href="css/componentes/acordeon.css?v=17">
-    <link rel="stylesheet" href="css/componentes/insignias.css?v=13">
-    <link rel="stylesheet" href="css/componentes/alertas.css?v=8">
-    <link rel="stylesheet" href="css/componentes/progreso.css?v=9">
-    <link rel="stylesheet" href="css/componentes/listas.css?v=8">
-    <link rel="stylesheet" href="css/componentes/toast.css?v=11">
-    <link rel="stylesheet" href="css/componentes/modal.css?v=23">
-    <link rel="stylesheet" href="css/componentes/spinner.css?v=6">
+    <link rel="stylesheet" href="../shared/ui/componentes/transiciones.css?v=12">
+    <link rel="stylesheet" href="../shared/ui/componentes/tablas.css?v=12">
+    <link rel="stylesheet" href="../shared/ui/componentes/formularios.css?v=14">
+    <link rel="stylesheet" href="../shared/ui/componentes/botones.css?v=15">
+    <link rel="stylesheet" href="../shared/ui/componentes/desplegables.css?v=18">
+    <link rel="stylesheet" href="../shared/ui/componentes/navegacion.css?v=21">
+    <link rel="stylesheet" href="../shared/ui/componentes/tarjetas.css?v=11">
+    <link rel="stylesheet" href="../shared/ui/componentes/acordeon.css?v=17">
+    <link rel="stylesheet" href="../shared/ui/componentes/insignias.css?v=13">
+    <link rel="stylesheet" href="../shared/ui/componentes/alertas.css?v=8">
+    <link rel="stylesheet" href="../shared/ui/componentes/progreso.css?v=9">
+    <link rel="stylesheet" href="../shared/ui/componentes/listas.css?v=8">
+    <link rel="stylesheet" href="../shared/ui/componentes/toast.css?v=11">
+    <link rel="stylesheet" href="../shared/ui/componentes/modal.css?v=23">
+    <link rel="stylesheet" href="../shared/ui/componentes/spinner.css?v=6">
     <link rel="stylesheet" href="css/app/estructura.css?v=40">
     <link rel="stylesheet" href="css/app/tema.css?v=4">
     <link rel="stylesheet" href="css/app/estado.css?v=54">
@@ -48,8 +49,8 @@
     <link rel="stylesheet" href="css/app/interaccion.css?v=8">
     <link rel="stylesheet" href="css/app/detalle-movil.css?v=6">
     <link rel="stylesheet" href="css/app/barra-movil.css?v=7">
-    <link rel="stylesheet" href="css/utilidades.css?v=34">
-    <link rel="stylesheet" href="vendor/fonts/inter.css">
+    <link rel="stylesheet" href="../shared/ui/utilidades.css?v=34">
+    <link rel="stylesheet" href="../shared/vendor/fonts/inter.css">
 </head>
 
 <body>

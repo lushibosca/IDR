@@ -26,6 +26,8 @@ Estructura y capas: `docs/ARQUITECTURA.md` (fuente de verdad). Contexto y entreg
 - **Sin pasamanos**: no reexportar ni envolver `(...a) => Otro.fn(...a)`; se llama a la función del dueño. Antes de
   escribir un helper, buscar si ya existe (`comun.js`: bloques `UI COMUN`, `FECHAS Y CSV PURO`, ...).
 - **Claves de `localStorage`** siempre con prefijo `sgc2/`. Todo lo que entra (storage, archivo, Gist) pasa por
-  `sanearDatos`. No tocar `img/devices/` ni `vendor/`.
+  `sanearDatos`. No tocar `img/devices/` ni `../shared/vendor/`.
+- **Estilo:** la base (tokens, base, grilla, `componentes/`, utilidades) está en `../shared/ui/` y la usan las otras apps de la
+  suite: un cambio ahí se ve en todas. Lo propio de SGC va en `css/app/`. Ver `../docs/PORTE-ESTILO-SGC.md`.
 - **Seguridad de base** en todo cambio: validar y acotar lo que entra, no meter datos del usuario en HTML ni en URLs,
   nada de tokens ni claves en el repo.

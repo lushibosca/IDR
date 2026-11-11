@@ -25,7 +25,9 @@ que responde en el navegador. Las normas de abajo las vigila `tests/js/arquitect
 7. **Offline-first desde la raíz de la suite.** El único Service Worker es `../sw.js` (cache-first, `ignoreSearch`):
    todo archivo nuevo va en su `PRECACHE_URLS` y cada cambio sube `CACHE_NAME` (`node scripts/release.mjs` en `idr/`).
    Los `?v=N` de `index.html` solo sirven al navegador sin PWA. Lo vigila `../tests/suite.test.mjs`.
-8. **Sin Bootstrap ni `!important`.** CSS propio en capas (abajo); íconos y fuentes vendorizados en `vendor/`.
+8. **Sin Bootstrap ni `!important`.** CSS propio en capas (abajo). La base común de la suite (tokens, base, grilla,
+   componentes, utilidades) vive en `../shared/ui/` y los íconos y fuentes en `../shared/vendor/`: la comparten las apps
+   que se portan al diseño de SGC (`../docs/PORTE-ESTILO-SGC.md`). Los tests de CSS de SGC también revisan esas hojas.
 
 ---
 
@@ -36,12 +38,11 @@ SGC/
 ├── index.html              # DOM, CSP, <link> en orden de capas y <script> en orden de dependencias
 ├── CLAUDE.md               # directivas de trabajo (flujo, normas); las de la suite están en ../CLAUDE.md
 ├── css/
-│   ├── tokens.css base.css grilla.css utilidades.css   # variables y reset · utilidades al final de la cascada
-│   ├── componentes/        # piezas reutilizables: botones, modal, tablas, formularios, toast, ...
 │   └── app/                # estilos de cada sección (produccion, activos, ajustes, tema, ...)
+│                           # (tokens, base, grilla, componentes/ y utilidades: en ../shared/ui/, comunes a la suite)
 ├── js/                     # ver capas (3)
 ├── img/devices/            # fotos de modelos (no tocar; se guardan al verlas, no están en el precache)
-├── vendor/                 # bootstrap-icons y fuentes (no tocar)
+│                           # (bootstrap-icons y fuentes: ../shared/vendor/, no tocar)
 ├── tests/js/               # node --test: lógica pura de cada js + arquitectura
 └── tests/e2e/humo.mjs      # la página real en jsdom, sin servidor
 ```

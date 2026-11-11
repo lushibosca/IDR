@@ -24,11 +24,11 @@ test("sin entradas repetidas en el precache", () => {
   assert.deepEqual(repetidas, []);
 });
 
-test("SGC: todo js/css/svg/html/json de la app (menos fotos y tests) está en el precache", () => {
+function sinPrecachear(dir) {
   const sin = [];
-  const recorrer = (dir) => {
-    for (const e of fs.readdirSync(path.join(RAIZ, dir), { withFileTypes: true })) {
-      const rel = `${dir}/${e.name}`;
+  const recorrer = (d) => {
+    for (const e of fs.readdirSync(path.join(RAIZ, d), { withFileTypes: true })) {
+      const rel = `${d}/${e.name}`;
       if (e.isDirectory()) {
         if (!["tests", "docs", "node_modules", "devices"].includes(e.name)) recorrer(rel);
       } else if (/\.(js|css|svg|html|json|woff2?)$/.test(e.name) && !PRECACHE.includes(`./${rel}`)) {
@@ -36,13 +36,24 @@ test("SGC: todo js/css/svg/html/json de la app (menos fotos y tests) está en el
       }
     }
   };
-  recorrer("SGC");
-  assert.deepEqual(sin, [], "agregarlos a PRECACHE_URLS de sw.js");
+  recorrer(dir);
+  return sin;
+}
+
+test("SGC: todo js/css/svg/html/json de la app (menos fotos y tests) está en el precache", () => {
+  assert.deepEqual(sinPrecachear("SGC"), [], "agregarlos a PRECACHE_URLS de sw.js");
 });
 
-test("el fallback offline de /SGC apunta a un archivo precacheado", () => {
-  assert.ok(sw.includes("caches.match('./SGC/index.html')"));
-  assert.ok(PRECACHE.includes("./SGC/index.html"));
+test("shared/: todo lo compartido (scripts, base de estilo ui/, íconos y fuentes de vendor/) está en el precache", () => {
+  assert.deepEqual(sinPrecachear("shared"), [], "agregarlos a PRECACHE_URLS de sw.js");
+});
+
+test("cada app tiene su fallback offline de navegación apuntando a su index.html precacheado", () => {
+  for (const app of ["SGC", "SGI", "SGL", "SGP", "SGR"]) {
+    assert.ok(sw.includes(`pathname.includes('/${app}')`), `${app}: falta en el fallback de navegación de sw.js`);
+    assert.ok(sw.includes(`caches.match('./${app}/index.html')`), `${app}: el fallback no apunta a su index.html`);
+    assert.ok(PRECACHE.includes(`./${app}/index.html`), `${app}: su index.html no está en el precache`);
+  }
 });
 
 test("ya no queda nada de la carpeta SGC-2 (se renombró a SGC)", () => {
