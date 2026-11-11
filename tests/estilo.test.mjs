@@ -122,12 +122,17 @@ test("apps portadas: cargan la base (tokens primero, utilidades al final), el es
     const propias = hojas.filter((h) => !h.startsWith("../shared/"));
     assert.ok(propias.every((h) => hojas.indexOf(h) > hojas.indexOf("../shared/ui/esqueleto.css")
       && hojas.indexOf(h) < hojas.indexOf("../shared/ui/utilidades.css")), `${app}: sus hojas van entre el esqueleto y utilidades`);
-    for (const js of ["ui.js", "atras-modales.js", "busqueda-movil.js", "swipe-pestanas.js"]) {
+    for (const js of ["ui.js", "atras-modales.js", "busqueda-movil.js", "swipe-pestanas.js", "toast.js", "volver-arriba.js", "apariencia.js"]) {
       assert.ok(html.includes(`src="../shared/ui/js/${js}`), `${app}: falta ../shared/ui/js/${js}`);
     }
     assert.ok(html.includes('src="../shared/idr-tema.js"') && html.includes('src="../shared/idr-version.js"'), `${app}: tema y versión de la suite`);
     assert.match(html, new RegExp(`data-idr-version="${app}"`), `${app}: versión visible en Ajustes`);
     assert.doesNotMatch(html, /<svg[^>]*class="svg-sprites"/, `${app}: sin sprite SVG propio (íconos de bootstrap-icons)`);
+    assert.ok(html.includes('src="../shared/ui/js/arranque.js"'), `${app}: falta arranque.js en el <head>`);
+    for (const id of ["btn-theme", "btn-movimiento", "btn-scroll-top", "search-clear"]) {
+      assert.ok(html.includes(`id="${id}"`), `${app}: falta #${id}`);
+    }
+    assert.match(html, /id="toast"[^>]*role="status"|role="status"[^>]*id="toast"/, `${app}: #toast con role="status"`);
     for (const id of ["app-main-row", "sidebar-col", "main-content-col", "v-pills-tab", "v-pills-tabContent",
       "sidebar-search-container", "global-search", "btn-buscar-movil"]) {
       assert.ok(html.includes(`id="${id}"`), `${app}: falta #${id} (lo esperan el esqueleto y sus scripts)`);
@@ -160,6 +165,32 @@ test("apps portadas: <head> de referencia (viewport, color-scheme, metas de PWA 
     // igual a la base salvo los orígenes extra de connect-src (cada app conserva los suyos)
     assert.equal(csp[1].replace(/connect-src 'self'[^;]*;/, "connect-src 'self';"), BASE_CSP, `${app}: CSP distinta de la base`);
   }
+});
+
+// ─── toast.js: cola, duplicados, duración y el 4.º argumento
+test("toast.js: cola de avisos", async () => {
+  const { cargarBloque } = await import("./_bloque.mjs");
+  const { toastExtra, toastEncolar, toastDuracion } = cargarBloque("toast.js", "TOAST PURO", {}, ["toastExtra", "toastEncolar", "toastDuracion"]);
+  const j = JSON.parse.bind(JSON);
+  assert.deepEqual(j(JSON.stringify(toastExtra("Listo", null))), { texto: "Listo", accion: null });
+  assert.deepEqual(j(JSON.stringify(toastExtra("Listo", "3 filas"))), { texto: "Listo, 3 filas", accion: null });
+  const f = () => 1;
+  assert.equal(toastExtra("Listo", f).accion, f);
+  assert.equal(toastExtra("Listo", f).texto, "Listo");
+  assert.equal(toastExtra("Listo", { detalle: "x", accion: f }).texto, "Listo, x");
+  assert.deepEqual(j(JSON.stringify(toastExtra("Listo", { accion: "no es función" }))), { texto: "Listo", accion: null });
+  const a = { texto: "a" }, b = { texto: "b" };
+  assert.deepEqual(j(JSON.stringify(toastEncolar([], a, null))), [a]);
+  assert.deepEqual(j(JSON.stringify(toastEncolar([a], { texto: "a" }, null))), [a]);   // igual al último en espera
+  assert.deepEqual(j(JSON.stringify(toastEncolar([], a, "a"))), []);                    // igual al que se está mostrando
+  assert.deepEqual(j(JSON.stringify(toastEncolar([a], b, null))), [a, b]);
+  const seis = toastEncolar(["1", "2", "3", "4", "5"].map((texto) => ({ texto })), b, null);
+  assert.equal(seis.length, 5);
+  assert.equal(seis.at(-1), b);
+  assert.equal(seis[0].texto, "2");                                  // se descarta el más viejo
+  assert.equal(toastDuracion(0, 0), 3000);
+  assert.equal(toastDuracion(4000, 1), 2000);
+  assert.equal(toastDuracion(4000, 0), 4000);
 });
 
 // ─── arranque.js (antes de pintar): el tema de la suite manda; si nadie eligió, el de la app

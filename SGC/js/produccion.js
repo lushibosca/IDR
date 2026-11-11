@@ -1644,19 +1644,7 @@ function inicializarCierreDropdownsOnScroll() {
     }, { capture: true, passive: true });
 }
 
-// Botón para volver al inicio al hacer scroll hacia abajo (Estilo IDR)
-function inicializarBotonScrollTop() {
-    const btn = document.getElementById('btn-scroll-top');
-    if (!btn) return;
-
-    window.addEventListener('scroll', () => {
-        btn.classList.toggle('show', window.scrollY > 300);
-    }, { passive: true });
-
-    btn.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-}
+// «Volver arriba»: ../shared/ui/js/volver-arriba.js
 
 // Stub seguro para compatibilidad (el sticky de las tablas ahora se fija directamente a --navbar-height)
 window.actualizarStickyHeader = () => {};

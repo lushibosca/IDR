@@ -137,7 +137,6 @@ function _initDOMRefs() {
     DOM.servicioCount = document.getElementById('servicio-count');
     DOM.inventarioCount = document.getElementById('inventario-count');
     DOM.statsGrid = document.getElementById('stats-grid');
-    DOM.toast = document.getElementById('toast');
     DOM.btnUndo = document.getElementById('btn-undo');
     DOM.btnRedo = document.getElementById('btn-redo');
     DOM.fabRackServicio = document.getElementById('fab-rack-servicio');
@@ -184,108 +183,7 @@ const historial = (() => {
 
 // (Modales: `MM`, de ../shared/ui/js/mm.js, sobre UI.modal.)
 
-// ═══════════════════════════════════════════════════════
-//  SISTEMA TOAST ESTANDARIZADO (PATRÓN HORARIOS)
-// ═══════════════════════════════════════════════════════
-const _toastQ = [];
-let _toastBusy = false;
-let _toastTimeout = null;
-const MAX_TOAST_QUEUE = 5;
-
-function _cerrarToastActual() {
-    if (_toastTimeout) { clearTimeout(_toastTimeout); _toastTimeout = null; }
-    const el = DOM.toast || document.getElementById('toast');
-    if (!el || !el.classList.contains('show')) return;
-    el.classList.remove('show');
-    setTimeout(() => _flushToast(), 300);
-}
-
-function _habilitarInteraccionToast(toastEl) {
-    if (!toastEl || toastEl.dataset.toastInit) return;
-    toastEl.dataset.toastInit = '1';
-
-    // Cierre al hacer click o tocar
-    toastEl.addEventListener('click', () => _cerrarToastActual());
-
-    // Gesto Swipe horizontal para descartar en móviles
-    let startX = null, startY = null;
-    toastEl.addEventListener('touchstart', e => {
-        if (e.touches.length === 1) {
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-        }
-    }, { passive: true });
-
-    toastEl.addEventListener('touchend', e => {
-        if (startX === null) return;
-        const diffX = e.changedTouches[0].clientX - startX;
-        const diffY = e.changedTouches[0].clientY - startY;
-        startX = null; startY = null;
-        if (Math.abs(diffY) > 60) return;
-        if (Math.abs(diffX) > 40) _cerrarToastActual();
-    }, { passive: true });
-}
-
-function _flushToast() {
-    if (_toastQ.length === 0) {
-        _toastBusy = false;
-        return;
-    }
-
-    _toastBusy = true;
-    const actual = _toastQ.shift();
-    let el = DOM.toast || document.getElementById('toast');
-    if (!el) {
-        el = document.createElement('div');
-        el.id = 'toast';
-        el.className = 'toast';
-        document.body.appendChild(el);
-    }
-
-    _habilitarInteraccionToast(el);
-
-    el.classList.remove('show');
-    el.textContent = actual.msg;
-    el.className = `toast ${actual.tipo}`;
-
-    let duracionFinal = actual.duracion || 3000;
-    if (_toastQ.length >= 1) {
-        duracionFinal = Math.floor(duracionFinal / 2);
-    }
-
-    setTimeout(() => {
-        el.classList.add('show');
-        _toastTimeout = setTimeout(() => {
-            el.classList.remove('show');
-            _toastTimeout = null;
-            setTimeout(() => _flushToast(), 300);
-        }, duracionFinal);
-    }, 20);
-}
-
-function mostrarToast(mensaje, tipo = 'info', duracion = 3000, detalle = null) {
-    if (!mensaje) return;
-    const texto = detalle ? `${mensaje}, ${detalle}` : mensaje;
-    const ultimo = _toastQ[_toastQ.length - 1];
-    const el = DOM.toast || document.getElementById('toast');
-    const actual = _toastBusy && el ? el.textContent : null;
-
-    if ((ultimo && ultimo.msg === texto) || actual === texto) return;
-
-    _toastQ.push({ msg: texto, tipo, duracion });
-    if (_toastQ.length > MAX_TOAST_QUEUE) {
-        _toastQ.splice(0, _toastQ.length - MAX_TOAST_QUEUE);
-    }
-
-    if (!_toastBusy) _flushToast();
-}
-
-function toast(msg, tipo = 'success', duracion = 3000, detalle = null) {
-    return mostrarToast(msg, tipo, duracion, detalle);
-}
-
-window.mostrarToast = mostrarToast;
-window.toast = toast;
+// Avisos (mostrarToast, toast): ../shared/ui/js/toast.js
 
 // ═══════════════════════════════════════════════════════
 //  CONFIRMAR
@@ -2600,8 +2498,6 @@ document.addEventListener('keydown', e => {
 });
 
 window.addEventListener('scroll', () => {
-    const btn = document.getElementById('btn-scroll-top');
-    if (btn) btn.classList.toggle('show', window.scrollY > window.innerHeight);
     _cerrarTodosDropdowns();
 }, { passive: true });
 
@@ -2819,9 +2715,6 @@ function _initBindings() {
     document.addEventListener('click', e => {
         if (_fabOpen && !e.target.closest('#fab-container')) cerrarFab();
     });
-
-    // Scroll top
-    document.getElementById('btn-scroll-top')?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
     // Modal nuevo rack
     document.getElementById('rack-nuevo-guardar-btn')?.addEventListener('click', guardarNuevoRack);

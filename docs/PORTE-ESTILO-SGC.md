@@ -153,7 +153,7 @@ Lo que las decisiones 7, 8 y 9 y la sección 6 dejan como base, sacándolo de SG
 aplicándolo en SGC, SGR y SGI. **La guía paso a paso, con archivos y líneas, es la sección 8.** Se marca acá lo hecho:
 - [x] Paso 1 — `<head>` de referencia en SGC, SGR y SGI, con test (hecho, 2026-11-11).
 - [x] Paso 2 — un solo arranque (SGC pasa a `arranque.js` + `apariencia.js`) (hecho, 2026-11-11).
-- [ ] Paso 3 — avisos (`toast.js`) y «volver arriba» comunes.
+- [x] Paso 3 — avisos (`toast.js`) y «volver arriba» comunes (hecho; SGR y SGI conservan en su CSS el `right` de `.btn-scroll-top` porque tienen FAB).
 - [ ] Paso 4 — transición de cambio de pestaña común (decisión 8).
 - [ ] Paso 5 — panel plegable y personalizable común (decisión 7).
 - [ ] Paso 6 — barra superior única: menú ⚙ como en SGC + deshacer/rehacer (decisiones 9 y 11).

@@ -824,10 +824,8 @@ document.addEventListener('DOMContentLoaded', () => {
     ajustarEtiquetasPanel();
     inicializarAnimacionModalesApple();
     inicializarCierreDropdownsOnScroll();
-    inicializarBotonScrollTop();
 
     initTheme();
-    initToastClick();
     initAtajoCamarasDeNvr();
     initDetalleProduccion();
     initModoVistaProduccion();
