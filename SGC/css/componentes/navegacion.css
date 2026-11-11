@@ -136,7 +136,7 @@
             flex-wrap: nowrap;
             gap: 6px;
             width: 100%;
-            padding-bottom: var(--esp-1);
+            padding-bottom: 0;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;

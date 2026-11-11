@@ -813,19 +813,12 @@ function initAcordeones() {
     });
 }
 
-/** Botones del menú ⚙ y de la barra: tema, reiniciar el monitoreo y actualizar. (DOMContentLoaded) */
+/** Botones del menú ⚙ y de Ajustes: cambiar el tema. (DOMContentLoaded) */
 function initAccionesMenu() {
     const btnTheme = document.getElementById('btn-theme');
     if (btnTheme) btnTheme.addEventListener('click', toggleTheme);
     const btnThemeMenu = document.getElementById('btn-theme-menu');
     if (btnThemeMenu) btnThemeMenu.addEventListener('click', toggleTheme);
-    const btnRefresh = document.getElementById('btn-refresh');
-    if (btnRefresh) {
-        btnRefresh.addEventListener('click', async () => {
-            await recargarTodo();
-            mostrarToast('Datos actualizados', 'success', 2000);
-        });
-    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

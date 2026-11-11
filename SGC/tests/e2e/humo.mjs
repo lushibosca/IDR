@@ -353,6 +353,34 @@ check('importar otro formato: se rechaza sin tocar nada', mal && (await api('/ap
     check('importar (reemplaza): lo que sale deja lápida', !!guardado.eliminados.dispositivos[sale], Object.keys(guardado.eliminados.dispositivos).join());
 }
 
+// --- móvil: Ajustes > Historial abre la ventana con la tarjeta del historial (que vuelve a su lugar al cerrar)
+{
+    const fila = d.querySelector('[data-ui-target="#modal-historial"]');
+    fila.click();
+    await hasta(() => $('modal-historial').classList.contains('show'));
+    check('historial: la tarjeta se muda a la ventana', !!$('bd-card').closest('#modal-historial'));
+    await hasta(() => $('bd-tbody').children.length > 0);
+    check('historial: al abrir la ventana lee los cambios del stock', $('bd-tbody').children.length > 0, String($('bd-tbody').children.length));
+    $('modal-historial').querySelector('[data-ui-dismiss="modal"]').click();
+    await hasta(() => !$('modal-historial').classList.contains('show') && !!$('bd-card').closest('#auditoria-bd'));
+    check('historial: al cerrar la tarjeta vuelve a su pestaña', !!$('bd-card').closest('#auditoria-bd'));
+}
+
+// --- móvil: el ícono de búsqueda abre y cierra el buscador
+{
+    const raiz = d.documentElement;
+    $('btn-buscar-movil').click();
+    check('búsqueda móvil: el ícono abre el buscador', raiz.classList.contains('busqueda-movil-abierta')
+        && $('btn-buscar-movil').getAttribute('aria-expanded') === 'true');
+    $('global-search').value = 'nvr';
+    $('global-search').dispatchEvent(new w.Event('input'));
+    $('btn-buscar-movil').click();
+    check('búsqueda móvil: cerrada con texto, el ícono lo avisa', !raiz.classList.contains('busqueda-movil-abierta')
+        && $('btn-buscar-movil').classList.contains('con-texto'));
+    $('global-search').value = '';
+    $('global-search').dispatchEvent(new w.Event('input'));
+}
+
 await esperar(300);
 check('sin errores de JavaScript', errores.length === 0, errores.join(' | '));
 console.log(fallos ? `\n${fallos} FALLO(S)` : '\nTODO OK');

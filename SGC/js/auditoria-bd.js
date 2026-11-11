@@ -2,7 +2,8 @@
 // «Cargar más», filtro por acción y la búsqueda del panel (va al servidor: «juan» trae TODOS los eventos
 // de juan, no solo los de las páginas ya cargadas). Lectura local de la base: no consulta a los equipos; sin polling.
 // La lógica pura (URL, validación, textos) está en el bloque STOCK PURO de stock.js; acá solo el DOM.
-// Se carga después de consultas.js (uiConsultaDemanda) y de stock.js.
+// Se carga después de consultas.js (uiConsultaDemanda) y de stock.js. La tarjeta se ve en la pestaña Historial (escritorio) o
+// en la ventana de Ajustes > Historial (historial-modal.js, que llama a `window.historialMostrar`).
 (function () {
     'use strict';
     const $ = (id) => document.getElementById(id);
@@ -13,7 +14,11 @@
     let esperaBusqueda = null;
 
     const termino = () => String(terminoBusquedaActual() || '').trim().slice(0, 60);
-    const visible = () => { const p = $('auditoria-bd'); return !!p && p.classList.contains('active'); };
+    const visible = () => {
+        const p = $('auditoria-bd');
+        return (!!p && p.classList.contains('active') && !!$('bd-card').closest('#auditoria-bd'))
+            || !!$('bd-card').closest('#modal-historial.show');
+    };
 
     function leer() {
         return { accion: $('bd-accion').value, q: termino() };
@@ -127,7 +132,7 @@
             sel.value = '';
             sel.dispatchEvent(new Event('change'));             // el desplegable con estilo refleja el cambio
         },
-        pestanas: ['auditoria-bd-tab'],
+        pestanas: ['v-pills-auditoria-tab'],
         // al abrir la subpestaña se lee una vez; si la búsqueda cambió mientras estaba oculta, se vuelve a leer
         alMostrar: () => {
             if (cargadaUnaVez && ctl.consulta && ctl.consulta.q === termino()) return false;
@@ -149,4 +154,5 @@
     $('bd-accion').addEventListener('change', () => { if (cargadaUnaVez && !ctl.enCurso) ctl.consultar(false); });
 
     window.obtenerConteoBaseDatos = ctl.conteo;
+    window.historialMostrar = ctl.alMostrar;
 })();

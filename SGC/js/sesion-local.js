@@ -42,13 +42,6 @@ function uiAplicarRol(rol) {
     }
 }
 
-/** Vuelve a leer todo lo que muestra la página (Actualizar del menú). */
-async function recargarTodo() {
-    const promesas = [cargarDatos()];
-    if (typeof window.recargarStock === 'function') promesas.push(window.recargarStock());
-    await Promise.allSettled(promesas);
-}
-
 function initSesion() {
     uiAplicarRol(rolActual);
 }

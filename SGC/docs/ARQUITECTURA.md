@@ -59,11 +59,19 @@ Cada capa solo usa las de arriba. `app.js` es el eje histórico (heredado de cct
 | **2. API local** | `api-local.js`, `sesion-local.js` | Responde `/api/stock*` y `/api/v2/datos` sobre el JSON guardado, con los mismos estados (422, 404, 409). `sesion-local` reemplaza al login de cctv_monitor. | Reglas de negocio (las llama de la capa 1). |
 | **3. Infraestructura UI** | `ui.js`, `animaciones.js`, `busqueda.js`, `comun.js` | `UI` (pestañas, modales, desplegables), animaciones de mutación, búsqueda tokenizada, `storage`, `apiFetch`, toasts y los bloques `UI COMUN`, `FECHAS Y CSV`. | Conocer pestañas concretas. |
 | **4. Núcleo de la app** | `app.js`, `selector.js` | Pestañas, panel lateral, búsqueda global, tema, select propio. | Reglas del stock. |
-| **5. Pestañas y funciones** | `produccion*.js`, `resumen.js`, `favoritos.js`, `atajos.js`, `stock*.js`, `auditoria-bd.js`, `ajustes.js`, `datos-ui.js`, `privacidad.js` | Una vista o función cada uno; el DOM con `textContent`. | Hablar con `localStorage` directo: pasan por `storage` o `apiFetch`. |
+| **5. Pestañas y funciones** | `produccion*.js`, `resumen.js`, `favoritos.js`, `atajos.js`, `stock*.js`, `consultas.js`, `auditoria-bd.js`, `historial-modal.js`, `busqueda-movil.js`, `ajustes.js`, `datos-ui.js`, `privacidad.js` | Una vista o función cada uno; el DOM con `textContent`. | Hablar con `localStorage` directo: pasan por `storage` o `apiFetch`. |
 | **6. Servicios sin vista propia** | `gist.js`, `parseador.js`, `migrar-sgc.js` | Sincronización cifrada (AES-GCM), parseadores de `cctv_online.json` y migración desde SGC; cada uno con su bloque puro y su ventana. | Escribir datos sin vista previa ni confirmar. |
 
 `stock-puro.js` (puras de la pestaña Stock) se carga antes que `stock.js`; los hijos `stock-*.js` y `produccion-*.js`
 comparten con su padre por un objeto global (`window.StockNucleo`) y el hijo no depende de que el padre lo conozca.
+
+### Vista móvil (< 768 px)
+El panel lateral pasa a ser una **barra fija abajo** (Estado, Activos, Producción, búsqueda, Ajustes; `css/app/barra-movil.css`,
+variable `--alto-barra-movil`, que sube lo flotante: toast, «volver arriba» y la barra de selección). El buscador está oculto y
+lo abre el ícono (`busqueda-movil.js`, `html.busqueda-movil-abierta`). Sin menú ⚙: Historial, Listar y Ayuda y atajos están en
+Ajustes (sección `.solo-movil`). **Historial** es una ventana (`#modal-historial`): `historial-modal.js` mueve ahí la tarjeta
+`#bd-card` de la pestaña (que sigue en el escritorio) mientras está abierta. `.solo-escritorio` / `.solo-movil` (utilidades.css)
+muestran u ocultan por ancho: son el mecanismo para lo que existe en una sola vista.
 
 ### Comunicación entre archivos
 - **Globales de página**: `storage`, `apiFetch`, `mostrarToast`, `UI`, `globalData`, `StockNucleo`. Lo que otro archivo necesita

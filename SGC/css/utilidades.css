@@ -695,6 +695,13 @@
             display: none;
         }
     }
+
+    /* Lo contrario: solo en la vista móvil (barra de abajo: ícono de búsqueda; Ajustes: Historial, Listar y Ayuda) */
+    @media (min-width: 768px) {
+        .solo-movil.solo-movil {
+            display: none;
+        }
+    }
 }
 
 /* ─── Menos movimiento (menú de ajustes > «Reducir movimiento», `data-movimiento="reducido"` en <html>). Va FUERA de las

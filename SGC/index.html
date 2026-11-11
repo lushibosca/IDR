@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="css/componentes/formularios.css?v=14">
     <link rel="stylesheet" href="css/componentes/botones.css?v=15">
     <link rel="stylesheet" href="css/componentes/desplegables.css?v=18">
-    <link rel="stylesheet" href="css/componentes/navegacion.css?v=16">
+    <link rel="stylesheet" href="css/componentes/navegacion.css?v=17">
     <link rel="stylesheet" href="css/componentes/tarjetas.css?v=11">
     <link rel="stylesheet" href="css/componentes/acordeon.css?v=17">
     <link rel="stylesheet" href="css/componentes/insignias.css?v=12">
@@ -31,7 +31,7 @@
     <link rel="stylesheet" href="css/componentes/toast.css?v=11">
     <link rel="stylesheet" href="css/componentes/modal.css?v=23">
     <link rel="stylesheet" href="css/componentes/spinner.css?v=6">
-    <link rel="stylesheet" href="css/app/estructura.css?v=36">
+    <link rel="stylesheet" href="css/app/estructura.css?v=37">
     <link rel="stylesheet" href="css/app/tema.css?v=4">
     <link rel="stylesheet" href="css/app/estado.css?v=54">
     <link rel="stylesheet" href="css/app/produccion.css?v=50">
@@ -42,7 +42,8 @@
     <link rel="stylesheet" href="css/app/ajustes.css?v=9">
     <link rel="stylesheet" href="css/app/animaciones.css?v=12">
     <link rel="stylesheet" href="css/app/interaccion.css?v=8">
-    <link rel="stylesheet" href="css/utilidades.css?v=32">
+    <link rel="stylesheet" href="css/app/barra-movil.css?v=2">
+    <link rel="stylesheet" href="css/utilidades.css?v=33">
     <link rel="stylesheet" href="vendor/fonts/inter.css">
 </head>
 
@@ -57,17 +58,12 @@
                 <span id="last-update"
                     class="text-secondary me-3 small d-inline-flex align-items-center solo-escritorio">Cargando...</span>
 
-                <div class="dropdown" id="menu-config">
+                <div class="dropdown solo-escritorio" id="menu-config">
                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
                         id="dropdownMenuButton" data-ui-toggle="dropdown" aria-expanded="false" data-ui-offset="0,8">
                         <i class="bi bi-gear-fill me-1"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end min-w-220" aria-labelledby="dropdownMenuButton">
-                        <li><button id="btn-refresh" class="dropdown-item"><i class="bi bi-arrow-clockwise me-2"></i>
-                                Actualizar</button></li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
                         <li class="d-none">
                             <button type="button" class="dropdown-item d-none" id="stock-ubicaciones"
                                 title="Edificios y pisos" aria-hidden="true" tabindex="-1">
@@ -202,13 +198,18 @@
                                         class="sidebar-label">Producción</span></span>
                                 <span class="badge sidebar-search-badge d-none" id="badge-count-produccion">0</span>
                             </button>
-                            <button class="nav-link text-start d-flex align-items-center" id="v-pills-auditoria-tab"
+                            <button class="nav-link text-start d-flex align-items-center solo-escritorio" id="v-pills-auditoria-tab"
                                 data-ui-toggle="pill" data-ui-target="#v-pills-auditoria" type="button" role="tab"
                                 aria-selected="false" data-etiqueta="Historial">
                                 <span class="d-inline-flex align-items-center"><i
                                         class="bi bi-clock-history sidebar-tab-icon"></i> <span
                                         class="sidebar-label">Historial</span></span>
                                 <span class="badge sidebar-search-badge d-none" id="badge-count-auditoria">0</span>
+                            </button>
+                            <button class="nav-link text-start d-flex align-items-center solo-movil" id="btn-buscar-movil"
+                                type="button" aria-label="Buscar" aria-expanded="false" aria-controls="sidebar-search-container">
+                                <span class="d-inline-flex align-items-center"><i
+                                        class="bi bi-search sidebar-tab-icon"></i></span>
                             </button>
                             <button class="nav-link text-start d-flex align-items-center" id="v-pills-ajustes-tab"
                                 data-ui-toggle="pill" data-ui-target="#v-pills-ajustes" type="button" role="tab"
@@ -693,6 +694,35 @@
                                 <div class="ajuste-texto">
                                     <span class="ajuste-titulo">Catálogos</span>
                                     <span class="ajuste-desc">Edificios, pisos y tipos de dispositivos.</span>
+                                </div>
+                                <span class="ajuste-accion-estado"><i class="bi bi-chevron-right"></i></span>
+                            </div>
+                        </section>
+                        <section class="ajuste-seccion solo-movil" aria-labelledby="ajustes-herramientas">
+                            <h6 class="ajuste-seccion-titulo" id="ajustes-herramientas">Herramientas</h6>
+                            <div class="ajuste-fila" role="button" tabindex="0" data-ui-toggle="modal"
+                                data-ui-target="#modal-historial">
+                                <i class="bi bi-clock-history ajuste-icono" aria-hidden="true"></i>
+                                <div class="ajuste-texto">
+                                    <span class="ajuste-titulo">Historial</span>
+                                    <span class="ajuste-desc">Los últimos cambios del stock: agregados, modificados y borrados.</span>
+                                </div>
+                                <span class="ajuste-accion-estado"><i class="bi bi-chevron-right"></i></span>
+                            </div>
+                            <div class="ajuste-fila" role="button" tabindex="0" data-stock-exportar="ips">
+                                <i class="bi bi-list-task ajuste-icono" aria-hidden="true"></i>
+                                <div class="ajuste-texto">
+                                    <span class="ajuste-titulo">Listar</span>
+                                    <span class="ajuste-desc">Arma listas de dispositivos para copiar o imprimir.</span>
+                                </div>
+                                <span class="ajuste-accion-estado"><i class="bi bi-chevron-right"></i></span>
+                            </div>
+                            <div class="ajuste-fila" role="button" tabindex="0" data-ui-toggle="modal"
+                                data-ui-target="#modal-atajos">
+                                <i class="bi bi-question-circle ajuste-icono" aria-hidden="true"></i>
+                                <div class="ajuste-texto">
+                                    <span class="ajuste-titulo">Ayuda y atajos</span>
+                                    <span class="ajuste-desc">Cómo se usa cada sección y los atajos de teclado.</span>
                                 </div>
                                 <span class="ajuste-accion-estado"><i class="bi bi-chevron-right"></i></span>
                             </div>
@@ -1678,6 +1708,20 @@
     <!-- Modal Detalle Capacidad -->
 
     <!-- Ayuda del sistema y atajos (static/atajos.js: tecla ?) -->
+    <!-- Historial (Ajustes > Historial): historial-modal.js mueve acá la tarjeta #bd-card de la pestaña Historial mientras está abierto -->
+    <div class="modal fade" id="modal-historial" tabindex="-1" aria-labelledby="modalHistorialLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content modal-tema">
+                <div class="modal-header border-0 pb-1">
+                    <h5 class="modal-title fs-6 fw-bold text-primary" id="modalHistorialLabel"><i
+                            class="bi bi-clock-history me-2"></i>Historial</h5>
+                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body pt-1" id="historial-cuerpo"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="modal-atajos" tabindex="-1" aria-labelledby="modalAtajosLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content modal-tema">
@@ -2123,7 +2167,10 @@
     <script src="js/stock-alta-lote.js?v=4"></script>
     <script src="js/produccion-seleccion.js?v=7"></script>
     <script src="js/produccion-asignar.js?v=1"></script>
-    <script src="js/auditoria-bd.js?v=3"></script>
+    <script src="js/consultas.js?v=1"></script>
+    <script src="js/auditoria-bd.js?v=4"></script>
+    <script src="js/historial-modal.js?v=1"></script>
+    <script src="js/busqueda-movil.js?v=1"></script>
     <script src="js/ajustes.js?v=6"></script>
     <script src="js/datos-ui.js?v=1"></script>
     <script src="js/gist.js?v=1"></script>
