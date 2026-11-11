@@ -6,6 +6,9 @@
         if (s !== 'light') {
             s = 'dark'; // dark por defecto
         }
+        // El tema de la suite (../shared/idr-tema.js, `IDR_dark`) manda sobre el propio si alguien ya lo eligió
+        var suite = typeof IDRTema !== 'undefined' ? IDRTema.oscuro() : null;
+        if (suite !== null) s = suite ? 'dark' : 'light';
         html.setAttribute('data-tema', s);
         // Dashboard oculto hasta que lleguen los datos: resumen.js lo revela con el blur (sin salto de placeholders)
         html.setAttribute('data-cargando', '');

@@ -10,12 +10,14 @@
     <title>SGC</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="manifest" href="manifest.json">
-    <script src="js/preload.js?v=7"></script>
+    <script src="../shared/idr-tema.js"></script>
+    <script src="js/preload.js?v=8"></script>
     <!-- CSS: todo en static/css/, por capas (@layer en tokens.css): tokens, base, iconos, grilla, componentes,
          app, utilidades. Sin !important (docs/diseno/CSS-Y-UI.md). El orden de los <link> es el de las capas. -->
-    <link rel="stylesheet" href="css/tokens.css?v=26">
+    <link rel="stylesheet" href="css/tokens.css?v=27">
     <link rel="stylesheet" href="css/base.css?v=16">
     <link rel="stylesheet" href="css/grilla.css?v=5">
+    <link rel="stylesheet" href="../shared/idr-actualizacion.css">
     <link rel="stylesheet" href="css/componentes/transiciones.css?v=12">
     <link rel="stylesheet" href="css/componentes/tablas.css?v=12">
     <link rel="stylesheet" href="css/componentes/formularios.css?v=14">
@@ -31,7 +33,7 @@
     <link rel="stylesheet" href="css/componentes/toast.css?v=11">
     <link rel="stylesheet" href="css/componentes/modal.css?v=23">
     <link rel="stylesheet" href="css/componentes/spinner.css?v=6">
-    <link rel="stylesheet" href="css/app/estructura.css?v=39">
+    <link rel="stylesheet" href="css/app/estructura.css?v=40">
     <link rel="stylesheet" href="css/app/tema.css?v=4">
     <link rel="stylesheet" href="css/app/estado.css?v=54">
     <link rel="stylesheet" href="css/app/produccion.css?v=51">
@@ -42,8 +44,8 @@
     <link rel="stylesheet" href="css/app/ajustes.css?v=9">
     <link rel="stylesheet" href="css/app/animaciones.css?v=12">
     <link rel="stylesheet" href="css/app/interaccion.css?v=8">
-    <link rel="stylesheet" href="css/app/detalle-movil.css?v=4">
-    <link rel="stylesheet" href="css/app/barra-movil.css?v=6">
+    <link rel="stylesheet" href="css/app/detalle-movil.css?v=5">
+    <link rel="stylesheet" href="css/app/barra-movil.css?v=7">
     <link rel="stylesheet" href="css/utilidades.css?v=34">
     <link rel="stylesheet" href="vendor/fonts/inter.css">
 </head>
@@ -1951,7 +1953,7 @@
         </div>
     </div>
 
-    <div class="modal fade modal-altura-fija" id="modal-detalle-capacidad" tabindex="-1" aria-labelledby="modalCapacidadLabel"
+    <div class="modal fade modal-altura-fija" id="modal-detalle-capacidad" data-doble-toque tabindex="-1" aria-labelledby="modalCapacidadLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
@@ -2013,13 +2015,12 @@
     </div>
 
     <!-- Modal Detalle Stock -->
-    <div class="modal fade modal-detalle-tipos modal-altura-fija" id="modal-detalle-stock" tabindex="-1" aria-labelledby="modalStockLabel"
+    <div class="modal fade modal-detalle-tipos modal-altura-fija" id="modal-detalle-stock" data-doble-toque tabindex="-1" aria-labelledby="modalStockLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header bg-primary border-0">
-                    <h5 class="modal-title" id="modalStockLabel"><i class="bi bi-hdd-rack me-2"></i>Detalle de Stock
-                        (Servidores)</h5>
+                    <h5 class="modal-title" id="modalStockLabel"><i class="bi bi-hdd-rack me-2"></i>Detalle de servidores</h5>
                     <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body p-0">
@@ -2052,13 +2053,12 @@
     </div>
 
     <!-- Modal Detalle Stock Otros Dispositivos -->
-    <div class="modal fade modal-detalle-tipos modal-altura-fija" id="modal-detalle-stock-otros" tabindex="-1"
+    <div class="modal fade modal-detalle-tipos modal-altura-fija" id="modal-detalle-stock-otros" data-doble-toque tabindex="-1"
         aria-labelledby="modalStockOtrosLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header bg-primary border-0">
-                    <h5 class="modal-title" id="modalStockOtrosLabel"><i class="bi bi-cpu me-2"></i>Detalle de Stock
-                        (Otros Dispositivos)</h5>
+                    <h5 class="modal-title" id="modalStockOtrosLabel"><i class="bi bi-cpu me-2"></i>Detalle de otros</h5>
                     <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body p-0">
@@ -2091,13 +2091,13 @@
     </div>
 
     <!-- Modal Detalle Stock de un grupo creado por el usuario (compartido: lo llena el chip tocado; resumen.js) -->
-    <div class="modal fade modal-detalle-tipos modal-altura-fija" id="modal-detalle-stock-grupo" tabindex="-1"
+    <div class="modal fade modal-detalle-tipos modal-altura-fija" id="modal-detalle-stock-grupo" data-doble-toque tabindex="-1"
         aria-labelledby="modal-stock-grupo-titulo" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header bg-primary border-0">
                     <h5 class="modal-title" id="modal-stock-grupo-titulo"><i class="bi bi-box-seam me-2"></i><span
-                            id="modal-stock-grupo-texto">Detalle de Stock</span></h5>
+                            id="modal-stock-grupo-texto">Detalle</span></h5>
                     <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body p-0">
@@ -2132,11 +2132,11 @@
     <!-- Modal de Todas las Alertas -->
 
     <!-- Modal Detalle Stock Cámaras -->
-    <div class="modal fade modal-detalle-tipos modal-altura-fija" id="modal-detalle-stock-camaras" tabindex="-1" aria-hidden="true">
+    <div class="modal fade modal-detalle-tipos modal-altura-fija" id="modal-detalle-stock-camaras" data-doble-toque tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header bg-primary border-0">
-                    <h5 class="modal-title"><i class="bi bi-camera-video me-2"></i>Detalle de Stock (Cámaras)</h5>
+                    <h5 class="modal-title"><i class="bi bi-camera-video me-2"></i>Detalle de cámaras</h5>
                     <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body p-0">
@@ -2175,12 +2175,15 @@
     <script src="js/busqueda.js?v=8"></script>
     <script src="js/datos-puro.js?v=3"></script>
     <script src="js/api-local.js?v=3"></script>
-    <script src="js/comun.js?v=56"></script>
-    <script src="js/app.js?v=273"></script>
+    <script src="js/comun.js?v=57"></script>
+    <script src="js/arrastre-tactil.js?v=1"></script>
+    <script src="js/doble-toque.js?v=1"></script>
+    <script src="js/tema-suite.js?v=1"></script>
+    <script src="js/app.js?v=274"></script>
     <script src="js/sesion-local.js?v=1"></script>
     <script src="js/selector.js?v=2"></script>
-    <script src="js/produccion.js?v=63"></script>
-    <script src="js/resumen.js?v=74"></script>
+    <script src="js/produccion.js?v=64"></script>
+    <script src="js/resumen.js?v=75"></script>
     <script src="js/favoritos.js?v=20"></script>
     <script src="js/atajos.js?v=27"></script>
     <script src="js/stock-puro.js?v=5"></script>
@@ -2203,6 +2206,7 @@
     <script src="js/parseador.js?v=1"></script>
     <script src="js/migrar-sgc.js?v=1"></script>
     <script src="js/privacidad.js?v=2"></script>
+    <script src="../shared/idr-actualizacion.js" data-sw="../sw.js" data-scope="../"></script>
 
 </body>
 

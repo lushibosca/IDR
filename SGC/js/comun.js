@@ -1613,7 +1613,7 @@ function uiArrastreLargo(raiz, { elegir, capturar = (el) => el, alEmpezar = () =
         arrastrando = false;
         el = null;
         if (arrastrado) {
-            arrastrado.style.touchAction = '';
+            arrastrado.style.touchAction = ''; document.documentElement.classList.remove('arrastrando-largo');
             try { capturar(arrastrado).releasePointerCapture(pointerId); } catch (_) { /* ya soltado */ }
             tragarClic = true;
             setTimeout(() => { tragarClic = false; }, 100);
@@ -1653,7 +1653,7 @@ function uiArrastreLargo(raiz, { elegir, capturar = (el) => el, alEmpezar = () =
         timer = setTimeout(() => {
             timer = null;
             arrastrando = true;
-            el.style.touchAction = 'none';
+            el.style.touchAction = 'none'; document.documentElement.classList.add('arrastrando-largo');   // (js/arrastre-tactil.js: sin scroll)
             try { capturar(el).setPointerCapture(pointerId); } catch (_) { /* sin captura: sigue con la ventana */ }
             if (typeof navigator !== 'undefined' && navigator.vibrate) {
                 try { navigator.vibrate(35); } catch (_) { /* sin vibración */ }

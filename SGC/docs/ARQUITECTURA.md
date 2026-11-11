@@ -69,7 +69,7 @@ comparten con su padre por un objeto global (`window.StockNucleo`) y el hijo no 
 El panel lateral pasa a ser una **barra fija abajo** (Estado, Activos, Producción, búsqueda, Ajustes; `css/app/barra-movil.css`,
 variable `--alto-barra-movil`, que sube lo flotante: toast, «volver arriba» y la barra de selección). El buscador está oculto y
 lo abre el ícono (`busqueda-movil.js`, `html.busqueda-movil-abierta`). Sin menú ⚙: Historial, Listar y Ayuda y atajos están en
-Ajustes (sección `.solo-movil`). **La cabecera va abajo del todo** (fija, ~29 px, con el área segura del teléfono) y el panel de pestañas justo encima; ninguna se oculta. `--navbar-alto` es lo que mide la cabecera y `--navbar-height` lo que ocupa ARRIBA (0 en móvil, de ahí cuelgan los encabezados pegajosos); `--alto-barra-movil` suma las dos barras y sube lo flotante. **Swipe de lado** (`swipe-pestanas.js`, decisión pura `swipePestanaDestino`) cambia de pestaña; no actúa desde los bordes, en campos, tablas que se desplazan, ventanas abiertas ni con más de un dedo, y `overscroll-behavior-x: none` evita el «atrás» del navegador. Al abrir la búsqueda el campo recibe el foco en el mismo toque (abre el teclado). En móvil el `.row` de `#app-main-row` va sin márgenes negativos: con el padding de 8 px del contenedor se pasaba 4 px y causaba scroll horizontal (y movía lo fijo). **Historial** es una ventana (`#modal-historial`): `historial-modal.js` mueve ahí la tarjeta
+Ajustes (sección `.solo-movil`). **La cabecera queda arriba**, pegajosa y de ~29 px, y el panel de pestañas es una barra fija abajo; ninguna se oculta. `--alto-barra-movil` es el alto de la barra de abajo y sube lo flotante (toast, «volver arriba», barra de selección, el aviso de actualización). En móvil `#v-pills-tabContent` no tiene alto mínimo: con poco contenido la página no se desplaza de más. **Swipe de lado** (`swipe-pestanas.js`, decisión pura `swipePestanaDestino`) cambia de pestaña; no actúa desde los bordes, en campos, tablas que se desplazan, ventanas abiertas ni con más de un dedo, y `overscroll-behavior-x: none` evita el «atrás» del navegador. Al abrir la búsqueda el campo recibe el foco en el mismo toque (abre el teclado). En móvil el `.row` de `#app-main-row` va sin márgenes negativos: con el padding de 8 px del contenedor se pasaba 4 px y causaba scroll horizontal (y movía lo fijo). **Historial** es una ventana (`#modal-historial`): `historial-modal.js` mueve ahí la tarjeta
 `#bd-card` de la pestaña (que sigue en el escritorio) mientras está abierta. `.solo-escritorio` / `.solo-movil` (utilidades.css)
 muestran u ocultan por ancho: son el mecanismo para lo que existe en una sola vista.
 
@@ -79,7 +79,15 @@ muestran u ocultan por ancho: son el mecanismo para lo que existe en una sola vi
 
 **Cambio de pestaña en móvil:** el contenido desliza de lado (eje X), porque la barra de pestañas es horizontal (abajo); en escritorio el eje sale de dónde esté el panel (izquierda o derecha: vertical; arriba o abajo: horizontal). `_ejeDeslizePestanas` en `animaciones.js`.
 
+**Reubicar con el dedo (móvil):** durante una pulsación larga y arrastre (`html.arrastrando-largo`) `arrastre-tactil.js` cancela los `touchmove`: `touch-action: none` fijado al empezar llega tarde (el navegador decide el gesto al tocar) y la página hacía scroll.
+
 **Detalles en tarjetas (móvil):** los modales de detalle de stock (cámaras, servidores, otros, grupos) y de canales muestran cada fila como una tarjeta (nombre arriba, números en columnas con su rótulo; los modelos, sub-tarjetas; el total, una tarjeta fija abajo). Es solo CSS (`css/app/detalle-movil.css`, selectores genéricos con `:where()`); el JS arma las mismas filas de tabla.
+
+**Tema compartido con la suite:** `IDRTema` (`../shared/idr-tema.js`, clave `IDR_dark`) manda sobre `sgc2/theme`: `preload.js` lo aplica antes de pintar, `toggleTheme` lo escribe y `tema-suite.js` lo sigue en vivo (evento `storage`, y al volver del caché de «atrás»).
+
+**Doble toque** (`doble-toque.js`): dentro de lo marcado con `data-doble-toque` (los modales de detalle) dos toques seguidos emiten un `dblclick` propio y se descarta el nativo, que en los teléfonos no es confiable.
+
+**Actualización de la PWA:** la registra `../shared/idr-actualizacion.js` (toast con barra de progreso); SGC no registra el worker por su cuenta.
 
 ### Comunicación entre archivos
 - **Globales de página**: `storage`, `apiFetch`, `mostrarToast`, `UI`, `globalData`, `StockNucleo`. Lo que otro archivo necesita

@@ -19,6 +19,16 @@ Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se document�
   otra va **antes** en esa cadena. Hoy no hay prefijos repetidos.
 
 ## Reglas de la suite
+- **Actualizaciones:** `shared/idr-actualizacion.js` (+ `.css`) registra el Service Worker y muestra el toast con barra de progreso
+  («Descargando actualización · 40%» → «Actualización lista. Tocá para recargar»). Toda página de la suite lo carga con
+  `<script src="../shared/idr-actualizacion.js" data-sw="../sw.js" data-scope="../">` y su hoja; **ninguna app registra el worker
+  por su cuenta** (lo vigila `tests/actualizacion.test.mjs`). `sw.js` descarga todo en paralelo, informa el avance y es todo o nada:
+  si falla un archivo se conserva la versión anterior, así que un archivo listado en `PRECACHE_URLS` que no exista rompe las
+  actualizaciones (el test de la suite lo vigila). Una app nueva: agregar esa línea y su hoja en su `index.html`.
+- **Tema claro/oscuro compartido:** la clave `IDR_dark` (`'1'` oscuro, `'0'` claro) es de TODA la suite: el launcher y cada app la
+  leen al cargar y la escriben al cambiar el tema, así que se cambia en una y se ve en todas. Las apps nuevas usan
+  `shared/idr-tema.js` (`IDRTema.oscuro()` / `guardar()` / `alCambiar()`), cargado en el `<head>` antes de pintar el tema; sin
+  valor guardado cada app usa su tema de siempre. SGC mantiene `sgc2/theme` solo como respaldo (lo vigila `tests/tema.test.mjs`).
 - Las apps comparten el origen: todas las claves de `localStorage` llevan el prefijo de su app (`sgc2/`, `RCK_`, `PCH_`,
   ...). Lo común entre apps vive solo en `shared/` (hoy `idr-infra.js`: edificios y racks) y se carga con `<script>`;
   una app no lee las claves de otra directamente, pasa por `shared/`.

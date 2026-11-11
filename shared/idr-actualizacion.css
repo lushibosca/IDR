@@ -1,0 +1,71 @@
+/* Aviso de actualización de la suite (shared/idr-actualizacion.js). Colores propios (tarjeta oscura que se lee igual en tema claro y
+   oscuro) y sin depender de las variables de cada app; en el móvil de SGC sube sobre las barras de abajo (--alto-barra-movil). */
+.idr-aviso {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--alto-barra-movil, 0px) + 1rem);
+    z-index: 2000;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: min(92vw, 22rem);
+    padding: 0.75rem 1rem;
+    border: 1px solid rgb(255 255 255 / 0.12);
+    border-radius: 0.75rem;
+    background-color: #1f2937;
+    color: #f9fafb;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+    font: 500 0.875rem/1.3 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    text-align: center;
+    transform: translate(-50%, 1.5rem);
+    opacity: 0;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+}
+
+.idr-aviso[hidden] {
+    display: none;
+}
+
+.idr-aviso.idr-aviso-visible {
+    transform: translate(-50%, 0);
+    opacity: 1;
+}
+
+.idr-aviso[data-tipo="ok"] {
+    border-color: #22c55e;
+}
+
+.idr-aviso[data-tipo="error"] {
+    border-color: #ef4444;
+}
+
+.idr-aviso.idr-aviso-tocable {
+    cursor: pointer;
+}
+
+.idr-aviso-barra {
+    height: 0.3125rem;
+    border-radius: 999px;
+    background-color: rgb(255 255 255 / 0.18);
+    overflow: hidden;
+}
+
+.idr-aviso-barra[hidden] {
+    display: none;
+}
+
+.idr-aviso-relleno {
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background-color: #60a5fa;
+    transition: width 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .idr-aviso,
+    .idr-aviso-relleno {
+        transition: none;
+    }
+}

@@ -895,7 +895,7 @@ function pintarDetalleGrupo() {
     if (!chip || !_cacheStockResumen) return;
     const res = resumirStock(_cacheStockResumen.dispositivos, stockEtiquetas(_cacheStockResumen.tipos), stockGrupoDeActual);
     const datos = res.personalizados.get(_grupoDetalle);
-    uiPonerTexto('modal-stock-grupo-texto', `Detalle de Stock (${chip.etiqueta})`);
+    uiPonerTexto('modal-stock-grupo-texto', `Detalle de ${chip.etiqueta}`);
     pintarTablaTipos('#tabla-stock-grupo-tipo tbody', datos ? datos.porTipo : new Map());
 }
 

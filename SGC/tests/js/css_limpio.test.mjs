@@ -22,7 +22,9 @@ function exigir(t, nombre, lista) {
 test("css limpio 1: todo el CSS vive en static/css/ y index.html solo carga de ahí (más íconos y fuentes)", (t) => {
   const fuera = hojas.filter((h) => !h.startsWith("css/"));
   const enlaces = [...leer("index.html").matchAll(/<link rel="stylesheet" href="([^"?]+)/g)].map((m) => m[1]);
-  const ajenos = enlaces.filter((e) => !e.startsWith("css/") && !/^vendor\/(bootstrap-icons|fonts)\//.test(e));
+  // (la hoja del aviso de actualización es de la suite: ../shared/)
+  const ajenos = enlaces.filter((e) => !e.startsWith("css/") && !/^vendor\/(bootstrap-icons|fonts)\//.test(e)
+    && e !== "../shared/idr-actualizacion.css");
   exigir(t, "hojas fuera de static/css/", fuera);
   exigir(t, "hojas cargadas desde fuera de static/css/", ajenos);
 });

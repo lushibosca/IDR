@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-261111.0009';
+const CACHE_NAME = 'idr-suite-261111.0023';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -61,6 +61,7 @@ const PRECACHE_URLS = [
   './SGC/js/animaciones.js',
   './SGC/js/api-local.js',
   './SGC/js/app.js',
+  './SGC/js/arrastre-tactil.js',
   './SGC/js/atajos.js',
   './SGC/js/auditoria-bd.js',
   './SGC/js/busqueda-movil.js',
@@ -68,6 +69,7 @@ const PRECACHE_URLS = [
   './SGC/js/comun.js',
   './SGC/js/consultas.js',
   './SGC/js/datos-puro.js',
+  './SGC/js/doble-toque.js',
   './SGC/js/datos-ui.js',
   './SGC/js/favoritos.js',
   './SGC/js/gist.js',
@@ -89,6 +91,7 @@ const PRECACHE_URLS = [
   './SGC/js/stock-puro.js',
   './SGC/js/stock-seleccion.js',
   './SGC/js/stock.js',
+  './SGC/js/tema-suite.js',
   './SGC/js/swipe-pestanas.js',
   './SGC/js/ui.js',
   './SGC/vendor/bootstrap-icons/bootstrap-icons.min.css',
@@ -148,28 +151,49 @@ const PRECACHE_URLS = [
   './SGP/icons/icon-1024.png',
 
   // ── Recursos Compartidos Suite ──
-  './shared/idr-infra.js'
+  './shared/idr-actualizacion.css',
+  './shared/idr-actualizacion.js',
+  './shared/idr-infra.js',
+  './shared/idr-tema.js'
 ];
 
-// Instalación
+// Avisa a las páginas abiertas cómo va la descarga de la versión nueva (shared/idr-actualizacion.js muestra el toast con la barra)
+function avisarAClientes(mensaje) {
+  return self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    .then(clientes => clientes.forEach(c => c.postMessage(mensaje)))
+    .catch(() => { });
+}
+
+// Instalación: descarga todos los archivos en paralelo (sin usar la caché HTTP) e informa el avance. Es todo o nada: si falla
+// uno, la instalación falla y se conserva la versión anterior (el test de la suite vigila que todo lo listado exista).
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(async cache => {
-      console.log('[IDR-SW] Precacheando recursos de la suite...');
-      try {
-        await cache.addAll(PRECACHE_URLS);
-        console.log('[IDR-SW] Precacheo completado exitosamente.');
-      } catch (err) {
-        console.warn('[IDR-SW] Falló cache.addAll atómico, precacheando archivo por archivo:', err);
-        await Promise.all(
-          PRECACHE_URLS.map(url =>
-            cache.add(url).catch(e => console.warn(`[IDR-SW] No se pudo precachear ${url}:`, e))
-          )
-        );
-      }
-    })
-  );
-  self.skipWaiting();
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const total = PRECACHE_URLS.length;
+    let descargados = 0;
+    let ultimoAviso = -1;
+    const informar = () => {
+      const porcentaje = Math.floor((descargados / total) * 100);
+      if (porcentaje === ultimoAviso) return;
+      ultimoAviso = porcentaje;
+      avisarAClientes({ tipo: 'sw-progreso', progreso: porcentaje, version: CACHE_NAME });
+    };
+    try {
+      informar();
+      await Promise.all(PRECACHE_URLS.map(async url => {
+        const respuesta = await fetch(new Request(url, { cache: 'reload' }));
+        if (!respuesta.ok) throw new Error(`${url}: HTTP ${respuesta.status}`);
+        await cache.put(url, respuesta);
+        descargados++;
+        informar();
+      }));
+    } catch (err) {
+      console.error('[IDR-SW] Falló la descarga de la versión nueva:', err);
+      await avisarAClientes({ tipo: 'sw-error', version: CACHE_NAME });
+      throw err;
+    }
+    await self.skipWaiting();
+  })());
 });
 
 // Activación

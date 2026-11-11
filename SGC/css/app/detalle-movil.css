@@ -77,6 +77,8 @@
         .modal-detalle-tipos table tr > :nth-child(4)::before { content: "Disponibles"; }
         .modal-detalle-tipos table tr > :nth-child(5)::before { content: "No disp."; }
 
+        .modal-detalle-tipos table tfoot tr > :nth-child(2)::before { content: "Equipos"; }     /* el título de la tarjeta ya dice «Total» */
+
         :where(#tabla-detalle-capacidad, #tabla-detalle-pantallas) tr > :nth-child(2)::before { content: "Capacidad"; }
         :where(#tabla-detalle-capacidad, #tabla-detalle-pantallas) tr > :nth-child(3)::before { content: "En uso"; }
         :where(#tabla-detalle-capacidad, #tabla-detalle-pantallas) tr > :nth-child(4)::before { content: "Disponibles"; }

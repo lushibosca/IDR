@@ -172,28 +172,9 @@
         window.mostrarToast = mostrarToast;
         window.toast = toast;
 
-        // Registrar Service Worker Unificado
+        // El Service Worker unificado y el aviso de actualización los registra shared/idr-actualizacion.js
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => {
-                        console.log('PWA: Service Worker del Launcher registrado.', registration.scope);
-
-                        // Detectar si hay una actualización disponible en segundo plano
-                        registration.addEventListener('updatefound', () => {
-                            const newWorker = registration.installing;
-                            if (!newWorker) return;
-
-                            newWorker.addEventListener('statechange', () => {
-                                // Solo notificar si ya existía un controller previo (es una actualización, no la primera instalación)
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    toast('Nueva versión disponible. Se aplicará al recargar o volver a abrir.', 'info', 4500);
-                                }
-                            });
-                        });
-                    })
-                    .catch(err => console.error('PWA: Error al registrar Service Worker:', err));
-
                 // Saneamiento: Desregistrar workers secundarios obsoletos en subcarpetas
                 navigator.serviceWorker.getRegistrations().then(registrations => {
                     const rootScope = new URL('./', window.location.href).href;

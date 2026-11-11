@@ -1,38 +1,29 @@
-/* app/barra-movil.css: App, vista móvil (< 768 px). Abajo del todo van dos barras fijas: la cabecera (la marca, que lleva al
-   launcher) y, justo encima, el panel de pestañas (Estado, Activos, Producción, búsqueda, Ajustes). Ninguna se oculta al hacer
-   scroll. El buscador está oculto: el ícono de la barra lo desliza desde arriba (js/busqueda-movil.js). Historial, Listar y Ayuda
-   están en Ajustes. Va después de estructura.css: mismo selector, gana el orden. */
+/* app/barra-movil.css: App, vista móvil (< 768 px). La cabecera (la marca, que lleva al launcher) queda arriba, pegajosa, y el
+   panel de pestañas (Estado, Activos, Producción, búsqueda, Ajustes) es una barra fija ABAJO; ninguna se oculta al hacer scroll.
+   El buscador está oculto: el ícono de la barra lo desliza desde arriba (js/busqueda-movil.js). Historial, Listar y Ayuda están
+   en Ajustes. Va después de estructura.css: mismo selector, gana el orden. */
 
 @layer app {
     :root {
-        --alto-barra-movil: 0px;                      /* en escritorio no hay barras de abajo */
+        --alto-barra-movil: 0px;                      /* en escritorio no hay barra de abajo */
     }
 
     @media (max-width: 767.98px) {
         :root {
-            --navbar-alto: 2.25rem;                     /* hasta que app.js mide la cabecera */
-            --alto-pestanas-movil: 3.25rem;
-            --alto-barra-movil: calc(var(--alto-pestanas-movil) + var(--navbar-alto));   /* las dos barras */
+            --alto-barra-movil: calc(3.25rem + env(safe-area-inset-bottom, 0px));        /* la barra de pestañas de abajo */
         }
 
         html {
             overscroll-behavior-x: none;            /* el swipe de lado cambia de pestaña: sin el «atrás» del navegador al desbordar */
         }
 
-        /* La cabecera, abajo del todo (el panel de pestañas queda encima); el área segura del teléfono es suya */
-        .navbar {
-            position: fixed;
-            top: auto;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            padding-bottom: env(safe-area-inset-bottom, 0px);
-            border-top: 1px solid var(--border-color);
-            border-bottom: 0;
-            box-shadow: 0 -2px 10px rgb(0 0 0 / 0.12);
+        html.arrastrando-largo {                        /* reubicando con el dedo (js/arrastre-tactil.js): la página no se mueve */
+            overscroll-behavior: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
-        /* El contenido termina sobre las dos barras, no debajo */
+        /* El contenido termina sobre la barra de abajo, no debajo */
         body {
             padding-bottom: var(--alto-barra-movil);
         }
@@ -40,10 +31,10 @@
         #sidebar-col {                                  /* position: fixed está en estructura.css */
             top: auto;
             right: 0;
-            bottom: var(--navbar-alto);                 /* justo sobre la cabecera */
+            bottom: 0;
             left: 0;
-            height: var(--alto-pestanas-movil);
             padding-top: var(--esp-1);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
             background-color: var(--bg-card);
             border-top: 1px solid var(--border-color);
             box-shadow: 0 -2px 10px rgb(0 0 0 / 0.12);

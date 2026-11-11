@@ -15,7 +15,7 @@ function limpiarNombreNvr(nombre) {
 
 // --- Theme Toggling ---
 function initTheme() {
-    const savedTheme = storage.get('theme') || 'dark';
+    const suite = IDRTema.oscuro(), savedTheme = suite === null ? (storage.get('theme') || 'dark') : (suite ? 'dark' : 'light');   // el de la suite (IDR_dark) manda
     if (document.documentElement.getAttribute('data-tema') !== savedTheme) {
         document.documentElement.setAttribute('data-tema', savedTheme);
         document.documentElement.style.colorScheme = savedTheme;
@@ -31,7 +31,7 @@ function toggleTheme() {
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-tema', newTheme);
     document.documentElement.style.colorScheme = newTheme;
-    preferencias.set('theme', newTheme);
+    preferencias.set('theme', newTheme); IDRTema.guardar(newTheme === 'dark');   // y lo ven todas las apps de la suite
     updateThemeIcon();
     setTimeout(() => {
         document.documentElement.classList.remove('theme-transition');

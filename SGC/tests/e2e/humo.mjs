@@ -28,7 +28,9 @@ class Disco extends ResourceLoader {
     fetch(url) {
         const u = new URL(url);
         if (u.origin + '/' !== ORIGEN) return Promise.reject(new Error(`pedido fuera del sitio: ${url}`));
-        return fs.promises.readFile(path.join(RAIZ, decodeURIComponent(u.pathname)));
+        const ruta = decodeURIComponent(u.pathname);
+        // lo compartido de la suite (../shared/) vive fuera de SGC
+        return fs.promises.readFile(ruta.startsWith('/shared/') ? path.join(RAIZ, '..', ruta) : path.join(RAIZ, ruta));
     }
 }
 const dom = new JSDOM(fs.readFileSync(path.join(RAIZ, 'index.html'), 'utf8'), {
@@ -66,6 +68,22 @@ check('carga: los datos se leyeron (sin servidor)', /Última act/.test($('last-u
 check('carga: sin banner de error', $('api-error-alert').classList.contains('d-none'));
 check('cabecera: el ícono de la marca lleva al launcher de la suite', $('menu-config') && d.querySelector('.navbar .brand-launcher')
     && d.querySelector('.navbar .brand-launcher').getAttribute('href') === '../index.html');
+// --- tema compartido con la suite (IDR_dark): manda sobre el propio, se escribe al cambiarlo y se sigue en vivo
+{
+    const tema = () => d.documentElement.getAttribute('data-tema');
+    w.localStorage.setItem('IDR_dark', '1'); w.initTheme();
+    check('tema: IDR_dark=1 pone SGC en oscuro', tema() === 'dark');
+    w.localStorage.setItem('IDR_dark', '0'); w.initTheme();
+    check('tema: IDR_dark=0 pone SGC en claro', tema() === 'light');
+    w.toggleTheme();
+    check('tema: cambiarlo en SGC lo escribe para toda la suite', tema() === 'dark' && w.localStorage.getItem('IDR_dark') === '1');
+    w.toggleTheme();
+    check('tema: y al volver, también', tema() === 'light' && w.localStorage.getItem('IDR_dark') === '0');
+    w.localStorage.setItem('IDR_dark', '1');
+    w.dispatchEvent(new w.StorageEvent('storage', { key: 'IDR_dark', newValue: '1' }));
+    check('tema: un cambio hecho en otra app se sigue en vivo', tema() === 'dark');
+    w.localStorage.removeItem('IDR_dark'); w.initTheme();     // nadie eligió: vuelve a lo propio (sgc2/theme)
+}
 check('sin Auditoría ni monitoreo en la página', !$('monitoreo-section') && !$('alertas-section') && !$('logs-sistema'));
 
 // --- alta, edición y producción por la API local (la que usa stock.js)
