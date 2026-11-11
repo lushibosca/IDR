@@ -972,12 +972,7 @@ function _restaurarCamposBusq() {
     } catch (_) { }
 }
 function _coincideToken(h, token) {
-    if (!token.esExacto) {
-        return h.includes(token.texto);
-    }
-    const escaped = token.texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp('(?<![\\p{L}\\p{N}])' + escaped + '(?![\\p{L}\\p{N}])', 'iu');
-    return regex.test(h);
+    return idrTextoContiene(h, token);          // ../shared/ui/js/busqueda-tokens.js (comillas y paréntesis = palabra completa)
 }
 
 function _coincideBusqueda(r, busqRaw, campos) {
@@ -1002,44 +997,26 @@ function _coincideBusqueda(r, busqRaw, campos) {
         return '';
     };
 
-    // 1. Extraemos los "tokens" respetando frases entre comillas ("anexo c") o paréntesis ((anexo c))
-    const tokensRaw = busqRaw.match(/"[^"]+"|\([^)]+\)|\S+/g) || [];
-
-    // 2. Extraemos el texto limpio de cada token y si es exacto (entre comillas o paréntesis)
-    const tokens = tokensRaw.map(raw => {
-        let inner = raw;
-        const esExacto = (inner.startsWith('"') && inner.endsWith('"')) || (inner.startsWith('(') && inner.endsWith(')'));
-        if (esExacto) inner = inner.slice(1, -1);
-        const texto = normalizarTexto(inner);
-        return { texto, esExacto };
-    }).filter(t => t.texto.length > 0);
-
+    // Palabras, "frases" o (frases) y exclusiones con ! o -  (../shared/ui/js/busqueda-tokens.js)
+    const tokens = idrTokensBusqueda(busqRaw);
     if (!tokens.length) return true;
+    const incluir = tokens.filter(t => !t.excluir);
+    const excluir = tokens.filter(t => t.excluir);
+
+    const hayfields = (esTodo ? todosLosCampos : camposArr).map(c => normalizarTexto(_textoParaCampo(c)));
+    // Lo excluido no puede aparecer en NINGUNO de los campos donde se busca
+    if (excluir.some(t => hayfields.some(h => _coincideToken(h, t)))) return false;
+    if (!incluir.length) return true;
 
     if (esTodo) {
-        const hayfields = [
-            normalizarTexto([r.numero].join(' ')),
-            normalizarTexto([r.patrimonio].join(' ')),
-            normalizarTexto([r.marca, r.modelo].join(' ')),
-            normalizarTexto([r.identificador].join(' ')),
-            normalizarTexto([r.notas].join(' ')),
-            normalizarTexto([r.edificio, r.piso].join(' ')),
-            normalizarTexto([r.dependencia].join(' ')),
-            normalizarTexto([uniVis].join(' ')),
-            normalizarTexto([estadoVis].join(' ')),
-        ];
         // Primero intentar que todos los tokens estén en UN MISMO campo
-        const matchSameField = hayfields.some(h => tokens.every(t => _coincideToken(h, t)));
-        if (matchSameField) return true;
+        if (hayfields.some(h => incluir.every(t => _coincideToken(h, t)))) return true;
         // Fallback: todos los tokens en algún campo (cross-field)
-        return tokens.every(t => hayfields.some(h => _coincideToken(h, t)));
+        return incluir.every(t => hayfields.some(h => _coincideToken(h, t)));
     }
 
     // Multi-campo: basta con que TODAS las palabras (o frases) coincidan en al menos UN campo en común
-    return camposArr.some(c => {
-        const h = normalizarTexto(_textoParaCampo(c));
-        return tokens.every(t => _coincideToken(h, t));
-    });
+    return hayfields.some(h => incluir.every(t => _coincideToken(h, t)));
 }
 
 function _getRacksFiltrados() {

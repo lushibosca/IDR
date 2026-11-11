@@ -173,6 +173,11 @@ async function sgr() {
     check(app, 'buscador: filtra', await hasta(() => !/48491/.test($('tabla-inventario').textContent)));
     clic($('search-clear'));
     check(app, 'buscador: limpiar vuelve a mostrar', await hasta(() => /48491/.test($('tabla-inventario').textContent)));
+    escribir($('global-search'), '48491 !48491');
+    check(app, 'buscador: la exclusión con ! descarta lo que tiene esa palabra', await hasta(() => !/48491/.test($('tabla-inventario').textContent)));
+    escribir($('global-search'), '48491 -zzz');
+    check(app, 'buscador: excluir algo que no está deja el resultado', await hasta(() => /48491/.test($('tabla-inventario').textContent)));
+    clic($('search-clear'));
     clic($('searchFilterBtn'));
     clic(d.querySelector('.search-filter-item[data-field="marca"]'));
     check(app, 'buscador: apagar un campo marca el filtro', $('searchFilterBtn').classList.contains('active-filter'));
@@ -235,6 +240,11 @@ async function sgi() {
     check(app, 'buscador: filtra', await hasta(() => !/Patchcord cat6/.test($('tabla-materiales').textContent)));
     clic($('search-clear'));
     check(app, 'buscador: limpiar vuelve a mostrar', await hasta(() => /Patchcord cat6/.test($('tabla-materiales').textContent)));
+    escribir($('global-search'), 'patchcord !cat6');
+    check(app, 'buscador: la exclusión con ! descarta lo que tiene esa palabra', await hasta(() => !/Patchcord cat6/.test($('tabla-materiales').textContent)));
+    escribir($('global-search'), '"patchcord cat6" -zzz');
+    check(app, 'buscador: frase exacta con exclusión que no está deja el resultado', await hasta(() => /Patchcord cat6/.test($('tabla-materiales').textContent)));
+    clic($('search-clear'));
 
     // modales: editar (clic en la fila), entrada con su primera línea, y desde Ajustes
     await modalBasico(app, ctx, () => clic($('tabla-materiales').querySelector('[data-mat-id]')), 'modal-material-editar');

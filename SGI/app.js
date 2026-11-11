@@ -51,7 +51,7 @@ function parseSeguro(jsonString) {
 
 function analizarBuscadorInteligente(queryOriginal) {
     // Dividimos el texto en palabras separadas por espacios
-    const tokens = queryOriginal.trim().split(/\s+/);
+    const tokens = queryOriginal.trim().match(/[!-]?"[^"]+"|\S+/g) || [];   // las "frases" y las exclusiones quedan enteras
     const dateTokens = [];
     const textTokens = [];
 
@@ -116,8 +116,8 @@ function analizarBuscadorInteligente(queryOriginal) {
     }
 
     return {
-        // Devolvemos el texto limpio sin las fechas y en minúsculas
-        textoLimpio: textTokens.join(' ').toLowerCase(),
+        // Devolvemos el texto limpio sin las fechas (sigue con sus comillas y signos: lo parte idrTokensBusqueda)
+        textoLimpio: textTokens.join(' '),
         desde: filtroDesde,
         hasta: filtroHasta
     };
@@ -1632,7 +1632,7 @@ function getMovsFiltrados() {
 let _modoAnioAnterior = null;
 
 function renderMateriales() {
-    const busq = (document.getElementById('global-search')?.value || '').toLowerCase().trim();
+    const busq = (document.getElementById('global-search')?.value || '').trim();
     const tbody = document.getElementById('tabla-materiales');
     const empty = document.getElementById('materiales-empty');
     const modoAnio = !!_anioFiltro;
@@ -1643,10 +1643,10 @@ function renderMateriales() {
 
     // Búsqueda tokenizada
     if (busq) {
-        const tokens = busq.split(/\s+/);
+        const tokens = idrTokensBusqueda(busq);        // palabras, "frases" y exclusiones con ! o - (../shared/ui/js/busqueda-tokens.js)
         lista = lista.filter(m => {
-            const textoMat = m.nombre.toLowerCase();
-            return tokens.every(token => textoMat.includes(token));
+            const textoMat = idrNormalizarBusqueda(m.nombre);
+            return idrCumpleTokens(tokens, t => idrTextoContiene(textoMat, t));
         });
     }
 
@@ -2752,7 +2752,7 @@ function renderMovimientos() {
         } else {
             // --- AQUÍ EMPIEZA LA BÚSQUEDA NINJA ---
             const filtros = analizarBuscadorInteligente(busqOriginal);
-            const tokensTexto = filtros.textoLimpio ? filtros.textoLimpio.split(/\s+/) : [];
+            const tokensTexto = idrTokensBusqueda(filtros.textoLimpio);
 
             movs = movs.filter(m => {
                 // A) Filtro de Rango de Fechas
@@ -2767,10 +2767,10 @@ function renderMovimientos() {
                     }).join(' ');
 
                     // Armamos el string completo donde buscar
-                    const textoMovimiento = `${m.tipo} ${m.ticket} ${nombresMateriales} ${m.comentarios || ''}`.toLowerCase();
+                    const textoMovimiento = idrNormalizarBusqueda(`${m.tipo} ${m.ticket} ${nombresMateriales} ${m.comentarios || ''}`);
 
-                    // Verificamos que todas las palabras buscadas estén en este movimiento
-                    return tokensTexto.every(token => textoMovimiento.includes(token));
+                    // Todas las palabras buscadas tienen que estar en este movimiento, y ninguna de las excluidas
+                    return idrCumpleTokens(tokensTexto, t => idrTextoContiene(textoMovimiento, t));
                 }
 
                 return true; // Si solo filtró por fecha y pasó, lo mostramos

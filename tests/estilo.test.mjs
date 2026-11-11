@@ -129,6 +129,8 @@ test("apps portadas: cargan la base (tokens primero, utilidades al final), el es
     assert.match(html, new RegExp(`data-idr-version="${app}"`), `${app}: versión visible en Ajustes`);
     assert.doesNotMatch(html, /<svg[^>]*class="svg-sprites"/, `${app}: sin sprite SVG propio (íconos de bootstrap-icons)`);
     assert.ok(html.includes('src="../shared/ui/js/arranque.js"'), `${app}: falta arranque.js en el <head>`);
+    // (SGC tiene su propio motor de búsqueda por campos de equipos; las demás usan la sintaxis común)
+    if (app !== "SGC") assert.ok(html.includes('src="../shared/ui/js/busqueda-tokens.js"'), `${app}: falta busqueda-tokens.js`);
     for (const id of ["btn-theme", "btn-movimiento", "btn-scroll-top", "search-clear", "btn-toggle-sidebar"]) {
       assert.ok(html.includes(`id="${id}"`), `${app}: falta #${id}`);
     }
@@ -196,6 +198,39 @@ test("toast.js: cola de avisos", async () => {
   assert.equal(toastDuracion(0, 0), 3000);
   assert.equal(toastDuracion(4000, 1), 2000);
   assert.equal(toastDuracion(4000, 0), 4000);
+});
+
+// ─── busqueda-tokens.js: la sintaxis del buscador global (palabras, "frases", exclusión con ! o -)
+test("busqueda-tokens.js: tokens, frases, exclusiones y palabra completa", async () => {
+  const { cargarBloque } = await import("./_bloque.mjs");
+  const api = cargarBloque("busqueda-tokens.js", "BUSQUEDA TOKENS PURO", { String, Array },
+    ["idrNormalizarBusqueda", "idrTokensBusqueda", "idrCumpleTokens", "idrTextoContiene"]);
+  const t = (q) => JSON.parse(JSON.stringify(api.idrTokensBusqueda(q)));
+  assert.equal(api.idrNormalizarBusqueda("  CÁMARA   Acceso "), "camara acceso");
+  assert.deepEqual(t("domo pasillo"), [{ texto: "domo", esExacto: false, excluir: false }, { texto: "pasillo", esExacto: false, excluir: false }]);
+  assert.deepEqual(t("domo !ptz"), t("domo ! ptz"));
+  assert.deepEqual(t("domo -ptz"), t("domo - ptz"));
+  assert.deepEqual(t("domo !ptz")[1], { texto: "ptz", esExacto: false, excluir: true });
+  assert.deepEqual(t('"Acceso Norte"'), [{ texto: "acceso norte", esExacto: true, excluir: false }]);
+  assert.deepEqual(t('camara -"piso 3"')[1], { texto: "piso 3", esExacto: true, excluir: true });
+  assert.deepEqual(t("(anexo c)"), [{ texto: "anexo c", esExacto: true, excluir: false }]);
+  assert.deepEqual(t("cat-6"), [{ texto: "cat-6", esExacto: false, excluir: false }]);   // el guion en medio no excluye
+  assert.deepEqual(t("hikvision !ptz \"puerta 1\" -caido").map((x) => [x.texto, x.excluir]),
+    [["hikvision", false], ["ptz", true], ["puerta 1", false], ["caido", true]]);
+  assert.deepEqual(t(""), []);
+  assert.deepEqual(t(null), []);
+  assert.deepEqual(t("!"), [{ texto: "!", esExacto: false, excluir: false }]);
+  const cumple = (texto, q) => api.idrCumpleTokens(api.idrTokensBusqueda(q), (tok) => api.idrTextoContiene(api.idrNormalizarBusqueda(texto), tok));
+  assert.equal(cumple("Domo fijo pasillo", "domo pasillo"), true);
+  assert.equal(cumple("Domo PTZ pasillo", "domo !ptz"), false);
+  assert.equal(cumple("Domo fijo", "domo -ptz"), true);
+  assert.equal(cumple("Domo fijo", "!ptz"), true, "solo exclusiones, nada excluido: cumple");
+  assert.equal(cumple("Acceso norte", '"acceso norte"'), true);
+  assert.equal(cumple("norte acceso", '"acceso norte"'), false, "la frase va contigua y en orden");
+  assert.equal(cumple("piso 3 ala", 'camara -"piso 3"'), false);
+  assert.equal(cumple("aptzx", '"ptz"'), false, "entre comillas pide palabra completa");
+  assert.equal(cumple("aptzx", "ptz"), true);
+  assert.equal(cumple("el ptz fijo", '"ptz"'), true);
 });
 
 // ─── arranque.js (antes de pintar): el tema de la suite manda; si nadie eligió, el de la app
