@@ -269,272 +269,25 @@ const historial = (() => {
 })();
 
 // ══════════════════════════════════════════════════════════════
-//  6. MODAL MANAGER (MM)
+//  6. MODALES Y AVISOS
 // ══════════════════════════════════════════════════════════════
-const MM = (() => {
-    const _padres = {};
-    const _accionesVolver = {};
-
-    let _navegandoHaciaAtras = false;
-    let _ignorandoPopstate = false;
-    let _mdDown = false;
-
-    // Focus trap
-    const FOCUSABLE = [
-        'a[href]', 'button:not([disabled])', 'input:not([disabled])',
-        'select:not([disabled])', 'textarea:not([disabled])',
-        '[tabindex]:not([tabindex="-1"])'
-    ].join(',');
-    const _trapHandlers = new Map();
-    const _prevFocus = new Map();
-
-    function _instalarTrap(m) {
-        _prevFocus.set(m.id, document.activeElement);
-        const getFocusables = () => Array.from(m.querySelectorAll(FOCUSABLE)).filter(el => !el.closest('[hidden]'));
-        setTimeout(() => { getFocusables()[0]?.focus(); }, 50);
-
-        function _onTab(e) {
-            if (e.key !== 'Tab') return;
-            const elems = getFocusables();
-            if (!elems.length) { e.preventDefault(); return; }
-            const first = elems[0], last = elems[elems.length - 1];
-            if (e.shiftKey) {
-                if (document.activeElement === first) { e.preventDefault(); last.focus(); }
-            } else {
-                if (document.activeElement === last) { e.preventDefault(); first.focus(); }
-            }
-        }
-        m.addEventListener('keydown', _onTab);
-        _trapHandlers.set(m.id, _onTab);
-    }
-
-    function _removerTrap(m) {
-        const handler = _trapHandlers.get(m.id);
-        if (handler) {
-            m.removeEventListener('keydown', handler);
-            _trapHandlers.delete(m.id);
-        }
-        const prev = _prevFocus.get(m.id);
-        if (prev && typeof prev.focus === 'function') {
-            try { prev.focus(); } catch (_) {}
-        }
-        _prevFocus.delete(m.id);
-    }
-
-    function _getAccionVolver(modalId) {
-        return _accionesVolver[modalId] || null;
-    }
-
-    function _ejecutarAccionCierre(modalId) {
-        const accionVolver = _getAccionVolver(modalId);
-        if (typeof accionVolver === 'function') {
-            accionVolver();
-            return;
-        }
-        const padreId = _padres[modalId];
-        if (padreId) {
-            const padreEl = document.getElementById(padreId);
-            if (padreEl && !padreEl.classList.contains('show')) {
-                alternar(modalId, padreId);
-                return;
-            }
-        }
-        cerrar(modalId);
-    }
-
-    window.addEventListener('popstate', () => {
-        if (_ignorandoPopstate) {
-            _ignorandoPopstate = false;
-            return;
-        }
-        _navegandoHaciaAtras = true;
-        const abiertos = Array.from(document.querySelectorAll('.modal.show'));
-        if (abiertos.length > 0) {
-            const topModal = abiertos[abiertos.length - 1];
-            _ejecutarAccionCierre(topModal.id);
-        }
-        setTimeout(() => { _navegandoHaciaAtras = false; }, 50);
-    });
-
-    function _onMD(e) { _mdDown = e.target === e.currentTarget; }
-    function _onClick(e) {
-        if (!_mdDown) return;
-        if (e.target === e.currentTarget) {
-            _ejecutarAccionCierre(e.target.id);
-        }
-    }
-
-    function abrir(modalId, optsOrCb) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-
-        let cb, onEscape, padre;
-        if (typeof optsOrCb === 'function') {
-            cb = optsOrCb;
-        } else if (optsOrCb && typeof optsOrCb === 'object') {
-            cb = optsOrCb.cb;
-            onEscape = optsOrCb.onEscape;
-            padre = optsOrCb.padre;
-        }
-
-        if (onEscape) {
-            _accionesVolver[modalId] = onEscape;
-        } else {
-            delete _accionesVolver[modalId];
-        }
-
-        if (padre) {
-            _padres[modalId] = padre;
-        }
-
-        modal.classList.add('show');
-        document.body.classList.add('modal-open');
-
-        if (!_navegandoHaciaAtras) {
-            history.pushState({ modalId }, '');
-        }
-
-        setTimeout(() => {
-            modal.addEventListener('mousedown', _onMD);
-            modal.addEventListener('click', _onClick);
-        }, 100);
-
-        _instalarTrap(modal);
-        if (typeof cb === 'function') cb();
-    }
-
-    function cerrar(modalId, callback = null) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-
-        const estabaAbierto = modal.classList.contains('show');
-        delete _accionesVolver[modalId];
-        modal.classList.remove('show');
-
-        if (!document.querySelector('.modal.show')) {
-            document.body.classList.remove('modal-open');
-        }
-
-        modal.removeEventListener('mousedown', _onMD);
-        modal.removeEventListener('click', _onClick);
-        _removerTrap(modal);
-
-        if (estabaAbierto && !_navegandoHaciaAtras) {
-            if (history.state && history.state.modalId === modalId) {
-                _ignorandoPopstate = true;
-                history.back();
-            }
-        }
-
-        if (typeof callback === 'function') callback();
-    }
-
-    function alternar(modalOrigenId, modalDestinoId, optsOrCb = null) {
-        cerrar(modalOrigenId, () => {
-            setTimeout(() => {
-                abrir(modalDestinoId, optsOrCb);
-            }, 50);
-        });
-    }
-
-    function cerrarTop() {
-        const abiertos = Array.from(document.querySelectorAll('.modal.show'));
-        if (!abiertos.length) return;
-        const target = abiertos[abiertos.length - 1];
-        _ejecutarAccionCierre(target.id);
-    }
-
-    return { abrir, cerrar, alternar, cerrarTop };
-})();
-
-// ══════════════════════════════════════════════════════════════
-//  7. TOAST NOTIFICACIONES
-// ══════════════════════════════════════════════════════════════
-const _tQ = [];
-let _tBusy = false;
-let _tCurrent = null;
-
-function toast(msg, tipo = 'success') {
-    if (_tCurrent && _tCurrent.msg === msg && _tCurrent.tipo === tipo) return;
-    if (_tQ.some(t => t.msg === msg && t.tipo === tipo)) return;
-    _tQ.push({ msg, tipo });
-    _flushToast();
-}
-
-function _flushToast() {
-    if (_tBusy || !_tQ.length) return;
-    _tCurrent = _tQ.shift();
-    _tBusy = true;
-    const el = document.getElementById('toast');
-    if (!el) return;
-    el.textContent = _tCurrent.msg;
-    el.className = `toast show ${_tCurrent.tipo}`;
-    
-    let timeoutId;
-    let closeTimeoutId;
-    
-    const closeToast = () => {
-        el.removeEventListener('click', closeToast);
-        clearTimeout(timeoutId);
-        el.classList.remove('show');
-        closeTimeoutId = setTimeout(() => {
-            el.className = 'toast';
-            _tBusy = false;
-            _tCurrent = null;
-            _flushToast();
-        }, 300);
-    };
-
-    el.addEventListener('click', closeToast);
-    
-    timeoutId = setTimeout(() => {
-        closeToast();
-    }, 2600);
-}
+// Modales: `MM` (../shared/ui/js/mm.js, sobre UI.modal). Avisos: `toast` / `mostrarToast` (../shared/ui/js/toast.js).
 
 // ══════════════════════════════════════════════════════════════
 //  8. CONFIRMAR MODAL
 // ══════════════════════════════════════════════════════════════
 let _confirmarCb = null;
-let _confirmarPadreId = null;
 
 function confirmar(titulo, texto, cb) {
     document.getElementById('confirmar-titulo').textContent = titulo;
     document.getElementById('confirmar-texto').textContent = texto;
     _confirmarCb = cb;
-    const abiertos = Array.from(document.querySelectorAll('.modal.show'));
-    _confirmarPadreId = abiertos.length ? abiertos[abiertos.length - 1].id : null;
-    MM.abrir('modal-confirmar', { onEscape: _volverAlPadreConf });
+    MM.abrir('modal-confirmar');       // queda encima del modal que lo pidió (UI.modal apila)
 }
 
-function _volverAlPadreConf() {
-    MM.cerrar('modal-confirmar');
+function _cerrarConfirmar() {
     _confirmarCb = null;
-    if (_confirmarPadreId) {
-        const id = _confirmarPadreId;
-        _confirmarPadreId = null;
-        setTimeout(() => MM.abrir(id), 50);
-    }
-}
-
-// ══════════════════════════════════════════════════════════════
-//  9. MODO OSCURO
-// ══════════════════════════════════════════════════════════════
-function toggleDarkMode() {
-    const dark = document.documentElement.classList.toggle('dark-mode');
-    const btn = document.getElementById('btn-dark-mode');
-    if (btn) {
-        btn.title = dark ? 'Modo claro' : 'Modo oscuro';
-        const use = btn.querySelector('use');
-        if (use) use.setAttribute('href', dark ? '#icon-sun' : '#icon-moon');
-    }
-    const iconModal = document.getElementById('dark-icon-use');
-    if (iconModal) {
-        iconModal.setAttribute('href', dark ? '#icon-sun' : '#icon-moon');
-    }
-    try {
-        localStorage.setItem('IDR_dark', dark ? '1' : '0');
-    } catch (_) {}
+    MM.cerrar('modal-confirmar');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -543,10 +296,12 @@ function toggleDarkMode() {
 const Tooltip = (() => {
     const el = document.getElementById('jack-tooltip');
     let _hideTimer = null;
+    let _origen = null;                 // el puerto que lo abrió con un toque (para que un segundo toque lo edite)
 
-    function show(port, label, notas, rect) {
+    function show(port, label, notas, rect, origen = null) {
         if (!el) return;
         clearTimeout(_hideTimer);
+        _origen = origen;
         document.getElementById('jt-port').textContent = port;
         document.getElementById('jt-label').textContent = label || '(sin destino asignado)';
         const notasEl = document.getElementById('jt-note');
@@ -565,13 +320,19 @@ const Tooltip = (() => {
         el.style.top = y + 'px';
     }
 
-    function hide() {
+    function hide(ya = false) {
         if (!el) return;
-        _hideTimer = setTimeout(() => el.classList.remove('show'), 80);
+        clearTimeout(_hideTimer);
+        _origen = null;
+        if (ya) el.classList.remove('show');
+        else _hideTimer = setTimeout(() => el.classList.remove('show'), 80);
     }
 
-    return { show, hide };
+    return { show, hide, origen: () => _origen };
 })();
+
+/** ¿La pantalla se usa con el dedo? Ahí no hay «pasar el mouse»: el primer toque a un puerto muestra su tooltip y el segundo lo edita. */
+const esTactil = () => !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 
 // ══════════════════════════════════════════════════════════════
 //  11. RENDER RACKS & PATCHERAS
@@ -597,12 +358,18 @@ function _initRacksListDelegation() {
         } else if (action === 'editar-patchera') {
             abrirEditarPatchera(el.dataset.rack, el.dataset.unidad);
         } else if (action === 'editar-jack') {
+            if (esTactil() && Tooltip.origen() !== el) {
+                Tooltip.show(`Puerto ${el.dataset.num}`, el.dataset.label || '', el.dataset.notas || '', el.getBoundingClientRect(), el);
+                return;
+            }
+            Tooltip.hide(true);
             abrirEditarJack(el.dataset.rack, el.dataset.unidad, Number(el.dataset.num));
         }
     });
 
     // Tooltips interactivos con guardia contra layout thrashing
     container.addEventListener('mouseover', e => {
+        if (esTactil()) return;               // el «mouseover» que el navegador inventa al tocar no debe abrir el tooltip
         const jack = e.target.closest('.jack, .fiber-coupler, .patch-label-cell');
         if (!jack || !jack.dataset.action) return;
         // Evitar recalcular getBoundingClientRect si el puntero se mueve entre hijos del mismo conector
@@ -616,11 +383,39 @@ function _initRacksListDelegation() {
     });
 
     container.addEventListener('mouseout', e => {
+        if (esTactil()) return;
         const jack = e.target.closest('.jack, .fiber-coupler, .patch-label-cell');
         if (!jack) return;
         // Evitar ocultar tooltip si seguimos dentro del mismo conector
         if (e.relatedTarget && jack.contains(e.relatedTarget)) return;
         Tooltip.hide();
+    });
+}
+
+/** Lo que se busca en un rack: su nombre, edificio y descripción, y los de sus patcheras y puertos (etiqueta, notas y número). */
+function _textoBuscableRack(rack) {
+    const partes = [rack.nombre, rack.edificio, rack.desc];
+    for (const u of rack.unidades) {
+        partes.push(u.nombre, u.desc, 'patchera');
+        for (const pu of u.puertos) partes.push(`puerto ${pu.num}`, pu.label, pu.notas);
+    }
+    return idrNormalizarBusqueda(partes.filter(Boolean).join(' · '));
+}
+
+/** ¿El rack cumple lo escrito en el buscador? (palabras, "frases" y exclusión con ! o -: ../shared/ui/js/busqueda-tokens.js) */
+function _rackCoincide(rack, tokens) {
+    const texto = _textoBuscableRack(rack);
+    return idrCumpleTokens(tokens, t => idrTextoContiene(texto, t));
+}
+
+/** Resalta los puertos cuya etiqueta, notas o número cumplen las palabras buscadas (las exclusiones no resaltan nada). */
+function _marcarCoincidencias(container, tokens) {
+    const positivos = tokens.filter(t => !t.excluir);
+    if (!positivos.length) return;
+    container.querySelectorAll('[data-num]').forEach(el => {
+        if (!el.dataset.label && !el.dataset.notas) return;
+        const texto = idrNormalizarBusqueda(`puerto ${el.dataset.num} ${el.dataset.label || ''} ${el.dataset.notas || ''}`);
+        if (positivos.every(t => idrTextoContiene(texto, t))) el.classList.add('coincide');
     });
 }
 
@@ -631,54 +426,66 @@ function renderRacks() {
 
     _initRacksListDelegation();
 
+    const tokens = idrTokensBusqueda(document.getElementById('global-search')?.value || '');
+    const buscando = tokens.length > 0;
     let racksMostrar = state.racks;
     if (_filtroEdificio) {
         const fEd = _filtroEdificio.toLowerCase().trim();
         racksMostrar = racksMostrar.filter(r => (r.edificio || '').toLowerCase().trim() === fEd);
     }
+    if (buscando) racksMostrar = racksMostrar.filter(r => _rackCoincide(r, tokens));
+
+    const conteo = document.getElementById('racks-count');
+    if (conteo) conteo.textContent = String(racksMostrar.length);
 
     if (!racksMostrar.length) {
-        container.innerHTML = '';
-        empty.classList.remove('hidden');
+        container.replaceChildren();
+        empty.classList.remove('empty-state-hidden');
         const emptyP = empty.querySelector('p');
         if (emptyP) {
-            if (state.racks.length > 0 && _filtroEdificio) {
+            if (buscando) {
+                emptyP.textContent = 'Ningún rack, patchera ni puerto coincide con la búsqueda.';
+            } else if (state.racks.length > 0 && _filtroEdificio) {
                 emptyP.textContent = `No hay racks en el edificio "${_filtroEdificio}".`;
             } else {
-                emptyP.innerHTML = 'No hay racks registrados.<br>Comenzá creando tu primer rack de telecomunicaciones.';
+                emptyP.replaceChildren('No hay racks registrados.', document.createElement('br'), 'Comenzá creando tu primer rack de telecomunicaciones.');
             }
         }
+        renderEstado();
         return;
     }
-    empty.classList.add('hidden');
-    container.innerHTML = racksMostrar.map(r => renderRackCard(r)).join('');
+    empty.classList.add('empty-state-hidden');
+    // con una búsqueda activa los racks que coinciden se muestran abiertos (sin tocar lo que se dejó abierto o cerrado)
+    container.innerHTML = racksMostrar.map(r => renderRackCard(r, buscando)).join('');
+    if (buscando) _marcarCoincidencias(container, tokens);
+    renderEstado();
 }
 
 function _renderRackBodyContent(rack) {
     if (!rack.unidades.length) {
         return `
             <div class="empty-state empty-state-sm">
-                <div class="empty-icon empty-icon-sm">🔌</div>
+                <div class="empty-icon empty-icon-sm"><i class="bi bi-ethernet" aria-hidden="true"></i></div>
                 <p class="empty-text-sm">Sin patcheras registradas en este rack.</p>
             </div>`;
     }
     return renderRackView(rack);
 }
 
-function renderRackCard(rack) {
+function renderRackCard(rack, forzarAbierto = false) {
     const totalPuertos = rack.unidades.reduce((s, u) => s + (typeof u.tipo === 'number' ? u.tipo : 24), 0);
     const usados = rack.unidades.reduce((s, u) => s + u.puertos.filter(p => p.label).length, 0);
     const pct = totalPuertos ? Math.round((usados / totalPuertos) * 100) : 0;
-    const isOpen = rack.abierto;
+    const isOpen = rack.abierto || forzarAbierto;
 
     return `
     <div class="rack-item-card" id="rcard-${esc(rack.id)}">
         <div class="rack-item-header ${isOpen ? 'open' : ''}" id="rheader-${esc(rack.id)}" data-action="toggle-rack" data-id="${esc(rack.id)}">
-            <svg class="svg-icon icon-accent"><use href="#icon-rack"/></svg>
+            <i class="bi bi-hdd-rack icon-accent" aria-hidden="true"></i>
             <span class="rack-item-name">${esc(rack.nombre)}</span>
             ${rack.edificio ? `
                 <span class="rack-edificio-badge" title="Edificio">
-                    <svg class="svg-icon icon-xs"><use href="#icon-building"/></svg>
+                    <i class="bi bi-building icon-xs" aria-hidden="true"></i>
                     ${esc(rack.edificio)}
                 </span>` : ''}
             ${rack.sgrId ? `<span class="badge badge-sgr" title="Vinculado a rack de SGR">SGR</span>` : ''}
@@ -686,17 +493,17 @@ function renderRackCard(rack) {
             <span class="badge badge-gray" id="runits-${esc(rack.id)}">${rack.unidades.length} patchera${rack.unidades.length !== 1 ? 's' : ''}</span>
             <span class="badge ${pct > 80 ? 'badge-orange' : 'badge-blue'}" id="rocc-${esc(rack.id)}">${pct}% ocupado</span>
             <span class="badge badge-gray">${rack.us}U</span>
-            <button class="icon-btn" data-action="editar-rack" data-id="${esc(rack.id)}" title="Editar rack">
-                <svg class="svg-icon icon-md"><use href="#icon-edit"/></svg>
+            <button type="button" class="btn btn-sm btn-outline-secondary card-action-btn" data-action="editar-rack" data-id="${esc(rack.id)}" title="Editar rack" aria-label="Editar rack">
+                <i class="bi bi-pencil" aria-hidden="true"></i>
             </button>
-            <button class="icon-btn" data-action="toggle-rack" data-id="${esc(rack.id)}" title="${isOpen ? 'Colapsar' : 'Expandir'}">
-                <svg class="svg-icon rack-chevron"><use href="#icon-chevron-down"/></svg>
+            <button type="button" class="btn btn-sm btn-outline-secondary card-action-btn" data-action="toggle-rack" data-id="${esc(rack.id)}" title="${isOpen ? 'Colapsar' : 'Expandir'}" aria-label="${isOpen ? 'Colapsar' : 'Expandir'}">
+                <i class="bi bi-chevron-down rack-chevron" aria-hidden="true"></i>
             </button>
         </div>
         <div class="rack-item-body ${isOpen ? 'open' : ''}" id="rbody-${esc(rack.id)}">
             <div class="rack-card-actions">
-                <button class="btn-primary btn-nueva-patchera" data-action="nueva-patchera" data-rack="${esc(rack.id)}">
-                    <svg class="svg-icon icon-sm"><use href="#icon-add"/></svg> Agregar patchera
+                <button type="button" class="btn btn-sm btn-primary btn-nueva-patchera" data-action="nueva-patchera" data-rack="${esc(rack.id)}">
+                    <i class="bi bi-plus-lg me-1" aria-hidden="true"></i> Agregar patchera
                 </button>
             </div>
             <div class="rack-body-content" id="rcontent-${esc(rack.id)}">
@@ -1112,45 +919,12 @@ function bindRackEvents(rackId) {
 //  12. INTEGRACIÓN SGR & GESTOR DE EDIFICIOS
 // ══════════════════════════════════════════════════════════════
 const SGRBridge = {
-    obtenerData() {
-        try {
-            const raw = parseSeguro(localStorage.getItem('RCK_data') || 'null');
-            return (raw && typeof raw === 'object') ? raw : null;
-        } catch (_) {
-            return null;
-        }
-    },
+    // Los datos de SGR se piden siempre a shared/idr-infra.js (una app no lee las claves de otra)
     obtenerEdificios() {
-        if (typeof IDRInfra !== 'undefined') return IDRInfra.getEdificios();
-        const data = this.obtenerData();
-        if (!data) return [];
-        const set = new Set();
-        if (Array.isArray(data.edificios)) {
-            data.edificios.forEach(e => {
-                if (typeof e === 'string' && e.trim()) set.add(e.trim());
-            });
-        }
-        if (Array.isArray(data.racks)) {
-            data.racks.forEach(r => {
-                if (typeof r?.edificio === 'string' && r.edificio.trim()) set.add(r.edificio.trim());
-            });
-        }
-        return Array.from(set).sort((a, b) => a.localeCompare(b, 'es'));
+        return typeof IDRInfra !== 'undefined' ? IDRInfra.getEdificios() : [];
     },
     obtenerRacks(edificio = '') {
-        if (typeof IDRInfra !== 'undefined') return IDRInfra.getRacks(edificio);
-        const data = this.obtenerData();
-        if (!data || !Array.isArray(data.racks)) return [];
-        let list = data.racks.filter(r => r && (r.numero || r.identificador || r.marca) && r.estado === 'servicio');
-        if (edificio) {
-            const edNorm = edificio.trim().toLowerCase();
-            list = list.filter(r => (r.edificio || '').trim().toLowerCase() === edNorm);
-        }
-        return list.sort((a, b) => {
-            const numA = (a.numero || a.identificador || '').toString();
-            const numB = (b.numero || b.identificador || '').toString();
-            return numA.localeCompare(numB, 'es', { numeric: true });
-        });
+        return typeof IDRInfra !== 'undefined' ? IDRInfra.getRacks(edificio) : [];
     }
 };
 
@@ -1205,9 +979,13 @@ const GestorEdificios = (() => {
             }
 
             const btn = document.createElement('button');
-            btn.className = 'icon-btn btn-delete btn-delete--sm';
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-outline-danger btn-delete--sm';
             btn.title = 'Eliminar edificio';
-            btn.innerHTML = '<svg class="svg-icon"><use href="#icon-trash"/></svg>';
+            btn.setAttribute('aria-label', `Eliminar el edificio ${ed}`);
+            const ico = document.createElement('i');
+            ico.className = 'bi bi-trash3';
+            btn.appendChild(ico);
             btn.addEventListener('click', () => eliminar(ed));
 
             row.appendChild(span);
@@ -1246,12 +1024,12 @@ const GestorEdificios = (() => {
 
     function abrir() {
         _renderLista();
-        MM.alternar('modal-ajustes', 'modal-edificios');
+        MM.abrir('modal-edificios');
         setTimeout(() => document.getElementById('edificios-nuevo-input')?.focus(), 50);
     }
 
     function cerrar() {
-        MM.alternar('modal-edificios', 'modal-ajustes');
+        MM.cerrar('modal-edificios');
         actualizarFiltrosYSelects();
     }
 
@@ -1596,7 +1374,7 @@ function abrirNuevoRack() {
     GestorEdificios.poblarSelect('rack-edificio', '', false);
     poblarSelectorSGR('');
 
-    MM.abrir('modal-rack', { onEscape: () => MM.cerrar('modal-rack') });
+    MM.abrir('modal-rack');
     setTimeout(() => {
         const sgrSel = document.getElementById('rack-sgr-select');
         if (sgrSel && sgrSel.options.length > 1) {
@@ -1638,7 +1416,7 @@ function abrirEditarRack(rackId) {
     document.getElementById('rack-sgr-group')?.classList.add('hidden');
     document.getElementById('rack-eliminar-btn').classList.remove('hidden');
 
-    MM.abrir('modal-rack', { onEscape: () => MM.cerrar('modal-rack') });
+    MM.abrir('modal-rack');
 }
 
 function guardarRack() {
@@ -1724,7 +1502,7 @@ function abrirNuevaPatchera(rackId) {
     document.getElementById('patchera-tipo').value = '24';
     document.getElementById('patchera-desc').value = '';
     document.getElementById('patchera-eliminar-btn').classList.add('hidden');
-    MM.abrir('modal-patchera', { onEscape: () => MM.cerrar('modal-patchera') });
+    MM.abrir('modal-patchera');
     setTimeout(() => document.getElementById('patchera-nombre').focus(), 150);
 }
 
@@ -1741,7 +1519,7 @@ function abrirEditarPatchera(rackId, unidadId) {
     document.getElementById('patchera-tipo').value = String(u.tipo);
     document.getElementById('patchera-desc').value = u.desc || '';
     document.getElementById('patchera-eliminar-btn').classList.remove('hidden');
-    MM.abrir('modal-patchera', { onEscape: () => MM.cerrar('modal-patchera') });
+    MM.abrir('modal-patchera');
 }
 
 function guardarPatchera() {
@@ -1828,7 +1606,7 @@ function abrirEditarJack(rackId, unidadId, num) {
         sw.classList.toggle('active', sw.dataset.color === color);
     });
 
-    MM.abrir('modal-jack', { onEscape: () => MM.cerrar('modal-jack') });
+    MM.abrir('modal-jack');
     setTimeout(() => document.getElementById('jack-label').focus(), 150);
 }
 
@@ -1841,6 +1619,7 @@ function _actualizarStatsRackCard(rack) {
         occBadge.className = `badge ${pct > 80 ? 'badge-orange' : 'badge-blue'}`;
         occBadge.textContent = `${pct}% ocupado`;
     }
+    renderEstado();
 }
 
 function _actualizarUnidadDOM(rack, u) {
@@ -2040,7 +1819,6 @@ function restablecerDatos() {
         '¿Restablecer todos los datos?',
         'Se eliminarán todos los racks, patcheras y edificios de la memoria local. Esta acción se puede revertir con Ctrl+Z antes de recargar.',
         () => {
-            MM.cerrar('modal-ajustes');
             historial.empujar('Restablecer todos los datos');
             state.racks = [];
             state.edificios = [];
@@ -2107,9 +1885,7 @@ function abrirModalImportarPlanilla() {
         });
     }
 
-    MM.abrir('modal-importar-planilla', {
-        onEscape: () => MM.cerrar('modal-importar-planilla')
-    });
+    MM.abrir('modal-importar-planilla');
 }
 
 async function procesarPlanillaEntrada(entrada) {
@@ -2458,7 +2234,7 @@ const GistSync = (() => {
         if (!inp) return;
         const show = inp.type === 'password';
         inp.type = show ? 'text' : 'password';
-        if (icon) icon.setAttribute('href', show ? '#icon-eye-off' : '#icon-eye');
+        if (icon) icon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
     }
 
     function toggleAuto() {
@@ -2487,7 +2263,6 @@ const GistSync = (() => {
         _actualizarBotonesAjustes();
         toast('Configuración de Gist guardada');
         MM.cerrar('modal-gist');
-        setTimeout(() => MM.abrir('modal-ajustes'), 50);
     }
 
     async function _ejecutarSubida(silencioso = false) {
@@ -2703,7 +2478,7 @@ const GistSync = (() => {
             tokenEl.type = 'password';
         }
         if (idEl) idEl.value = _cfg.gistId || '';
-        if (eyeIcon) eyeIcon.setAttribute('href', '#icon-eye');
+        if (eyeIcon) eyeIcon.className = 'bi bi-eye';
         _actualizarLinkBtn();
         _actualizarToggleUI();
         if (_cfg.lastSync) _setStatusSync();
@@ -2800,233 +2575,174 @@ const GistSync = (() => {
 })();
 
 // ══════════════════════════════════════════════════════════════
+//  16b. ESTADO (resumen por edificio) Y PESTAÑAS
+// ══════════════════════════════════════════════════════════════
+const _el = (tag, clase, texto) => {
+    const e = document.createElement(tag);
+    if (clase) e.className = clase;
+    if (texto !== undefined && texto !== null) e.textContent = texto;
+    return e;
+};
+
+/** Puertos de un rack: total (24, 48...) y los que tienen un servicio (etiqueta). */
+function _puertosDe(rack) {
+    let total = 0, usados = 0;
+    for (const u of rack.unidades) {
+        total += typeof u.tipo === 'number' ? u.tipo : 24;
+        usados += u.puertos.filter(p => p.label).length;
+    }
+    return { total, usados };
+}
+
+/** Totales por edificio (los racks sin edificio van a «Sin edificio»), en orden alfabético y «Sin edificio» al final. */
+function resumenPorEdificio(racks) {
+    const mapa = new Map();
+    for (const r of racks) {
+        const clave = (r.edificio || '').trim();
+        if (!mapa.has(clave)) mapa.set(clave, { edificio: clave, racks: 0, patcheras: 0, puertos: 0, usados: 0 });
+        const f = mapa.get(clave);
+        const { total, usados } = _puertosDe(r);
+        f.racks += 1; f.patcheras += r.unidades.length; f.puertos += total; f.usados += usados;
+    }
+    return [...mapa.values()].sort((a, b) => (a.edificio === '') - (b.edificio === '') || a.edificio.localeCompare(b.edificio, 'es'));
+}
+
+function renderEstado() {
+    const chips = document.getElementById('estado-chips');
+    const cont = document.getElementById('estado-edificios');
+    if (!chips || !cont) return;
+    const filas = resumenPorEdificio(state.racks);
+    const tot = filas.reduce((a, f) => ({ racks: a.racks + f.racks, patcheras: a.patcheras + f.patcheras, puertos: a.puertos + f.puertos, usados: a.usados + f.usados }),
+        { racks: 0, patcheras: 0, puertos: 0, usados: 0 });
+    const pct = (u, t) => (t ? Math.round((u / t) * 100) : 0);
+
+    const chip = (etiqueta, valor, sub) => {
+        const c = _el('div', 'stat-chip');
+        c.append(_el('span', 'stat-chip-label', etiqueta), _el('span', 'stat-chip-value', valor), _el('span', 'stat-chip-sub', sub));
+        return c;
+    };
+    chips.replaceChildren(
+        chip('Racks', String(tot.racks), tot.racks === 1 ? 'registrado' : 'registrados'),
+        chip('Patcheras', String(tot.patcheras), 'instaladas'),
+        chip('Puertos', String(tot.usados), `con servicio de ${tot.puertos}`),
+        chip('Ocupación', `${pct(tot.usados, tot.puertos)}%`, 'de las bocas'),
+    );
+
+    document.getElementById('estado-vacio')?.classList.toggle('empty-state-hidden', filas.length > 0);
+    const cuenta = document.getElementById('estado-edificios-count');
+    if (cuenta) cuenta.textContent = String(filas.length);
+    if (!filas.length) { cont.replaceChildren(); return; }
+
+    const tabla = _el('table', 'estado-tabla');
+    const cab = _el('tr');
+    ['Edificio', 'Racks', 'Patcheras', 'Puertos con servicio', 'Ocupación'].forEach((t, i) => {
+        const th = _el('th', i >= 1 && i <= 3 ? 'num' : '', t);
+        cab.appendChild(th);
+    });
+    tabla.appendChild(_el('thead')).appendChild(cab);
+    const cuerpo = _el('tbody');
+    for (const f of filas) {
+        const tr = _el('tr', 'tr-clickable');
+        tr.dataset.edificio = f.edificio;
+        tr.title = f.edificio ? `Ver los racks de ${f.edificio}` : 'Ver los racks sin edificio';
+        const porc = pct(f.usados, f.puertos);
+        const ocup = _el('td');
+        const wrap = _el('div', 'estado-ocupacion');
+        const barra = _el('div', 'estado-barra');
+        const relleno = _el('span', porc > 80 ? 'alta' : '');
+        relleno.style.width = `${porc}%`;
+        barra.appendChild(relleno);
+        wrap.append(barra, _el('span', '', `${porc}%`));
+        ocup.appendChild(wrap);
+        tr.append(_el('td', '', f.edificio || 'Sin edificio'), _el('td', 'num', String(f.racks)), _el('td', 'num', String(f.patcheras)),
+            _el('td', 'num', `${f.usados} / ${f.puertos}`), ocup);
+        cuerpo.appendChild(tr);
+    }
+    tabla.appendChild(cuerpo);
+    const wrapTabla = _el('div', 'table-wrap');
+    wrapTabla.appendChild(tabla);
+    cont.replaceChildren(wrapTabla);
+}
+
+let _tabActual = 'estado';
+const TABS = ['estado', 'racks', 'ajustes'];
+
+function switchTab(tab) {
+    if (_tabActual === tab) return;
+    const boton = document.getElementById(`tab-${tab}`);
+    if (boton) UI.pestana.mostrar(boton);
+}
+
+// Cada cambio de pestaña (clic, flechas, swipe o switchTab): se recuerda
+function _alMostrarPestana(e) {
+    const tab = e.target && e.target.dataset ? e.target.dataset.tab : null;
+    if (!tab || !TABS.includes(tab)) return;
+    _tabActual = tab;
+    try { localStorage.setItem(APP_KEY + 'tab', tab); } catch (_) { /* queda solo en esta página */ }
+    window.scrollTo({ top: 0 });
+}
+
+// El buscador mira los racks: al escribir desde Estado o Ajustes pasa solo a Racks
+let _busqTimer = null;
+function onBusqGlobal() {
+    const caja = document.getElementById('global-search');
+    const val = caja ? caja.value : '';
+    document.getElementById('sidebar-search-container')?.classList.toggle('search-active', !!val);
+    if (val && _tabActual !== 'racks') switchTab('racks');
+    if (_busqTimer) clearTimeout(_busqTimer);
+    _busqTimer = setTimeout(renderRacks, 250);
+}
+
+function limpiarBusqueda() {
+    if (_busqTimer) clearTimeout(_busqTimer);
+    const caja = document.getElementById('global-search');
+    if (caja) caja.value = '';
+    document.getElementById('sidebar-search-container')?.classList.remove('search-active');
+    caja?.dispatchEvent(new Event('input'));       // el ícono del buscador móvil deja de marcar texto
+    renderRacks();
+}
+
+// ══════════════════════════════════════════════════════════════
 //  17. INICIALIZACIÓN & EVENTOS
 // ══════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
     cargar();
 
-    // Dark mode icon sync
-    try {
-        if (localStorage.getItem('IDR_dark') === '1') {
-            const btn = document.getElementById('btn-dark-mode');
-            if (btn) {
-                btn.title = 'Modo claro';
-                btn.querySelector('use')?.setAttribute('href', '#icon-sun');
-            }
-            const iconModal = document.getElementById('dark-icon-use');
-            if (iconModal) {
-                iconModal.setAttribute('href', '#icon-sun');
-            }
+    // ── Pestañas y buscador ──
+    document.addEventListener('ui:pestana-mostrada', _alMostrarPestana);
+    document.getElementById('global-search')?.addEventListener('input', onBusqGlobal);
+    document.getElementById('search-clear')?.addEventListener('click', () => { limpiarBusqueda(); document.getElementById('global-search')?.focus(); });
+    document.getElementById('global-search')?.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            const caja = e.currentTarget;
+            if (caja.value) limpiarBusqueda();
+            caja.blur();
         }
-    } catch (_) {}
-
-    // ═══════════════════════════════════════════════════════
-    //  SELECTOR DE MÓDULOS (App Switcher)
-    // ═══════════════════════════════════════════════════════
-    function _initMenuModulos(moduloActual) {
-        const modulos = [
-            { id: 'cctv', nombre: 'CCTV', sub: 'Cámaras y switches', icon: 'icon-camera', cls: 'c-cctv', href: '../SGC/index.html' },
-            { id: 'materiales', nombre: 'Materiales', sub: 'Gestión de inventario', icon: 'icon-box', cls: 'c-materiales', href: '../SGI/index.html' },
-            { id: 'racks', nombre: 'Racks', sub: 'Gestión de racks', icon: 'icon-rack', cls: 'c-racks', href: '../SGR/index.html' },
-            { id: 'patcheras', nombre: 'Patcheras', sub: 'Bocas de red en racks', icon: 'icon-plug', cls: 'c-patcheras', href: '../SGP/index.html' }
-        ];
-
-        const overlay = document.createElement('div');
-        overlay.className = 'menu-modulos-overlay';
-
-        const menu = document.createElement('div');
-        menu.className = 'menu-modulos';
-        menu.setAttribute('role', 'menu');
-        menu.setAttribute('aria-label', 'Selector de módulos');
-
-        let html = '<div class="menu-modulos-header">Módulos IDR</div>';
-
-        modulos.forEach(m => {
-            const esActual = m.id === moduloActual;
-            html += `
-                <a href="${m.href}" class="menu-modulo-item ${esActual ? 'es-actual' : ''}" role="menuitem" data-modulo="${m.id}">
-                    <div class="menu-modulo-icon ${m.cls}">
-                        <svg><use href="#${m.icon}"/></svg>
-                    </div>
-                    <div class="menu-modulo-info">
-                        <span class="menu-modulo-name">${m.nombre}</span>
-                        <span class="menu-modulo-sub">${m.sub}</span>
-                    </div>
-                    ${esActual ? '<span class="menu-modulo-badge">Actual</span>' : ''}
-                </a>
-            `;
-        });
-
-        html += `
-            <div class="menu-modulos-divider"></div>
-            <a href="../index.html" class="menu-modulo-item" role="menuitem">
-                <div class="menu-modulo-icon c-launcher">
-                    <svg><use href="#icon-launcher"/></svg>
-                </div>
-                <div class="menu-modulo-info">
-                    <span class="menu-modulo-name">Launcher</span>
-                    <span class="menu-modulo-sub">Menú principal</span>
-                </div>
-            </a>
-        `;
-
-        menu.innerHTML = html;
-        document.body.appendChild(overlay);
-        document.body.appendChild(menu);
-
-        let isOpen = false;
-        const items = Array.from(menu.querySelectorAll('.menu-modulo-item'));
-
-        function enfocarItem(index) {
-            if (items.length === 0) return;
-            const idx = ((index % items.length) + items.length) % items.length;
-            items[idx].focus();
-        }
-
-        function abrirMenu(enfocar = false) {
-            isOpen = true;
-            overlay.classList.add('open');
-            menu.classList.add('open');
-            if (enfocar) {
-                const idx = items.findIndex(el => el.classList.contains('es-actual'));
-                enfocarItem(idx !== -1 ? idx : 0);
-            }
-        }
-
-        function cerrarMenu() {
-            if (!isOpen) return;
-            isOpen = false;
-            overlay.classList.remove('open');
-            menu.classList.remove('open');
-            if (menu.contains(document.activeElement)) {
-                document.activeElement.blur();
-            }
-        }
-
-        function toggleMenu(enfocar = false) {
-            if (isOpen) cerrarMenu();
-            else abrirMenu(enfocar);
-        }
-
-        overlay.addEventListener('click', cerrarMenu);
-
-        menu.querySelector('.es-actual')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            cerrarMenu();
-        });
-
-        document.addEventListener('keydown', (e) => {
-            // Atajo global: Ctrl + Flecha Abajo abre el menú rápido
-            if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowDown') {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!isOpen) {
-                    abrirMenu(true);
-                } else {
-                    const current = items.indexOf(document.activeElement);
-                    if (current === -1) {
-                        const actualIdx = items.findIndex(el => el.classList.contains('es-actual'));
-                        enfocarItem(actualIdx !== -1 ? (actualIdx + 1) : 0);
-                    } else {
-                        enfocarItem(current + 1);
-                    }
-                }
-                return;
-            }
-
-            // Atajos cuando el menú rápido está abierto
-            if (isOpen) {
-                if (e.key === 'Escape') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    cerrarMenu();
-                    return;
-                }
-
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const current = items.indexOf(document.activeElement);
-                    if (current === -1) {
-                        const actualIdx = items.findIndex(el => el.classList.contains('es-actual'));
-                        enfocarItem(actualIdx !== -1 ? (actualIdx + 1) : 0);
-                    } else {
-                        enfocarItem(current + 1);
-                    }
-                    return;
-                }
-
-                if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const current = items.indexOf(document.activeElement);
-                    if (current === -1) {
-                        const actualIdx = items.findIndex(el => el.classList.contains('es-actual'));
-                        enfocarItem(actualIdx !== -1 ? (actualIdx - 1) : (items.length - 1));
-                    } else {
-                        enfocarItem(current - 1);
-                    }
-                    return;
-                }
-
-                if (e.key === 'Enter') {
-                    const focused = document.activeElement;
-                    if (items.includes(focused)) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        focused.click();
-                        return;
-                    }
-                }
-            }
-        });
-
-        // Vincular EXCLUSIVAMENTE al label (título principal)
-        const labelElements = [
-            document.getElementById('btn-inicio')
-        ].filter(Boolean);
-
-        labelElements.forEach(el => {
-            el.style.cursor = 'pointer';
-            el.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleMenu();
-            });
-        });
-
-        document.addEventListener('click', (e) => {
-            if (isOpen && !menu.contains(e.target) && !labelElements.some(el => el.contains(e.target))) {
-                cerrarMenu();
-            }
-        });
-    }
-
-    // ── Selector de Módulos (solo en label) ──
-    _initMenuModulos('patcheras');
-
-    // ── Botones Header ──
-    document.getElementById('btn-inicio-logo')?.addEventListener('click', () => {
-        window.location.href = '../index.html';
     });
-    document.getElementById('btn-dark-mode')?.addEventListener('click', toggleDarkMode);
-    document.getElementById('btn-alternar-tema')?.addEventListener('click', toggleDarkMode);
-    document.getElementById('btn-ajustes')?.addEventListener('click', () => MM.abrir('modal-ajustes'));
-    document.getElementById('btn-undo')?.addEventListener('click', () => historial.undo());
-    document.getElementById('btn-redo')?.addEventListener('click', () => historial.redo());
-    document.getElementById('btn-scroll-top')?.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Resumen por edificio: un clic lleva a los racks de ese edificio
+    document.getElementById('estado-edificios')?.addEventListener('click', e => {
+        const fila = e.target.closest('tr[data-edificio]');
+        if (!fila) return;
+        _filtroEdificio = fila.dataset.edificio;
+        const sel = document.getElementById('filtro-edificio-select');
+        if (sel) sel.value = _filtroEdificio;
+        renderRacks();
+        switchTab('racks');
     });
+    // Tocar fuera de un puerto esconde su tooltip (en pantallas táctiles)
+    document.addEventListener('click', e => { if (!e.target.closest('.jack, .fiber-coupler, .patch-label-cell')) Tooltip.hide(true); });
 
-    // ── Nuevo Rack & Filtros ──
+    // ── Racks ──
     document.getElementById('btn-nuevo-rack')?.addEventListener('click', abrirNuevoRack);
+    document.getElementById('btn-importar-planilla')?.addEventListener('click', abrirModalImportarPlanilla);
     document.getElementById('filtro-edificio-select')?.addEventListener('change', function () {
         _filtroEdificio = this.value;
         renderRacks();
     });
+    document.getElementById('btn-undo')?.addEventListener('click', () => historial.undo());
+    document.getElementById('btn-redo')?.addEventListener('click', () => historial.redo());
 
     // ── Modal Rack ──
-    document.getElementById('modal-rack-cerrar')?.addEventListener('click', () => MM.cerrar('modal-rack'));
     document.getElementById('rack-guardar-btn')?.addEventListener('click', guardarRack);
     document.getElementById('rack-cancelar-btn')?.addEventListener('click', () => MM.cerrar('modal-rack'));
     document.getElementById('rack-eliminar-btn')?.addEventListener('click', eliminarRack);
@@ -3037,7 +2753,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ── Modal Patchera ──
-    document.getElementById('modal-patchera-cerrar')?.addEventListener('click', () => MM.cerrar('modal-patchera'));
     document.getElementById('patchera-guardar-btn')?.addEventListener('click', guardarPatchera);
     document.getElementById('patchera-cancelar-btn')?.addEventListener('click', () => MM.cerrar('modal-patchera'));
     document.getElementById('patchera-eliminar-btn')?.addEventListener('click', eliminarPatchera);
@@ -3046,102 +2761,70 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ── Modal Jack ──
-    document.getElementById('modal-jack-cerrar')?.addEventListener('click', () => MM.cerrar('modal-jack'));
     document.getElementById('jack-guardar-btn')?.addEventListener('click', guardarJack);
     document.getElementById('jack-limpiar-btn')?.addEventListener('click', limpiarJack);
     document.getElementById('jack-cancelar-btn')?.addEventListener('click', () => MM.cerrar('modal-jack'));
     document.getElementById('jack-label')?.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); guardarJack(); }
     });
-
-    // Selector de color del jack
     document.getElementById('jack-color-swatches')?.addEventListener('click', e => {
         const sw = e.target.closest('.color-swatch');
         if (!sw) return;
-        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('active'));
         sw.classList.add('active');
     });
 
-    // ── Modal Ajustes ──
-    document.getElementById('ajustes-cerrar-btn')?.addEventListener('click', () => MM.cerrar('modal-ajustes'));
+    // ── Pestaña Ajustes ──
+    document.getElementById('ajustes-nuevo-rack-btn')?.addEventListener('click', abrirNuevoRack);
+    document.getElementById('ajustes-planilla-btn')?.addEventListener('click', abrirModalImportarPlanilla);
     document.getElementById('ajustes-edificios-btn')?.addEventListener('click', GestorEdificios.abrir);
+    document.getElementById('ajustes-exportar-btn')?.addEventListener('click', exportarDatos);
+    document.getElementById('ajustes-importar-btn')?.addEventListener('click', () => {
+        document.getElementById('importar-file-input').value = '';
+        document.getElementById('importar-dropzone-label').textContent = 'Seleccioná o arrastrá un archivo .json';
+        document.getElementById('importar-dropzone').classList.remove('dropzone-ok', 'dropzone-warn', 'dropzone-error');
+        document.getElementById('importar-confirmar-btn').disabled = true;
+        document.getElementById('importar-combinar-btn').disabled = true;
+        _importarParsed = null;
+        MM.abrir('modal-importar');
+    });
+    document.getElementById('ajustes-restablecer-btn')?.addEventListener('click', restablecerDatos);
+    document.getElementById('btn-abrir-gist')?.addEventListener('click', () => {
+        GistSync.poblarModal();
+        MM.abrir('modal-gist');
+    });
+    document.getElementById('btn-ajustes-gist-subir')?.addEventListener('click', () => GistSync.subir());
+    document.getElementById('btn-ajustes-gist-bajar')?.addEventListener('click', () => GistSync.bajar());
 
     // ── Modal Edificios ──
     document.getElementById('edificios-cerrar-btn')?.addEventListener('click', GestorEdificios.cerrar);
-    document.getElementById('edificios-cerrar-x')?.addEventListener('click', () => MM.cerrar('modal-edificios'));
     document.getElementById('edificios-agregar-btn')?.addEventListener('click', GestorEdificios.agregar);
     document.getElementById('btn-sync-edificios-sgr')?.addEventListener('click', GestorEdificios.sincronizarDesdeSGR);
     document.getElementById('edificios-nuevo-input')?.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); GestorEdificios.agregar(); }
     });
-    document.getElementById('btn-abrir-gist')?.addEventListener('click', () => {
-        MM.cerrar('modal-ajustes', () => {
-            GistSync.poblarModal();
-            MM.abrir('modal-gist', {
-                onEscape: () => {
-                    MM.cerrar('modal-gist');
-                    setTimeout(() => MM.abrir('modal-ajustes'), 50);
-                }
-            });
-        });
-    });
-    document.getElementById('btn-ajustes-gist-subir')?.addEventListener('click', () => GistSync.subir());
-    document.getElementById('btn-ajustes-gist-bajar')?.addEventListener('click', () => GistSync.bajar());
-    document.getElementById('ajustes-exportar-btn')?.addEventListener('click', () => {
-        MM.cerrar('modal-ajustes');
-        exportarDatos();
-    });
-    document.getElementById('ajustes-importar-btn')?.addEventListener('click', () => {
-        MM.cerrar('modal-ajustes', () => {
-            document.getElementById('importar-file-input').value = '';
-            document.getElementById('importar-dropzone-label').textContent = 'Seleccioná o arrastrá un archivo .json';
-            document.getElementById('importar-dropzone').classList.remove('dropzone-ok', 'dropzone-warn', 'dropzone-error');
-            document.getElementById('importar-confirmar-btn').disabled = true;
-            document.getElementById('importar-combinar-btn').disabled = true;
-            _importarParsed = null;
-            MM.abrir('modal-importar', {
-                onEscape: () => {
-                    MM.cerrar('modal-importar');
-                    setTimeout(() => MM.abrir('modal-ajustes'), 50);
-                }
-            });
-        });
-    });
-    document.getElementById('ajustes-restablecer-btn')?.addEventListener('click', restablecerDatos);
+    document.getElementById('modal-edificios')?.addEventListener('ui:modal-cerrado', actualizarFiltrosYSelects);
 
     // ── Modal Gist ──
-    document.getElementById('gist-cerrar-btn')?.addEventListener('click', () => {
-        MM.cerrar('modal-gist');
-        setTimeout(() => MM.abrir('modal-ajustes'), 50);
-    });
+    document.getElementById('gist-cerrar-btn')?.addEventListener('click', () => MM.cerrar('modal-gist'));
     document.getElementById('gist-token-eye')?.addEventListener('click', () => GistSync.toggleToken());
     document.getElementById('btn-gist-subir')?.addEventListener('click', () => GistSync.subir());
     document.getElementById('btn-gist-bajar')?.addEventListener('click', () => GistSync.bajar());
     document.getElementById('gist-autosync-toggle')?.addEventListener('click', () => GistSync.toggleAuto());
     document.getElementById('gist-guardar-btn')?.addEventListener('click', () => GistSync.guardarConfig());
-
-    // ── Modal Gist Novedades ──
     document.getElementById('gist-novedades-ignorar-btn')?.addEventListener('click', () => MM.cerrar('modal-gist-novedades'));
 
-    // ── Modal Importar ──
+    // ── Modal Importar respaldo ──
     document.getElementById('importar-dropzone')?.addEventListener('click', () => {
         document.getElementById('importar-file-input').click();
     });
     document.getElementById('importar-file-input')?.addEventListener('change', e => onImportarFileChange(e));
     document.getElementById('importar-confirmar-btn')?.addEventListener('click', () => importarDatos('reemplazar'));
     document.getElementById('importar-combinar-btn')?.addEventListener('click', () => importarDatos('combinar'));
-    document.getElementById('importar-cerrar-btn')?.addEventListener('click', () => {
-        MM.cerrar('modal-importar');
-        setTimeout(() => MM.abrir('modal-ajustes'), 50);
-    });
-
-    // Drag and drop en zona de importación
+    document.getElementById('importar-cerrar-btn')?.addEventListener('click', () => MM.cerrar('modal-importar'));
     const dz = document.getElementById('importar-dropzone');
     if (dz) {
-        dz.addEventListener('dragover', e => {
-            e.preventDefault();
-            dz.classList.add('drag');
-        });
+        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
         dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
         dz.addEventListener('drop', e => {
             e.preventDefault();
@@ -3157,8 +2840,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── Modal Importar Planilla (Excel / CSV / Pegar) ──
-    document.getElementById('btn-importar-planilla')?.addEventListener('click', abrirModalImportarPlanilla);
-    document.getElementById('importar-planilla-cerrar-btn')?.addEventListener('click', () => MM.cerrar('modal-importar-planilla'));
     document.getElementById('importar-planilla-cancelar-btn')?.addEventListener('click', () => MM.cerrar('modal-importar-planilla'));
     document.getElementById('importar-planilla-confirmar-btn')?.addEventListener('click', confirmarImportarPlanilla);
     document.getElementById('importar-hoja-select')?.addEventListener('change', function () {
@@ -3167,8 +2848,6 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarPreviewPlanilla(_planillaParsed);
         }
     });
-
-    // Pestañas del modal
     document.querySelectorAll('.importar-tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const tabId = btn.dataset.tab;
@@ -3178,8 +2857,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById(`tab-content-${tabId}`)?.classList.add('active');
         });
     });
-
-    // Zona de archivo Excel/CSV
     const dzPlanilla = document.getElementById('dropzone-planilla');
     const inputPlanilla = document.getElementById('input-archivo-planilla');
     if (dzPlanilla && inputPlanilla) {
@@ -3188,11 +2865,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const f = e.target.files?.[0];
             if (f) procesarPlanillaEntrada(f);
         });
-
-        dzPlanilla.addEventListener('dragover', e => {
-            e.preventDefault();
-            dzPlanilla.classList.add('drag');
-        });
+        dzPlanilla.addEventListener('dragover', e => { e.preventDefault(); dzPlanilla.classList.add('drag'); });
         dzPlanilla.addEventListener('dragleave', () => dzPlanilla.classList.remove('drag'));
         dzPlanilla.addEventListener('drop', e => {
             e.preventDefault();
@@ -3206,8 +2879,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // Área de pegar texto desde Excel
     document.getElementById('btn-procesar-pegado')?.addEventListener('click', () => {
         const txt = document.getElementById('textarea-pegar-planilla')?.value || '';
         if (!txt.trim()) {
@@ -3216,7 +2887,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         procesarPlanillaEntrada(txt);
     });
-
     document.getElementById('textarea-pegar-planilla')?.addEventListener('paste', () => {
         setTimeout(() => {
             const txt = document.getElementById('textarea-pegar-planilla')?.value || '';
@@ -3227,38 +2897,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Confirmar ──
     document.getElementById('confirmar-ok-btn')?.addEventListener('click', () => {
         const cb = _confirmarCb;
-        _confirmarCb = null;
-        MM.cerrar('modal-confirmar');
+        _cerrarConfirmar();
         if (cb) cb();
     });
-    document.getElementById('confirmar-cancelar-btn')?.addEventListener('click', _volverAlPadreConf);
+    document.getElementById('confirmar-cancelar-btn')?.addEventListener('click', _cerrarConfirmar);
 
-    // ── Atajos de Teclado ──
+    // ── Atajos de teclado: deshacer / rehacer (dentro de un campo de texto vale el del navegador; Escape y Ctrl+flechas: la suite) ──
     document.addEventListener('keydown', e => {
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
-            e.preventDefault();
-            historial.undo();
-            return;
-        }
-        if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) {
-            e.preventDefault();
-            historial.redo();
-            return;
-        }
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            MM.cerrarTop();
-            return;
-        }
+        if (e.defaultPrevented || !(e.ctrlKey || e.metaKey) || e.altKey) return;
+        if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+        if (UI.modal.arriba && UI.modal.arriba()) return;
+        const k = e.key.toLowerCase();
+        if (k === 'z' && !e.shiftKey) { e.preventDefault(); historial.undo(); }
+        else if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); historial.redo(); }
     });
-
-    // ── Scroll Header & Botón Scroll Top ──
-    window.addEventListener('scroll', () => {
-        const btn = document.getElementById('btn-scroll-top');
-        if (btn) btn.classList.toggle('show', window.scrollY > window.innerHeight * 0.6);
-        const header = document.getElementById('main-header');
-        if (header) header.classList.toggle('scrolled', window.scrollY > 30);
-    }, { passive: true });
 
     // ── Limpiar clase error al escribir ──
     document.addEventListener('input', e => {
@@ -3270,6 +2922,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carga inicial
     actualizarFiltrosYSelects();
     renderRacks();
+
+    // La pestaña con la que se cerró, sin animar (ya con todo dibujado: si no, el cambio deslizaría un fantasma vacío)
+    try {
+        const t = localStorage.getItem(APP_KEY + 'tab');
+        const boton = t && ['racks', 'ajustes'].includes(t) ? document.getElementById(`tab-${t}`) : null;
+        if (boton) {
+            const panel = document.querySelector(boton.dataset.uiTarget);
+            if (panel) panel.dataset.skipAnimation = 'true';
+            UI.pestana.mostrar(boton);
+        }
+    } catch (_) { /* sin almacenamiento */ }
+
     GistSync.init();
     GistSync.verificarAlAbrir();
 });

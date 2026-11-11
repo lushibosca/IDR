@@ -84,6 +84,15 @@ check('cabecera: el ícono de la marca lleva al launcher de la suite', $('menu-c
     check('tema: un cambio hecho en otra app se sigue en vivo', tema() === 'dark');
     w.localStorage.removeItem('IDR_dark'); w.initTheme();     // nadie eligió: vuelve a lo propio (sgc2/theme)
 }
+// --- fondo de página: interruptor en Ajustes > Apariencia
+{
+    const html = d.documentElement;
+    check('fondo: está puesto por defecto', !!d.querySelector('.bg-backdrop') && !html.hasAttribute('data-fondo') && $('btn-fondo').getAttribute('aria-checked') === 'true');
+    $('btn-fondo').click();
+    check('fondo: el interruptor lo quita y lo guarda en sgc2/fondo', html.getAttribute('data-fondo') === 'sin' && w.localStorage.getItem('sgc2/fondo') === '0');
+    $('btn-fondo').click();
+    check('fondo: el interruptor lo vuelve a poner', !html.hasAttribute('data-fondo') && w.localStorage.getItem('sgc2/fondo') === '1');
+}
 // --- panel lateral plegable y movible (shared/ui/js/panel.js) con las claves de siempre de SGC
 {
     const col = $('sidebar-col'), btn = $('btn-toggle-sidebar');

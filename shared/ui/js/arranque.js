@@ -7,6 +7,7 @@
 //   data-clave-tema        clave COMPLETA de respaldo del tema ('dark' | 'light'); vale si la suite no tiene tema elegido
 //   data-clave-movimiento  clave COMPLETA de «reducir animaciones» (por defecto <prefijo>movimiento)
 //   data-valor-reducido / data-valor-normal  sus valores (por defecto 'reducido' / 'normal')
+//   data-clave-fondo       clave COMPLETA de «fondo de página» ('0' = sin fondo; por defecto <prefijo>fondo)
 //   data-clave-panel-colapsado / data-clave-panel-posicion  claves COMPLETAS del panel lateral (por defecto <prefijo>panel_colapsado
 //                          y <prefijo>panel_posicion; las mismas que lee panel.js)
 // Deja todo en `<html data-idr-*>` para apariencia.js.
@@ -44,6 +45,12 @@ function idrTemaInicial(suite, defecto, respaldo) {
     try {
         if (claveMov && localStorage.getItem(claveMov) === reducido) html.setAttribute('data-movimiento', 'reducido');
     } catch (_) { /* sin almacenamiento: animaciones de siempre */ }
+    // Fondo de página (fondo.css): con '0' guardado se pinta sin él
+    var claveFondo = attr('data-clave-fondo', prefijo ? prefijo + 'fondo' : '');
+    html.setAttribute('data-idr-clave-fondo', claveFondo);
+    try {
+        if (claveFondo && localStorage.getItem(claveFondo) === '0') html.setAttribute('data-fondo', 'sin');
+    } catch (_) { /* sin almacenamiento: con fondo */ }
 
     // Panel lateral (antes de pintar, sin salto): dónde está (solo escritorio; el CSS lo ignora en pantallas chicas) y si estaba plegado
     try {

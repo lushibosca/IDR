@@ -131,7 +131,7 @@ test("apps portadas: cargan la base (tokens primero, utilidades al final), el es
     assert.ok(html.includes('src="../shared/ui/js/arranque.js"'), `${app}: falta arranque.js en el <head>`);
     // (SGC tiene su propio motor de búsqueda por campos de equipos; las demás usan la sintaxis común)
     if (app !== "SGC") assert.ok(html.includes('src="../shared/ui/js/busqueda-tokens.js"'), `${app}: falta busqueda-tokens.js`);
-    for (const id of ["btn-theme", "btn-movimiento", "btn-scroll-top", "search-clear", "btn-toggle-sidebar"]) {
+    for (const id of ["btn-theme", "btn-movimiento", "btn-fondo", "btn-scroll-top", "search-clear", "btn-toggle-sidebar"]) {
       assert.ok(html.includes(`id="${id}"`), `${app}: falta #${id}`);
     }
     // barra superior única: la marca lleva al launcher y a la derecha van instalar, deshacer y rehacer (el menú ⚙ es solo de SGC)

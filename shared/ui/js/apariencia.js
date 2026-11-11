@@ -2,6 +2,7 @@
 //   #btn-theme y [data-idr-tema-alternar]  modo oscuro: el tema de TODA la suite (IDRTema, `IDR_dark`); sigue en vivo el
 //                    cambio hecho en otra app. Emite `idr:tema` también cuando el cambio vino de afuera
 //   #btn-movimiento  reducir animaciones: de esta app (clave y valores que dejó arranque.js en <html>); emite `idr:movimiento`
+//   #btn-fondo       fondo de página (fondo.css): prendido por defecto; apagado = `<html data-fondo="sin">` y '0' guardado en la clave de la app
 // Los dos son `.interruptor` con role="switch" (aria-checked). Además, en la pestaña Ajustes: tocar una `.ajuste-fila` con
 // interruptor lo acciona, y Enter o Espacio sobre una fila `role="button"` hace clic. Emite `idr:tema` (detail.oscuro) en
 // document al cambiar el tema. Se carga al final, después de ui.js.
@@ -43,6 +44,19 @@
         document.dispatchEvent(new CustomEvent('idr:movimiento', { detail: { reducido } }));
     });
 
+    function aplicarFondo(con) {
+        if (con) html.removeAttribute('data-fondo');
+        else html.setAttribute('data-fondo', 'sin');
+        marcar($('btn-fondo'), con);
+    }
+    $('btn-fondo')?.addEventListener('click', () => {
+        const con = html.getAttribute('data-fondo') === 'sin';
+        aplicarFondo(con);
+        const clave = html.getAttribute('data-idr-clave-fondo');
+        try { if (clave) localStorage.setItem(clave, con ? '1' : '0'); } catch (_) { /* queda en esta página */ }
+        document.dispatchEvent(new CustomEvent('idr:fondo', { detail: { con } }));
+    });
+
     // La fila entera acciona su interruptor (como en SGC); el propio interruptor ya responde solo
     document.addEventListener('click', (e) => {
         const t = e.target instanceof Element ? e.target : null;
@@ -71,4 +85,5 @@
 
     marcar($('btn-theme'), html.getAttribute('data-tema') === 'dark');
     marcar($('btn-movimiento'), html.getAttribute('data-movimiento') === 'reducido');
+    marcar($('btn-fondo'), html.getAttribute('data-fondo') !== 'sin');
 })();

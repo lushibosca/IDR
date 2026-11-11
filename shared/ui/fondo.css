@@ -58,6 +58,11 @@
         transition: background-color 0.4s ease;
     }
 
+    /* Ajustes > Apariencia > «Fondo de página» apagado (arranque.js / apariencia.js) */
+    html[data-fondo="sin"] .bg-backdrop {
+        display: none;
+    }
+
     .bg-backdrop.exiting {
         animation: bgFadeOut 0.25s cubic-bezier(0.25, 1, 0.5, 1) both;
     }

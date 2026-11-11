@@ -1,7 +1,6 @@
 # Porte del estilo de SGC al resto de la suite (SGR, SGI, SGP y launcher; SGL por ahora no entra)
 
-**Inicio:** 2026-11-11 · **Estado:** fases 0, 1 (SGR), 2 (SGI) y 2.5 (unificar la base) hechas; **siguiente: fase 3 (SGP)**: ver
-«Para retomar» al final. La revisión de cobertura del 2026-11-11 (sección 6) encontró partes de la base que este plan
+**Inicio:** 2026-11-11 · **Estado:** fases 0, 1 (SGR), 2 (SGI), 2.5 (unificar la base) y 3 (SGP) hechas; **siguiente: fase 4 (launcher)**. La revisión de cobertura del 2026-11-11 (sección 6) encontró partes de la base que este plan
 no contemplaba; las decisiones 5 a 9 (sección 1) las resolvieron: SGL no entra por ahora, el launcher toma la base común y
 el panel plegable y personalizable, las transiciones de pestaña y la barra superior pasan a ser base de todas las apps.
 Eso es la **fase 2.5 (unificar la base)**, que va antes de portar SGP.
@@ -171,7 +170,7 @@ cada pestaña, `#modal-atajos` y el interruptor `#btn-rueda-pestanas` en Ajustes
 - [x] `css/sgi.css` (capa `app`, sin `!important`); salen `styles.css` y `flash.js`.
 - [x] Humo `node tests/e2e/humo-apps.mjs SGI` y capturas (escritorio, oscuro, móvil, entrada).
 
-### Fase 3 — SGP
+### Fase 3 — SGP (hecha, 2026-11-11)
 Además del porte: pestañas **Estado · Racks · Ajustes**, búsqueda nueva (rack, patchera, puerto, etiqueta) y el tooltip de
 jack, que hoy es por *hover*, abierto con un toque en móvil. Pasar la lectura de `RCK_data` a `IDRInfra.getRacks`.
 
@@ -292,11 +291,11 @@ tests. Nada de esto está hecho; cada punto dice qué falta decidir o hacer.
 **Hecho y commiteado:** fases 0, 1 y 2 (SGC sin cambios visibles; SGR y SGI con el diseño de SGC). Todo en verde:
 `npm test`, `npm run test:sgc`, `node SGC/tests/e2e/humo.mjs` (desde `SGC/`) y `node tests/e2e/humo-apps.mjs`.
 
-**Hecho también: fase 2.5 (unificar la base)**, ver la sección 4 y la sección 3 (receta actualizada). **Siguiente: SGP**, que se porta sobre la base ya unificada (panel plegable,
+**Hecho también: fase 2.5 (unificar la base)**, ver la sección 4 y la sección 3 (receta actualizada). **SGP** se portó sobre la base ya unificada (panel plegable,
 transición de pestañas, barra superior con deshacer/rehacer, ayuda y atajos, toast, búsqueda con comodines y Ajustes en columnas desde el primer día), y por último el launcher (fase 4).
 Pendiente de decidir: el menú ⚙ de SGR y SGI (hoy sin él) y llevar el Gist de SGR/SGI inline a la pestaña Ajustes como en SGC (hoy abre un modal).
 
-**Falta: fase 3, SGP (Patcheras).** Mismo procedimiento que SGR y SGI (sección 5 y la receta de la sección 3), más:
+**Hecho: fase 3, SGP (Patcheras)** (lo que sigue es lo que se hizo; ver `SGP/CLAUDE.md`). Mismo procedimiento que SGR y SGI (sección 5 y la receta de la sección 3), más:
 1. **Estructura nueva**: hoy es una sola lista de racks con `#btn-nuevo-rack`, `#btn-importar-planilla` y
    `#filtro-edificio-select`. Pestañas **Estado** (resumen por edificio) · **Racks** (la lista actual, con el filtro de
    edificio en el encabezado de la tarjeta) · **Ajustes**; la acción «Nuevo rack» e «Importar planilla» en Ajustes (y en un

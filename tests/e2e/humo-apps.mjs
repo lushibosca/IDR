@@ -107,6 +107,18 @@ async function comunes(app, ctx, pestanas) {
     clic($('btn-movimiento'));
     check(app, 'Ajustes: reducir animaciones', d.documentElement.getAttribute('data-movimiento') === 'reducido');
     clic($('btn-movimiento'));
+    // fondo de página: está por defecto, el interruptor lo quita y lo guarda con la clave de la app; recargar lo conserva
+    check(app, 'fondo: está puesto (hay .bg-backdrop y el interruptor prendido)', Boolean(d.querySelector('.bg-backdrop')) && !d.documentElement.hasAttribute('data-fondo')
+        && $('btn-fondo').getAttribute('aria-checked') === 'true');
+    clic($('btn-fondo'));
+    const claveFondo = Object.keys(w.localStorage).find((k) => /fondo$/.test(k));
+    check(app, 'fondo: el interruptor lo quita y lo guarda', d.documentElement.getAttribute('data-fondo') === 'sin' && $('btn-fondo').getAttribute('aria-checked') === 'false'
+        && w.localStorage.getItem(claveFondo) === '0', claveFondo);
+    const sinFondo = await cargar(app, { almacen: { [claveFondo]: '0' } });
+    check(app, 'fondo: recargar lo deja quitado desde el primer cuadro', sinFondo.d.documentElement.getAttribute('data-fondo') === 'sin'
+        && sinFondo.$('btn-fondo').getAttribute('aria-checked') === 'false');
+    clic($('btn-fondo'));
+    check(app, 'fondo: el interruptor lo vuelve a poner', !d.documentElement.hasAttribute('data-fondo') && w.localStorage.getItem(claveFondo) === '1');
     await panel(app, ctx);
     await ayuda(app, ctx);
     // aviso (toast): sale con su texto, en el elemento único #toast
@@ -317,7 +329,96 @@ async function sgi() {
     check(app, 'móvil: sin errores de JavaScript', movil.errores.length === 0, movil.errores.join(' | '));
 }
 
-const ESCENARIOS = { SGR: sgr, SGI: sgi };
+// ─── SGP
+async function sgp() {
+    const app = 'SGP';
+    const ctx = await cargar(app);
+    const { w, d, $, errores } = ctx;
+    await comunes(app, ctx, ['racks', 'estado']);
+
+    // Estado vacío; alta de un rack desde Ajustes
+    check(app, 'Estado: sin racks muestra el aviso', !$('estado-vacio').classList.contains('empty-state-hidden'));
+    clic($('tab-ajustes'));
+    clic($('ajustes-nuevo-rack-btn'));
+    check(app, 'Nuevo rack: abre el modal', await hasta(() => abierto(w, $('modal-rack'))));
+    $('rack-nombre').value = 'Rack 0400';
+    $('rack-desc').value = 'Sala de servidores';
+    clic($('rack-guardar-btn'));
+    check(app, 'Nuevo rack: guarda y cierra', await hasta(() => !abierto(w, $('modal-rack'))));
+    clic($('tab-racks'));
+    check(app, 'Racks: el rack aparece en la lista', await hasta(() => /Rack 0400/.test($('racks-list').textContent)));
+    check(app, 'Racks: el contador muestra 1', $('racks-count').textContent === '1');
+
+    // patchera: alta desde el rack
+    clic($('racks-list').querySelector('.rack-item-header'));
+    clic(await (async () => { await hasta(() => $('racks-list').querySelector('[data-action="nueva-patchera"]')); return $('racks-list').querySelector('[data-action="nueva-patchera"]'); })());
+    check(app, 'Patchera: abre el modal', await hasta(() => abierto(w, $('modal-patchera'))));
+    $('patchera-nombre').value = 'P-01';
+    $('patchera-pos').value = '3';
+    clic($('patchera-guardar-btn'));
+    check(app, 'Patchera: guarda y se dibuja con sus 24 puertos', await hasta(() => $('racks-list').querySelectorAll('.jack').length >= 24));
+
+    // puerto: clic abre el modal, se guarda la etiqueta y el tooltip la muestra
+    clic($('racks-list').querySelector('.jack'));
+    check(app, 'Puerto: abre el modal', await hasta(() => abierto(w, $('modal-jack'))));
+    $('jack-label').value = 'Oficina 102 - Puesto 4';
+    clic($('jack-guardar-btn'));
+    check(app, 'Puerto: guarda y cierra', await hasta(() => !abierto(w, $('modal-jack'))));
+    check(app, 'Puerto: la etiqueta queda en el puerto', await hasta(() => /Oficina 102/.test($('racks-list').innerHTML)));
+
+    // Estado: totales y resumen
+    clic($('tab-estado'));
+    check(app, 'Estado: totales de racks, patcheras y puertos', await hasta(() => /Puertos1con servicio de 24/.test($('estado-chips').textContent)), $('estado-chips').textContent);
+    check(app, 'Estado: una fila por edificio (sin edificio)', /Sin edificio/.test($('estado-edificios').textContent));
+
+    // búsqueda: rack, patchera, puerto y etiqueta; exclusión
+    escribir($('global-search'), 'oficina 102');
+    check(app, 'buscador: marca la búsqueda activa y pasa a Racks', await hasta(() => visible($('panel-racks')) && $('sidebar-search-container').classList.contains('search-active')));
+    check(app, 'buscador: encuentra por la etiqueta de un puerto y lo resalta', await hasta(() => /Rack 0400/.test($('racks-list').textContent) && $('racks-list').querySelector('.coincide')));
+    escribir($('global-search'), 'p-01');
+    check(app, 'buscador: encuentra por el nombre de la patchera', await hasta(() => /Rack 0400/.test($('racks-list').textContent)));
+    escribir($('global-search'), 'nada-que-coincida');
+    check(app, 'buscador: sin coincidencias muestra el aviso', await hasta(() => !$('racks-empty').classList.contains('empty-state-hidden') && !/Rack 0400/.test($('racks-list').textContent)));
+    escribir($('global-search'), 'oficina !102');
+    check(app, 'buscador: la exclusión con ! descarta lo que tiene esa palabra', await hasta(() => !/Rack 0400/.test($('racks-list').textContent)));
+    clic($('search-clear'));
+    check(app, 'buscador: limpiar vuelve a mostrar', await hasta(() => /Rack 0400/.test($('racks-list').textContent)));
+
+    // tooltip de un puerto con el mouse
+    const jackConEtiqueta = [...$('racks-list').querySelectorAll('.jack')].find((j) => j.dataset.label);
+    jackConEtiqueta.dispatchEvent(new w.MouseEvent('mouseover', { bubbles: true }));
+    check(app, 'tooltip: el mouse sobre un puerto muestra su destino', $('jack-tooltip').classList.contains('show') && /Oficina 102/.test($('jt-label').textContent));
+
+    // edificios, Gist y restaurar (modales desde Ajustes)
+    clic($('tab-ajustes'));
+    await modalBasico(app, ctx, () => clic($('ajustes-edificios-btn')), 'modal-edificios');
+    await modalBasico(app, ctx, () => clic($('btn-abrir-gist')), 'modal-gist');
+    await modalBasico(app, ctx, () => clic($('ajustes-importar-btn')), 'modal-importar');
+    await modalBasico(app, ctx, () => clic($('ajustes-planilla-btn')), 'modal-importar-planilla');
+
+    // confirmar sobre otro modal: Escape vuelve al de abajo, no cierra los dos
+    clic($('tab-racks'));
+    clic($('racks-list').querySelector('[data-action="editar-rack"]'));
+    await hasta(() => abierto(w, $('modal-rack')));
+    clic($('rack-eliminar-btn'));
+    check(app, 'eliminar: pide confirmación encima del modal', await hasta(() => abierto(w, $('modal-confirmar'))));
+    tecla(w, 'Escape');
+    check(app, 'confirmar: Escape vuelve al modal del rack', await hasta(() => !abierto(w, $('modal-confirmar'))) && abierto(w, $('modal-rack')));
+    tecla(w, 'Escape');
+    await hasta(() => !abierto(w, $('modal-rack')));
+
+    // datos guardados con la clave de siempre; sin leer las de otra app
+    check(app, 'datos: se guardan en PCH_state', /Rack 0400/.test(w.localStorage.getItem('PCH_state') || ''));
+    check(app, 'sin errores de JavaScript', errores.length === 0, errores.join(' | '));
+
+    // móvil: la barra de abajo y el buscador por ícono; tocar un puerto muestra el tooltip y un segundo toque lo edita
+    const movil = await cargar(app, { ancho: 390, almacen: { PCH_state: w.localStorage.getItem('PCH_state') } });
+    clic(movil.$('btn-buscar-movil'));
+    check(app, 'móvil: el ícono abre el buscador', movil.d.documentElement.classList.contains('busqueda-movil-abierta'));
+    check(app, 'móvil: sin errores de JavaScript', movil.errores.length === 0, movil.errores.join(' | '));
+}
+
+const ESCENARIOS = { SGR: sgr, SGI: sgi, SGP: sgp };
 const pedidas = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(ESCENARIOS);
 for (const app of pedidas) {
     if (!ESCENARIOS[app]) { console.log(`FAIL  ${app}: sin escenario`); fallos++; continue; }

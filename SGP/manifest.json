@@ -4,7 +4,7 @@
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000000",
-  "theme_color": "#ea580c",
+  "theme_color": "#1f2937",
   "orientation": "portrait",
   "scope": "./",
   "id": "/SGP-app",

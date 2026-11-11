@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261111.1340';
+const CACHE_NAME = 'idr-suite-v261111.1349';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -110,9 +110,9 @@ const PRECACHE_URLS = [
   // ── SGP (Patcheras) ──
   './SGP/',
   './SGP/index.html',
-  './SGP/flash.js',
   './SGP/manifest.json',
-  './SGP/styles.css',
+  './SGP/css/sgp.css',
+  './SGP/atajos.js',
   './SGP/parser_planilla.js',
   './SGP/app.js',
   './SGP/icon.svg',

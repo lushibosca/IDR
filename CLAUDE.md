@@ -3,7 +3,7 @@
 Suite en GitHub Pages, sin servidor ni build: launcher en la raíz (`index.html`, `app.js`) y una carpeta por app
 (`SGC`, `SGI`, `SGL`, `SGP`, `SGR`); lo compartido está en `shared/`. Idioma del proyecto: español (código,
 mensajes, commits, docs). Lo que pida el usuario manda sobre lo de este archivo.
-Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se documentó (hoy: `SGC`; `SGR` y `SGI` tienen su `CLAUDE.md`).
+Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se documentó (hoy: `SGC`; `SGR`, `SGI` y `SGP` tienen su `CLAUDE.md`).
 
 ## Flujo de trabajo (vale para todas las apps)
 - **Un solo Service Worker, el de la raíz (`sw.js`).** Es cache-first con `ignoreSearch`: los `?v=` de los `<script>` no
@@ -36,7 +36,7 @@ Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se document�
   valor guardado cada app usa su tema de siempre. SGC mantiene `sgc2/theme` solo como respaldo (lo vigila `tests/tema.test.mjs`).
 - **Panel, transición y barra superior son de la suite.** El panel lateral (plegar con `#btn-toggle-sidebar`, mover a los cuatro lados),
   el deslizamiento al cambiar de pestaña, la barra superior (marca → launcher, instalar, deshacer, rehacer), los avisos (`mostrarToast`),
-  «volver arriba», el modal de ayuda y atajos y las columnas de Ajustes viven en `shared/ui/` (`js/panel*.js`, `transicion-pestanas.js`,
+  «volver arriba», el fondo de página (con su interruptor en Ajustes), el modal de ayuda y atajos y las columnas de Ajustes viven en `shared/ui/` (`js/panel*.js`, `transicion-pestanas.js`,
   `toast.js`, `ayuda.js`...); una app no los reescribe: carga el script y pone el marcado (receta: `docs/PORTE-ESTILO-SGC.md`, sección 3).
   `tests/estilo.test.mjs` vigila que las apps portadas lo tengan.
 - Las apps comparten el origen: todas las claves de `localStorage` llevan el prefijo de su app (`sgc2/`, `RCK_`, `PCH_`,
@@ -57,5 +57,5 @@ Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se document�
 
 ## Versión visible en cada app
 Cada app muestra la versión de la suite en sus Ajustes con un elemento `<span data-idr-version="NOMBRE"></span>` y el script
-`<script src="../shared/idr-version.js">` (nada de código por app; hoy SGC, SGR y SGI). Al portar SGP al diseño de SGC,
+`<script src="../shared/idr-version.js">` (nada de código por app; hoy SGC, SGR, SGI y SGP). Al portar SGP al diseño de SGC,
 agregar esas dos líneas en sus Ajustes (receta completa: `docs/PORTE-ESTILO-SGC.md`, sección 3).
