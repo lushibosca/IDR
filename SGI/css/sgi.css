@@ -61,6 +61,13 @@
                 align-items: start;
             }
 
+    /* En pantallas chicas una sola columna (va DESPUÉS de la regla base: la hoja de cada app viene luego de legado/comunes.css) */
+    @media (max-width: 700px) {
+        .dash-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
     .dash-sidebar {
                 display: flex;
                 flex-direction: column;

@@ -197,5 +197,32 @@
         opacity: 0.5;
         user-select: none;
     }
-}
 
+    /* ─── Historial en móvil: cada cambio es una tarjeta (la tabla de 4 columnas se pisaba: la fecha no entra en el 17 % de la fila) */
+    @media (max-width: 767.98px) {
+        #bd-table thead {
+            display: none;
+        }
+
+        #bd-table tbody tr {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: var(--esp-1) var(--esp-3);
+            padding: var(--esp-3) var(--esp-4);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #bd-table tbody td {
+            display: block;
+            width: auto;
+            padding: 0;
+            border: 0;
+            min-width: 0;
+        }
+
+        #bd-table tbody td:nth-child(3),
+        #bd-table tbody td:nth-child(4) {
+            grid-column: 1 / -1;
+        }
+    }
+}

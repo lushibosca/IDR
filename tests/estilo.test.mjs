@@ -230,6 +230,18 @@ test("launcher: toma la base común (tokens, base, fondo, Inter, íconos, tema y
   assert.ok(!/localStorage\.(get|set)Item\(['"]IDR_dark/.test(leer("app.js")), "app.js no maneja el tema a mano");
 });
 
+// ─── legado/comunes.css va ANTES de la hoja de cada app: una regla suya dentro de un @media pierde contra la base del mismo selector
+// que la app defina después (pasó con `.dash-layout`: en móvil el dashboard quedaba al 70 % del ancho)
+test("legado/comunes.css: sus reglas dentro de @media no tienen la base del mismo selector en la hoja de la app", () => {
+  const comunes = reglas("../shared/ui/legado/comunes.css").filter((r) => r.media);
+  const malos = [];
+  for (const [app, hoja] of [["SGR", "../SGR/css/sgr.css"], ["SGI", "../SGI/css/sgi.css"], ["SGP", "../SGP/css/sgp.css"]]) {
+    const propias = new Set(reglas(hoja).filter((r) => !r.media).flatMap((r) => r.selectores));
+    for (const r of comunes) for (const sel of r.selectores) if (propias.has(sel)) malos.push(`${app}: ${sel} (${r.media})`);
+  }
+  assert.deepEqual(malos, []);
+});
+
 // ─── Manifiestos: las apps portadas se instalan con la misma pinta (color de la barra, fondo, modo y orientación)
 test("apps portadas: manifiestos con el mismo theme_color, background_color, display y orientation", () => {
   const m = APPS_PORTADAS.map((app) => [app, JSON.parse(leer(`${app}/manifest.json`))]);

@@ -152,12 +152,6 @@
         color: var(--c-red);
     }
 
-    @media (max-width: 700px) {
-        .dash-layout {
-            grid-template-columns: 1fr;
-        }
-    }
-
     .btn-input-side.btn-input-side--baja {
         background: var(--c-red);
     }
