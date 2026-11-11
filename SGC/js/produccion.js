@@ -1613,23 +1613,6 @@ function nivelCapacidad(pct) {
 }
 // ==== CAPACIDAD CANALES NVR PURO END ====
 
-// Sincronizar altura del navbar sticky con variables CSS para el panel lateral y headers de acordeón
-function actualizarAlturaNavbar() {
-    const navbar = document.querySelector('.navbar');
-    if (navbar) {
-        const h = navbar.offsetHeight;
-        document.documentElement.style.setProperty('--navbar-height', `${h}px`);
-    }
-}
-
-// Alto real del navbar para cálculos de auto-scroll (el mismo valor que ya
-// queda en --navbar-height; si el navbar cambia de alto, no hace falta tocar
-// este número aparte).
-function obtenerAlturaNavbar() {
-    const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--navbar-height'));
-    return Number.isFinite(v) ? v : 58;
-}
-
 // Cierre automático de menús dropdown (Búsqueda y Configuración) al hacer scroll
 function inicializarCierreDropdownsOnScroll() {
     window.addEventListener('scroll', (e) => {

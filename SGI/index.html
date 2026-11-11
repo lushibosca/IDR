@@ -39,6 +39,7 @@
     <link rel="stylesheet" href="../shared/ui/componentes/modal.css">
     <link rel="stylesheet" href="../shared/ui/componentes/spinner.css">
     <link rel="stylesheet" href="../shared/ui/esqueleto.css">
+    <link rel="stylesheet" href="../shared/ui/panel.css">
     <link rel="stylesheet" href="../shared/ui/legado/variables.css">
     <link rel="stylesheet" href="css/sgi.css?v=1">
     <link rel="stylesheet" href="../shared/ui/utilidades.css">
@@ -68,7 +69,7 @@
             <!-- Panel lateral: buscador y pestañas (en móvil, barra fija abajo) -->
             <div class="col-md-2 col-lg-2" id="sidebar-col">
                 <div class="sidebar-sticky">
-                    <div class="search-container" id="sidebar-search-container">
+                    <div class="search-container" id="sidebar-search-container" data-etiqueta="Buscar">
                         <i class="bi bi-search search-icon"></i>
                         <input type="text" id="global-search" class="search-input" placeholder="Buscar..."
                             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
@@ -81,13 +82,13 @@
                     <div class="sidebar-top flex-grow-1">
                         <div class="nav nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
                             <button class="nav-link active text-start d-flex align-items-center" id="tab-dashboard"
-                                data-ui-toggle="pill" data-ui-target="#panel-dashboard" type="button" role="tab"
+                                data-ui-toggle="pill" data-ui-target="#panel-dashboard" type="button" role="tab" data-etiqueta="Dashboard"
                                 aria-selected="true" data-tab="dashboard">
                                 <span class="d-inline-flex align-items-center"><i class="bi bi-grid-1x2 sidebar-tab-icon"></i>
                                     <span class="sidebar-label">Dashboard</span></span>
                             </button>
                             <button class="nav-link text-start d-flex align-items-center" id="tab-movimientos"
-                                data-ui-toggle="pill" data-ui-target="#panel-movimientos" type="button" role="tab"
+                                data-ui-toggle="pill" data-ui-target="#panel-movimientos" type="button" role="tab" data-etiqueta="Movimientos"
                                 aria-selected="false" data-tab="movimientos">
                                 <span class="d-inline-flex align-items-center"><i class="bi bi-arrow-left-right sidebar-tab-icon"></i>
                                     <span class="sidebar-label">Movimientos</span></span>
@@ -97,12 +98,22 @@
                                 <span class="d-inline-flex align-items-center"><i class="bi bi-search sidebar-tab-icon"></i></span>
                             </button>
                             <button class="nav-link text-start d-flex align-items-center" id="tab-ajustes"
-                                data-ui-toggle="pill" data-ui-target="#panel-ajustes" type="button" role="tab"
+                                data-ui-toggle="pill" data-ui-target="#panel-ajustes" type="button" role="tab" data-etiqueta="Ajustes"
                                 aria-selected="false" data-tab="ajustes">
                                 <span class="d-inline-flex align-items-center"><i class="bi bi-sliders sidebar-tab-icon"></i>
                                     <span class="sidebar-label">Ajustes</span></span>
                             </button>
                         </div>
+                    </div>
+
+                    <!-- Botón inferior: Ocultar / Mostrar el panel (mantenerlo presionado y arrastrar lo muda de lado) -->
+                    <div class="sidebar-bottom">
+                        <button id="btn-toggle-sidebar"
+                            class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2 border-0 py-2"
+                            type="button" data-etiqueta="Ocultar panel lateral" aria-label="Ocultar panel lateral">
+                            <i class="bi bi-chevron-bar-left sidebar-toggle-icon"></i>
+                            <span class="sidebar-label">Ocultar / Mover</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -836,6 +847,10 @@
     <script src="../shared/ui/js/toast.js"></script>
     <script src="../shared/ui/js/volver-arriba.js"></script>
     <script src="../shared/ui/js/transicion-pestanas.js"></script>
+    <script src="../shared/ui/js/gestos.js"></script>
+    <script src="../shared/ui/js/panel.js"></script>
+    <script src="../shared/ui/js/panel-mover.js"></script>
+    <script src="../shared/ui/js/panel-etiquetas.js"></script>
     <script src="../shared/ui/js/atras-modales.js"></script>
     <script src="../shared/ui/js/mm.js"></script>
     <script src="../shared/idr-actualizacion.js" data-sw="../sw.js" data-scope="../"></script>

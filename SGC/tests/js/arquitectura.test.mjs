@@ -16,14 +16,14 @@ const sinComentarios = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:
 const MAX_LINEAS = 500;
 const TOPES = {
   "animaciones.js": 653,
-  "app.js": 2099,
+  "app.js": 1668,
   "busqueda.js": 523,
   "comun.js": 1786,
   "datos-puro.js": 1242,
   "favoritos.js": 501,
   "gist.js": 561,
-  "produccion.js": 1650,
-  "resumen.js": 1604,
+  "produccion.js": 1633,
+  "resumen.js": 1507,
   "stock-catalogos.js": 804,
   "stock-listar.js": 514,
   "stock-puro.js": 1134,

@@ -17,8 +17,9 @@
     <script src="../shared/idr-version.js"></script>
     <script src="../shared/idr-atras.js"></script>
     <script src="../shared/ui/js/arranque.js" data-prefijo="sgc2/" data-tema="dark" data-clave-tema="sgc2/theme"
+        data-clave-panel-colapsado="sgc2/cctv:sidebar_collapsed" data-clave-panel-posicion="sgc2/cctv:sidebar_posicion"
         data-clave-movimiento="sgc2/cctv:movimiento_reducido" data-valor-reducido="1" data-valor-normal="0"></script>
-    <script src="js/preload.js?v=9"></script>
+    <script src="js/preload.js?v=10"></script>
     <!-- CSS por capas (@layer en tokens.css): tokens, base, iconos, grilla, componentes, app, utilidades. La base común de
          la suite (tokens, base, grilla, componentes, utilidades, íconos y fuentes) está en ../shared/ui y ../shared/vendor;
          lo propio de SGC, en css/app/. Sin !important. El orden de los <link> es el de las capas. -->
@@ -42,7 +43,8 @@
     <link rel="stylesheet" href="../shared/ui/componentes/modal.css?v=23">
     <link rel="stylesheet" href="../shared/ui/componentes/spinner.css?v=6">
     <link rel="stylesheet" href="../shared/ui/esqueleto.css?v=1">
-    <link rel="stylesheet" href="css/app/estructura.css?v=40">
+    <link rel="stylesheet" href="../shared/ui/panel.css">
+    <link rel="stylesheet" href="css/app/estructura.css?v=41">
         <link rel="stylesheet" href="css/app/estado.css?v=54">
     <link rel="stylesheet" href="css/app/produccion.css?v=51">
     <link rel="stylesheet" href="css/app/auditoria.css?v=25">
@@ -2182,6 +2184,9 @@
     <!-- Componentes propios (pestañas, modales, desplegables): reemplazan al JS de Bootstrap -->
     <script src="../shared/ui/js/ui.js?v=13"></script>
     <script src="../shared/ui/js/gestos.js"></script>
+    <script src="../shared/ui/js/panel.js" data-clave-colapsado="sgc2/cctv:sidebar_collapsed" data-clave-posicion="sgc2/cctv:sidebar_posicion" data-busqueda-propia></script>
+    <script src="../shared/ui/js/panel-mover.js"></script>
+    <script src="../shared/ui/js/panel-etiquetas.js"></script>
     <script src="../shared/ui/js/toast.js"></script>
     <script src="../shared/ui/js/volver-arriba.js"></script>
     <!-- Lógica Externa (Hardening) con versionado para evitar caché -->
@@ -2193,11 +2198,11 @@
     <script src="js/comun.js?v=60"></script>
     <script src="js/doble-toque.js?v=1"></script>
         <script src="../shared/ui/js/atras-modales.js?v=1"></script>
-    <script src="js/app.js?v=276"></script>
+    <script src="js/app.js?v=277"></script>
     <script src="js/sesion-local.js?v=1"></script>
     <script src="js/selector.js?v=2"></script>
-    <script src="js/produccion.js?v=65"></script>
-    <script src="js/resumen.js?v=76"></script>
+    <script src="js/produccion.js?v=66"></script>
+    <script src="js/resumen.js?v=77"></script>
     <script src="js/favoritos.js?v=20"></script>
     <script src="js/atajos.js?v=27"></script>
     <script src="js/stock-puro.js?v=5"></script>

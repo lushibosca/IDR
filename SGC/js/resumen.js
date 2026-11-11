@@ -1065,108 +1065,12 @@ function animarCargaDashboard() {
     document.documentElement.removeAttribute('data-cargando');
 }
 
-// Con el panel lateral colapsado (solo íconos), pasar el mouse (o el foco) por un ícono muestra un popup con el nombre de su
-// sección. Va fuera del panel, que recorta lo que sobresale. Las etiquetas están en `data-etiqueta` (texto, nunca HTML).
-// Para las pestañas del panel (Estado, Activos...) con el panel a un costado no es un popup aparte sino una PROLONGACIÓN del
-// botón: pegada a su borde exterior, de su misma altura y color, con solo el nombre (el ícono y el contador de la búsqueda
-// ya están en el botón). El resto de los botones (buscar, ocultar) y el panel arriba o abajo llevan el texto de siempre.
-function llenarEtiquetaPanel(tip, el, prolonga) {
-    tip.replaceChildren();
-    tip.classList.remove('sidebar-tip-fila', 'sidebar-tip-activa');
-    tip.style.removeProperty('min-height');
-    if (!prolonga) {
-        tip.textContent = el.dataset.etiqueta;
-        return;
-    }
-    tip.classList.add('sidebar-tip-fila');
-    tip.classList.toggle('sidebar-tip-activa', el.classList.contains('active'));
-    tip.appendChild(uiNodo('span', '', el.dataset.etiqueta));
-}
-
-function inicializarEtiquetasPanelLateral() {
-    const panel = document.getElementById('sidebar-col');
-    if (!panel) return;
-    const tip = uiNodo('div', 'sidebar-tip d-none');
-    tip.setAttribute('role', 'tooltip');
-    document.body.appendChild(tip);
-    let origen = null;                 // el elemento que lo muestra y cómo: { el, modo: 'mouse' | 'foco' }
-    const ocultar = () => {
-        tip.classList.add('d-none');
-        // el botón al que se une la prolongación vuelve a tener sus esquinas redondeadas
-        panel.querySelectorAll('.sidebar-tip-origen').forEach(b => b.classList.remove('sidebar-tip-origen', 'sidebar-tip-origen-der'));
-        origen = null;
-    };
-    const mostrar = (el, modo) => {
-        // solo íconos (panel oculto) o sin textos por falta de lugar (el buscador conserva el suyo)
-        const sinTexto = panel.classList.contains('sidebar-collapsed')
-            || (panel.classList.contains('sidebar-etiquetas-ocultas') && !el.closest('.search-container'));
-        if (!sinTexto || !el.dataset.etiqueta) return;
-        origen = { el, modo };
-        const posPanel = typeof posicionPanelActual === 'function' ? posicionPanelActual() : 'left';
-        const rect = el.getBoundingClientRect();
-        const esFila = el.matches('.nav-link') && (posPanel === 'left' || posPanel === 'right');
-        llenarEtiquetaPanel(tip, el, esFila);
-        if (esFila) tip.style.minHeight = `${Math.round(rect.height)}px`;
-        tip.classList.toggle('sidebar-tip-der', esFila && posPanel === 'right');
-        el.classList.toggle('sidebar-tip-origen', esFila);
-        el.classList.toggle('sidebar-tip-origen-der', esFila && posPanel === 'right');
-        tip.classList.remove('d-none');
-        const pos = (esFila ? posicionFilaPanel : posicionEtiquetaPanel)(
-            rect,
-            { width: tip.offsetWidth, height: tip.offsetHeight },
-            { width: window.innerWidth, height: window.innerHeight },
-            posPanel
-        );
-        tip.style.left = `${pos.left}px`;
-        tip.style.top = `${pos.top}px`;
-    };
-    panel.querySelectorAll('[data-etiqueta]').forEach(el => {
-        el.addEventListener('mouseenter', () => mostrar(el, 'mouse'));
-        // solo el foco del teclado: el de un clic (o el que vuelve al regresar a la ventana) dejaba el popup pegado
-        el.addEventListener('focus', () => { if (uiFocoDeTeclado(el)) mostrar(el, 'foco'); });
-        el.addEventListener('mouseleave', ocultar);
-        el.addEventListener('blur', ocultar);
-        el.addEventListener('click', ocultar);
-    });
-    window.addEventListener('scroll', ocultar, true);
-    window.addEventListener('resize', ocultar);
-    // Lo que lo deja pegado: un `mouseleave` que no llega (el panel se mueve o se reacomoda bajo el puntero), volver a la ventana,
-    // abrirse el panel con el popup a la vista, o tocar otra cosa. Se oculta en todos esos casos.
-    document.addEventListener('pointermove', () => {
-        if (origen && origen.modo === 'mouse' && !origen.el.matches(':hover')) ocultar();
-    }, { passive: true });
-    document.addEventListener('pointerdown', ocultar, true);
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') ocultar(); });
-    window.addEventListener('blur', ocultar);
-    document.addEventListener('visibilitychange', ocultar);
-    new MutationObserver(() => {
-        if (!panel.classList.contains('sidebar-collapsed') && !panel.classList.contains('sidebar-etiquetas-ocultas')) ocultar();
-    }).observe(panel, { attributes: true, attributeFilter: ['class'] });
-}
-
-function inicializarPanelLateral() {
+// Rueda del mouse sobre el panel lateral: recorre las pestañas (el panel mismo —plegar, mover, popups— es de ../shared/ui/js/panel.js)
+function inicializarRuedaPanel() {
     const btnToggle = document.getElementById('btn-toggle-sidebar');
     const sidebarCol = document.getElementById('sidebar-col');
     if (!sidebarCol || !btnToggle) return;
 
-    estadoPanelLateral = { colapsado: storage.get(CLAVE_PANEL_LATERAL) === '1', autoExpandido: false };
-    // Dónde está el panel (lo puso preload.js antes de pintar; acá se asegura que coincida con lo guardado)
-    fijarPosicionPanel(storage.get(CLAVE_POSICION_PANEL), { animar: false, guardar: false });
-    inicializarReubicarPanelLateral();
-    pintarPanelLateral(estadoPanelLateral.colapsado, { animar: false });
-    btnToggle.addEventListener('click', () => panelLateral('alternar'));
-
-    const searchContainer = document.getElementById('sidebar-search-container');
-    if (searchContainer) {
-        searchContainer.addEventListener('click', () => {
-            if (!estadoPanelLateral.colapsado) return;
-            panelLateral('buscar');
-            const globalSearch = document.getElementById('global-search');
-            if (globalSearch) globalSearch.focus();
-        });
-    }
-
-    // Rueda del mouse sobre el panel lateral: recorrer pestañas (como en el popup con foto de modelo y snapshot)
     let ultimaRuedaPanel = 0;
     const onWheelPanel = (ev) => {
         if (!ruedaRecorrePestanas()) return;                 // Ajustes: apagado, la rueda desplaza el panel como siempre
@@ -1582,8 +1486,7 @@ function inicializarReordenSeccionesDashboard() {
 document.addEventListener('DOMContentLoaded', () => {
     aplicarOrdenSeccionesResumen();
     preferencias.alAplicar(CLAVE_DISPOSICION_RESUMEN, aplicarOrdenSeccionesResumen);
-    inicializarPanelLateral();
-    inicializarEtiquetasPanelLateral();
+    inicializarRuedaPanel();
     inicializarSeccionesColapsablesDashboard();
     inicializarReordenSeccionesDashboard();
     iniciarReordenChipsActivos();

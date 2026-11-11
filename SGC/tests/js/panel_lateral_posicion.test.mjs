@@ -1,10 +1,10 @@
-// Ubicación del panel lateral (bloque PANEL LATERAL PURO de static/app.js): posición válida, borde de destino al soltar
+// Ubicación del panel lateral (bloque PANEL LATERAL PURO de shared/ui/js/panel.js): posición válida, borde de destino al soltar
 // «Ocultar» y ícono del botón según dónde está el panel.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { cargarBloque, plano } from "./_bloque.mjs";
 
-const p = cargarBloque("app.js", "PANEL LATERAL PURO", { Number, Math, Array }, [
+const p = cargarBloque("../shared/ui/js/panel.js", "PANEL LATERAL PURO", { Number, Math, Array }, [
   "POSICIONES_PANEL", "posicionPanelValida", "zonaPanelDestino", "iconoTogglePanel", "accionAtajoFlechaCtrl",
   "calcularPestanaRueda", "panelDesborda", "posicionEtiquetaPanel", "posicionFilaPanel",
 ]);

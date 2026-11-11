@@ -84,6 +84,24 @@ check('cabecera: el ícono de la marca lleva al launcher de la suite', $('menu-c
     check('tema: un cambio hecho en otra app se sigue en vivo', tema() === 'dark');
     w.localStorage.removeItem('IDR_dark'); w.initTheme();     // nadie eligió: vuelve a lo propio (sgc2/theme)
 }
+// --- panel lateral plegable y movible (shared/ui/js/panel.js) con las claves de siempre de SGC
+{
+    const col = $('sidebar-col'), btn = $('btn-toggle-sidebar');
+    btn.click();
+    check('panel: el botón lo pliega y guarda sgc2/cctv:sidebar_collapsed', col.classList.contains('sidebar-collapsed') && w.localStorage.getItem('sgc2/cctv:sidebar_collapsed') === '1');
+    btn.click();
+    check('panel: el botón lo vuelve a mostrar', !col.classList.contains('sidebar-collapsed') && w.localStorage.getItem('sgc2/cctv:sidebar_collapsed') === '0');
+    const mm0 = w.matchMedia;     // (el humo trae un matchMedia que siempre dice «no»: acá la pantalla es de escritorio)
+    w.matchMedia = (q) => ({ ...mm0(q), matches: /min-width:\s*768px/.test(q) });
+    btn.focus();
+    btn.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowRight', altKey: true, bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 400));
+    check('panel: Alt+→ lo pasa a la derecha y guarda sgc2/cctv:sidebar_posicion', d.documentElement.getAttribute('data-panel-pos') === 'right' && w.localStorage.getItem('sgc2/cctv:sidebar_posicion') === 'right');
+    btn.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowLeft', altKey: true, bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 400));
+    check('panel: Alt+← lo devuelve a la izquierda', !d.documentElement.hasAttribute('data-panel-pos'));
+    w.matchMedia = mm0;
+}
 check('ajustes: muestra la versión de la suite (SGC-vAAMMDD)', /^SGC-v\d{6}$/.test(($('v-pills-ajustes').querySelector('.ajustes-version') || {}).textContent || ''),
     ($('v-pills-ajustes').querySelector('.ajustes-version') || {}).textContent);
 check('sin Auditoría ni monitoreo en la página', !$('monitoreo-section') && !$('alertas-section') && !$('logs-sistema'));

@@ -104,6 +104,38 @@ async function comunes(app, ctx, pestanas) {
     clic($('btn-movimiento'));
     check(app, 'Ajustes: reducir animaciones', d.documentElement.getAttribute('data-movimiento') === 'reducido');
     clic($('btn-movimiento'));
+    await panel(app, ctx);
+    // aviso (toast): sale con su texto, en el elemento único #toast
+    w.mostrarToast('Aviso de prueba', 'success', 1500);
+    check(app, 'toast: muestra el aviso', await hasta(() => $('toast').classList.contains('show') && /Aviso de prueba/.test($('toast').textContent)));
+}
+
+// Panel lateral plegable y movible (shared/ui/js/panel.js): el botón pliega, Alt+flecha lo muda de lado, y las dos cosas se
+// guardan por dispositivo (con las claves de la app) y se restauran al recargar antes de pintar
+async function panel(app, ctx) {
+    const { w, d, $ } = ctx;
+    const col = $('sidebar-col'), btn = $('btn-toggle-sidebar');
+    check(app, 'panel: botón de ocultar presente', Boolean(btn));
+    clic(btn);
+    check(app, 'panel: el botón lo pliega', col.classList.contains('sidebar-collapsed'));
+    const claveCol = Object.keys(w.localStorage).find((k) => /sidebar_collapsed|panel_colapsado/.test(k));
+    check(app, 'panel: guarda el plegado', Boolean(claveCol) && w.localStorage.getItem(claveCol) === '1', claveCol);
+    clic(btn);
+    check(app, 'panel: el botón lo vuelve a mostrar', !col.classList.contains('sidebar-collapsed'));
+    btn.focus();
+    tecla(w, 'ArrowRight', { altKey: true });
+    check(app, 'panel: Alt+→ lo pasa a la derecha', await hasta(() => d.documentElement.getAttribute('data-panel-pos') === 'right'));
+    const clavePos = Object.keys(w.localStorage).find((k) => /sidebar_posicion|panel_posicion/.test(k));
+    check(app, 'panel: guarda el lugar', Boolean(clavePos) && w.localStorage.getItem(clavePos) === 'right', clavePos);
+    btn.focus();
+    tecla(w, 'ArrowUp', { altKey: true });
+    check(app, 'panel: Alt+↑ lo pasa arriba (dentro de la barra superior)', await hasta(() => d.documentElement.getAttribute('data-panel-pos') === 'top'
+        && col.closest('.navbar') !== null));
+    // recarga: plegado y lugar se conservan desde el primer cuadro
+    const guardado = { [claveCol]: '1', [clavePos]: 'bottom' };
+    const otra = await cargar(app, { almacen: guardado });
+    check(app, 'panel: recarga con el panel plegado y abajo', otra.d.documentElement.getAttribute('data-panel-pos') === 'bottom'
+        && otra.$('sidebar-col').classList.contains('sidebar-collapsed') && otra.errores.length === 0, otra.errores.join(' | '));
 }
 
 async function modalBasico(app, ctx, abrirFn, idModal) {

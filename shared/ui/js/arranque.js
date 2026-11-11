@@ -7,6 +7,8 @@
 //   data-clave-tema        clave COMPLETA de respaldo del tema ('dark' | 'light'); vale si la suite no tiene tema elegido
 //   data-clave-movimiento  clave COMPLETA de «reducir animaciones» (por defecto <prefijo>movimiento)
 //   data-valor-reducido / data-valor-normal  sus valores (por defecto 'reducido' / 'normal')
+//   data-clave-panel-colapsado / data-clave-panel-posicion  claves COMPLETAS del panel lateral (por defecto <prefijo>panel_colapsado
+//                          y <prefijo>panel_posicion; las mismas que lee panel.js)
 // Deja todo en `<html data-idr-*>` para apariencia.js.
 
 // ==== ARRANQUE PURO BEGIN ====
@@ -42,4 +44,36 @@ function idrTemaInicial(suite, defecto, respaldo) {
     try {
         if (claveMov && localStorage.getItem(claveMov) === reducido) html.setAttribute('data-movimiento', 'reducido');
     } catch (_) { /* sin almacenamiento: animaciones de siempre */ }
+
+    // Panel lateral (antes de pintar, sin salto): dónde está (solo escritorio; el CSS lo ignora en pantallas chicas) y si estaba plegado
+    try {
+        var clavePos = attr('data-clave-panel-posicion', prefijo ? prefijo + 'panel_posicion' : '');
+        var claveCol = attr('data-clave-panel-colapsado', prefijo ? prefijo + 'panel_colapsado' : '');
+        var pos = clavePos && localStorage.getItem(clavePos);
+        if (pos === 'right' || pos === 'top' || pos === 'bottom') html.setAttribute('data-panel-pos', pos);
+        if (claveCol && localStorage.getItem(claveCol) === '1') {
+            html.setAttribute('data-panel-colapsado', '');
+            // el panel aparece contraído de entrada: apenas existe #sidebar-col se le pone la clase (sin flash ni animación al recargar)
+            var plegar = function () {
+                var col = document.getElementById('sidebar-col');
+                if (col && !col.classList.contains('sidebar-collapsed')) col.classList.add('sidebar-collapsed');
+                var btn = document.getElementById('btn-toggle-sidebar');
+                var icono = btn && btn.querySelector('.sidebar-toggle-icon');
+                if (icono) {
+                    var vuelve = { left: 'right', right: 'left', top: 'down', bottom: 'up' }[html.getAttribute('data-panel-pos') || 'left'] || 'right';
+                    icono.className = 'bi bi-chevron-bar-' + vuelve + ' sidebar-toggle-icon';
+                    btn.dataset.etiqueta = 'Mostrar panel lateral';
+                    btn.setAttribute('aria-label', 'Mostrar panel lateral');
+                }
+                return Boolean(col && btn);
+            };
+            if (typeof MutationObserver === 'function') {
+                var obs = new MutationObserver(function () { if (plegar()) obs.disconnect(); });
+                obs.observe(html, { childList: true, subtree: true });
+                document.addEventListener('DOMContentLoaded', function () { obs.disconnect(); plegar(); }, { once: true });
+            } else {
+                document.addEventListener('DOMContentLoaded', plegar, { once: true });
+            }
+        }
+    } catch (_) { /* sin almacenamiento: panel como de fábrica */ }
 })();

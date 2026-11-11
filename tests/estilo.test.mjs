@@ -122,14 +122,14 @@ test("apps portadas: cargan la base (tokens primero, utilidades al final), el es
     const propias = hojas.filter((h) => !h.startsWith("../shared/"));
     assert.ok(propias.every((h) => hojas.indexOf(h) > hojas.indexOf("../shared/ui/esqueleto.css")
       && hojas.indexOf(h) < hojas.indexOf("../shared/ui/utilidades.css")), `${app}: sus hojas van entre el esqueleto y utilidades`);
-    for (const js of ["ui.js", "atras-modales.js", "busqueda-movil.js", "swipe-pestanas.js", "toast.js", "volver-arriba.js", "transicion-pestanas.js", "apariencia.js"]) {
+    for (const js of ["ui.js", "atras-modales.js", "busqueda-movil.js", "swipe-pestanas.js", "toast.js", "volver-arriba.js", "transicion-pestanas.js", "gestos.js", "panel.js", "panel-mover.js", "panel-etiquetas.js", "apariencia.js"]) {
       assert.ok(html.includes(`src="../shared/ui/js/${js}`), `${app}: falta ../shared/ui/js/${js}`);
     }
     assert.ok(html.includes('src="../shared/idr-tema.js"') && html.includes('src="../shared/idr-version.js"'), `${app}: tema y versión de la suite`);
     assert.match(html, new RegExp(`data-idr-version="${app}"`), `${app}: versión visible en Ajustes`);
     assert.doesNotMatch(html, /<svg[^>]*class="svg-sprites"/, `${app}: sin sprite SVG propio (íconos de bootstrap-icons)`);
     assert.ok(html.includes('src="../shared/ui/js/arranque.js"'), `${app}: falta arranque.js en el <head>`);
-    for (const id of ["btn-theme", "btn-movimiento", "btn-scroll-top", "search-clear"]) {
+    for (const id of ["btn-theme", "btn-movimiento", "btn-scroll-top", "search-clear", "btn-toggle-sidebar"]) {
       assert.ok(html.includes(`id="${id}"`), `${app}: falta #${id}`);
     }
     assert.match(html, /id="toast"[^>]*role="status"|role="status"[^>]*id="toast"/, `${app}: #toast con role="status"`);

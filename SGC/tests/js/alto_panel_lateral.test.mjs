@@ -4,7 +4,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { cargarBloque } from "./_bloque.mjs";
 
-const { altoPanelLateral } = cargarBloque("app.js", "ALTO PANEL LATERAL PURO", { Number, Math }, ["altoPanelLateral"]);
+const { altoPanelLateral } = cargarBloque("../shared/ui/js/panel.js", "ALTO PANEL LATERAL PURO", { Number, Math }, ["altoPanelLateral"]);
 
 test("anclado (sin avisos ni scroll): lo mismo que 100vh - navbar - 3rem", () => {
   // arriba = navbar (58) + 1.5rem (24) = 82; la ventana mide 900 y el margen de abajo es 24

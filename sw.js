@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261111.1303';
+const CACHE_NAME = 'idr-suite-v261111.1308';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -127,12 +127,16 @@ const PRECACHE_URLS = [
   // base de estilo común (porte del estilo de SGC: docs/PORTE-ESTILO-SGC.md)
   './shared/ui/base.css',
   './shared/ui/esqueleto.css',
+  './shared/ui/panel.css',
   './shared/ui/legado/variables.css',
   './shared/ui/grilla.css',
   './shared/ui/tokens.css',
   './shared/ui/utilidades.css',
   './shared/ui/js/apariencia.js',
   './shared/ui/js/gestos.js',
+  './shared/ui/js/panel.js',
+  './shared/ui/js/panel-mover.js',
+  './shared/ui/js/panel-etiquetas.js',
   './shared/ui/js/toast.js',
   './shared/ui/js/transicion-pestanas.js',
   './shared/ui/js/volver-arriba.js',

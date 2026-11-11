@@ -1,0 +1,343 @@
+/* panel.css: panel lateral plegable y movible de la suite (js/panel.js, panel-mover.js, panel-etiquetas.js): popups con el nombre de
+   cada sección, lugar del panel (`html[data-panel-pos]`), franja de destino al arrastrar. Va después de esqueleto.css. */
+
+@layer app {
+
+    /* Popup con el nombre de la sección sobre un ícono del panel colapsado (js/panel-etiquetas.js) */
+
+    .sidebar-tip {
+        position: fixed;
+        z-index: var(--capa-tip);
+        padding: 6px 10px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radio-medio);
+        background-color: var(--bg-card);
+        color: var(--color-texto);
+        box-shadow: var(--sombra-media);
+        font-size: var(--texto-sm);
+        font-weight: 600;
+        white-space: nowrap;
+        pointer-events: none;
+    }
+
+    /* Para las pestañas con el panel a un costado: prolongación del botón (mismo alto y color, borde recto del lado del botón),
+       solo con el nombre. La pestaña activa lleva el mismo resaltado que en el panel. */
+    .sidebar-tip-fila {
+        display: flex;
+        align-items: center;
+        gap: var(--esp-2);
+        min-height: 44px;
+        padding: 0 var(--esp-4) 0 var(--esp-2);
+        border: 0;                  /* sin borde: se funde con el botón (mismo fondo que el panel + su resaltado) */
+        border-radius: 0 var(--radio-medio) var(--radio-medio) 0;
+        color: var(--color-texto);
+        font-weight: 500;
+        background-color: var(--bg-main);
+        background-image: linear-gradient(var(--nav-hover), var(--nav-hover));
+        box-shadow: none;           /* es parte del botón: sin sombra propia */
+        animation: sidebar-tip-abrir var(--dur-pop-soft) var(--ease-panel);
+        transform-origin: left center;
+    }
+
+    .sidebar-tip-fila.sidebar-tip-activa {
+        background-image: linear-gradient(var(--nav-active-bg), var(--nav-active-bg));
+        color: var(--nav-active-text);
+    }
+
+    .sidebar-tip-fila.sidebar-tip-der {
+        padding: 0 var(--esp-2) 0 var(--esp-4);
+        border-radius: var(--radio-medio) 0 0 var(--radio-medio);
+        transform-origin: right center;
+    }
+
+    /* El botón al que se une: lado recto hacia la prolongación, sin costura */
+    #sidebar-col .nav-link.sidebar-tip-origen {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    #sidebar-col .nav-link.sidebar-tip-origen.sidebar-tip-origen-der {
+        border-radius: 0 var(--radio-medio) var(--radio-medio) 0;
+    }
+
+    @keyframes sidebar-tip-abrir {
+        from { opacity: 0; transform: scaleX(0.6); }
+        to { opacity: 1; transform: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .sidebar-tip-fila { animation: none; }
+    }
+
+    /* ─── Ubicación del panel lateral en escritorio (>= 768px): `html[data-panel-pos]` = right | top | bottom (izquierda es la de
+       fábrica, sin atributo). Se elige manteniendo presionado «Ocultar» (js/panel-mover.js). En pantallas chicas no aplica: el panel es la
+       barra de arriba. */
+
+    @media (min-width: 768px) {
+        html[data-panel-pos="right"] #sidebar-col {
+            order: 2;
+        }
+
+        html[data-panel-pos="right"] #main-content-col {
+            order: 1;
+        }
+
+        /* Arriba o abajo: una barra a todo lo ancho (búsqueda, pestañas y «Ocultar» en una fila) */
+        html[data-panel-pos="top"] #sidebar-col,
+        html[data-panel-pos="bottom"] #sidebar-col {
+            flex: 0 0 100%;
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            overflow: visible;
+            padding-left: calc(var(--ui-gutter-x, 1.5rem) * 0.5);
+            padding-right: calc(var(--ui-gutter-x, 1.5rem) * 0.5);
+        }
+
+        /* Oculto (solo íconos): la barra se ajusta a su contenido en vez de quedar a todo lo ancho con el espacio vacío */
+        html[data-panel-pos="top"] #sidebar-col.sidebar-collapsed,
+        html[data-panel-pos="bottom"] #sidebar-col.sidebar-collapsed {
+            flex: 0 0 auto;
+            width: auto;
+            max-width: 100%;
+        }
+
+        html[data-panel-pos="top"] #sidebar-col ~ #main-content-col,
+        html[data-panel-pos="bottom"] #sidebar-col ~ #main-content-col {
+            flex: 0 0 100%;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        /* Arriba: el panel vive DENTRO del encabezado (js/panel.js ubicarPanelEnEncabezado), sin tarjeta propia */
+        html[data-panel-pos="top"] .navbar #sidebar-col {
+            position: static;
+            flex: 1 1 auto;
+            width: auto;
+            max-width: none;
+            margin: 0 var(--esp-4);
+            padding: 0;
+        }
+
+        html[data-panel-pos="top"] .navbar #sidebar-col.sidebar-collapsed {
+            flex: 0 1 auto;
+        }
+
+        html[data-panel-pos="top"] .navbar .sidebar-sticky {
+            padding: 0;
+            background-color: transparent;
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        html[data-panel-pos="top"] #main-content-col {
+            flex: 0 0 100%;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        /* abajo: queda a la vista como un dock mientras el contenido se desplaza */
+        html[data-panel-pos="bottom"] #sidebar-col {
+            order: 2;
+            position: sticky;
+            top: auto;
+            bottom: 0.5rem;
+            margin-top: var(--esp-3);
+            z-index: calc(var(--capa-pegajosa) + 5);
+        }
+
+        html[data-panel-pos="top"] .sidebar-sticky,
+        html[data-panel-pos="bottom"] .sidebar-sticky {
+            height: auto;
+            min-height: 0;
+            flex-direction: row;
+            align-items: center;
+            gap: var(--esp-4);
+            padding: 0.4rem 0.6rem;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radio-grande);
+            box-shadow: var(--sombra-tarjeta);
+        }
+
+        html[data-panel-pos="top"] .sidebar-top,
+        html[data-panel-pos="bottom"] .sidebar-top {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: row;
+            align-items: center;
+            gap: var(--esp-4);
+            overflow: visible;
+            padding: 0;
+            margin: 0;
+        }
+
+        html[data-panel-pos="top"] .search-container,
+        html[data-panel-pos="bottom"] .search-container {
+            flex: 0 0 280px;
+            width: 280px;
+            margin-bottom: 0;
+        }
+
+        html[data-panel-pos="top"] #sidebar-col.sidebar-collapsed .search-container,
+        html[data-panel-pos="bottom"] #sidebar-col.sidebar-collapsed .search-container {
+            flex-basis: 48px;
+            width: 48px;
+        }
+
+        html[data-panel-pos="top"] #v-pills-tab,
+        html[data-panel-pos="bottom"] #v-pills-tab {
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 6px;
+        }
+
+        html[data-panel-pos="top"] #v-pills-tab .nav-link,
+        html[data-panel-pos="bottom"] #v-pills-tab .nav-link {
+            margin-bottom: 0;
+            min-width: 44px;
+        }
+
+        html[data-panel-pos="top"] .sidebar-bottom,
+        html[data-panel-pos="bottom"] .sidebar-bottom {
+            flex: 0 0 auto;
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+
+        html[data-panel-pos="top"] #btn-toggle-sidebar,
+        html[data-panel-pos="bottom"] #btn-toggle-sidebar {
+            width: auto;
+            padding-left: var(--esp-3);
+            padding-right: var(--esp-3);
+        }
+
+        /* Si no entra a lo ancho (app.js ajustarEtiquetasPanel): sin textos en las pestañas ni en «Ocultar / Mover»; el buscador
+           no se toca. `sidebar-midiendo` anula la transición mientras se mide con los textos a la vista. */
+        #sidebar-col.sidebar-midiendo .sidebar-label,
+        #sidebar-col.sidebar-etiquetas-ocultas .sidebar-label {
+            transition: none;          /* sin animar: medir y volver a poner la clase no puede reiniciar una transición (parpadeo sin fin) */
+        }
+
+        /* Ya sin textos, si todavía no entra el buscador cede lugar (hasta un mínimo); con los textos a la vista mantiene su ancho */
+        html[data-panel-pos="top"] .navbar #sidebar-col.sidebar-etiquetas-ocultas {
+            min-width: 0;              /* sin textos puede achicarse (con ellos no: así se detecta que no entran) */
+        }
+
+        html[data-panel-pos="top"] #sidebar-col.sidebar-etiquetas-ocultas .search-container,
+        html[data-panel-pos="bottom"] #sidebar-col.sidebar-etiquetas-ocultas .search-container {
+            flex: 0 1 280px;
+            min-width: 150px;
+        }
+
+        #sidebar-col.sidebar-etiquetas-ocultas .sidebar-label {
+            opacity: 0;
+            max-width: 0;
+            margin: 0;
+            padding: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        #sidebar-col.sidebar-etiquetas-ocultas .sidebar-tab-icon {
+            margin-right: 0;
+        }
+
+        /* Arriba, el botón de ocultar vive en el encabezado, al lado del de ajustes: solo el ícono (oculto / no oculto), sin texto,
+           así no quita lugar a los botones de la derecha */
+        .navbar > .container-fluid > .d-flex > .sidebar-bottom {
+            flex: 0 0 auto;
+            margin: 0 var(--esp-2) 0 0;
+            padding: 0;
+            border: 0;
+        }
+
+        .navbar #btn-toggle-sidebar {
+            width: auto;
+            padding: var(--esp-1) var(--esp-2);
+        }
+
+        .navbar #btn-toggle-sidebar .sidebar-label {
+            display: none;
+        }
+    }
+
+    /* Mientras se arrastra «Ocultar»: la franja muestra dónde quedaría el panel y se desliza de un borde a otro */
+
+    .panel-destino {
+        position: fixed;
+        z-index: var(--capa-tip);
+        pointer-events: none;
+        opacity: 0;
+        border: 2px dashed var(--ui-primary);
+        border-radius: var(--radio-grande);
+        background-color: color-mix(in srgb, var(--ui-primary) 14%, transparent);
+        transition: left var(--dur-panel) var(--ease-panel), top var(--dur-panel) var(--ease-panel),
+                width var(--dur-panel) var(--ease-panel), height var(--dur-panel) var(--ease-panel),
+                opacity var(--dur-base) ease;
+    }
+
+    .panel-destino.activo {
+        opacity: 1;
+    }
+
+    .panel-destino[data-zona="left"] {
+        left: 8px;
+        top: calc(var(--navbar-height, 58px) + 8px);
+        width: 215px;
+        height: calc(100vh - var(--navbar-height, 58px) - 16px);
+    }
+
+    .panel-destino[data-zona="right"] {
+        left: calc(100vw - 215px - 8px);
+        top: calc(var(--navbar-height, 58px) + 8px);
+        width: 215px;
+        height: calc(100vh - var(--navbar-height, 58px) - 16px);
+    }
+
+    /* Arriba el panel vive DENTRO del encabezado (ubicarPanelEnEncabezado): la franja cubre la barra, no queda debajo */
+    .panel-destino[data-zona="top"] {
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: var(--navbar-height, 58px);
+        border-radius: 0;
+    }
+
+    .panel-destino[data-zona="bottom"] {
+        left: 8px;
+        top: calc(100vh - 64px - 8px);
+        width: calc(100vw - 16px);
+        height: 64px;
+    }
+
+    body.panel-reubicando {
+        cursor: grabbing;
+        user-select: none;
+    }
+
+    body.panel-reubicando #btn-toggle-sidebar {
+        cursor: grabbing;
+    }
+
+
+    /* Con el panel lateral abajo y a la vista (barra completa a todo el ancho) el botón sube sobre ella; con el panel oculto (solo
+       íconos, queda a la izquierda) va en su lugar de siempre. A la derecha se corre a la izquierda del panel. `bottom` y `right`
+       se animan: sube, baja o se corre con el panel. */
+    @media (min-width: 768px) {
+        html[data-panel-pos="bottom"]:has(#sidebar-col:not(.sidebar-collapsed)) .btn-scroll-top {
+            bottom: 6.25rem;
+        }
+
+        /* Panel a la derecha: el botón se corre a su izquierda (a la vista: 215 px de panel; oculto: la franja de íconos de 68 px) */
+        html[data-panel-pos="right"] .btn-scroll-top {
+            right: 8rem;
+        }
+
+        html[data-panel-pos="right"]:has(#sidebar-col:not(.sidebar-collapsed)) .btn-scroll-top {
+            right: 17rem;
+        }
+    }
+}
