@@ -64,6 +64,8 @@ await hasta(() => /Última act/.test($('last-update').textContent));
 if (errores.length) console.log('ERRORES:', errores);
 check('carga: los datos se leyeron (sin servidor)', /Última act/.test($('last-update').textContent), $('last-update').textContent);
 check('carga: sin banner de error', $('api-error-alert').classList.contains('d-none'));
+check('cabecera: el ícono de la marca lleva al launcher de la suite', $('menu-config') && d.querySelector('.navbar .brand-launcher')
+    && d.querySelector('.navbar .brand-launcher').getAttribute('href') === '../index.html');
 check('sin Auditoría ni monitoreo en la página', !$('monitoreo-section') && !$('alertas-section') && !$('logs-sistema'));
 
 // --- alta, edición y producción por la API local (la que usa stock.js)
