@@ -1,597 +1,316 @@
-/* ════ 1. TOKENS COMPARTIDOS ════ */
-:root {
-    --bg-body: #f5f6fa;
-    --bg-card: #ffffff;
-    --bg-header: #ffffffee;
-    --text-main: #1a1d23;
-    --text-muted: #5a6070;
-    --border: #e2e6ef;
+/* styles.css del launcher: lo propio sobre la base de la suite (./shared/ui: tokens, base, fondo de página, Inter y bootstrap-icons):
+   encabezado, tarjetas de las apps con su color y las animaciones de entrada y salida. Todo en la capa `app`, sin !important; los colores,
+   radios y sombras son los tokens de la suite. La foto de fondo es suya (./img/cco_*.jpeg). */
 
-    /* Colores base */
-    --accent: #3b64d2;
-    --c-blue: rgba(76, 114, 172, 1);
-    --c-green: rgba(76, 172, 140, 1);
-    --c-purple: rgba(129, 76, 172, 1);
-    --c-red: rgba(220, 53, 69, 1);
-    --c-orange: rgba(235, 119, 52, 1);
-
-    /* Fondos semánticos para los iconos */
-    --c-blue-bg: rgba(76, 114, 172, 0.12);
-    --c-green-bg: rgba(76, 172, 140, 0.12);
-    --c-purple-bg: rgba(129, 76, 172, 0.12);
-    --c-red-bg: rgba(220, 53, 69, 0.12);
-    --c-orange-bg: rgba(235, 119, 52, 0.12);
-
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.02);
-    --shadow-hover: 0 12px 24px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04);
-    --radius: 20px;
-    --radius-lg: 28px;
-    --border-w: 1.5px;
-
-    /* Botones y controles estándar */
-    --btn-fs: 0.9rem;
-    --btn-fw: 600;
-    --btn-pad-y: 0.75rem;
-    --btn-pad-x: 1rem;
-    --btn-padding: var(--btn-pad-y) var(--btn-pad-x);
-    --btn-icon-size: 44px;
-
-    --bg-overlay: rgba(245, 246, 250, 0.72);
-    --bg-blur: 6px;
-
-    /* Escala tipográfica */
-    --fs-xs: 0.7rem;
-    --fs-sm: 0.75rem;
-    --fs-base: 0.8rem;
-    --fs-md: 0.85rem;
-    --fs-lg: 0.9rem;
-    --fs-xl: 1rem;
-    --fs-2xl: 1.1rem;
-}
-
-html.dark-mode,
-html.dark-mode body {
-    --bg-body: #131314;
-    --bg-card: #1e1f20;
-    --bg-header: #131314f6;
-    --text-main: #e3e3e3;
-    --text-muted: #b4b4b4;
-    --border: #313333;
-    --bg-overlay: rgba(19, 19, 20, 0.78);
-    --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    --shadow-hover: 0 12px 30px rgba(0, 0, 0, 0.6);
-}
-
-html.dark-mode {
-    background-color: #131314;
-    color-scheme: dark;
-}
-
-/* ════ 2. RESET & BASE ════ */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-}
-
-html {
-    background-color: var(--bg-body);
-}
-
-body {
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: transparent;
-    color: var(--text-main);
-    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    overflow-x: hidden;
-}
-
-/* ════ FONDO DINÁMICO CON OVERLAY Y DESENFOQUE ════ */
-.bg-backdrop {
-    position: fixed;
-    top: -24px;
-    left: -24px;
-    right: -24px;
-    bottom: -24px;
-    z-index: -1;
-    overflow: hidden;
-    pointer-events: none;
-    animation: bgFadeIn 0.5s cubic-bezier(0.25, 1, 0.5, 1) backwards;
-}
-
-.bg-layer {
-    position: absolute;
-    inset: 0;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-    filter: blur(var(--bg-blur));
-    transform: scale(1.05);
-    transition: opacity 0.4s ease;
-    will-change: opacity, transform;
-    animation: bgZoom 0.5s cubic-bezier(0.25, 1, 0.5, 1) backwards;
-}
-
-.bg-layer.bg-light {
-    background-image: url('./img/cco_light.jpeg');
-    opacity: 1;
-}
-
-.bg-layer.bg-dark {
-    background-image: url('./img/cco_dark.jpeg');
-    opacity: 0;
-}
-
-html.dark-mode .bg-layer.bg-light {
-    opacity: 0;
-}
-
-html.dark-mode .bg-layer.bg-dark {
-    opacity: 1;
-}
-
-.bg-overlay {
-    position: absolute;
-    inset: 0;
-    background: var(--bg-overlay);
-    transition: background-color 0.4s ease;
-}
-
-.bg-backdrop.exiting {
-    animation: bgFadeOut 0.25s cubic-bezier(0.25, 1, 0.5, 1) both;
-    pointer-events: none;
-}
-
-@keyframes bgFadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes bgFadeOut {
-    from {
-        opacity: 1;
-        transform: scale(1);
-    }
-    to {
-        opacity: 0;
-        transform: scale(1.04);
-    }
-}
-
-@keyframes bgZoom {
-    from {
-        transform: scale(1);
-    }
-    to {
-        transform: scale(1.05);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .bg-backdrop,
-    .bg-backdrop.exiting,
-    .bg-layer,
-    .bg-overlay {
-        animation: none;
-        transition: none;
-    }
-}
-
-#btn-install-app {
-    display: none;
-}
-
-/* ════ 3. HEADER ════ */
-.header {
-    background: var(--bg-header);
-    backdrop-filter: blur(10px);
-    padding: 0 1.5rem;
-    height: 64px;
-    box-shadow: var(--shadow);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    position: sticky;
-    top: 0;
-    z-index: 90;
-}
-
-.header-actions {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-}
-
-.header-logo {
-    color: var(--accent);
-    display: flex;
-    align-items: center;
-}
-
-.header-logo .svg-icon {
-    width: 28px;
-    height: 28px;
-}
-
-.header-main-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    flex: 1;
-    letter-spacing: -0.01em;
-}
-
-.icon-btn {
-    width: var(--btn-icon-size);
-    height: var(--btn-icon-size);
-    border-radius: 50%;
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s, color 0.2s;
-}
-
-.icon-btn:hover {
-    background: var(--border);
-    color: var(--text-main);
-}
-
-.svg-icon {
-    width: 22px;
-    height: 22px;
-}
-
-/* ════ 4. LAYOUT DEL LAUNCHER ════ */
-.container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 3rem 1.5rem;
-    width: 100%;
-}
-
-.welcome-section {
-    text-align: center;
-    margin-bottom: 3rem;
-}
-
-.welcome-section h2 {
-    font-size: 2rem;
-    font-weight: 800;
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.02em;
-}
-
-.welcome-section p {
-    color: var(--text-muted);
-    font-size: 1.1rem;
-}
-
-/* ════ 5. TARJETAS DE APLICACIONES ════ */
-.app-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
-}
-
-.app-card {
-    background: var(--bg-card);
-    border: var(--border-w) solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 2.5rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    text-decoration: none;
-    color: var(--text-main);
-    box-shadow: var(--shadow);
-    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s, border-color 0.25s;
-    outline: none;
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-user-drag: none;
-    animation: fadeInBlur 0.6s cubic-bezier(0.25, 1, 0.5, 1) backwards;
-}
-
-/* Iconos grandes */
-.app-icon-wrapper {
-    width: 90px;
-    height: 90px;
-    border-radius: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-    transition: transform 0.3s ease;
-}
-
-.app-card:hover .app-icon-wrapper,
-.app-card:focus .app-icon-wrapper,
-.app-card:focus-visible .app-icon-wrapper {
-    transform: scale(1.05);
-}
-
-.app-icon {
-    width: 44px;
-    height: 44px;
-}
-
-/* --- Colores dinámicos por módulo --- */
-.card-blue {
-    --theme-color: var(--c-blue);
-    --theme-bg: var(--c-blue-bg);
-}
-
-.card-orange {
-    --theme-color: var(--c-orange);
-    --theme-bg: var(--c-orange-bg);
-}
-
-.card-green {
-    --theme-color: var(--c-green);
-    --theme-bg: var(--c-green-bg);
-}
-
-.card-purple {
-    --theme-color: var(--c-purple);
-    --theme-bg: var(--c-purple-bg);
-}
-
-.card-red {
-    --theme-color: var(--c-red);
-    --theme-bg: var(--c-red-bg);
-}
-
-/* El wrapper del ícono ahora hereda esas variables directamente */
-.app-card .app-icon-wrapper {
-    background: var(--theme-bg);
-    color: var(--theme-color);
-}
-
-/* --- Modificamos el hover de la tarjeta (Modo Claro) --- */
-.app-card:hover,
-.app-card:focus,
-.app-card:focus-visible {
-    transform: scale(1.01);
-    border-color: var(--theme-color);
-    box-shadow: 0 10px 20px var(--theme-bg), 0 0 4px var(--theme-color);
-}
-
-/* --- Resplandor potenciado (Modo Oscuro) --- */
-html.dark-mode .app-card:hover,
-html.dark-mode .app-card:focus,
-html.dark-mode .app-card:focus-visible {
-    border-color: var(--theme-color);
-    box-shadow: 0 12px 25px var(--theme-bg), 0 0 8px var(--theme-color), 0 0 20px var(--theme-bg);
-}
-
-/* Retardos escalonados para cada tarjeta según su orden */
-.app-card:nth-child(1) {
-    animation-delay: 0.05s;
-}
-
-.app-card:nth-child(2) {
-    animation-delay: 0.10s;
-}
-
-.app-card:nth-child(3) {
-    animation-delay: 0.15s;
-}
-
-.app-card:nth-child(4) {
-    animation-delay: 0.20s;
-}
-
-.app-card:nth-child(5) {
-    animation-delay: 0.25s;
-}
-
-.app-card.exiting {
-    animation: fadeOutBlur 0.25s cubic-bezier(0.25, 1, 0.5, 1) both;
-    pointer-events: none;
-}
-
-/* ════ 6. FOOTER & VERSIÓN ════ */
-.footer {
-    margin-top: auto; /* Empuja el footer al fondo absoluto del body flex */
-    width: 100%;
-    max-width: 1000px; /* Alineado con el ancho máximo de tu contenedor */
-    margin-left: auto;
-    margin-right: auto;
-    padding: 1rem 1.5rem; /* Margen interno para que no pegue al borde */
-    display: flex;
-    justify-content: flex-end; /* Alinea el contenido a la derecha */
-}
-
-.app-version {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    user-select: none;
-}
-
-/* --- ESTADO DESHABILITADO --- */
-.app-card.disabled {
-    opacity: 0.5;
-    filter: grayscale(100%);
-    cursor: not-allowed;
-    /* Bloquea clics, hover y la animación de salida */
-    pointer-events: none;
-    /* Mantiene el borde estático anulando el color del tema */
-    border-color: var(--border) !important;
-    animation-name: fadeInBlurDisabled;
-}
-
-.app-card.disabled.exiting {
-    animation-name: fadeOutBlurDisabled;
-}
-
-/* --- Animaciones con Blur en el mismo sitio --- */
-@keyframes fadeInBlur {
-    from {
-        opacity: 0;
-        filter: blur(10px);
+@layer app {
+    /* Fondo de página (el resto en ./shared/ui/fondo.css) */
+    .bg-layer.bg-light {
+        background-image: url('./img/cco_light.jpeg');
     }
 
-    to {
-        opacity: 1;
-        filter: blur(0);
-    }
-}
-
-@keyframes fadeOutBlur {
-    from {
-        opacity: 1;
-        filter: blur(0);
+    .bg-layer.bg-dark {
+        background-image: url('./img/cco_dark.jpeg');
     }
 
-    to {
-        opacity: 0;
-        filter: blur(10px);
-    }
-}
-
-@keyframes fadeInBlurDisabled {
-    from {
-        opacity: 0;
-        filter: grayscale(100%) blur(10px);
+    body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow-x: hidden;
     }
 
-    to {
-        opacity: 0.5;
-        filter: grayscale(100%) blur(0);
+    /* ─── Encabezado */
+    .header {
+        background: color-mix(in srgb, var(--bg-card) 93%, transparent);
+        backdrop-filter: blur(10px);
+        padding: 0 1.5rem;
+        height: 64px;
+        box-shadow: var(--sombra-tarjeta);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        position: sticky;
+        top: 0;
+        z-index: var(--capa-barra);
     }
-}
 
-@keyframes fadeOutBlurDisabled {
-    from {
-        opacity: 0.5;
-        filter: grayscale(100%) blur(0);
+    .header-actions {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
     }
 
-    to {
-        opacity: 0;
-        filter: grayscale(100%) blur(10px);
+    .header-logo {
+        color: var(--color-blue);
+        display: flex;
+        align-items: center;
+        font-size: 1.6rem;
     }
-}
 
-/* Ajustes para móviles */
-@media (max-width: 600px) {
+    .header-main-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        flex: 1;
+        letter-spacing: -0.01em;
+        margin: 0;
+    }
+
+    .icon-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        color: var(--color-texto-suave);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        transition: background 0.2s, color 0.2s;
+    }
+
+    .icon-btn[hidden] {
+        display: none;
+    }
+
+    .icon-btn:hover {
+        background: var(--border-color);
+        color: var(--color-texto);
+    }
+
+    /* ─── Tarjetas de las aplicaciones */
     .container {
-        padding: 1.25rem 1rem;
-    }
-
-    .welcome-section h2 {
-        font-size: 1.5rem;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem;
+        width: 100%;
     }
 
     .app-grid {
-        grid-template-columns: 1fr;
-        gap: 0.85rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
     }
 
     .app-card {
-        flex-direction: row;
+        background: var(--bg-card);
+        border: 1.5px solid var(--border-color);
+        border-radius: 28px;
+        padding: 2.5rem 1.5rem;
+        display: flex;
+        flex-direction: column;
         align-items: center;
-        text-align: left;
-        padding: 1rem 1.15rem;
-        gap: 1rem;
-        border-radius: var(--radius);
+        text-align: center;
+        text-decoration: none;
+        color: var(--color-texto);
+        box-shadow: var(--sombra-tarjeta);
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s, border-color 0.25s;
+        outline: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-user-drag: none;
+        animation: fadeInBlur 0.6s cubic-bezier(0.25, 1, 0.5, 1) backwards;
     }
 
     .app-icon-wrapper {
-        flex: 0 0 22%;
-        max-width: 66px;
-        aspect-ratio: 1;
-        width: 64px;
-        height: 64px;
-        border-radius: 18px;
-        margin-bottom: 0;
+        width: 90px;
+        height: 90px;
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        background: var(--theme-bg);
+        color: var(--theme-color);
+        transition: transform 0.3s ease;
+    }
+
+    .app-card:hover .app-icon-wrapper,
+    .app-card:focus .app-icon-wrapper,
+    .app-card:focus-visible .app-icon-wrapper {
+        transform: scale(1.05);
     }
 
     .app-icon {
-        width: 32px;
-        height: 32px;
-    }
-
-    .app-info {
-        flex: 1;
-        min-width: 0;
-        text-align: left;
+        font-size: 2.6rem;
+        line-height: 1;
     }
 
     .app-info h3 {
-        font-size: 1.05rem;
+        font-size: 1.15rem;
         font-weight: 700;
-        margin-bottom: 0.2rem;
-        letter-spacing: -0.01em;
+        margin: 0 0 0.35rem;
     }
 
     .app-info p {
-        font-size: 0.82rem;
-        line-height: 1.35;
+        margin: 0;
+        color: var(--color-texto-suave);
+        font-size: var(--texto-md);
     }
-}
 
-/* ════ 8. TOAST NOTIFICACIÓN (PATRÓN HORARIOS) ════ */
-.toast {
-    position: fixed;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
-    background: var(--bg-card);
-    color: var(--text-main);
-    border: 2px solid var(--c-blue);
-    padding: 0.85rem 1.4rem;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-hover);
-    font-size: 0.95rem;
-    font-weight: 500;
-    opacity: 0;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    white-space: pre-line;
-    pointer-events: none;
-    width: calc(100% - 3rem);
-    max-width: 400px;
-    text-align: center;
-    cursor: pointer;
-    user-select: none;
-}
+    /* Color de cada módulo */
+    .card-blue {
+        --theme-color: var(--color-blue);
+        --theme-bg: color-mix(in srgb, var(--color-blue) 12%, transparent);
+    }
 
-.toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-    pointer-events: auto;
-}
+    .card-orange {
+        --theme-color: var(--color-orange);
+        --theme-bg: color-mix(in srgb, var(--color-orange) 12%, transparent);
+    }
 
-.toast.success {
-    border-color: var(--c-green);
-}
+    .card-green {
+        --theme-color: var(--color-green);
+        --theme-bg: color-mix(in srgb, var(--color-green) 12%, transparent);
+    }
 
-.toast.error,
-.toast.warning {
-    border-color: var(--c-red);
-}
+    .card-purple {
+        --theme-color: var(--color-purple);
+        --theme-bg: color-mix(in srgb, var(--color-purple) 12%, transparent);
+    }
 
-.toast.info {
-    border-color: var(--c-blue);
+    .card-red {
+        --theme-color: var(--color-red);
+        --theme-bg: color-mix(in srgb, var(--color-red) 12%, transparent);
+    }
+
+    .app-card:hover,
+    .app-card:focus,
+    .app-card:focus-visible {
+        transform: scale(1.01);
+        border-color: var(--theme-color);
+        box-shadow: 0 10px 20px var(--theme-bg), 0 0 4px var(--theme-color);
+    }
+
+    /* Resplandor potenciado (modo oscuro) */
+    [data-tema="dark"] .app-card:hover,
+    [data-tema="dark"] .app-card:focus,
+    [data-tema="dark"] .app-card:focus-visible {
+        box-shadow: 0 12px 25px var(--theme-bg), 0 0 8px var(--theme-color), 0 0 20px var(--theme-bg);
+    }
+
+    /* Entrada escalonada según el orden */
+    .app-card:nth-child(1) { animation-delay: 0.05s; }
+    .app-card:nth-child(2) { animation-delay: 0.10s; }
+    .app-card:nth-child(3) { animation-delay: 0.15s; }
+    .app-card:nth-child(4) { animation-delay: 0.20s; }
+    .app-card:nth-child(5) { animation-delay: 0.25s; }
+
+    .app-card.exiting {
+        animation: fadeOutBlur 0.25s cubic-bezier(0.25, 1, 0.5, 1) both;
+        pointer-events: none;
+    }
+
+    /* Deshabilitada (todavía no existe): sin clics ni hover, borde fijo */
+    .app-card.disabled {
+        opacity: 0.5;
+        filter: grayscale(100%);
+        cursor: not-allowed;
+        pointer-events: none;
+        animation-name: fadeInBlurDisabled;
+    }
+
+    .app-card.disabled.exiting {
+        animation-name: fadeOutBlurDisabled;
+    }
+
+    /* ─── Pie con la versión de la suite */
+    .footer {
+        margin: auto auto 0;
+        width: 100%;
+        max-width: 1000px;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .app-version {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--color-texto-suave);
+        user-select: all;
+    }
+
+    @keyframes fadeInBlur {
+        from { opacity: 0; filter: blur(10px); }
+        to { opacity: 1; filter: blur(0); }
+    }
+
+    @keyframes fadeOutBlur {
+        from { opacity: 1; filter: blur(0); }
+        to { opacity: 0; filter: blur(10px); }
+    }
+
+    @keyframes fadeInBlurDisabled {
+        from { opacity: 0; filter: grayscale(100%) blur(10px); }
+        to { opacity: 0.5; filter: grayscale(100%) blur(0); }
+    }
+
+    @keyframes fadeOutBlurDisabled {
+        from { opacity: 0.5; filter: grayscale(100%) blur(0); }
+        to { opacity: 0; filter: grayscale(100%) blur(10px); }
+    }
+
+    /* ─── Móvil: tarjetas en fila */
+    @media (max-width: 600px) {
+        .container {
+            padding: 1.25rem 1rem;
+        }
+
+        .app-grid {
+            grid-template-columns: 1fr;
+            gap: 0.85rem;
+        }
+
+        .app-card {
+            flex-direction: row;
+            align-items: center;
+            text-align: left;
+            padding: 1rem 1.15rem;
+            gap: 1rem;
+            border-radius: 20px;
+        }
+
+        .app-icon-wrapper {
+            flex: 0 0 22%;
+            max-width: 66px;
+            aspect-ratio: 1;
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            margin-bottom: 0;
+        }
+
+        .app-icon {
+            font-size: 1.9rem;
+        }
+
+        .app-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .app-info h3 {
+            font-size: 1.05rem;
+            margin-bottom: 0.2rem;
+            letter-spacing: -0.01em;
+        }
+
+        .app-info p {
+            font-size: 0.82rem;
+            line-height: 1.35;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .app-card,
+        .app-card.exiting,
+        .app-card.disabled {
+            animation: none;
+        }
+    }
 }

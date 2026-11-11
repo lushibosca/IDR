@@ -43,7 +43,7 @@ async function cargar(app, { ancho = 1280, almacen = {} } = {}) {
     vc.on('error', (...a) => errores.push(`console.error: ${a.map(String).join(' ').split('\n')[0]}`));
     const html = fs.readFileSync(path.join(RAIZ, app, 'index.html'), 'utf8');
     const dom = new JSDOM(html, {
-        url: `${ORIGEN}${app}/index.html`, runScripts: 'dangerously', resources: new Disco(), pretendToBeVisual: true,
+        url: `${ORIGEN}${app ? app + '/' : ''}index.html`, runScripts: 'dangerously', resources: new Disco(), pretendToBeVisual: true,
         virtualConsole: vc,
         beforeParse(w) {
             for (const [k, v] of Object.entries(almacen)) w.localStorage.setItem(k, v);
@@ -418,7 +418,35 @@ async function sgp() {
     check(app, 'móvil: sin errores de JavaScript', movil.errores.length === 0, movil.errores.join(' | '));
 }
 
-const ESCENARIOS = { SGR: sgr, SGI: sgi, SGP: sgp };
+// ─── Launcher (raíz)
+async function launcher() {
+    const app = 'launcher';
+    const ctx = await cargar('');
+    const { w, d, $, errores } = ctx;
+    check(app, 'tarjetas: cuatro apps y una deshabilitada', d.querySelectorAll('.app-card').length === 5 && d.querySelectorAll('.app-card.disabled').length === 1);
+    check(app, 'versión de la suite visible', /^IDR-v\d{6}$/.test(d.querySelector('[data-idr-version]').textContent), d.querySelector('[data-idr-version]').textContent);
+    check(app, 'fondo de página puesto', Boolean(d.querySelector('.bg-backdrop')));
+    check(app, 'instalar: oculto hasta que el navegador lo ofrece', $('btn-install-app').hidden === true);
+    const antes = d.documentElement.getAttribute('data-tema');
+    clic($('btn-dark-mode'));
+    const despues = d.documentElement.getAttribute('data-tema');
+    check(app, 'tema: el botón cambia el tema de la suite y lo guarda', antes !== despues && w.localStorage.getItem('IDR_dark') === (despues === 'dark' ? '1' : '0'));
+    check(app, 'tema: el ícono y la ayuda siguen al tema', $('icono-tema').className === (despues === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill'), $('icono-tema').className);
+    const otro = await cargar('', { almacen: { IDR_dark: '1' } });
+    check(app, 'tema: lo guardado por cualquier app se aplica desde el primer cuadro', otro.d.documentElement.getAttribute('data-tema') === 'dark');
+    // abrir una app: las tarjetas y el fondo se desvanecen antes de irse
+    clic(d.querySelector('.app-card:not(.disabled)'));
+    check(app, 'abrir una app: las tarjetas y el fondo pasan a «saliendo»', d.querySelector('.app-card').classList.contains('exiting') && d.querySelector('.bg-backdrop').classList.contains('exiting'));
+    // teclado: flechas mueven el foco entre las tarjetas
+    const otra = await cargar('');
+    const primera = otra.d.querySelector('.app-card:not(.disabled)');
+    primera.focus();
+    otra.d.dispatchEvent(new otra.w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    check(app, 'teclado: la flecha derecha pasa a la tarjeta siguiente', otra.d.activeElement !== primera && otra.d.activeElement.classList.contains('app-card'));
+    check(app, 'sin errores de JavaScript', errores.length === 0 && otro.errores.length === 0 && otra.errores.length === 0, [...errores, ...otro.errores, ...otra.errores].join(' | '));
+}
+
+const ESCENARIOS = { SGR: sgr, SGI: sgi, SGP: sgp, launcher };
 const pedidas = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(ESCENARIOS);
 for (const app of pedidas) {
     if (!ESCENARIOS[app]) { console.log(`FAIL  ${app}: sin escenario`); fallos++; continue; }

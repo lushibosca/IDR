@@ -1,11 +1,10 @@
-const CACHE_NAME = 'idr-suite-v261111.1403';
+const CACHE_NAME = 'idr-suite-v261111.1409';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
   // ── Launcher (Portada) ──
   './',
   './index.html',
-  './flash.js',
   './manifest.json',
   './styles.css',
   './app.js',

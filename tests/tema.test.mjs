@@ -62,13 +62,18 @@ test("sin almacenamiento (modo privado, bloqueado) no rompe: devuelve null y gua
 
 test("el launcher y todas las apps leen la misma clave IDR_dark (o usan IDRTema)", () => {
   // Las portadas al diseño de SGC (tests/_apps.mjs) lo hacen con ../shared/ui/js/arranque.js (antes de pintar) y apariencia.js
-  const fuentes = { launcher: ["flash.js", "app.js"], SGI: ["SGI/flash.js", "SGI/app.js"], SGR: ["SGR/flash.js", "SGR/app.js"],
+  const fuentes = { SGI: ["SGI/flash.js", "SGI/app.js"], SGR: ["SGR/flash.js", "SGR/app.js"],
     SGL: ["SGL/flash.js", "SGL/app.js"], SGP: ["SGP/flash.js", "SGP/app.js"] };
   for (const [app, archivos] of Object.entries(fuentes)) {
     if (APPS_PORTADAS.includes(app)) continue;
     const texto = archivos.map((f) => leer(f)).join("\n");
     assert.ok(/IDR_dark/.test(texto), `${app} no usa IDR_dark`);
   }
+  // El launcher también usa IDRTema (idr-tema.js + arranque.js + apariencia.js), sin flash.js propio
+  const lanz = leer("index.html");
+  assert.ok(lanz.includes('src="./shared/idr-tema.js"') && lanz.indexOf("idr-tema.js") < lanz.indexOf("ui/js/arranque.js"), "launcher: idr-tema.js antes de arranque.js");
+  assert.ok(lanz.includes("data-idr-tema-alternar") && lanz.includes('src="./shared/ui/js/apariencia.js"'), "launcher: botón de tema con apariencia.js");
+  assert.ok(!fs.existsSync(path.join(RAIZ, "flash.js")), "launcher: flash.js ya no hace falta");
   const sgc = leer("SGC/js/app.js") + leer("shared/ui/js/apariencia.js");
   assert.ok(/IDRTema/.test(sgc), "SGC debe usar IDRTema");
   assert.ok(leer("SGC/index.html").includes('src="../shared/idr-tema.js"'), "SGC carga el módulo en el <head>");

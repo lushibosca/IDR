@@ -207,6 +207,29 @@ test("toast.js: cola de avisos", async () => {
   assert.equal(toastDuracion(4000, 0), 4000);
 });
 
+// ─── Launcher: la base de la suite sin el esqueleto de pestañas
+test("launcher: toma la base común (tokens, base, fondo, Inter, íconos, tema y versión) y no trae sprite ni tema propio", () => {
+  const html = leer("index.html");
+  const hojas = [...html.matchAll(/<link rel="stylesheet" href="([^"?]+)/g)].map((m) => m[1]);
+  assert.equal(hojas[0], "./shared/ui/tokens.css", "tokens.css primero");
+  for (const h of ["./shared/ui/base.css", "./shared/ui/fondo.css", "./shared/vendor/fonts/inter.css", "./shared/idr-actualizacion.css"]) {
+    assert.ok(hojas.includes(h), `falta ${h}`);
+  }
+  assert.equal(hojas.at(-2), "./shared/ui/utilidades.css", "utilidades al final (antes de la fuente)");
+  assert.ok(hojas.indexOf("./styles.css") > hojas.indexOf("./shared/ui/fondo.css") && hojas.indexOf("./styles.css") < hojas.indexOf("./shared/ui/utilidades.css"), "su hoja va entre la base y utilidades");
+  for (const j of ["idr-tema.js", "idr-version.js", "ui/js/arranque.js", "ui/js/apariencia.js", "ui/js/instalar.js"]) assert.ok(html.includes(`src="./shared/${j}"`), `falta shared/${j}`);
+  assert.match(html, /data-idr-version="IDR"/, "versión visible");
+  assert.doesNotMatch(html, /<svg[^>]*class="svg-sprites"/, "sin sprite SVG propio");
+  assert.match(html, /<body>\s*<div class="bg-backdrop"/, "fondo de página justo después de <body>");
+  assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">/);
+  assert.match(html, /<meta name="color-scheme" content="dark light">/);
+  const css = leer("styles.css").replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.doesNotMatch(css, /!important/, "styles.css sin !important");
+  assert.match(css, /^\s*@layer app \{/, "todo en la capa app");
+  assert.doesNotMatch(css, /dark-mode/, "el tema oscuro es [data-tema=\"dark\"]");
+  assert.ok(!/localStorage\.(get|set)Item\(['"]IDR_dark/.test(leer("app.js")), "app.js no maneja el tema a mano");
+});
+
 // ─── Manifiestos: las apps portadas se instalan con la misma pinta (color de la barra, fondo, modo y orientación)
 test("apps portadas: manifiestos con el mismo theme_color, background_color, display y orientation", () => {
   const m = APPS_PORTADAS.map((app) => [app, JSON.parse(leer(`${app}/manifest.json`))]);

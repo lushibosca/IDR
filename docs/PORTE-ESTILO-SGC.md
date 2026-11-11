@@ -1,6 +1,6 @@
 # Porte del estilo de SGC al resto de la suite (SGR, SGI, SGP y launcher; SGL por ahora no entra)
 
-**Inicio:** 2026-11-11 · **Estado:** fases 0, 1 (SGR), 2 (SGI), 2.5 (unificar la base) y 3 (SGP) hechas; **siguiente: fase 4 (launcher)**. La revisión de cobertura del 2026-11-11 (sección 6) encontró partes de la base que este plan
+**Inicio:** 2026-11-11 · **Estado:** fases 0, 1 (SGR), 2 (SGI), 2.5 (unificar la base) y 3 (SGP) hechas; **el porte de estilo está completo** (queda SGL, fuera por decisión 5). La revisión de cobertura del 2026-11-11 (sección 6) encontró partes de la base que este plan
 no contemplaba; las decisiones 5 a 9 (sección 1) las resolvieron: SGL no entra por ahora, el launcher toma la base común y
 el panel plegable y personalizable, las transiciones de pestaña y la barra superior pasan a ser base de todas las apps.
 Eso es la **fase 2.5 (unificar la base)**, que va antes de portar SGP.
@@ -191,11 +191,13 @@ aplicándolo en SGC, SGR y SGI. **La guía paso a paso, con archivos y líneas, 
 - [x] Paso 7 — CSS repetido de SGR/SGI: las 36 reglas idénticas (estado vacío, encabezado de tarjeta, tabla, FAB, Gist, chips...) pasaron a `shared/ui/legado/comunes.css` (usa las variables viejas, solo SGR/SGI); las 4 muertas se borraron. Lo que difiere por poco (`.badge`, `table`, `.stat-chip-label`...) queda en cada app.
 - [x] Paso 8 — tests de 6.4 (`tests/estilo.test.mjs`: scripts, ids, `<head>`, barra, ayuda, manifiestos) y humo de las tres apps (panel, ayuda, toast, Ajustes, búsqueda, deshacer en SGC).
 
-### Fase 4 — Launcher (decisión 6)
-Sin esqueleto de pestañas. Carga `tokens.css`, `base.css`, la fuente Inter y bootstrap-icons (sale el sprite SVG);
-`idr-tema.js` en lugar de leer `IDR_dark` a mano (sale `flash.js`; el tema sigue en vivo el cambio hecho en una app);
-`idr-version.js` con `data-idr-version`; `styles.css` queda solo con lo propio (tarjetas, fondo) en `@layer app`, sin
-`!important`. Ajustar `PRECACHE_URLS`. Se agrega a los tests de estilo como página con base pero sin esqueleto.
+### Fase 4 — Launcher (hecha, 2026-11-11; decisión 6)
+Sin esqueleto de pestañas. Toma de la suite `tokens.css`, `base.css`, `fondo.css`, la fuente Inter y bootstrap-icons (sale el sprite SVG; las tarjetas
+llevan `bi-camera-video`, `bi-box-seam`, `bi-hdd-rack`, `bi-plug` y `bi-map`), `idr-tema.js` + `arranque.js` + `apariencia.js` (el botón de tema es
+`[data-idr-tema-alternar]`; sale `flash.js`), `idr-version.js` (`data-idr-version="IDR"`, ya no un número a mano), `instalar.js` y `idr-actualizacion.js`.
+`styles.css` quedó solo con lo propio (encabezado, tarjetas de las apps, animaciones) en `@layer app`, sin `!important`, con los tokens de la suite. `app.js`
+conserva la animación de salida al abrir una app, la navegación con flechas y la limpieza de los Service Workers viejos por app (el toast propio, que nadie
+llamaba, salió). Lo vigila `tests/estilo.test.mjs` (test del launcher) y la humo `node tests/e2e/humo-apps.mjs launcher`.
 
 ### SGL — fuera del porte por ahora (decisión 5)
 No se toca. Cuando entre: definir pestañas y buscador y seguir la sección 5.
