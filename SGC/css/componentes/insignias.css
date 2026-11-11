@@ -96,6 +96,10 @@
         line-height: 1.2;
     }
 
+    .canal-item-estado:empty {                  /* sin estado (un canal en producción no lo muestra): sin hueco */
+        display: none;
+    }
+
     /* ─── ACTIVOS: INSIGNIA DE ESTADO / CONDICIÓN (ESTILO SGC) */
 
     .stock-card-pill {

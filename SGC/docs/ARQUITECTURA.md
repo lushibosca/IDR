@@ -75,6 +75,8 @@ muestran u ocultan por ancho: son el mecanismo para lo que existe en una sola vi
 
 **Imagen ampliada** (`#snapshotModal`): tocar la foto de un equipo la abre grande solo en escritorio (`uiAmpliarImagenPermitido`, `imagen-ampliada.js`); en móvil el toque no hace nada. Solo se ofrece si el equipo está instalado (hay cámara asociada). Sin video en vivo ni ventana flotante: no hay servidor.
 
+**Canales de Producción en móvil:** un canal ocupado va en dos líneas (`.canal-item-dos-lineas`): canal e IP arriba, la descripción completa abajo. Un canal en producción no muestra estado (siempre es operativo); solo «Disponible» en los libres.
+
 ### Comunicación entre archivos
 - **Globales de página**: `storage`, `apiFetch`, `mostrarToast`, `UI`, `globalData`, `StockNucleo`. Lo que otro archivo necesita
   se expone explícitamente en uno de esos objetos; no se esparcen funciones sueltas nuevas sin motivo.

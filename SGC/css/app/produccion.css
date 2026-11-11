@@ -547,6 +547,40 @@
         user-select: text;
     }
 
+    /* Móvil: un canal ocupado en dos líneas. Arriba el canal y la IP; abajo la descripción, sola y a todo el ancho (en una
+       sola fila quedaba cortada con «…» mientras sobraba lugar al costado) */
+    @media (max-width: 767.98px) {
+        .canal-item-dos-lineas {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            grid-template-rows: auto auto;
+            column-gap: var(--esp-3);
+            row-gap: 2px;
+            align-items: center;
+            padding: var(--esp-2) var(--esp-4);
+            border-radius: var(--radio-grande);
+        }
+
+        .canal-item-dos-lineas .canal-item-left {
+            display: contents;                      /* el canal y la descripción son celdas de la grilla del item */
+        }
+
+        .canal-item-dos-lineas .canal-ch-badge {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .canal-item-dos-lineas .canal-item-right {
+            grid-column: 3;
+            grid-row: 1;
+        }
+
+        .canal-item-dos-lineas .canal-item-nombre {
+            grid-column: 1 / -1;
+            grid-row: 2;
+        }
+    }
+
     /* ─── Popup de un equipo (Producción y Activos: abrirPopupDispositivo) */
 
     .popup-dispositivo {

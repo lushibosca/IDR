@@ -509,8 +509,8 @@ function produccionEstado(it) {
         s.title = 'Responde ping directo, pero su NVR está caído (sin grabación)';
         return s;
     }
-    // Sin monitoreo, un canal ocupado es un equipo en producción: operativo (la única condición posible ahí)
-    return uiNodo('span', 'text-success fw-semibold', 'Operativo');
+    // Sin monitoreo, un canal ocupado es un equipo en producción: «operativo» es lo único posible ahí, no se marca
+    return null;
 }
 
 // Las capturas de la vista snapshot se piden de a pocas y solo las que están cerca de la vista (uiColaImagenes): cientos de
@@ -737,7 +737,7 @@ function produccionItem(it, lista = false, snapshot = false) {
             produccionEnSnapshot(el, izq, der, it, caja);
         } else {
             izq.append(firstColNode, caja, ubic);
-            el.append(izq, der);
+            el.classList.add('canal-item-dos-lineas'); el.append(izq, der);   // móvil: canal e IP arriba, descripción abajo
         }
     }
 
