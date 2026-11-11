@@ -148,25 +148,15 @@ jack, que hoy es por *hover*, abierto con un toque en móvil. Pasar la lectura d
 
 ### Fase 2.5 — unificar la base (pendiente; va antes de SGP)
 Lo que las decisiones 7, 8 y 9 y la sección 6 dejan como base, sacándolo de SGC (o de SGR/SGI) a `shared/ui/` y
-aplicándolo en SGC, SGR y SGI. SGC no debe cambiar a la vista, salvo la barra superior.
-- [ ] **Panel plegable y personalizable** (decisión 7): hoy en `SGC/js/app.js` (~líneas 1269–1390: plegar, posición, arrastre
-      del botón), `SGC/js/preload.js` (aplicarlo antes de pintar), `SGC/css/app/estructura.css` (`.panel-destino`,
-      `.sidebar-tip`, `body.panel-reubicando`) y el plegado de `esqueleto.css`. Pasa a `shared/ui/js/panel.js` +
-      `esqueleto.css`; lo de «antes de pintar» a `arranque.js`. Claves por app: `<prefijo>panel_colapsado` y
-      `<prefijo>panel_posicion` (SGC conserva `sgc2/cctv:sidebar_collapsed` y `sgc2/cctv:sidebar_posicion`: no se pierden
-      las preferencias guardadas). Agregar `#btn-toggle-sidebar` al marcado de SGR y SGI.
-- [ ] **Transición de cambio de pestaña** (decisión 8): de `SGC/js/animaciones.js` (clon saliente, `slide-pestana-saliente`)
-      y `SGC/css/app/animaciones.css` a `shared/ui/` (JS aparte o dentro de `UI.pestana`). SGR y SGI dejan su
-      `_animarMutacion` para el cambio de pestaña. Con `data-movimiento="reducido"` no anima.
-- [ ] **Barra superior única** (decisión 9): un marcado de referencia en la sección 3 — marca con enlace al launcher
-      (`.brand-launcher`) + `.navbar-acciones` con `#btn-undo` y `#btn-redo` (y «Instalar», oculto hasta que el navegador
-      lo ofrece). En SGC: agregar los dos botones y resolver dónde quedan el menú ⚙ (`#menu-config`) y `#last-update`
-      (**pendiente de confirmar**: ver 6.2).
-- [ ] **Un solo arranque**: SGC pasa a `arranque.js` + `apariencia.js`; `preload.js` queda solo con lo propio de SGC.
-- [ ] **`<head>` de referencia** en las tres apps (6.2).
-- [ ] `shared/ui/js/toast.js` y «volver arriba» comunes (6.2); CSS repetido de SGR/SGI a `shared/ui/componentes/` (6.3).
-- [ ] Tests de 6.4, más: `#btn-toggle-sidebar`, `#btn-undo`, `#btn-redo` y `panel.js` en cada app portada.
-- [ ] Humo de SGC, SGR y SGI: plegar el panel, moverlo, recargar (se conserva) y cambiar de pestaña.
+aplicándolo en SGC, SGR y SGI. **La guía paso a paso, con archivos y líneas, es la sección 8.** Se marca acá lo hecho:
+- [ ] Paso 1 — `<head>` de referencia en SGC, SGR y SGI, con test.
+- [ ] Paso 2 — un solo arranque (SGC pasa a `arranque.js` + `apariencia.js`).
+- [ ] Paso 3 — avisos (`toast.js`) y «volver arriba» comunes.
+- [ ] Paso 4 — transición de cambio de pestaña común (decisión 8).
+- [ ] Paso 5 — panel plegable y personalizable común (decisión 7).
+- [ ] Paso 6 — barra superior única con deshacer/rehacer (decisión 9; **tiene dos preguntas abiertas**, ver paso 6).
+- [ ] Paso 7 — CSS repetido de SGR/SGI a `shared/ui/componentes/`.
+- [ ] Paso 8 — tests de 6.4 y humo de las tres apps.
 
 ### Fase 4 — Launcher (decisión 6)
 Sin esqueleto de pestañas. Carga `tokens.css`, `base.css`, la fuente Inter y bootstrap-icons (sale el sprite SVG);
@@ -296,3 +286,222 @@ reemplaza la base).
 
 **Pendientes generales (fuera de este porte):** pasar las plantillas `innerHTML` de SGR/SGI/SGP a `createElement`; partir los
 `app.js` con las normas de SGC; Gist cifrado como el de SGC.
+
+---
+
+## 8. Guía de ejecución de la fase 2.5 (para quien la retome)
+
+Escrita el 2026-11-11 después de leer el código; **los números de línea son de ese día** (commit `4c193aa`): buscar por
+nombre de función si se corrieron. Leer antes `CLAUDE.md` (raíz), `SGC/CLAUDE.md`, `SGR/CLAUDE.md`, `SGI/CLAUDE.md` y la
+sección 3 de este documento.
+
+### 8.0 Reglas que valen para todos los pasos
+- **Un paso = un commit**, en este orden (cada uno deja la suite en verde). Prefijo `Suite y SGC: ...` o
+  `Suite, SGC, SGR y SGI: ...`; en español; **sin push**.
+- Después de cada paso: archivo nuevo/borrado/renombrado → `PRECACHE_URLS` de `sw.js` (a mano); `npm run release`;
+  `npm test`; `npm run test:sgc`; `node tests/e2e/humo-apps.mjs`; y desde `SGC/`: `node tests/e2e/humo.mjs`.
+- **SGC no puede cambiar a la vista ni perder preferencias guardadas** (salvo la barra superior del paso 6). Sus claves
+  de `localStorage` (`sgc2/...`) no se renombran.
+- Normas de `shared/ui/js/` (las vigila `tests/estilo.test.mjs`): máximo 500 líneas por archivo; sin `innerHTML`,
+  `outerHTML`, `insertAdjacentHTML`, `eval` ni `new Function`; la lógica que se pueda probar va en un bloque
+  `// ==== NOMBRE PURO BEGIN ====` … `// ==== NOMBRE PURO END ====` sin `document`, `localStorage`, `navigator` ni
+  `fetch`, y se prueba con `tests/_bloque.mjs` (`cargarBloque`). Ejemplo: `shared/ui/js/arranque.js` y su test en
+  `tests/estilo.test.mjs`.
+- Normas de `shared/ui/*.css`: dentro de `@layer`, sin `!important`, cada selector en un solo lugar, y toda clase tiene
+  que usarla al menos una app portada (test de CSS muerto). Al mover una regla, **borrarla del origen** en el mismo commit.
+- Al mover una función de SGC a `shared/`, SGC tiene tests propios que leen bloques por marcador y archivo
+  (`SGC/tests/js/*.test.mjs`, p. ej. `preferencias.test.mjs`, `arquitectura.test.mjs`): actualizar la ruta del bloque en
+  esos tests o mover el test a `tests/` de la raíz; no borrar cobertura.
+- Los scripts son globales clásicos (sin módulos): lo compartido se carga con `<script>` **antes** de lo que lo usa y
+  expone funciones globales o un objeto (`UI`, `MM`, `IDRTema`...). CSP `script-src 'self'`: nada inline.
+- No tocar SGP ni SGL en esta fase. No convertir plantillas `innerHTML` de SGR/SGI (decisión 4).
+
+### Paso 1 — `<head>` de referencia
+Hoy cada app tiene el suyo (detalle en 6.2). Dejar en SGC, SGR y SGI, en este orden, exactamente:
+```html
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' …; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>SGx</title>
+<link rel="icon" …> <link rel="manifest" href="manifest.json">
+<script src="../shared/idr-tema.js"></script> <script src="../shared/idr-version.js"></script>
+<script src="../shared/idr-atras.js"></script> <script src="../shared/ui/js/arranque.js" data-prefijo="…" data-tema="…"></script>
+<!-- hojas, en el orden de la sección 3 -->
+```
+- `connect-src` es lo único de la CSP que cambia por app (cada una conserva sus orígenes actuales). Se quitan
+  `font-src data:`, `frame-ancestors` y `upgrade-insecure-requests` (los dos últimos no tienen efecto en un `<meta>`).
+  **Verificar antes** que ninguna app use fuentes `data:` (`grep -rn "url(data:font\|url(\"data:font" SGR SGI shared`).
+- `viewport-fit=cover` en SGC cambia el alto de la barra móvil en teléfonos con muesca (pasa a respetar
+  `env(safe-area-inset-bottom)`, como SGR y SGI): es el cambio buscado.
+- Los `?v=` de SGC se pueden dejar (no molestan); no agregarlos en las otras.
+- El script de arranque de SGC sigue siendo `js/preload.js` hasta el paso 2.
+- **Test nuevo** en `tests/estilo.test.mjs`: para cada app de `APPS_PORTADAS`, las metas de arriba presentes y con ese
+  contenido, y la CSP igual a la base salvo `connect-src`.
+
+### Paso 2 — un solo arranque de tema y «reducir animaciones»
+- Hoy: SGR/SGI usan `shared/ui/js/arranque.js` (en `<head>`) + `shared/ui/js/apariencia.js` (al final). SGC usa
+  `SGC/js/preload.js` (tema, `data-cargando`, posición y plegado del panel, privacidad, pestaña recordada),
+  `SGC/js/tema-suite.js` e `initTheme` (`SGC/js/app.js:17`), y guarda «reducir animaciones» con
+  `CLAVE_MOVIMIENTO_REDUCIDO` (`SGC/js/app.js:~232`, `movimientoReducidoActivo` en `SGC/js/comun.js:38`).
+- Hacer: que `arranque.js` acepte por atributos lo que SGC necesita distinto: `data-tema="dark"` (SGC es oscuro por
+  defecto), la clave propia de tema de respaldo (`sgc2/theme`, la vigila `tests/tema.test.mjs`) y la clave/valores de
+  movimiento de SGC (SGC guarda `sgc2/cctv:movimiento_reducido` = `'1'`/`'0'`, `SGC/js/comun.js:37`; `arranque.js` espera
+  `<prefijo>movimiento` = `'reducido'`/`'normal'`). Opción recomendada: atributos `data-clave-movimiento` y
+  `data-valor-reducido` con los valores por defecto actuales, así ninguna app migra datos.
+- SGC carga `arranque.js` y después `preload.js`, que queda **solo** con lo propio (`data-cargando`, privacidad,
+  `preload-tab`; el panel sale en el paso 5). `apariencia.js` reemplaza los manejadores de `#btn-theme` y
+  `#btn-movimiento` de `app.js` y a `tema-suite.js` (borrarlo y sacarlo de `sw.js`). SGC tiene además `#btn-theme-menu`
+  en el menú ⚙: que `apariencia.js` acepte más de un disparador de tema (p. ej. `[data-idr-tema-alternar]`) y emita
+  `idr:tema`, y que SGC escuche ese evento para lo que hoy hace `initTheme` de más (ícono del menú, `theme-transition`).
+- Aceptación: en SGC el tema y «reducir animaciones» se conservan al recargar sin parpadeo; cambiar el tema en SGR lo
+  cambia en SGC abierta en otra pestaña; `tests/tema.test.mjs` en verde (actualizar su lista de archivos por app).
+
+### Paso 3 — avisos y «volver arriba»
+- **Toast**: tres copias — `SGC/js/comun.js:331` (`mostrarToast(mensaje, tipo, duracion, accion)`: 4.º argumento = botón de
+  acción), `SGR/app.js:266` y `SGI/app.js:598` (`mostrarToast(mensaje, tipo, duracion, detalle)` + `toast(msg, tipo…)` +
+  cola `_flushToast`, `_cerrarToastActual`, `_habilitarInteraccionToast`). **Comparar las tres antes de unificar**: las
+  firmas difieren en el 4.º argumento. Crear `shared/ui/js/toast.js` con una sola `mostrarToast` que cubra las dos
+  variantes (p. ej. 4.º argumento objeto `{ accion, detalle }`, aceptando también las formas viejas) y `toast` como alias;
+  borrar las copias. Marcado único: `<div id="toast" class="toast" role="status" aria-live="polite"></div>` (a SGC le
+  faltan `role` y `aria-live`). Solo `textContent`.
+- **Volver arriba**: `SGC/js/produccion.js:~1649`, `SGR/app.js:~2603` y `2824`, `SGI/app.js:~3116` y `4020`. Crear
+  `shared/ui/js/volver-arriba.js` (muestra `#btn-scroll-top` con `.show` al bajar, sube con scroll suave, respeta
+  «reducir animaciones»); borrar las copias y las reglas `.btn-scroll-top` de `SGR/css/sgr.css:~1894` y
+  `SGI/css/sgi.css:~1666` (si agregan algo real, pasarlo a `esqueleto.css`). Marcado único (el de SGR).
+- Cargar los dos scripts en las tres apps después de `ui.js`; agregarlos a `sw.js`.
+
+### Paso 4 — transición de cambio de pestaña (decisión 8)
+- Origen: `SGC/js/animaciones.js` (809 líneas). El manejador de `ui:pestana-mostrar` está cerca de la línea 540–640; la
+  rama «Pestañas principales: deslizamiento» (~582–607) clona el panel saliente (`clonarAcotado`, bloque
+  `CLON ACOTADO PURO`, línea 455), le pone `.slide-pestana-saliente` y lo anima con Web Animations; el entrante se
+  anima en `ui:pestana-mostrada` (~640 en adelante). Usa `prefiereMovimientoReducido` (18), `fijarAlturaAnimable` (74),
+  `_liberarDeslizePrincipal` (505), el bloque `DESLIZE POSICION PURO` (431), `DUR_ANIM_MS`, `EASING_DESLIZE`,
+  `MAX_NODOS_CLON_PESTANA`. CSS: `.slide-pestana-saliente` en `SGC/css/app/animaciones.css:131`.
+- En el mismo manejador hay otras ramas que **son de SGC y se quedan**: subpestañas de Auditoría
+  (`_slideSubtabsPendiente`, `.slide-subtabs-wrapper`) y el fantasma genérico con `CLASES_MUTACION`.
+- Hacer: `shared/ui/js/transicion-pestanas.js` con solo el deslizamiento de las pestañas principales
+  (`#v-pills-tab` → paneles de `#v-pills-tabContent`), escuchando los eventos de `UI.pestana` (`shared/ui/js/ui.js:218–250`:
+  `ui:pestana-ocultar` → `ui:pestana-mostrar` → `ui:pestana-oculta` → `ui:pestana-mostrada`, con `detail.relacionado`).
+  Lleva consigo los bloques puros que necesita (con sus tests). «Reducir animaciones» = `html[data-movimiento="reducido"]`
+  o `prefers-reduced-motion` → sin animación. La regla `.slide-pestana-saliente` pasa a
+  `shared/ui/componentes/transiciones.css`.
+- SGC: `animaciones.js` deja de tratar las pestañas principales (conserva el resto) y carga el script común.
+  El eje del deslizamiento lo decide `_ejeDeslizePestanas` (`animaciones.js:498`; `_keyframeDeslizar` en 502): leerla y
+  llevarla tal cual, porque depende de dónde está el panel (paso 5) y del ancho de pantalla.
+- SGR y SGI: cargar el script; revisar `switchTab` (`SGR/app.js:461`, `SGI/app.js:1426`) y `_alMostrarPestana`
+  (`SGR/app.js:472`, `SGI/app.js:1438`) para que no animen por su cuenta el cambio de pestaña. `_animarMutacion`
+  (`SGR/app.js:412`, `SGI/app.js:167`) **se queda**: SGI la usa para otras cosas (líneas ~2050 y 2093).
+- Coordinar con `shared/ui/js/swipe-pestanas.js` (el swipe en móvil dispara el mismo cambio): probar que no se anime dos veces.
+- Aceptación: en las tres apps el panel saliente desliza y el entrante entra desde el lado correcto según el orden de
+  las pestañas; con «reducir animaciones» el cambio es instantáneo; el contenedor no salta de alto.
+
+### Paso 5 — panel plegable y personalizable (decisión 7)
+- Origen, todo en SGC:
+  - Lógica pura: `SGC/js/app.js` bloque `PANEL LATERAL PURO` (997–1197: `panelLateralTransicion` 1000,
+    `posicionPanelValida` 1120, `zonaPanelDestino` 1125, `iconoTogglePanel` 1132, `panelDesborda` 1179) y
+    `ALTO PANEL LATERAL PURO` (1199–1207). Tienen tests en `SGC/tests/js/` (buscar por el nombre del marcador).
+  - DOM: `ajustarAltoPanelLateral` (1211), `pintarPanelLateral` (1245), `posicionPanelActual`,
+    `ubicarPanelEnEncabezado`, `ajustarEtiquetasPanel`, `fijarPosicionPanel`, `inicializarReubicarPanelLateral`,
+    `panelLateral(evento)` (~1280–1405), e `inicializarPanelLateral` en `SGC/js/resumen.js:1147`.
+  - Claves: `CLAVE_PANEL_LATERAL = 'cctv:sidebar_collapsed'` (`'1'/'0'`) y `CLAVE_POSICION_PANEL =
+    'cctv:sidebar_posicion'` (`left|right|top|bottom`), siempre con el prefijo `sgc2/` (`storage` de `comun.js:10`).
+  - Antes de pintar: `SGC/js/preload.js` (pone `data-panel-pos` y `data-panel-colapsado` en `<html>` y la clase
+    `sidebar-collapsed` apenas existe `#sidebar-col`).
+  - CSS: plegado en `shared/ui/esqueleto.css:94–193` (ya común); posición y arrastre en
+    `SGC/css/app/estructura.css:95–365` (`html[data-panel-pos=…]`, `.sidebar-etiquetas-ocultas`, `.sidebar-tip*`,
+    `.panel-destino`, `body.panel-reubicando`); además `shared/ui/componentes/botones.css:320` (`#btn-toggle-sidebar`).
+  - Marcado: `SGC/index.html:232–240` (`.sidebar-bottom` con `#btn-toggle-sidebar`, texto «Ocultar / Mover», dentro de
+    `.sidebar-sticky`, después de `.sidebar-top`).
+  - Dependencias en `SGC/js/comun.js`: `uiArrastreLargo` (1598, pulsación larga + arrastre), `uiAnimarReubicacion`
+    (1092), `uiNodo` (946), `storage`; y `actualizarAlturaNavbar` (`SGC/js/produccion.js:1617`).
+- Hacer:
+  1. `shared/ui/js/panel.js` (≤ 500 líneas; si no entra, partir en `panel.js` y `panel-mover.js`): los dos bloques
+     puros + el DOM de arriba. Configuración por app sin tocar código: lee el prefijo de `<html data-idr-prefijo>` (lo
+     deja `arranque.js`) y usa `<prefijo>panel_colapsado` y `<prefijo>panel_posicion`; SGC pasa sus claves actuales por
+     atributos del `<script>` (`data-clave-colapsado="sgc2/cctv:sidebar_collapsed"`,
+     `data-clave-posicion="sgc2/cctv:sidebar_posicion"`) para **no perder lo guardado**.
+  2. Las dependencias genéricas (`uiArrastreLargo`, `uiAnimarReubicacion`, `uiNodo`) hoy solo existen en SGC: moverlas a
+     `shared/ui/js/` (p. ej. `gestos.js`) y que SGC las tome de ahí, **o** dar a `panel.js` una versión mínima propia.
+     Recomendado: moverlas (SGC las usa en más lugares; siguen siendo globales con el mismo nombre). Ojo con
+     `SGC/js/arrastre-tactil.js` (cancela el scroll durante `html.arrastrando-largo`): va junto.
+  3. Lo de `preload.js` del panel pasa a `arranque.js` (con las mismas claves configurables), así ninguna app parpadea.
+  4. CSS de posición y arrastre: de `SGC/css/app/estructura.css` a `shared/ui/esqueleto.css` (o a un
+     `shared/ui/panel.css` nuevo, cargado después de `esqueleto.css` en las tres apps y agregado a `sw.js` y al orden que
+     exige `tests/estilo.test.mjs`). En SGC queda solo lo que nombra cosas de SGC (`#menu-config`, `#last-update`,
+     `html.modo-kiosco`, `.stock-seleccion-banner` de `activos.css:164`).
+  5. `ubicarPanelEnEncabezado` usa `#menu-config` para ubicar el botón cuando el panel va arriba: cambiarlo por
+     `.navbar-acciones` (la barra única del paso 6) con respaldo si no existe.
+  6. Agregar el bloque `.sidebar-bottom` + `#btn-toggle-sidebar` al panel de `SGR/index.html` y `SGI/index.html`
+     (mismo marcado que SGC) y cargar `panel.js`.
+  7. `panelLateral(evento)` recibe tres eventos: `'alternar'` (clic en el botón, `resumen.js:1157`), `'buscar'` (al
+     enfocar o usar el buscador con el panel plegado se expande solo: `resumen.js:1163` y varias llamadas en
+     `app.js:1845–2118`) y `'limpiar'` (`app.js:1518`: vuelve a plegarse si se había expandido solo). La regla está en
+     `panelLateralTransicion`. En `panel.js` exponer esa función (p. ej. `IDRPanel.evento('buscar')`) y enganchar
+     `'buscar'` al foco de `#global-search` y `'limpiar'` a `#search-clear` de forma genérica; las llamadas propias de la
+     búsqueda de SGC siguen en SGC, llamando a la API común.
+- Móvil (< 768 px): el panel es la barra de abajo; plegar y mover no aplican (ya lo resuelve el CSS y `escritorio()`).
+- Aceptación (en SGC, SGR y SGI, escritorio): plegar/mostrar con el botón; mantener presionado y arrastrar muestra la
+  franja de destino y muda el panel a izquierda/derecha/arriba/abajo; `Alt` + flechas hace lo mismo; `Escape` cancela;
+  recargar conserva plegado y posición sin parpadeo; con el panel arriba o abajo las etiquetas se ocultan si no entran;
+  «volver arriba» y lo flotante no quedan tapados. En SGC, un usuario con el panel ya plegado/movido lo encuentra igual.
+
+### Paso 6 — barra superior única (decisión 9)
+- Hoy: SGR (`SGR/index.html:~59–72`) y SGI: marca con `.brand-launcher` + `.navbar-acciones` con `#btn-undo`,
+  `#btn-redo` (SGI suma `#btn-install-app`, oculto hasta `beforeinstallprompt`). SGC (`SGC/index.html:~59–105`): marca +
+  `#last-update` + menú ⚙ `#menu-config` (Listar, `#btn-theme-menu`, `#btn-atajos`); **no tiene deshacer/rehacer ni un
+  historial general**. En SGR/SGI el historial es el objeto `historial` de cada `app.js` (`historial.undo()` /
+  `.redo()`, `SGR/app.js:2785`, `SGI/app.js:3823`).
+- Marcado de referencia (el de SGR), a anotar en la sección 3 cuando se haga:
+  ```html
+  <nav class="navbar navbar-expand-lg shadow-sm"><div class="container-fluid">
+    <span class="navbar-brand mb-0 h1"><a href="../index.html" class="brand-launcher" title="Ir a la página principal"
+        aria-label="Ir a la página principal"><i class="bi bi-ICONO text-primary"></i></a>SGx</span>
+    <div class="d-flex align-items-center gap-2 navbar-acciones">
+      <button … id="btn-install-app" hidden>…</button>
+      <button … id="btn-undo" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled>…</button>
+      <button … id="btn-redo" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled>…</button>
+    </div></div></nav>
+  ```
+- **Dos preguntas sin responder (preguntarle al usuario antes de tocar SGC en este paso; no decidir por él):**
+  1. ¿SGC suma deshacer/rehacer de verdad (lógica nueva: un historial de operaciones de stock/producción; excede «solo
+     estilo») o lleva los dos botones siempre deshabilitados hasta que exista esa lógica?
+  2. ¿El menú ⚙ y `#last-update` de SGC se quedan en la barra como extra de SGC (a la izquierda de `.navbar-acciones`),
+     o sus opciones pasan a la pestaña Ajustes para que la barra sea idéntica?
+- Lo que **sí** se puede hacer sin esas respuestas: agregar `#btn-install-app` a SGR (y su manejador, hoy solo en SGI:
+  pasarlo a `shared/ui/js/instalar.js`), anotar el marcado de referencia en la sección 3 y escribir el test que lo exige
+  en SGR y SGI (SGC entra al test cuando se respondan las preguntas).
+
+### Paso 7 — CSS repetido de SGR y SGI
+- Selectores definidos en las dos hojas (`SGR/css/sgr.css`, `SGI/css/sgi.css`): `.empty-state` (+ `.empty-icon`),
+  `.card-header`, `.table-wrap`, `.dash-layout`, el botón flotante (FAB) y lo que aparezca al comparar. Procedimiento:
+  listar los selectores comunes (el parser `SGC/tests/js/_css.mjs`, `reglas()`, sirve), comparar declaraciones y, si son
+  iguales o casi, mover una sola versión a `shared/ui/componentes/` (archivo existente que corresponda — `tarjetas.css`,
+  `tablas.css` — o uno nuevo, p. ej. `vacio.css`, `flotante.css`; un archivo nuevo va a `sw.js`, a los `<link>` de las
+  **tres** apps y lo exige `tests/estilo.test.mjs`). Si SGC ya tiene un equivalente con otro nombre de clase, usar el de
+  SGC y cambiar la clase en SGR/SGI (no crear un segundo componente para lo mismo).
+- Las funciones JS repetidas de 6.3 (`confirmar`, `esc`, `normalizarTexto`, `uid`, exportar/importar, firma) **no** son
+  de esta fase salvo el toast: quedan anotadas para cuando se partan los `app.js`.
+
+### Paso 8 — tests y cierre
+- `tests/estilo.test.mjs`, para cada app de `APPS_PORTADAS`: los scripts nuevos (`arranque.js`, `apariencia.js`,
+  `toast.js`, `volver-arriba.js`, `transicion-pestanas.js`, `panel.js`); los ids `btn-theme`, `btn-movimiento`, `toast`
+  (con `role="status"`), `btn-scroll-top`, `search-clear`, `btn-toggle-sidebar`, `btn-undo`, `btn-redo`; `.brand-launcher`
+  con `href="../index.html"`; el `<head>` del paso 1. `mm.js` solo se exige a las apps que usan `MM` (SGR, SGI; SGC no).
+- Manifiestos de las apps portadas con los mismos `theme_color`, `background_color`, `display` y `orientation`.
+- `tests/e2e/humo-apps.mjs` (y `SGC/tests/e2e/humo.mjs`): plegar el panel, cambiar de posición, recargar y comprobar que
+  se conserva; cambiar de pestaña; mostrar un toast.
+- Verificación visual (no hay herramienta en el repo; ver «Herramientas» en la sección 7): escritorio claro y oscuro,
+  móvil, panel en las cuatro posiciones, en las tres apps.
+- Al terminar: marcar los pasos en la fase 2.5 (sección 4) y los puntos de 6.2/6.3/6.4; actualizar la sección 3 (árbol de
+  `shared/ui/`, lista de ids, receta de una app portada, marcado de la barra y del `<head>`), `CLAUDE.md` de la raíz
+  (regla nueva: panel, transición y barra son de la suite) y los `CLAUDE.md` de SGC, SGR y SGI; y `SGC/docs/ARQUITECTURA.md`
+  si nombra los archivos movidos.
+
+### 8.9 Después de la fase 2.5
+SGP (sección 7, «Falta: fase 3») ya sobre la base unificada: su receta incluye `panel.js`, `transicion-pestanas.js`,
+`toast.js`, `volver-arriba.js`, la barra única y el `<head>` de referencia desde el primer día. Luego el launcher (fase 4).
