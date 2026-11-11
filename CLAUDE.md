@@ -57,5 +57,5 @@ Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se document�
 
 ## Versión visible en cada app
 Cada app muestra la versión de la suite en sus Ajustes con un elemento `<span data-idr-version="NOMBRE"></span>` y el script
-`<script src="../shared/idr-version.js">` (nada de código por app; hoy SGC, SGR, SGI y SGP). Al portar SGP al diseño de SGC,
+`<script src="../shared/idr-version.js">` (nada de código por app; hoy SGC, SGR, SGI, SGP y el launcher). Al portar SGP al diseño de SGC,
 agregar esas dos líneas en sus Ajustes (receta completa: `docs/PORTE-ESTILO-SGC.md`, sección 3).
