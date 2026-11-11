@@ -1077,59 +1077,6 @@
                 line-height: 1.55;
             }
 
-    /* ── SHORTCUTS MODAL ── */
-    .shortcut-list {
-                display: flex;
-                flex-direction: column;
-                gap: 0.1rem;
-                margin-bottom: 0.25rem;
-            }
-
-    .shortcut-row {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 1rem;
-                padding: 0.55rem 0;
-                border-bottom: 1px solid var(--border);
-            }
-
-    .shortcut-row:last-child {
-                border-bottom: none;
-            }
-
-    .shortcut-desc {
-                font-size: 0.87rem;
-                color: var(--text-main);
-            }
-
-    .shortcut-keys {
-                display: flex;
-                align-items: center;
-                gap: 0.25rem;
-                flex-shrink: 0;
-                font-size: 0.78rem;
-                color: var(--text-muted);
-                white-space: nowrap;
-            }
-
-    kbd {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                background: var(--input-bg);
-                border: var(--border-w) solid var(--border);
-                border-radius: var(--radius-sm);
-                padding: 0.15rem 0.45rem;
-                font-family: inherit;
-                font-size: 0.78rem;
-                font-weight: 600;
-                color: var(--text-main);
-                box-shadow: 0 1px 0 var(--border);
-                min-width: 1.6rem;
-                text-align: center;
-            }
-
     .stock-negative,
             .stock-zero,
             .stock-positive,

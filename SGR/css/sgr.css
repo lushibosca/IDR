@@ -848,23 +848,6 @@
         display: none;
     }
 
-    kbd {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--input-bg);
-        border: var(--border-w) solid var(--border);
-        border-radius: var(--radius-sm);
-        padding: 0.15rem 0.45rem;
-        font-family: inherit;
-        font-size: var(--fs-sm);
-        font-weight: 600;
-        color: var(--text-main);
-        box-shadow: 0 1px 0 var(--border);
-        min-width: 1.6rem;
-        text-align: center;
-    }
-
     @keyframes mutacionSalida {
         from {
             opacity: 1;

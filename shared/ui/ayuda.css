@@ -1,4 +1,4 @@
-/* app/atajos.css: App, modal de ayuda del sistema y atajos del menú ⚙ (atajos.js). */
+/* ayuda.css: modal de ayuda y atajos (#modal-atajos: Secciones · Búsqueda y comodines · Atajos), común a las apps (js/ayuda.js). */
 
 @layer app {
     /* tamaño fijo: no se achica ni se agranda según los resultados del filtro */

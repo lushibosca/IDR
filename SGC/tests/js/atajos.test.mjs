@@ -1,9 +1,11 @@
-// Lista de atajos del menú ⚙ (bloque ATAJOS DATOS de static/atajos.js): la forma de cada entrada, el filtro y el agrupado.
+// Lista de atajos del menú ⚙ (bloque ATAJOS DATOS de js/atajos.js y shared/ui/js/ayuda.js): la forma de cada entrada, el filtro y el agrupado.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { cargarBloque, plano } from "./_bloque.mjs";
 
-const a = cargarBloque("atajos.js", "ATAJOS DATOS", { String, Array, Map }, ["ATAJOS", "ATAJOS_TIPOS", "filtrarAtajos", "agruparAtajos"]);
+const datos = cargarBloque("atajos.js", "ATAJOS DATOS", {}, ["ATAJOS"]);
+const funciones = cargarBloque("../shared/ui/js/ayuda.js", "AYUDA PURO", { String, Array, Map }, ["ATAJOS_TIPOS", "filtrarAtajos", "agruparAtajos"]);
+const a = { ...datos, ...funciones };
 
 test("cada atajo tiene lugar, acción y teclas (teclado) o gesto (mouse); ninguno repetido", () => {
   const vistos = new Set();

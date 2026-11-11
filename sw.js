@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261111.1312';
+const CACHE_NAME = 'idr-suite-v261111.1318';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -22,7 +22,6 @@ const PRECACHE_URLS = [
   './SGC/css/app/activos.css',
   './SGC/css/app/ajustes.css',
   './SGC/css/app/animaciones.css',
-  './SGC/css/app/atajos.css',
   './SGC/css/app/auditoria.css',
   './SGC/css/app/barra-movil.css',
   './SGC/css/app/estado.css',
@@ -76,6 +75,7 @@ const PRECACHE_URLS = [
   './SGI/manifest.json',
   './SGI/css/sgi.css',
   './SGI/app.js',
+  './SGI/atajos.js',
   './SGI/icon.svg',
   './SGI/icons/icon-192.png',
   './SGI/icons/icon-512.png',
@@ -99,6 +99,7 @@ const PRECACHE_URLS = [
   './SGR/manifest.json',
   './SGR/css/sgr.css',
   './SGR/app.js',
+  './SGR/atajos.js',
   './SGR/icon.svg',
   './SGR/icons/icon-192.png',
   './SGR/icons/icon-512.png',
@@ -128,11 +129,14 @@ const PRECACHE_URLS = [
   './shared/ui/base.css',
   './shared/ui/esqueleto.css',
   './shared/ui/panel.css',
+  './shared/ui/ayuda.css',
   './shared/ui/legado/variables.css',
   './shared/ui/grilla.css',
   './shared/ui/tokens.css',
   './shared/ui/utilidades.css',
   './shared/ui/js/apariencia.js',
+  './shared/ui/js/ayuda.js',
+  './shared/ui/js/navegacion.js',
   './shared/ui/js/busqueda-tokens.js',
   './shared/ui/js/gestos.js',
   './shared/ui/js/instalar.js',

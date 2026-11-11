@@ -14,6 +14,7 @@ categorías y herramientas). Idioma: español. Reglas generales (Service Worker 
 - `app.js`: los modales son `MM` (`../shared/ui/js/mm.js`, sobre `UI.modal`); al cerrar cualquier modal se cierra el portal de
   sugerencias. El objeto de vistas se llama `Vistas` (`UI` es de ui.js). Las pestañas las cambia `UI.pestana`;
   `_alMostrarPestana` recuerda la pestaña (una hora, `SGI_tab` / `SGI_tab_time`) y redibuja el dashboard.
+- Ayuda y atajos: `atajos.js` (datos) + `../shared/ui/js/ayuda.js`; navegación por teclado y rueda: `navegacion.js`; búsqueda: `busqueda-tokens.js` (con fechas y «duplicados» propios de SGI).
 - Tema y «reducir animaciones»: `../shared/ui/js/arranque.js` y `apariencia.js`. El swipe entre pestañas es el de la suite.
 
 ## Después de cada cambio

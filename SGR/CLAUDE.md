@@ -13,6 +13,7 @@ Front vanilla JS (un `app.js` global) con el **diseño de SGC**: esqueleto, base
 - `app.js`: `MM` (modales) es la API de siempre sobre `UI.modal` (`../shared/ui/js/ui.js`): descartar un modal (Escape, fondo,
   X, «atrás») vuelve al modal padre si se abrió con `MM.alternar`. El objeto de vistas se llama `Vistas` (`UI` es de ui.js).
   Las pestañas las cambia `UI.pestana`; `_alMostrarPestana` (evento `ui:pestana-mostrada`) recuerda y redibuja.
+- Ayuda y atajos: `atajos.js` (datos) + `../shared/ui/js/ayuda.js`; navegación por teclado y rueda: `navegacion.js`; búsqueda: `busqueda-tokens.js`.
 - Tema y «reducir animaciones»: `../shared/ui/js/arranque.js` (en el `<head>`) y `apariencia.js` (interruptores de Ajustes).
 
 ## Después de cada cambio

@@ -39,7 +39,7 @@ class Disco extends ResourceLoader {
 async function cargar(app, { ancho = 1280, almacen = {} } = {}) {
     const errores = [];
     const vc = new VirtualConsole();
-    vc.on('jsdomError', (e) => errores.push(String(e.message).split('\n')[0]));
+    vc.on('jsdomError', (e) => errores.push(String(e.message).split('\n')[0] + (process.env.PILA ? ' ' + String(e.detail && e.detail.stack) : '')));
     vc.on('error', (...a) => errores.push(`console.error: ${a.map(String).join(' ').split('\n')[0]}`));
     const html = fs.readFileSync(path.join(RAIZ, app, 'index.html'), 'utf8');
     const dom = new JSDOM(html, {
@@ -105,9 +105,40 @@ async function comunes(app, ctx, pestanas) {
     check(app, 'Ajustes: reducir animaciones', d.documentElement.getAttribute('data-movimiento') === 'reducido');
     clic($('btn-movimiento'));
     await panel(app, ctx);
+    await ayuda(app, ctx);
     // aviso (toast): sale con su texto, en el elemento único #toast
     w.mostrarToast('Aviso de prueba', 'success', 1500);
     check(app, 'toast: muestra el aviso', await hasta(() => $('toast').classList.contains('show') && /Aviso de prueba/.test($('toast').textContent)));
+}
+
+// Ayuda y atajos (shared/ui/js/ayuda.js + navegacion.js): «?» abre el modal, las tres pestañas se arman con los datos de la app,
+// el filtro de atajos funciona, y Ctrl + flechas recorre las pestañas del panel
+async function ayuda(app, ctx) {
+    const { w, d, $ } = ctx;
+    const modal = $('modal-atajos');
+    d.body.focus?.();
+    d.body.dispatchEvent(new w.KeyboardEvent('keydown', { key: '?', bubbles: true, cancelable: true }));
+    check(app, 'ayuda: «?» abre el modal', await hasta(() => abierto(w, modal)));
+    check(app, 'ayuda: Secciones con contenido', $('ayuda-secciones').querySelectorAll('.ayuda-seccion-card').length >= 3);
+    check(app, 'ayuda: Búsqueda y comodines con la tabla de operadores', $('ayuda-comodines').querySelectorAll('tr').length >= 7
+        && /!ptz/.test($('ayuda-comodines').textContent) && $('ayuda-busqueda-consejos').children.length >= 2);
+    check(app, 'ayuda: Atajos con teclas y gestos', $('atajos-lista').querySelectorAll('kbd').length > 5 && $('atajos-lista').querySelector('.atajo-gesto'));
+    $('atajos-buscar').value = 'deshacer';
+    $('atajos-buscar').dispatchEvent(new w.Event('input', { bubbles: true }));
+    check(app, 'ayuda: el filtro deja solo los atajos que coinciden', await hasta(() => {
+        const t = $('atajos-lista').textContent; return /Deshacer/.test(t) && !/Ocultar o mostrar el panel/.test(t);
+    }));
+    tecla(w, 'Escape');
+    check(app, 'ayuda: Escape cierra el modal', await hasta(() => !abierto(w, modal)));
+    // Ctrl + ↓ recorre las pestañas (panel a la izquierda: las pestañas son verticales)
+    clic($('tab-' + [...d.querySelectorAll('#v-pills-tab button[data-tab]')][0].dataset.tab));
+    await esperar(80);
+    const antes = d.querySelector('#v-pills-tab button.active')?.id;
+    d.body.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowDown', ctrlKey: true, bubbles: true, cancelable: true }));
+    check(app, 'atajos: Ctrl + ↓ pasa a la pestaña siguiente', await hasta(() => d.querySelector('#v-pills-tab button.active')?.id !== antes));
+    d.body.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowLeft', ctrlKey: true, bubbles: true, cancelable: true }));
+    check(app, 'atajos: Ctrl + ← lleva al buscador', d.activeElement === $('global-search'));
+    $('global-search').blur();
 }
 
 // Panel lateral plegable y movible (shared/ui/js/panel.js): el botón pliega, Alt+flecha lo muda de lado, y las dos cosas se
@@ -131,6 +162,9 @@ async function panel(app, ctx) {
     tecla(w, 'ArrowUp', { altKey: true });
     check(app, 'panel: Alt+↑ lo pasa arriba (dentro de la barra superior)', await hasta(() => d.documentElement.getAttribute('data-panel-pos') === 'top'
         && col.closest('.navbar') !== null));
+    btn.focus();
+    tecla(w, 'ArrowLeft', { altKey: true });
+    check(app, 'panel: Alt+← lo devuelve a la izquierda', await hasta(() => !d.documentElement.hasAttribute('data-panel-pos')));
     // recarga: plegado y lugar se conservan desde el primer cuadro
     const guardado = { [claveCol]: '1', [clavePos]: 'bottom' };
     const otra = await cargar(app, { almacen: guardado });

@@ -40,6 +40,7 @@
     <link rel="stylesheet" href="../shared/ui/componentes/spinner.css">
     <link rel="stylesheet" href="../shared/ui/esqueleto.css">
     <link rel="stylesheet" href="../shared/ui/panel.css">
+    <link rel="stylesheet" href="../shared/ui/ayuda.css">
     <link rel="stylesheet" href="../shared/ui/legado/variables.css">
     <link rel="stylesheet" href="css/sgr.css?v=2">
     <link rel="stylesheet" href="../shared/ui/utilidades.css">
@@ -271,6 +272,18 @@
                                     </button>
                                 </div>
                             </section>
+                            <section class="ajuste-seccion" aria-labelledby="ajustes-navegacion">
+                                <h6 class="ajuste-seccion-titulo" id="ajustes-navegacion">Navegación</h6>
+                                <div class="ajuste-fila">
+                                    <i class="bi bi-mouse ajuste-icono" aria-hidden="true"></i>
+                                    <div class="ajuste-texto">
+                                        <span class="ajuste-titulo" id="btn-rueda-pestanas-titulo">Rueda sobre el panel lateral</span>
+                                        <span class="ajuste-desc">La rueda del mouse sobre el panel recorre las pestañas.</span>
+                                    </div>
+                                    <button type="button" id="btn-rueda-pestanas" class="interruptor" role="switch" aria-checked="true"
+                                        aria-labelledby="btn-rueda-pestanas-titulo"><span class="interruptor-perilla"></span></button>
+                                </div>
+                            </section>
                             <section class="ajuste-seccion" aria-labelledby="ajustes-racks">
                                 <h6 class="ajuste-seccion-titulo" id="ajustes-racks">Racks</h6>
                                 <div class="ajuste-fila" id="ajustes-nuevo-rack-btn" role="button" tabindex="0">
@@ -348,6 +361,17 @@
                                         <span class="ajuste-titulo">Bajar ahora</span>
                                         <span class="ajuste-desc">Trae los datos del Gist a este navegador.</span>
                                     </div>
+                                </div>
+                            </section>
+                            <section class="ajuste-seccion" aria-labelledby="ajustes-ayuda">
+                                <h6 class="ajuste-seccion-titulo" id="ajustes-ayuda">Ayuda</h6>
+                                <div class="ajuste-fila" role="button" tabindex="0" data-ui-toggle="modal" data-ui-target="#modal-atajos">
+                                    <i class="bi bi-question-circle ajuste-icono" aria-hidden="true"></i>
+                                    <div class="ajuste-texto">
+                                        <span class="ajuste-titulo">Ayuda y atajos</span>
+                                        <span class="ajuste-desc">Cómo se usa cada sección, el buscador y los atajos de teclado y mouse.</span>
+                                    </div>
+                                    <span class="ajuste-accion-estado"><i class="bi bi-chevron-right"></i></span>
                                 </div>
                             </section>
                         </div>
@@ -573,6 +597,67 @@
         </div>
     </div>
 
+    <!-- Ayuda y atajos: Secciones · Búsqueda y comodines · Atajos (se arma con ../shared/ui/js/ayuda.js y los datos de atajos.js) -->
+    <div class="modal fade" id="modal-atajos" tabindex="-1" aria-labelledby="modalAtajosLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content modal-tema">
+                <div class="modal-header border-0 pb-1">
+                    <h5 class="modal-title fs-6 fw-bold text-primary" id="modalAtajosLabel"><i
+                            class="bi bi-question-circle me-2"></i>Ayuda del sistema y atajos</h5>
+                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="px-3 pt-1 pb-2 border-bottom">
+                    <ul class="nav nav-pills nav-subtabs gap-1" id="ayuda-pills" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active py-1 px-3" id="ayuda-tab-secciones" data-ui-toggle="pill"
+                                data-ui-target="#ayuda-pane-secciones" type="button" role="tab"
+                                aria-controls="ayuda-pane-secciones" aria-selected="true"><i class="bi bi-grid me-1"></i> Secciones</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link py-1 px-3" id="ayuda-tab-busqueda" data-ui-toggle="pill"
+                                data-ui-target="#ayuda-pane-busqueda" type="button" role="tab"
+                                aria-controls="ayuda-pane-busqueda" aria-selected="false"><i class="bi bi-search me-1"></i> Búsqueda y comodines</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link py-1 px-3" id="ayuda-tab-atajos" data-ui-toggle="pill"
+                                data-ui-target="#ayuda-pane-atajos" type="button" role="tab"
+                                aria-controls="ayuda-pane-atajos" aria-selected="false"><i class="bi bi-keyboard me-1"></i> Atajos</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="tab-content" id="ayuda-tabcontent">
+                        <div class="tab-pane fade show active" id="ayuda-pane-secciones" role="tabpanel" aria-labelledby="ayuda-tab-secciones">
+                            <div id="ayuda-secciones"></div>
+                        </div>
+                        <div class="tab-pane fade" id="ayuda-pane-busqueda" role="tabpanel" aria-labelledby="ayuda-tab-busqueda">
+                            <p class="ayuda-seccion-desc mb-3" id="ayuda-busqueda-intro"></p>
+                            <div class="table-responsive mb-3">
+                                <table class="table table-sm align-middle ayuda-tabla-comodines mb-0">
+                                    <thead>
+                                        <tr><th>Operador / Comodín</th><th>Sintaxis de ejemplo</th><th>Comportamiento</th></tr>
+                                    </thead>
+                                    <tbody id="ayuda-comodines"></tbody>
+                                </table>
+                            </div>
+                            <div class="ayuda-nota">
+                                <strong><i class="bi bi-lightbulb me-1"></i>Consejos de búsqueda:</strong>
+                                <ul class="mb-0 ps-3 mt-1" id="ayuda-busqueda-consejos"></ul>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="ayuda-pane-atajos" role="tabpanel" aria-labelledby="ayuda-tab-atajos">
+                            <div class="ayuda-buscar-sticky mb-3">
+                                <input type="text" class="form-control form-control-sm" id="atajos-buscar" placeholder="Filtrar atajos..."
+                                    autocomplete="off" spellcheck="false" aria-label="Filtrar atajos">
+                            </div>
+                            <div id="atajos-lista"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="modal-gist" tabindex="-1" aria-labelledby="modal-gist-titulo" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
@@ -699,10 +784,13 @@
     <script src="../shared/ui/js/mm.js"></script>
     <script src="../shared/idr-infra.js"></script>
     <script src="../shared/idr-actualizacion.js" data-sw="../sw.js" data-scope="../"></script>
+    <script src="./atajos.js"></script>
     <script src="./app.js?v=3"></script>
     <script src="../shared/ui/js/busqueda-movil.js"></script>
     <script src="../shared/ui/js/swipe-pestanas.js"></script>
     <script src="../shared/ui/js/apariencia.js"></script>
+    <script src="../shared/ui/js/navegacion.js"></script>
+    <script src="../shared/ui/js/ayuda.js"></script>
 </body>
 
 </html>

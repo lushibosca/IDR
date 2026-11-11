@@ -1128,14 +1128,6 @@ const Vistas = {
         Vistas._cerrarAjustesHijo('modal-gist');
     },
 
-    abrirShortcuts() {
-        MM.abrir('modal-shortcuts');
-    },
-
-    cerrarShortcuts() {
-        Vistas._cerrarAjustesHijo('modal-shortcuts');
-    },
-
     abrirReporte() {
         generarReporte();
         if (!state.materiales.length) return; // generarReporte ya emitió el toast
@@ -2876,7 +2868,7 @@ function renderMovimientos() {
 // ═══════════════════════════════════════════════════════
 //  SHORTCUTS DE TECLADO
 // ═══════════════════════════════════════════════════════
-let _lastTabSwitchTime = 0;
+
 
 document.addEventListener('keydown', e => {
     const modalOpen = document.body.classList.contains('modal-open');
@@ -2912,33 +2904,6 @@ document.addEventListener('keydown', e => {
         }
 
         return;
-    }
-
-    // ── Ctrl + ← / → : cambiar pestaña (Carrusel con Cooldown) ───────────────────
-    if (!modalOpen && e.ctrlKey) {
-        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-            e.preventDefault();
-            
-            // Verificamos si pasaron al menos 300ms desde el último cambio
-            const now = Date.now();
-            if (now - _lastTabSwitchTime < 200) return; 
-            _lastTabSwitchTime = now; // Actualizamos el temporizador
-            
-            // 1. Buscamos el índice de la pestaña actual
-            const idx = TABS_CONFIG.findIndex(t => t.id === _tabActual);
-            let nextIdx;
-            
-            // 2. Calculamos el próximo índice con efecto carrusel (módulo)
-            if (e.key === 'ArrowRight') {
-                nextIdx = (idx + 1) % TABS_CONFIG.length;
-            } else {
-                nextIdx = (idx - 1 + TABS_CONFIG.length) % TABS_CONFIG.length;
-            }
-            
-            // 3. Cambiamos a la pestaña calculada
-            switchTab(TABS_CONFIG[nextIdx].id);
-            return;
-        }
     }
 
     // ── Sin modal y sin foco en input ────────────────────
@@ -3800,7 +3765,6 @@ function _ejecutarReporte() {
     _on('ajustes-btn-gist', 'click', () => Vistas.abrirGist());
     _on('btn-ajustes-gist-subir', 'click', () => GistSync.subir());
     _on('btn-ajustes-gist-bajar', 'click', () => GistSync.bajar());
-    _on('ajustes-btn-shortcuts', 'click', () => Vistas.abrirShortcuts());
     _on('ajustes-btn-exportar', 'click', () => exportarDatos());
     _on('ajustes-btn-entrada', 'click', () => abrirModalMovimiento('entrada'));
     _on('ajustes-btn-salida', 'click', () => abrirModalMovimiento('salida'));
@@ -3850,8 +3814,6 @@ function _ejecutarReporte() {
     // Modal gist novedades
     _on('gist-novedades-ignorar-btn', 'click', () => MM.cerrar('modal-gist-novedades'));
 
-    // Modal shortcuts
-    _on('shortcuts-cerrar-btn', 'click', () => Vistas.cerrarShortcuts());
 
     // Modal reporte
     _on('rpt-btn-generar', 'click', () => _ejecutarReporte());

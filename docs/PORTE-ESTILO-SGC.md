@@ -157,6 +157,10 @@ aplicándolo en SGC, SGR y SGI. **La guía paso a paso, con archivos y líneas, 
 - [x] Paso 4 — transición de cambio de pestaña común (decisión 8) (hecho; `shared/ui/js/transicion-pestanas.js`, también aloja `DUR_ANIM_MS`, `fijarAlturaAnimable` y `animarAlturaAlContenido`).
 - [x] Paso 5 — panel plegable y personalizable común (decisión 7) (hecho: `shared/ui/js/{gestos,panel,panel-mover,panel-etiquetas}.js` y `shared/ui/panel.css`; claves `<prefijo>panel_colapsado` / `panel_posicion`, SGC conserva las suyas por atributos).
 - [x] Paso 6 — barra superior única (hecho sin menú ⚙ en SGR y SGI por pedido del usuario: SGC lo conserva; `instalar.js` compartido; en SGC `#btn-undo`/`#btn-redo` quedan `disabled` hasta el paso 6b).
+- [x] Añadido a pedido (2026-11-11): sintaxis de búsqueda de SGC (frases y exclusión con `!`/`-`) en SGR y SGI (`shared/ui/js/busqueda-tokens.js`);
+      modal de ayuda y atajos común (`ayuda.js` + `ayuda.css`; datos en `SGR/atajos.js`, `SGI/atajos.js`, `SGC/js/atajos.js`; «?» lo abre y está en
+      Ajustes > Ayuda); Ctrl+flechas según el lugar del panel y rueda sobre el panel (`navegacion.js`, interruptor en Ajustes > Navegación).
+      No se llevaron a SGR/SGI (no aplican): selección masiva, Listar, privacidad, reubicar secciones del Estado, acordeones, popup de equipo.
 - [ ] Paso 6b — deshacer/rehacer en SGC (decisión 10; función nueva).
 - [ ] Paso 7 — CSS repetido de SGR/SGI a `shared/ui/componentes/`.
 - [ ] Paso 8 — tests de 6.4 y humo de las tres apps.

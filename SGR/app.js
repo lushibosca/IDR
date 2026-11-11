@@ -2443,19 +2443,6 @@ document.addEventListener('keydown', e => {
     }
 
     if (e.ctrlKey && !e.altKey) {
-        // 2. NUEVO: Ctrl + Flechas para ciclar entre pestañas
-        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-            e.preventDefault();
-            const tabs = ['dashboard', 'inventario', 'servicio'];
-            let idx = tabs.indexOf(_tabActual);
-
-            if (e.key === 'ArrowRight') idx = (idx + 1) % tabs.length;
-            else idx = (idx - 1 + tabs.length) % tabs.length; // Cicla hacia atrás sin dar negativo
-
-            switchTab(tabs[idx]);
-            return;
-        }
-
         if (e.key === 'z' || e.key === 'Z') { e.preventDefault(); historial.undo(); return; }
         if (e.key === 'y' || e.key === 'Y') { e.preventDefault(); historial.redo(); return; }
     }
