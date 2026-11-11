@@ -1,0 +1,756 @@
+/* shared/ui/esqueleto.css: el esqueleto de pantalla común de la suite (diseño de SGC): panel lateral de pestañas con
+   buscador, su versión plegada (solo íconos), la vista móvil (< 768 px: barra de pestañas fija abajo y buscador que baja desde
+   arriba, ver ui/js/busqueda-movil.js), «volver arriba» y la pestaña Ajustes (filas con interruptor). Capa `app`: cada app carga
+   esta hoja antes de las suyas. Ids que espera: #app-main-row, #sidebar-col, #main-content-col, #v-pills-tab, #v-pills-tabContent,
+   #sidebar-search-container, #btn-buscar-movil (ver SGC/index.html o SGR/index.html). */
+
+@layer app {
+    /* Modales con pestañas o secciones plegables: alto fijo, así no se achican ni se agrandan según lo que muestran */
+    .modal-altura-fija .modal-content {
+        height: min(42rem, 85vh);
+    }
+
+    /* ─── Sidebar / Tabs */
+
+    .sidebar-tab-icon {
+        margin-right: var(--esp-2);
+    }
+
+    #sidebar-col {
+        transition: width var(--dur-panel) var(--ease-panel),
+                flex var(--dur-panel) var(--ease-panel),
+                max-width var(--dur-panel) var(--ease-panel);
+        overflow-x: hidden;
+        will-change: width, max-width;
+    }
+
+    #main-content-col {
+        transition: width var(--dur-panel) var(--ease-panel),
+                flex var(--dur-panel) var(--ease-panel),
+                max-width var(--dur-panel) var(--ease-panel);
+        will-change: width, max-width;
+    }
+
+    #v-pills-tabContent {
+        min-height: calc(100vh - var(--navbar-height) - 3rem);
+    }
+
+    /* ─── Escritorio y tablets (>= 768px): panel lateral vertical con ancho suficiente y anclado */
+
+    @media (min-width: 768px) {
+        #sidebar-col {
+            position: sticky;
+            top: calc(var(--navbar-height) + 1.5rem);
+            height: var(--alto-panel, calc(100vh - var(--navbar-height) - 3rem));
+            align-self: flex-start;
+            z-index: var(--capa-panel);
+        }
+
+        #sidebar-col:has(.dropdown-menu.show) {
+            z-index: var(--capa-barra);
+        }
+
+        #sidebar-col:not(.sidebar-collapsed) {
+            flex: 0 0 215px;
+            width: 215px;
+            max-width: 215px;
+            overflow: visible;
+        }
+
+        #sidebar-col:not(.sidebar-collapsed) ~ #main-content-col {
+            flex: 1 1 0;
+            width: calc(100% - 215px);
+            max-width: calc(100% - 215px);
+        }
+
+        .sidebar-sticky {
+            height: 100%;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* El relleno de 4 px (compensado por el margen negativo: el ancho no cambia) deja lugar para el aro de foco de las
+           pestañas, que el scroll del panel recortaba; abajo, lo mismo para el botón «Ocultar». */
+        .sidebar-top {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0 var(--esp-1);
+            margin: 0 calc(var(--esp-1) * -1);
+        }
+
+        /* (era `mt-auto pt-3 border-top ...` en el HTML: las utilidades ganan a esta capa y no dejaban cambiarlo arriba o abajo) */
+        .sidebar-bottom {
+            flex: 0 0 auto;
+            margin-top: auto;
+            padding-top: var(--esp-4);
+            padding-bottom: var(--esp-1);
+            border-top: 1px solid color-mix(in srgb, var(--color-texto-suave) 10%, transparent);
+        }
+    }
+
+    /* ─── Estado Colapsado del Panel Lateral (Solo Íconos) */
+
+    @media (min-width: 768px) {
+        #sidebar-col.sidebar-collapsed {
+            flex: 0 0 68px;
+            max-width: 68px;
+            width: 68px;
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+
+        #sidebar-col.sidebar-collapsed ~ #main-content-col {
+            flex: 1 1 0;
+            max-width: calc(100% - 68px);
+            width: calc(100% - 68px);
+        }
+
+        .sidebar-label {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: clip;
+            display: inline-block;
+            opacity: 1;
+            max-width: 140px;
+            vertical-align: middle;
+            transition: opacity var(--dur-pop-soft) var(--ease-panel),
+                    max-width var(--dur-panel) var(--ease-panel);
+        }
+
+        #sidebar-col.sidebar-collapsed .sidebar-label {
+            opacity: 0;
+            max-width: 0;
+            margin: 0;
+            padding: 0;
+            pointer-events: none;
+        }
+
+        .sidebar-tab-icon {
+            transition: margin var(--dur-panel) var(--ease-panel), font-size var(--dur-base) ease;
+        }
+
+        #sidebar-col.sidebar-collapsed .sidebar-tab-icon {
+            margin-right: 0;
+            font-size: var(--texto-lg);
+        }
+
+        .search-container {
+            margin-bottom: var(--esp-4);
+            transition: background-color var(--dur-panel) var(--ease-panel),
+                    border-color var(--dur-panel) var(--ease-panel);
+        }
+
+        #sidebar-col.sidebar-collapsed .search-container {
+            justify-content: center;
+            cursor: pointer;
+            background-color: var(--search-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radio-medio);
+            height: 42px;
+        }
+
+        .search-container .search-icon {
+            transition: left var(--dur-panel) var(--ease-panel),
+                    transform var(--dur-panel) var(--ease-panel),
+                    font-size var(--dur-panel) var(--ease-panel),
+                    color var(--dur-base) ease;
+        }
+
+        #sidebar-col.sidebar-collapsed .search-container .search-icon {
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: var(--texto-lg);
+            pointer-events: auto;
+        }
+
+        .search-input {
+            transition: opacity var(--dur-pop-soft) var(--ease-panel),
+                    width var(--dur-panel) var(--ease-panel),
+                    padding var(--dur-panel) var(--ease-panel);
+        }
+
+        #sidebar-col.sidebar-collapsed .search-input {
+            opacity: 0;
+            width: 0;
+            min-width: 0;
+            padding: 0;
+            border-color: transparent;
+            pointer-events: none;
+        }
+
+        #sidebar-col.sidebar-collapsed .search-filter-dropdown {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #sidebar-col.sidebar-collapsed #btn-toggle-sidebar {
+            padding: var(--esp-2) 0;
+        }
+    }
+
+    /* ─── Dispositivos móviles y ventanas chicas (< 768px): barra de pestañas abajo, solo con íconos */
+
+    @media (max-width: 767.98px) {
+        #sidebar-col {
+            width: 100%;
+            max-width: 100%;
+            flex: 0 0 100%;
+            overflow: visible;                          /* si no, recorta el menú de filtros de la búsqueda, que cuelga de él */
+            position: fixed;                            /* barra de abajo (css/app/barra-movil.css) */
+            z-index: var(--capa-barra);                 /* sobre la barra de arriba: el buscador abierto la tapa */
+            padding-left: var(--esp-2);
+            padding-right: var(--esp-2);
+            margin-bottom: 0;
+        }
+
+        #sidebar-col:has(.dropdown-menu.show) {         /* el menú abierto queda sobre los encabezados pegajosos de Activos y Producción */
+            z-index: var(--capa-barra);
+        }
+
+        #v-pills-tabContent {                           /* sin alto mínimo: con poco contenido la página no se desplaza de más */
+            min-height: 0;
+        }
+
+        #app-main-row {                                 /* sin los -12 px del .row: con el padding de 8 px del contenedor se pasaba 4 px y movía lo fijo */
+            margin-right: 0;
+            margin-left: 0;
+        }
+
+        #main-content-col {
+            width: 100%;
+            max-width: 100%;
+            flex: 0 0 100%;
+            padding-right: 0;
+            padding-left: 0;
+        }
+
+
+        .sidebar-sticky {
+            position: static;
+            height: auto;
+            min-height: auto;
+            display: block;
+        }
+
+        .sidebar-top {
+            display: block;
+            overflow: visible;
+        }
+
+        .sidebar-bottom {
+            display: none;
+        }
+    }
+
+    /* ─── En móviles: mostrar únicamente los íconos de cada pestaña */
+
+    @media (max-width: 767.98px) {
+        #sidebar-col .sidebar-label {
+            display: none;
+        }
+
+        #v-pills-tab::-webkit-scrollbar {
+            display: none;
+        }
+
+        #v-pills-tab .sidebar-tab-icon {
+            font-size: var(--texto-lg);
+            margin-right: 0;
+        }
+
+        .search-container {
+            margin-bottom: var(--esp-2);
+        }
+    }
+
+    /* ─── Insignias de coincidencia de búsqueda en el panel lateral */
+
+    .nav-pills .nav-link:hover .sidebar-search-badge {
+        background-color: transparent;
+        color: var(--color-blue);
+        border: none;
+    }
+
+    .sidebar-search-badge.badge-cero,
+    .nav-pills .nav-link.active .sidebar-search-badge.badge-cero {
+        background-color: transparent;
+        color: var(--color-texto-suave);
+        --ui-badge-color: var(--color-texto-suave);
+        border: none;
+        opacity: 0.65;
+    }
+
+    /* ─── Search Input (Sidebar) */
+
+    .search-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-container .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--color-texto-suave);
+        font-size: var(--texto-md);
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .search-input {
+        background-color: var(--search-bg);
+        border: 1px solid var(--border-color);
+        color: var(--color-texto);
+        padding: 9px 38px 9px 33px;
+        border-radius: var(--radio-medio);
+        width: 100%;
+        font-size: var(--texto-md);
+        transition: all var(--dur-base);
+    }
+
+    .search-input:focus,
+    .search-input:not(:placeholder-shown) {
+        border-color: var(--color-blue);
+        box-shadow: 0 0 0 3px var(--search-focus);
+        outline: none;
+    }
+
+    /* Búsqueda ACTIVA: se nota a simple vista (fondo teñido, aro sólido y texto firme), porque con un filtro puesto la lista
+       vacía se confunde con falta de datos. La «X» (`#search-clear`) la limpia; solo se ve con búsqueda activa. */
+    .search-input.search-active {
+        padding-right: 68px;
+        background-color: var(--ui-primary-bg-subtle);
+        border-color: var(--color-blue);
+        box-shadow: 0 0 0 2px var(--color-blue);
+        font-weight: 600;
+    }
+
+    .search-clear {
+        display: none;
+        position: absolute;
+        right: 38px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 3;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        background: transparent;
+        color: var(--color-blue);
+        padding: var(--esp-1) 6px;
+        border-radius: var(--radio-medio);
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .search-container.search-active .search-clear {
+        display: inline-flex;
+    }
+
+    #sidebar-col.sidebar-collapsed .search-clear {
+        display: none;
+    }
+
+    .search-clear:hover,
+    .search-clear:focus-visible {
+        background-color: var(--dropdown-item-hover);
+    }
+
+    .search-container:focus-within .search-icon,
+    .search-container.search-active .search-icon,
+    .search-container:has(.search-input:not(:placeholder-shown)) .search-icon {
+        color: var(--color-blue);
+    }
+
+    .search-input::placeholder {
+        color: var(--color-texto-suave);
+        font-size: var(--texto-sm);
+        opacity: 0.8;
+    }
+
+    /* ─── blue-12 ya vale 12% en claro y 15% en oscuro, así que esta única regla */
+
+    .search-filter-btn.active-filter {
+        color: var(--color-blue);
+        background-color: var(--blue-12);
+    }
+
+    .filtro-dropdown-toggle-all {
+        font-size: var(--texto-xs);
+        color: var(--color-texto-suave);
+        text-decoration: none;
+        background: none;
+        border: none;
+        padding: 0;
+        font-weight: 500;
+        white-space: nowrap;
+        transition: color var(--dur-fast) ease;
+    }
+
+    .filtro-dropdown-toggle-all:hover {
+        color: var(--color-blue);
+    }
+
+    /* ─── Botón Scroll Top (Volver arriba - Estilo IDR) */
+
+    .btn-scroll-top {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background-color: var(--color-blue);
+        color: var(--color-blue-on);
+        box-shadow: var(--sombra-media);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: var(--capa-flotante);
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(20px) scale(0.9);
+        transition: opacity var(--dur-slow) ease, transform var(--dur-slow) var(--ease-pop), bottom var(--dur-panel) var(--ease-panel),
+                right var(--dur-panel) var(--ease-panel), background-color var(--dur-base) ease, box-shadow var(--dur-base) ease;
+        border: none;
+        padding: 0;
+    }
+
+
+    .btn-scroll-top.show {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0) scale(1);
+    }
+
+    .btn-scroll-top:hover {
+        background-color: var(--color-blue-hover);
+        box-shadow: var(--sombra-alta);
+        transform: translateY(-2px) scale(1.05);
+    }
+
+    .btn-scroll-top:active {
+        transform: scale(0.92);
+    }
+
+    .btn-scroll-top i {
+        font-size: var(--texto-lg);
+        line-height: 1;
+    }
+
+    [data-tema="dark"] .btn-scroll-top {
+        box-shadow: var(--sombra-media);
+    }
+}
+
+/* ─── Vista móvil (< 768 px). La cabecera (la marca, que lleva al launcher) queda arriba, pegajosa, y el panel de pestañas (con
+   el ícono de búsqueda y Ajustes) es una barra fija ABAJO; ninguna se oculta al hacer scroll. El buscador está oculto: el ícono de
+   la barra lo desliza desde arriba (ui/js/busqueda-movil.js). Va después de lo de arriba: mismo selector, gana el orden. */
+
+@layer app {
+    :root {
+        --alto-barra-movil: 0px;                      /* en escritorio no hay barra de abajo */
+    }
+
+    @media (max-width: 767.98px) {
+        :root {
+            --alto-barra-movil: calc(3.25rem + env(safe-area-inset-bottom, 0px));        /* la barra de pestañas de abajo */
+        }
+
+        html {
+            overscroll-behavior-x: none;            /* el swipe de lado cambia de pestaña: sin el «atrás» del navegador al desbordar */
+        }
+
+        html.arrastrando-largo {                        /* reubicando con el dedo (js/arrastre-tactil.js): la página no se mueve */
+            overscroll-behavior: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* El contenido termina sobre la barra de abajo, no debajo */
+        body {
+            padding-bottom: var(--alto-barra-movil);
+        }
+
+        #sidebar-col {                                  /* position: fixed está en estructura.css */
+            top: auto;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            padding-top: var(--esp-1);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            background-color: var(--bg-card);
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -2px 10px rgb(0 0 0 / 0.12);
+        }
+
+        /* Búsqueda abierta o con texto: el ícono se ve como una pestaña activa (sin la clase .active, que es de las pestañas) */
+        #btn-buscar-movil.busqueda-activa {
+            background-color: var(--nav-active-bg);
+            color: var(--nav-active-text);
+        }
+
+        #btn-buscar-movil .sidebar-tab-icon {
+            position: relative;
+        }
+
+        #btn-buscar-movil.con-texto:not(.busqueda-activa) .sidebar-tab-icon::after {
+            content: "";
+            position: absolute;
+            top: -2px;
+            right: -4px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--ui-primary);
+        }
+
+        /* Buscador: oculto arriba y fuera del flujo; al abrirlo baja desde el borde de arriba */
+        #sidebar-search-container {
+            position: fixed;
+            top: calc(var(--esp-2) + env(safe-area-inset-top, 0px));
+            right: var(--esp-2);
+            left: var(--esp-2);
+            margin: 0;
+            background-color: var(--bg-card);
+            box-shadow: var(--sombra-media);
+            transform: translateY(calc(-100% - var(--esp-6)));
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: transform var(--dur-panel) var(--ease-panel), opacity var(--dur-base) ease,
+                    visibility 0s linear var(--dur-panel);
+        }
+
+        html.busqueda-movil-abierta #sidebar-search-container {
+            transform: none;
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition: transform var(--dur-panel) var(--ease-panel), opacity var(--dur-base) ease, visibility 0s;
+        }
+
+        /* Lo que flota abajo sube sobre la barra */
+        .btn-scroll-top {
+            bottom: calc(var(--alto-barra-movil) + 1rem);
+            right: 1rem;
+        }
+
+
+        .toast {
+            bottom: calc(var(--alto-barra-movil) + 1rem);
+        }
+    }
+
+    @media (max-width: 767.98px) and (prefers-reduced-motion: reduce) {
+        #sidebar-search-container {
+            transition: none;
+        }
+    }
+}
+
+/* ─── Pestaña «Ajustes» (filas con interruptor deslizante, `.interruptor`, role="switch"). */
+
+@layer app {
+    /* Encabezado de la pestaña: el título y, a la derecha, la versión de la suite (shared/idr-version.js la escribe) */
+    .ajustes-encabezado {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--esp-3);
+        margin-bottom: var(--esp-3);
+    }
+
+    .ajustes-version {
+        font-family: var(--fuente-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+        font-size: var(--texto-sm);
+        color: var(--ui-secondary-color);
+        user-select: all;                                /* se copia de un toque al reportar un problema */
+    }
+
+    /* Dos columnas (o más) si hay lugar; cada sección ocupa su alto y no se estira con la vecina */
+    .ajustes-grilla {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr));
+        gap: var(--esp-6);
+        align-items: start;
+    }
+
+    .ajuste-seccion {
+        margin-bottom: 0;
+    }
+
+    .ajustes-columna {
+        display: flex;
+        flex-direction: column;
+        gap: var(--esp-6);
+        min-width: 0;
+    }
+
+    .ajuste-seccion-titulo {
+        margin-bottom: var(--esp-2);
+        font-size: var(--texto-md);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: var(--ui-secondary-color);
+    }
+
+    .ajuste-fila {
+        display: flex;
+        align-items: center;
+        gap: var(--esp-3);
+        padding: var(--esp-3) var(--esp-4);
+        background: var(--bg-card);
+        border: var(--ui-border-width) solid var(--ui-border-color);
+    }
+
+    .ajuste-fila + .ajuste-fila {
+        border-top: 0;
+    }
+
+    .ajuste-seccion > .ajuste-fila:first-of-type {
+        border-radius: var(--ui-border-radius) var(--ui-border-radius) 0 0;
+    }
+
+    .ajuste-seccion > .ajuste-fila:last-of-type {
+        border-radius: 0 0 var(--ui-border-radius) var(--ui-border-radius);
+    }
+
+    .ajuste-seccion > .ajuste-fila:only-of-type {
+        border-radius: var(--ui-border-radius);
+    }
+
+    .ajuste-icono {
+        flex: none;
+        width: 1.5rem;
+        text-align: center;
+        color: var(--ui-secondary-color);
+    }
+
+    /* Acción en curso: la tarjeta cambia su título y el ícono gira (menos movimiento lo detiene) */
+    .ajuste-ocupada .ajuste-icono {
+        color: var(--color-blue);
+        animation: ajuste-icono-giro 1s linear infinite;
+    }
+
+    @keyframes ajuste-icono-giro {
+        to { transform: rotate(360deg); }
+    }
+
+    .ajuste-texto {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .ajuste-titulo {
+        font-weight: 500;
+    }
+
+    .ajuste-desc {
+        font-size: var(--texto-md);
+        color: var(--ui-secondary-color);
+    }
+
+    .ajuste-fila[role="button"],
+    .ajuste-fila:has(.interruptor) {
+        cursor: pointer;
+        user-select: none;
+        transition: background-color var(--dur-base) ease;
+    }
+
+    .ajuste-fila[role="button"]:hover,
+    .ajuste-fila:has(.interruptor):hover {
+        background-color: var(--dropdown-item-hover);
+    }
+
+    .ajuste-fila[role="button"]:active,
+    .ajuste-fila:has(.interruptor):active {
+        background-color: var(--nav-hover);
+    }
+
+    .ajuste-fila[role="button"]:focus-visible {
+        outline: 2px solid var(--color-blue);
+        outline-offset: -2px;
+    }
+
+    .ajuste-accion-estado {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        font-size: var(--texto-base);
+        color: var(--ui-secondary-color);
+    }
+
+    /* Interruptor deslizante: la perilla se corre a la derecha con aria-checked="true" */
+    .interruptor {
+        position: relative;
+        flex: none;
+        width: 2.75rem;
+        height: 1.5rem;
+        padding: 0;
+        cursor: pointer;
+        background: var(--ui-border-color);
+        border: 0;
+        border-radius: var(--radio-grande);
+        transition: background-color var(--dur-base) ease;
+    }
+
+    .interruptor-perilla {
+        position: absolute;
+        top: .1875rem;
+        left: .1875rem;
+        width: 1.125rem;
+        height: 1.125rem;
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: var(--sombra-baja);
+        transition: transform var(--dur-base) ease;
+    }
+
+    .interruptor[aria-checked="true"] {
+        background: var(--color-blue);
+    }
+
+    .interruptor[aria-checked="true"] .interruptor-perilla {
+        transform: translateX(1.25rem);
+    }
+
+    .interruptor:focus-visible {
+        outline: 0;
+        box-shadow: 0 0 0 .25rem rgba(var(--color-blue-rgb), .35);
+    }
+
+    .interruptor[aria-disabled="true"] {
+        cursor: not-allowed;
+        opacity: .5;
+    }
+}
+
+/* Sincronización con el Gist: campos apilados dentro de una fila de Ajustes */
+@layer app {
+    .gist-campos {
+        gap: var(--esp-2);
+    }
+
+    .gist-recordar {
+        display: flex;
+        align-items: center;
+        gap: var(--esp-2);
+        font-size: var(--texto-md);
+    }
+
+    .gist-botones {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--esp-2);
+    }
+}

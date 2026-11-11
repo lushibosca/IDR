@@ -28,7 +28,6 @@ const TOPES = {
   "stock-listar.js": 514,
   "stock-puro.js": 1134,
   "stock.js": 1898,
-  "ui.js": 761,
 };
 
 test("cada js/ respeta su tope de líneas (500, o el congelado si ya lo pasaba)", () => {
@@ -116,8 +115,9 @@ test("las claves de localStorage llevan el prefijo sgc2/ (la suite comparte el o
 test("móvil: las filas .row de la página no se salen del ancho (margen lateral 0 en #app-main-row y #dashboard-fila)", () => {
   // El .row trae margen de -12 px y el contenedor solo 8 px de padding: 4 px de desborde = scroll horizontal y saltos de lo fijo.
   // Medido en un navegador; acá se vigila que las dos filas que lo causaban sigan corregidas en la hoja.
-  const css = fs.readFileSync(path.join(APP, "css/app/estructura.css"), "utf8");
-  const movil = css.slice(css.indexOf("@media (max-width: 767.98px)"));
+  // #app-main-row es del esqueleto común (../shared/ui/esqueleto.css); #dashboard-fila, de SGC (css/app/estructura.css)
+  const movilDe = (rel) => { const css = fs.readFileSync(path.join(APP, rel), "utf8"); return css.slice(css.indexOf("@media (max-width: 767.98px)")); };
+  const movil = movilDe("../shared/ui/esqueleto.css") + movilDe("css/app/estructura.css");
   for (const id of ["#app-main-row", "#dashboard-fila"]) {
     assert.match(movil, new RegExp(`${id}\\s*\\{[^}]*margin-right:\\s*0;[^}]*margin-left:\\s*0;`), `${id} sin margen lateral 0`);
     assert.ok(html.includes(`id="${id.slice(1)}"`), `${id} no está en index.html`);

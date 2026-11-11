@@ -55,8 +55,10 @@ test("css limpio 3: cada selector se define en un solo lugar (por condición de 
 });
 
 test("css limpio 5: sin CSS muerto (selectores con clases que el front no usa)", (t) => {
+  // Las hojas de ../shared/ui/ se revisan contra TODAS las apps que las cargan (../tests/estilo.test.mjs): una clase de la base
+  // que solo usa otra app no está muerta.
   const usada = clasesPosibles();
-  const muertos = todas.filter((r) => !r.bloque)
+  const muertos = todas.filter((r) => !r.bloque && !r.archivo.startsWith("../shared/"))
     .flatMap((r) => r.selectores.filter((s) => clasesDe(s).some((c) => !usada(c))).map((s) => `${r.archivo}: ${s}`));
   exigir(t, "selectores muertos", muertos);
 });

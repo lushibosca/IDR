@@ -1,4 +1,4 @@
-// Buscador móvil (bloque BUSQUEDA MOVIL PURO de js/busqueda-movil.js): cuándo se abre y cuándo se cierra solo.
+// Buscador móvil (bloque BUSQUEDA MOVIL PURO de shared/ui/js/busqueda-movil.js): cuándo se abre y cuándo se cierra solo.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { cargarBloque } from "./_bloque.mjs";

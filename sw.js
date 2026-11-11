@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261111.0047';
+const CACHE_NAME = 'idr-suite-v261111.0056';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -44,9 +44,7 @@ const PRECACHE_URLS = [
   './SGC/js/app.js',
   './SGC/js/arrastre-tactil.js',
   './SGC/js/atajos.js',
-  './SGC/js/atras-modales.js',
   './SGC/js/auditoria-bd.js',
-  './SGC/js/busqueda-movil.js',
   './SGC/js/busqueda.js',
   './SGC/js/comun.js',
   './SGC/js/consultas.js',
@@ -74,8 +72,6 @@ const PRECACHE_URLS = [
   './SGC/js/stock-seleccion.js',
   './SGC/js/stock.js',
   './SGC/js/tema-suite.js',
-  './SGC/js/swipe-pestanas.js',
-  './SGC/js/ui.js',
 
   // ── SGI (Materiales) ──
   './SGI/',
@@ -135,9 +131,14 @@ const PRECACHE_URLS = [
   './shared/idr-version.js',
   // base de estilo común (porte del estilo de SGC: docs/PORTE-ESTILO-SGC.md)
   './shared/ui/base.css',
+  './shared/ui/esqueleto.css',
   './shared/ui/grilla.css',
   './shared/ui/tokens.css',
   './shared/ui/utilidades.css',
+  './shared/ui/js/atras-modales.js',
+  './shared/ui/js/busqueda-movil.js',
+  './shared/ui/js/swipe-pestanas.js',
+  './shared/ui/js/ui.js',
   './shared/ui/componentes/acordeon.css',
   './shared/ui/componentes/alertas.css',
   './shared/ui/componentes/botones.css',

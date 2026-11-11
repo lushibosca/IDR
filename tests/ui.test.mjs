@@ -1,5 +1,5 @@
-// Funciones puras de static/ui.js (pestañas, modales y desplegables propios; reemplazan al JS de Bootstrap).
-// Ejecutar: node --test tests/js/*.test.mjs
+// Funciones puras de shared/ui/js/ui.js (pestañas, modales y desplegables propios de la suite; reemplazan al JS de Bootstrap).
+// Ejecutar desde la raíz: node --test tests/*.test.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
 import { cargarBloque, plano } from "./_bloque.mjs";

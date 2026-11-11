@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
+import { APPS_PORTADAS } from "./_apps.mjs";
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), "utf8");
@@ -117,10 +118,15 @@ test("el módulo: abrir empuja una entrada, el popstate cierra y una recarga con
   assert.deepEqual(llamadas.at(-1), ["go", -1]);
 });
 
-test("SGC conecta los modales y el buscador, y el precache incluye el módulo", () => {
-  const html = leer("SGC/index.html");
-  assert.ok(html.includes('src="../shared/idr-atras.js"') && html.includes('src="js/atras-modales.js'));
-  assert.ok(html.indexOf("idr-atras.js") < html.indexOf("atras-modales.js"));
-  assert.ok(leer("sw.js").includes("'./shared/idr-atras.js'"));
-  assert.ok(/IDRAtras\.abrir\('busqueda-movil'/.test(leer("SGC/js/busqueda-movil.js")));
+test("las apps portadas conectan los modales y el buscador (shared/ui/js/atras-modales.js), y el precache incluye los módulos", () => {
+  const sw = leer("sw.js");
+  assert.ok(sw.includes("'./shared/idr-atras.js'") && sw.includes("'./shared/ui/js/atras-modales.js'"));
+  assert.ok(/IDRAtras\.abrir\('busqueda-movil'/.test(leer("shared/ui/js/busqueda-movil.js")));
+  for (const app of APPS_PORTADAS) {
+    const html = leer(`${app}/index.html`);
+    assert.ok(html.includes('src="../shared/idr-atras.js"'), `${app}: falta ../shared/idr-atras.js`);
+    assert.ok(html.includes('src="../shared/ui/js/atras-modales.js'), `${app}: falta ../shared/ui/js/atras-modales.js`);
+    assert.ok(html.indexOf("idr-atras.js") < html.indexOf("atras-modales.js"), `${app}: idr-atras.js va antes`);
+    assert.ok(html.indexOf("ui/js/ui.js") < html.indexOf("atras-modales.js"), `${app}: ui.js va antes de atras-modales.js`);
+  }
 });

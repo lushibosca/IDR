@@ -1,4 +1,4 @@
-// Swipe entre pestañas en móvil (bloque SWIPE PESTANAS PURO de js/swipe-pestanas.js): cuándo un deslizamiento cambia de pestaña.
+// Swipe entre pestañas en móvil (bloque SWIPE PESTANAS PURO de shared/ui/js/swipe-pestanas.js): cuándo un deslizamiento cambia de pestaña.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { cargarBloque } from "./_bloque.mjs";

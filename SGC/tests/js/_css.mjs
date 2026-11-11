@@ -15,6 +15,11 @@ export function hojasCompartidas() {
   return [...leer("index.html").matchAll(/<link rel="stylesheet" href="(\.\.\/shared\/ui\/[^"?]+)/g)].map((m) => m[1]);
 }
 
+/** Scripts compartidos de la suite (../shared/...) que carga index.html, relativos a SGC/: también usan clases. */
+export function scriptsCompartidos() {
+  return [...leer("index.html").matchAll(/<script src="(\.\.\/shared\/[^"?]+)/g)].map((m) => m[1]);
+}
+
 /** Archivos .css de SGC (relativos), sin vendor/, más los de la base común que carga (../shared/ui/). */
 export function hojasCss() {
   const out = hojasCompartidas();
@@ -107,7 +112,8 @@ export function clasesDe(selector) {
  */
 export function clasesPosibles() {
   const html = leer("index.html");
-  const js = fs.readdirSync(path.join(STATIC, "js")).filter((f) => f.endsWith(".js")).map((f) => leer(f)).join("\n");
+  const js = [...fs.readdirSync(path.join(STATIC, "js")).filter((f) => f.endsWith(".js")).map((f) => leer(f)),
+    ...scriptsCompartidos().map((f) => leer(f))].join("\n");
   const exactas = new Set();
   const patrones = [];
   for (const m of html.matchAll(/class="([^"]*)"/g)) m[1].split(/\s+/).forEach((c) => exactas.add(c));

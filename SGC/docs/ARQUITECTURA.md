@@ -58,18 +58,21 @@ Cada capa solo usa las de arriba. `app.js` es el eje histórico (heredado de cct
 | **0. Arranque** | `preload.js` | Aplica tema, posición del panel y privacidad antes del primer pintado. | Lógica de negocio. |
 | **1. Reglas del stock** | `datos-puro.js` | Reglas portadas de `cctv/stock.py`: validación, unicidad de serie/MAC/patrimonio, catálogos, edificios y pisos, historial, «en producción solo operativo», `sanearDatos`. | DOM, red, disco ni reloj propio (`ctx.ahora`, `ctx.nuevoId`). |
 | **2. API local** | `api-local.js`, `sesion-local.js` | Responde `/api/stock*` y `/api/v2/datos` sobre el JSON guardado, con los mismos estados (422, 404, 409). `sesion-local` reemplaza al login de cctv_monitor. | Reglas de negocio (las llama de la capa 1). |
-| **3. Infraestructura UI** | `ui.js`, `animaciones.js`, `busqueda.js`, `comun.js` | `UI` (pestañas, modales, desplegables), animaciones de mutación, búsqueda tokenizada, `storage`, `apiFetch`, toasts y los bloques `UI COMUN`, `FECHAS Y CSV`. | Conocer pestañas concretas. |
+| **3. Infraestructura UI** | `../shared/ui/js/ui.js` (común a la suite), `animaciones.js`, `busqueda.js`, `comun.js` | `UI` (pestañas, modales, desplegables), animaciones de mutación, búsqueda tokenizada, `storage`, `apiFetch`, toasts y los bloques `UI COMUN`, `FECHAS Y CSV`. | Conocer pestañas concretas. |
 | **4. Núcleo de la app** | `app.js`, `selector.js` | Pestañas, panel lateral, búsqueda global, tema, select propio. | Reglas del stock. |
-| **5. Pestañas y funciones** | `produccion*.js`, `resumen.js`, `favoritos.js`, `atajos.js`, `stock*.js`, `consultas.js`, `auditoria-bd.js`, `historial-modal.js`, `busqueda-movil.js`, `swipe-pestanas.js`, `imagen-ampliada.js`, `ajustes.js`, `datos-ui.js`, `privacidad.js` | Una vista o función cada uno; el DOM con `textContent`. | Hablar con `localStorage` directo: pasan por `storage` o `apiFetch`. |
+| **5. Pestañas y funciones** | `produccion*.js`, `resumen.js`, `favoritos.js`, `atajos.js`, `stock*.js`, `consultas.js`, `auditoria-bd.js`, `historial-modal.js`, `../shared/ui/js/busqueda-movil.js`, `../shared/ui/js/swipe-pestanas.js`, `imagen-ampliada.js`, `ajustes.js`, `datos-ui.js`, `privacidad.js` | Una vista o función cada uno; el DOM con `textContent`. | Hablar con `localStorage` directo: pasan por `storage` o `apiFetch`. |
 | **6. Servicios sin vista propia** | `gist.js`, `parseador.js`, `migrar-sgc.js` | Sincronización cifrada (AES-GCM), parseadores de `cctv_online.json` y migración desde SGC; cada uno con su bloque puro y su ventana. | Escribir datos sin vista previa ni confirmar. |
 
 `stock-puro.js` (puras de la pestaña Stock) se carga antes que `stock.js`; los hijos `stock-*.js` y `produccion-*.js`
 comparten con su padre por un objeto global (`window.StockNucleo`) y el hijo no depende de que el padre lo conozca.
 
 ### Vista móvil (< 768 px)
-El panel lateral pasa a ser una **barra fija abajo** (Estado, Activos, Producción, búsqueda, Ajustes; `css/app/barra-movil.css`,
+El esqueleto (panel lateral, buscador, barra móvil, Ajustes) y sus scripts (`ui.js`, `atras-modales.js`, `busqueda-movil.js`,
+`swipe-pestanas.js`) son comunes a la suite: viven en `../shared/ui/` y sus tests en `../tests/`. Lo de abajo describe cómo los usa SGC.
+
+El panel lateral pasa a ser una **barra fija abajo** (Estado, Activos, Producción, búsqueda, Ajustes; `../shared/ui/esqueleto.css`, común a la suite,
 variable `--alto-barra-movil`, que sube lo flotante: toast, «volver arriba» y la barra de selección). El buscador está oculto y
-lo abre el ícono (`busqueda-movil.js`, `html.busqueda-movil-abierta`). Sin menú ⚙: Historial, Listar y Ayuda y atajos están en
+lo abre el ícono (`../shared/ui/js/busqueda-movil.js`, `html.busqueda-movil-abierta`). Sin menú ⚙: Historial, Listar y Ayuda y atajos están en
 Ajustes (sección `.solo-movil`). **La cabecera queda arriba**, pegajosa y de ~29 px, y el panel de pestañas es una barra fija abajo; ninguna se oculta. `--alto-barra-movil` es el alto de la barra de abajo y sube lo flotante (toast, «volver arriba», barra de selección, el aviso de actualización). En móvil `#v-pills-tabContent` no tiene alto mínimo: con poco contenido la página no se desplaza de más. **Swipe de lado** (`swipe-pestanas.js`, decisión pura `swipePestanaDestino`) cambia de pestaña; no actúa desde los bordes, en campos, tablas que se desplazan, ventanas abiertas ni con más de un dedo, y `overscroll-behavior-x: none` evita el «atrás» del navegador. Al abrir la búsqueda el campo recibe el foco en el mismo toque (abre el teclado). En móvil el `.row` de `#app-main-row` va sin márgenes negativos: con el padding de 8 px del contenedor se pasaba 4 px y causaba scroll horizontal (y movía lo fijo). **Historial** es una ventana (`#modal-historial`): `historial-modal.js` mueve ahí la tarjeta
 `#bd-card` de la pestaña (que sigue en el escritorio) mientras está abierta. `.solo-escritorio` / `.solo-movil` (utilidades.css)
 muestran u ocultan por ancho: son el mecanismo para lo que existe en una sola vista.
@@ -88,7 +91,7 @@ muestran u ocultan por ancho: son el mecanismo para lo que existe en una sola vi
 
 **Doble toque** (`doble-toque.js`): dentro de lo marcado con `data-doble-toque` (los modales de detalle) dos toques seguidos emiten un `dblclick` propio y se descarta el nativo, que en los teléfonos no es confiable.
 
-**Botón «atrás»:** `atras-modales.js` conecta `UI.modal` (eventos `ui:modal-abrir` / `ui:modal-cerrar`) y el buscador móvil con `IDRAtras` (`../shared/idr-atras.js`): cada capa abierta guarda una entrada del historial, cerrar por la X, el fondo o Escape la saca (varias juntas, con un solo `go(-n)`) y «atrás» del sistema cierra la de arriba; si una capa no se deja cerrar, recupera su entrada.
+**Botón «atrás»:** `../shared/ui/js/atras-modales.js` conecta `UI.modal` (eventos `ui:modal-abrir` / `ui:modal-cerrar`) y el buscador móvil con `IDRAtras` (`../shared/idr-atras.js`): cada capa abierta guarda una entrada del historial, cerrar por la X, el fondo o Escape la saca (varias juntas, con un solo `go(-n)`) y «atrás» del sistema cierra la de arriba; si una capa no se deja cerrar, recupera su entrada.
 
 **Detalles de stock (acordeón):** los modelos de un tipo se abren y cierran con animación (en móvil, `max-height`/relleno/margen/borde de la tarjeta en `detalle-movil.css`; en escritorio, el colapso por celdas) y **se abre un tipo a la vez**: abrir uno cierra el anterior, como los grupos de Activos y Producción.
 

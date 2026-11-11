@@ -14,12 +14,12 @@ const leer = (rel) => fs.readFileSync(path.join(STATIC, /^[^/]+\.js$/.test(rel) 
 
 // Hojas que aportan clases (las que carga index.html), todas propias (docs/diseno/CSS-Y-UI.md).
 const HOJAS = [
-  ...[...leer("index.html").matchAll(/<link rel="stylesheet" href="((?:\.\.\/shared\/ui\/|css\/)[^"?]+)/g)].map((m) => m[1]),
+  ...[...leer("index.html").matchAll(/<link rel="stylesheet" href="((?:\.\.\/shared\/ui\/|\.\.\/shared\/idr-|css\/)[^"?]+)/g)].map((m) => m[1]),
   "../shared/vendor/bootstrap-icons/bootstrap-icons.min.css", // la importa tokens.css (capa iconos)
 ];
 // Clases sin estilo propio a propósito: ganchos para JS/tests o marcadores de estado.
 const GANCHOS = new Set([
-  "asig-quitar", "custom-select-label", "gist-accion", "popup-disp-body", "popup-disp-info", "sidebar-toggle-icon",
+  "asig-quitar", "custom-select-label", "gist-accion", "idr-aviso-texto", "popup-disp-body", "popup-disp-info", "sidebar-toggle-icon",
 ]);
 // Usadas pero sin definición en ningún lado (no tienen efecto). Se informan; arreglarlas es aparte.
 const SIN_EFECTO_CONOCIDAS = new Set([]);
@@ -48,7 +48,9 @@ function tokensDeLista(texto) {
 }
 
 function clasesUsadas() {
-  const archivos = ["index.html", ...fs.readdirSync(path.join(STATIC, "js")).filter((f) => f.endsWith(".js"))];
+  // (más los scripts de la suite que carga index.html: ../shared/ui/js/ui.js arma el fondo de los modales, etc.)
+  const compartidos = [...leer("index.html").matchAll(/<script src="(\.\.\/shared\/[^"?]+)/g)].map((m) => m[1]);
+  const archivos = ["index.html", ...fs.readdirSync(path.join(STATIC, "js")).filter((f) => f.endsWith(".js")), ...compartidos];
   const usos = new Map();
   const anotar = (t, archivo) => {
     if (!usos.has(t)) usos.set(t, new Set());
