@@ -2,6 +2,13 @@
    búsqueda, Ajustes) y el buscador está oculto: el ícono de la barra lo desliza desde arriba (js/busqueda-movil.js).
    Historial, Listar y Ayuda están en Ajustes. Va después de estructura.css: mismo selector, gana el orden. */
 
+/* --navbar-height animable: al ocultarse la barra superior, los encabezados pegajosos (top: var(--navbar-height)) suben con ella */
+@property --navbar-height {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 58px;
+}
+
 @layer app {
     :root {
         --alto-barra-movil: 0px;                      /* en escritorio no hay barra de abajo */
@@ -10,6 +17,20 @@
     @media (max-width: 767.98px) {
         :root {
             --alto-barra-movil: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+        }
+
+        /* La barra superior se oculta al bajar y vuelve al subir (js/barra-superior.js: `html.navbar-oculta`) */
+        html {
+            transition: --navbar-height var(--dur-panel) var(--ease-panel);
+        }
+
+        .navbar {
+            transition: transform var(--dur-panel) var(--ease-panel), box-shadow var(--dur-panel) var(--ease-panel);
+        }
+
+        html.navbar-oculta .navbar {
+            transform: translateY(-100%);
+            box-shadow: none;
         }
 
         /* El contenido termina sobre la barra, no debajo */
@@ -91,7 +112,12 @@
     }
 
     @media (max-width: 767.98px) and (prefers-reduced-motion: reduce) {
-        #sidebar-search-container {
+        #sidebar-search-container,
+        .navbar {
+            transition: none;
+        }
+
+        html {
             transition: none;
         }
     }

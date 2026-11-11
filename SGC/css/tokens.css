@@ -64,7 +64,8 @@
         --ui-border-radius-sm: var(--radio-chico);
         --ui-border-radius-lg: var(--radio-medio);
         --ui-border-radius-pill: 50rem;
-        --navbar-height: 58px;
+        --navbar-height: 58px;                         /* lo que la barra superior ocupa a la vista (0 si el móvil la ocultó al bajar) */
+        --navbar-alto: 58px;                           /* lo que mide siempre (lo fija app.js) */
         --stock-header-height: 41px;
         --stock-th-height: 29px;
         --produccion-header-height: 52px;

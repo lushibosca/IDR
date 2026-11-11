@@ -39,7 +39,7 @@
     }
 
     #v-pills-tabContent {
-        min-height: calc(100vh - var(--navbar-height) - 3rem);
+        min-height: calc(100vh - var(--navbar-alto) - 3rem);
     }
 
     /* ─── Escritorio y tablets (>= 768px): panel lateral vertical con ancho suficiente y anclado */
@@ -284,10 +284,17 @@
             z-index: var(--capa-barra);
         }
 
+        #app-main-row {                                 /* sin los -12 px del .row: con el padding de 8 px del contenedor se pasaba 4 px y movía lo fijo */
+            margin-right: 0;
+            margin-left: 0;
+        }
+
         #main-content-col {
             width: 100%;
             max-width: 100%;
             flex: 0 0 100%;
+            padding-right: 0;
+            padding-left: 0;
         }
 
         .sidebar-sticky {
