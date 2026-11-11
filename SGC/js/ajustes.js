@@ -167,21 +167,7 @@ if (typeof document !== 'undefined') {
             }
         }
         if (tabAjustes) {
-            tabAjustes.addEventListener('click', (e) => {
-                const fila = e.target instanceof Element ? e.target.closest('.ajuste-fila') : null;
-                if (!fila) return;
-                const sw = fila.querySelector('.interruptor');
-                if (!sw || sw.disabled || sw.getAttribute('aria-disabled') === 'true') return;
-                if (e.target.closest('.interruptor')) return;
-                sw.click();
-            });
-
-            tabAjustes.addEventListener('keydown', (e) => {
-                if ((e.key === 'Enter' || e.key === ' ') && e.target instanceof Element && e.target.classList.contains('ajuste-fila') && e.target.getAttribute('role') === 'button') {
-                    e.preventDefault();
-                    e.target.click();
-                }
-            });
+            // Tocar la fila acciona su interruptor, y Enter/Espacio sobre una fila-botón: apariencia.js (compartido)
         }
     });
 }

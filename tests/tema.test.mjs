@@ -69,10 +69,11 @@ test("el launcher y todas las apps leen la misma clave IDR_dark (o usan IDRTema)
     const texto = archivos.map((f) => leer(f)).join("\n");
     assert.ok(/IDR_dark/.test(texto), `${app} no usa IDR_dark`);
   }
-  const sgc = leer("SGC/js/app.js") + leer("SGC/js/preload.js");
+  const sgc = leer("SGC/js/app.js") + leer("shared/ui/js/apariencia.js");
   assert.ok(/IDRTema/.test(sgc), "SGC debe usar IDRTema");
   assert.ok(leer("SGC/index.html").includes('src="../shared/idr-tema.js"'), "SGC carga el módulo en el <head>");
-  assert.ok(leer("SGC/index.html").indexOf("idr-tema.js") < leer("SGC/index.html").indexOf("js/preload.js"), "antes de preload.js");
+  assert.ok(leer("SGC/index.html").indexOf("idr-tema.js") < leer("SGC/index.html").indexOf("ui/js/arranque.js"), "antes de arranque.js");
+  assert.ok(leer("SGC/index.html").includes('data-clave-tema="sgc2/theme"'), "SGC conserva sgc2/theme como respaldo del tema");
   for (const app of APPS_PORTADAS.filter((a) => a !== "SGC")) {
     const html = leer(`${app}/index.html`);
     const cabeza = html.slice(0, html.indexOf("</head>"));

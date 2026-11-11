@@ -1,19 +1,10 @@
 (function () {
     try {
-        var s = localStorage.getItem('sgc2/' + 'theme');
         var html = document.documentElement;
-
-        if (s !== 'light') {
-            s = 'dark'; // dark por defecto
-        }
-        // El tema de la suite (../shared/idr-tema.js, `IDR_dark`) manda sobre el propio si alguien ya lo eligió
-        var suite = typeof IDRTema !== 'undefined' ? IDRTema.oscuro() : null;
-        if (suite !== null) s = suite ? 'dark' : 'light';
-        html.setAttribute('data-tema', s);
+        // (el tema y «reducir animaciones» los pone ../shared/ui/js/arranque.js, antes de este script)
         // Dashboard oculto hasta que lleguen los datos: resumen.js lo revela con el blur (sin salto de placeholders)
         html.setAttribute('data-cargando', '');
         setTimeout(function () { html.removeAttribute('data-cargando'); }, 6000);
-        html.style.colorScheme = s;
 
         // Dónde está el panel lateral (solo escritorio; el CSS lo ignora en pantallas chicas): antes de pintar, sin salto
         var p = localStorage.getItem('sgc2/' + 'cctv:sidebar_posicion');
@@ -67,7 +58,6 @@
             html.classList.add('preload-tab');
         }
     } catch (e) {
-        document.documentElement.setAttribute('data-tema', 'dark');
-        document.documentElement.style.colorScheme = 'dark';
+        /* sin almacenamiento: queda lo que puso arranque.js */
     }
 }());

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261111.1247';
+const CACHE_NAME = 'idr-suite-v261111.1257';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -31,7 +31,6 @@ const PRECACHE_URLS = [
   './SGC/css/app/favoritos.css',
   './SGC/css/app/interaccion.css',
   './SGC/css/app/produccion.css',
-  './SGC/css/app/tema.css',
   './SGC/favicon.svg',
   './SGC/icon.svg',
   './SGC/icons/icon-192.png',
@@ -71,7 +70,6 @@ const PRECACHE_URLS = [
   './SGC/js/stock-puro.js',
   './SGC/js/stock-seleccion.js',
   './SGC/js/stock.js',
-  './SGC/js/tema-suite.js',
 
   // ── SGI (Materiales) ──
   './SGI/',

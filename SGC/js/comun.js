@@ -32,17 +32,7 @@ const storage = {
     }
 };
 
-// --- Menos movimiento (menú de ajustes): del dispositivo, como el sonido. `data-movimiento="reducido"` en <html> apaga las
-// animaciones y transiciones (utilidades.css) y `uiMovimientoReducido` (ui.js) hace que el JS tampoco anime. Se aplica al cargar.
-const CLAVE_MOVIMIENTO_REDUCIDO = 'cctv:movimiento_reducido';
-function movimientoReducidoActivo() {
-    return storage.get(CLAVE_MOVIMIENTO_REDUCIDO) === '1';
-}
-function aplicarMovimientoReducido(activo) {
-    if (activo) document.documentElement.setAttribute('data-movimiento', 'reducido');
-    else document.documentElement.removeAttribute('data-movimiento');
-}
-aplicarMovimientoReducido(movimientoReducidoActivo());
+// «Reducir animaciones» (`data-movimiento="reducido"` en <html>) lo aplican arranque.js y apariencia.js (shared/ui/js).
 
 // ==== PREFERENCIAS PURO BEGIN ====
 // Preferencias que siguen a la persona a otra PC (docs/diseno/PREFERENCIAS-POR-USUARIO.md): [clave del servidor

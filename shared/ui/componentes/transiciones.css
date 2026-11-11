@@ -98,4 +98,17 @@
         }
     }
 
+    /* ─── Transición suave solo cuando el usuario cambia de tema activamente */
+
+    html.theme-transition,
+    html.theme-transition body,
+    html.theme-transition .navbar,
+    html.theme-transition .card,
+    html.theme-transition .card-footer,
+    html.theme-transition .modal-content,
+    html.theme-transition .table,
+    html.theme-transition .search-container,
+    html.theme-transition .dropdown-menu {
+        transition: background-color var(--dur-slow) ease, color var(--dur-slow) ease, border-color var(--dur-slow) ease;
+    }
 }

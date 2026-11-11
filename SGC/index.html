@@ -16,7 +16,9 @@
     <script src="../shared/idr-tema.js"></script>
     <script src="../shared/idr-version.js"></script>
     <script src="../shared/idr-atras.js"></script>
-    <script src="js/preload.js?v=8"></script>
+    <script src="../shared/ui/js/arranque.js" data-prefijo="sgc2/" data-tema="dark" data-clave-tema="sgc2/theme"
+        data-clave-movimiento="sgc2/cctv:movimiento_reducido" data-valor-reducido="1" data-valor-normal="0"></script>
+    <script src="js/preload.js?v=9"></script>
     <!-- CSS por capas (@layer en tokens.css): tokens, base, iconos, grilla, componentes, app, utilidades. La base común de
          la suite (tokens, base, grilla, componentes, utilidades, íconos y fuentes) está en ../shared/ui y ../shared/vendor;
          lo propio de SGC, en css/app/. Sin !important. El orden de los <link> es el de las capas. -->
@@ -24,7 +26,7 @@
     <link rel="stylesheet" href="../shared/ui/base.css?v=16">
     <link rel="stylesheet" href="../shared/ui/grilla.css?v=5">
     <link rel="stylesheet" href="../shared/idr-actualizacion.css">
-    <link rel="stylesheet" href="../shared/ui/componentes/transiciones.css?v=12">
+    <link rel="stylesheet" href="../shared/ui/componentes/transiciones.css?v=13">
     <link rel="stylesheet" href="../shared/ui/componentes/tablas.css?v=12">
     <link rel="stylesheet" href="../shared/ui/componentes/formularios.css?v=14">
     <link rel="stylesheet" href="../shared/ui/componentes/botones.css?v=15">
@@ -41,8 +43,7 @@
     <link rel="stylesheet" href="../shared/ui/componentes/spinner.css?v=6">
     <link rel="stylesheet" href="../shared/ui/esqueleto.css?v=1">
     <link rel="stylesheet" href="css/app/estructura.css?v=40">
-    <link rel="stylesheet" href="css/app/tema.css?v=4">
-    <link rel="stylesheet" href="css/app/estado.css?v=54">
+        <link rel="stylesheet" href="css/app/estado.css?v=54">
     <link rel="stylesheet" href="css/app/produccion.css?v=51">
     <link rel="stylesheet" href="css/app/auditoria.css?v=25">
     <link rel="stylesheet" href="css/app/activos.css?v=45">
@@ -90,7 +91,7 @@
                         <li>
                             <hr class="dropdown-divider">
                         </li>
-                        <li><button id="btn-theme-menu" class="dropdown-item" type="button"
+                        <li><button id="btn-theme-menu" class="dropdown-item" type="button" data-idr-tema-alternar
                                 title="Cambiar entre modo oscuro y claro"
                                 ><i class="bi bi-moon-fill text-secondary me-2"></i> Modo oscuro</button>
                         </li>
@@ -2185,12 +2186,11 @@
     <script src="js/busqueda.js?v=8"></script>
     <script src="js/datos-puro.js?v=3"></script>
     <script src="js/api-local.js?v=3"></script>
-    <script src="js/comun.js?v=57"></script>
+    <script src="js/comun.js?v=58"></script>
     <script src="js/arrastre-tactil.js?v=1"></script>
     <script src="js/doble-toque.js?v=1"></script>
-    <script src="js/tema-suite.js?v=1"></script>
-    <script src="../shared/ui/js/atras-modales.js?v=1"></script>
-    <script src="js/app.js?v=274"></script>
+        <script src="../shared/ui/js/atras-modales.js?v=1"></script>
+    <script src="js/app.js?v=275"></script>
     <script src="js/sesion-local.js?v=1"></script>
     <script src="js/selector.js?v=2"></script>
     <script src="js/produccion.js?v=64"></script>
@@ -2211,12 +2211,13 @@
     <script src="../shared/ui/js/busqueda-movil.js?v=4"></script>
     <script src="js/imagen-ampliada.js?v=1"></script>
     <script src="../shared/ui/js/swipe-pestanas.js?v=1"></script>
-    <script src="js/ajustes.js?v=6"></script>
+    <script src="js/ajustes.js?v=7"></script>
     <script src="js/datos-ui.js?v=1"></script>
     <script src="js/gist.js?v=1"></script>
     <script src="js/parseador.js?v=1"></script>
     <script src="js/migrar-sgc.js?v=1"></script>
     <script src="js/privacidad.js?v=2"></script>
+    <script src="../shared/ui/js/apariencia.js"></script>
     <script src="../shared/idr-actualizacion.js" data-sw="../sw.js" data-scope="../"></script>
 
 </body>

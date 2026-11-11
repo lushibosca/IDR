@@ -25,18 +25,12 @@ function initTheme() {
 
 preferencias.alAplicar('theme', initTheme);         // el tema de esta persona, traído de otra PC
 
-function toggleTheme() {
-    document.documentElement.classList.add('theme-transition');
-    const currentTheme = document.documentElement.getAttribute('data-tema');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-tema', newTheme);
-    document.documentElement.style.colorScheme = newTheme;
-    preferencias.set('theme', newTheme); IDRTema.guardar(newTheme === 'dark');   // y lo ven todas las apps de la suite
+// El cambio de tema (botón de Ajustes o del menú ⚙, otra app, otra ventana) lo hace apariencia.js y avisa con `idr:tema`:
+// acá se guarda el respaldo propio (sgc2/theme, se sincroniza entre PC) y se repinta el ícono del menú.
+document.addEventListener('idr:tema', (e) => {
+    preferencias.set('theme', e.detail.oscuro ? 'dark' : 'light');
     updateThemeIcon();
-    setTimeout(() => {
-        document.documentElement.classList.remove('theme-transition');
-    }, 350);
-}
+});
 
 function updateThemeIcon() {
     const currentTheme = document.documentElement.getAttribute('data-tema');
@@ -219,21 +213,9 @@ function irACamarasDeNvr(nvrName, nvrIp) {
 }
 
 
-// Pestaña Ajustes > «Reducir animaciones»: quita las animaciones de la página (del dispositivo, como el sonido)
-function pintarBotonMovimiento() {
-    uiInterruptor(document.getElementById('btn-movimiento'), movimientoReducidoActivo());
-}
-document.addEventListener('DOMContentLoaded', () => {
-    pintarBotonMovimiento();
-    const btn = document.getElementById('btn-movimiento');
-    if (!btn) return;
-    btn.addEventListener('click', () => {
-        const activo = !movimientoReducidoActivo();
-        storage.set(CLAVE_MOVIMIENTO_REDUCIDO, activo ? '1' : '0');
-        aplicarMovimientoReducido(activo);
-        pintarBotonMovimiento();
-        mostrarToast(activo ? 'Animaciones desactivadas.' : 'Animaciones activadas.', 'info', 2500);
-    });
+// Pestaña Ajustes > «Reducir animaciones»: lo maneja apariencia.js (del dispositivo, como el sonido); acá solo el aviso
+document.addEventListener('idr:movimiento', (e) => {
+    mostrarToast(e.detail.reducido ? 'Animaciones desactivadas.' : 'Animaciones activadas.', 'info', 2500);
 });
 
 // Ajustes > «Cambiar de pestaña al buscar» (preferencia de la persona; sin elegir, sí)
@@ -813,14 +795,6 @@ function initAcordeones() {
     });
 }
 
-/** Botones del menú ⚙ y de Ajustes: cambiar el tema. (DOMContentLoaded) */
-function initAccionesMenu() {
-    const btnTheme = document.getElementById('btn-theme');
-    if (btnTheme) btnTheme.addEventListener('click', toggleTheme);
-    const btnThemeMenu = document.getElementById('btn-theme-menu');
-    if (btnThemeMenu) btnThemeMenu.addEventListener('click', toggleTheme);
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     actualizarAlturaNavbar();
     window.addEventListener('resize', actualizarAlturaNavbar, { passive: true });
@@ -868,7 +842,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initAtajosKpi();
     initCamposBusqueda();
     initAcordeones();
-    initAccionesMenu();
     initSesion();                     // sesion-local.js: sin login, el rol que se muestra
 
     cargarDatos();

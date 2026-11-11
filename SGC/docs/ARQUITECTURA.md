@@ -55,7 +55,7 @@ Cada capa solo usa las de arriba. `app.js` es el eje histórico (heredado de cct
 
 | Capa | Archivos | Qué hace | Qué **no** hace |
 |---|---|---|---|
-| **0. Arranque** | `preload.js` | Aplica tema, posición del panel y privacidad antes del primer pintado. | Lógica de negocio. |
+| **0. Arranque** | `preload.js` | Aplica la posición del panel, la privacidad y la pestaña recordada antes del primer pintado (el tema y «reducir animaciones» los pone `../shared/ui/js/arranque.js`). | Lógica de negocio. |
 | **1. Reglas del stock** | `datos-puro.js` | Reglas portadas de `cctv/stock.py`: validación, unicidad de serie/MAC/patrimonio, catálogos, edificios y pisos, historial, «en producción solo operativo», `sanearDatos`. | DOM, red, disco ni reloj propio (`ctx.ahora`, `ctx.nuevoId`). |
 | **2. API local** | `api-local.js`, `sesion-local.js` | Responde `/api/stock*` y `/api/v2/datos` sobre el JSON guardado, con los mismos estados (422, 404, 409). `sesion-local` reemplaza al login de cctv_monitor. | Reglas de negocio (las llama de la capa 1). |
 | **3. Infraestructura UI** | `../shared/ui/js/ui.js` (común a la suite), `animaciones.js`, `busqueda.js`, `comun.js` | `UI` (pestañas, modales, desplegables), animaciones de mutación, búsqueda tokenizada, `storage`, `apiFetch`, toasts y los bloques `UI COMUN`, `FECHAS Y CSV`. | Conocer pestañas concretas. |
@@ -87,7 +87,7 @@ muestran u ocultan por ancho: son el mecanismo para lo que existe en una sola vi
 
 **Detalles en tarjetas (móvil):** los modales de detalle de stock (cámaras, servidores, otros, grupos) y de canales muestran cada fila como una tarjeta (nombre arriba, números en columnas con su rótulo; los modelos, sub-tarjetas; el total, una tarjeta fija abajo). Es solo CSS (`css/app/detalle-movil.css`, selectores genéricos con `:where()`); el JS arma las mismas filas de tabla.
 
-**Tema compartido con la suite:** `IDRTema` (`../shared/idr-tema.js`, clave `IDR_dark`) manda sobre `sgc2/theme`: `preload.js` lo aplica antes de pintar, `toggleTheme` lo escribe y `tema-suite.js` lo sigue en vivo (evento `storage`, y al volver del caché de «atrás»).
+**Tema compartido con la suite:** `IDRTema` (`../shared/idr-tema.js`, clave `IDR_dark`) manda sobre `sgc2/theme`: `arranque.js` lo aplica antes de pintar (con `sgc2/theme` de respaldo) y `apariencia.js` lo cambia y lo sigue en vivo (evento `storage`, y al volver del caché de «atrás»); SGC guarda su respaldo al oír `idr:tema`.
 
 **Doble toque** (`doble-toque.js`): dentro de lo marcado con `data-doble-toque` (los modales de detalle) dos toques seguidos emiten un `dblclick` propio y se descarta el nativo, que en los teléfonos no es confiable.
 

@@ -172,4 +172,8 @@ test("arranque.js: tema inicial", async () => {
   assert.equal(f(null, "light"), "light");
   assert.equal(f(null, null), "light");
   assert.equal(f(null, "cualquiera"), "light");
+  assert.equal(f(null, "dark", "light"), "light");   // respaldo propio de la app (SGC: sgc2/theme)
+  assert.equal(f(null, "light", "dark"), "dark");
+  assert.equal(f(true, "light", "light"), "dark");   // el de la suite manda sobre el respaldo
+  assert.equal(f(null, "dark", "basura"), "dark");
 });

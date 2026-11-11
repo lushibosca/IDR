@@ -75,9 +75,9 @@ check('cabecera: el ícono de la marca lleva al launcher de la suite', $('menu-c
     check('tema: IDR_dark=1 pone SGC en oscuro', tema() === 'dark');
     w.localStorage.setItem('IDR_dark', '0'); w.initTheme();
     check('tema: IDR_dark=0 pone SGC en claro', tema() === 'light');
-    w.toggleTheme();
+    $('btn-theme').click();
     check('tema: cambiarlo en SGC lo escribe para toda la suite', tema() === 'dark' && w.localStorage.getItem('IDR_dark') === '1');
-    w.toggleTheme();
+    $('btn-theme').click();
     check('tema: y al volver, también', tema() === 'light' && w.localStorage.getItem('IDR_dark') === '0');
     w.localStorage.setItem('IDR_dark', '1');
     w.dispatchEvent(new w.StorageEvent('storage', { key: 'IDR_dark', newValue: '1' }));
