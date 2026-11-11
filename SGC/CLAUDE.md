@@ -1,4 +1,4 @@
-# SGC-2 — stock de CCTV estático (parte de la suite IDR)
+# SGC — stock de CCTV estático (parte de la suite IDR)
 
 Front vanilla JS (scripts globales, sin módulos ES) y CSS propio, todo en el navegador (`localStorage`, prefijo `sgc2/`).
 Idioma: español. Reglas generales de la suite (Service Worker único, release, commits, no push): `../CLAUDE.md`.
@@ -8,9 +8,9 @@ Estructura y capas: `docs/ARQUITECTURA.md` (fuente de verdad). Contexto y entreg
 1. Si cambió un `js/` o `css/`, subir su `?v=` en `index.html`. Si se creó o borró un archivo, ajustar `../sw.js`
    (`PRECACHE_URLS`) y el `<script>`/`<link>` de `index.html` (el orden de los `<script>` es el de dependencias).
 2. Desde la raíz `idr/`: `node scripts/release.mjs`.
-3. `node --test tests/js/*.test.mjs` (en `SGC-2/`; no pasar el directorio) y `node --test ../tests/*.test.mjs`.
+3. `node --test tests/js/*.test.mjs` (en `SGC/`; no pasar el directorio) y `node --test ../tests/*.test.mjs`.
    Tocar la UI o el `index.html`: también `(cd tests/e2e && npm ci) && node tests/e2e/humo.mjs`.
-4. Si pasan, commit automático (`SGC-2: ...`, en español, incluyendo `../sw.js`). No hacer push.
+4. Si pasan, commit automático (`SGC: ...`, en español, incluyendo `../sw.js`). No hacer push.
 
 ## Normas (las vigila `tests/js/arquitectura.test.mjs`)
 - **Lógica pura aparte.** Las decisiones van en funciones puras entre marcadores `// ==== X PURO BEGIN/END ====`, sin

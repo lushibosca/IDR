@@ -1,4 +1,6 @@
-# SGC-2 — análisis de implementación
+# SGC (antes SGC-2) — análisis de implementación
+
+> **2026-11-10:** la migración con datos reales salió bien. `SGC-2/` se renombró a `SGC/` y el SGC anterior se borró (su `ROADMAP.md` está en `docs/ROADMAP-SGC-anterior.md`). Las menciones a «SGC-2» de abajo son históricas.
 
 Objetivo: una versión **estática** (GitHub Pages, sin backend) del front de `cctv_monitor`, con los datos en un JSON
 (localStorage) sincronizable con un **GitHub Gist**, igual que `idr/SGC`. Cuando esté completa reemplaza a `idr/SGC`.

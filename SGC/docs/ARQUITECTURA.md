@@ -1,4 +1,4 @@
-# Arquitectura del front — SGC-2
+# Arquitectura del front — SGC
 
 **Última actualización:** 2026-11-10
 **Estado:** front vanilla (scripts globales, sin módulos ni build) con la lógica del stock en funciones puras y una API local
@@ -32,7 +32,7 @@ que responde en el navegador. Las normas de abajo las vigila `tests/js/arquitect
 ## 2. Estructura
 
 ```text
-SGC-2/
+SGC/
 ├── index.html              # DOM, CSP, <link> en orden de capas y <script> en orden de dependencias
 ├── CLAUDE.md               # directivas de trabajo (flujo, normas); las de la suite están en ../CLAUDE.md
 ├── css/
@@ -115,5 +115,5 @@ hay que bajar su número (o quitarlo si queda por debajo). Los mayores: `app.js`
 
 - Partir los archivos de más de 500 líneas (primero `app.js`, 2135, y `comun.js`, 2018), bajando su tope en el test.
 - Convertir los accesos a `window.*` entre archivos en objetos con nombre (`StockNucleo` ya lo es).
-- Entrega 6 del análisis: renombrar `SGC-2` → `SGC` (con su manifest e iconos de PWA propios); al hacerlo, actualizar
-  `PRECACHE_URLS`, el fallback offline de `../sw.js` y los tests de la suite.
+- ~~Entrega 6 (renombrar `SGC-2` → `SGC`)~~: hecha el 2026-11-10; el SGC anterior se borró. Falta solo un `flash.js` propio si se quiere
+  evitar el parpadeo de tema (hoy lo cubre `preload.js`).

@@ -1,4 +1,4 @@
-// Normas de arquitectura de SGC-2 (docs/ARQUITECTURA.md y CLAUDE.md). Ejecutar: node --test tests/js/*.test.mjs
+// Normas de arquitectura de SGC (docs/ARQUITECTURA.md y CLAUDE.md). Ejecutar: node --test tests/js/*.test.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";

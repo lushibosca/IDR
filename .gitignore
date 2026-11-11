@@ -1,4 +1,4 @@
-SGC/Utilidades/datos/*
+Utilidades/datos/*
 *.json
 !manifest.json
 !*/manifest.json

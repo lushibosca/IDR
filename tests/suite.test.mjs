@@ -24,7 +24,7 @@ test("sin entradas repetidas en el precache", () => {
   assert.deepEqual(repetidas, []);
 });
 
-test("SGC-2: todo js/css/svg/html/json de la app (menos fotos y tests) está en el precache", () => {
+test("SGC: todo js/css/svg/html/json de la app (menos fotos y tests) está en el precache", () => {
   const sin = [];
   const recorrer = (dir) => {
     for (const e of fs.readdirSync(path.join(RAIZ, dir), { withFileTypes: true })) {
@@ -36,11 +36,16 @@ test("SGC-2: todo js/css/svg/html/json de la app (menos fotos y tests) está en 
       }
     }
   };
-  recorrer("SGC-2");
+  recorrer("SGC");
   assert.deepEqual(sin, [], "agregarlos a PRECACHE_URLS de sw.js");
 });
 
-test("el fallback offline de /SGC-2 va antes que el de /SGC (includes('/SGC') lo capturaría)", () => {
-  assert.ok(sw.indexOf("includes('/SGC-2')") > -1);
-  assert.ok(sw.indexOf("includes('/SGC-2')") < sw.indexOf("includes('/SGC')"));
+test("el fallback offline de /SGC apunta a un archivo precacheado", () => {
+  assert.ok(sw.includes("caches.match('./SGC/index.html')"));
+  assert.ok(PRECACHE.includes("./SGC/index.html"));
+});
+
+test("ya no queda nada de la carpeta SGC-2 (se renombró a SGC)", () => {
+  assert.ok(!sw.includes("SGC-2"));
+  assert.ok(!fs.existsSync(path.join(RAIZ, "SGC-2")));
 });
