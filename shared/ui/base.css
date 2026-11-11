@@ -66,7 +66,7 @@
         -webkit-user-select: none;
         user-select: none;
         font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        background-color: var(--bg-main);
+        background-color: transparent;                /* el color de la página está en <html>; así se ve el fondo de fondo.css */
         color: var(--color-texto);
     }
 

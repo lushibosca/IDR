@@ -10,15 +10,6 @@
         --bg-overlay: color-mix(in srgb, var(--bg-main) 74%, transparent);
     }
 
-    /* el cuerpo deja ver el fondo; el color de la página queda en <html> (menos con un modal abierto: ahí manda base.css) */
-    html:not(.ui-modal-abierto) {
-        background-color: var(--bg-main);
-    }
-
-    body {
-        background-color: transparent;
-    }
-
     .bg-backdrop {
         position: fixed;
         top: -24px;
