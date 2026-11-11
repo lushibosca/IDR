@@ -1,6 +1,7 @@
 // Móvil (< 768 px): el buscador del panel está oculto y se abre con el ícono de la barra de abajo (#btn-buscar-movil); aparece
 // arriba (`html.busqueda-movil-abierta`, el CSS lo desliza) y se cierra con el mismo ícono, con Escape o al tocar fuera sin
-// texto. Con texto escrito y cerrado, el ícono lleva un punto (`.con-texto`): la búsqueda sigue filtrando. Se carga después de app.js.
+// texto. Con texto escrito y cerrado, el ícono lleva un punto (`.con-texto`): la búsqueda sigue filtrando. Al abrirlo el campo
+// recibe el foco en el mismo toque (se abre el teclado); al cerrarlo o con «Buscar» (Enter) el teclado baja. Se carga después de app.js.
 
 // ==== BUSQUEDA MOVIL PURO BEGIN ====
 /** Estado siguiente del buscador móvil. evento: 'alternar' (ícono), 'abrir' (foco en el campo), 'cerrar' (Escape, fuera, ancho de escritorio). */
@@ -35,7 +36,16 @@ function busquedaMovilCierraAlTocarFuera({ abierta, texto, tocoDentro }) {
         raiz.classList.toggle(CLASE, ahora);
         boton.classList.toggle('busqueda-activa', ahora);
         boton.setAttribute('aria-expanded', String(ahora));
-        if (ahora && !antes) requestAnimationFrame(() => campo.focus({ preventScroll: true }));
+        if (ahora && !antes) {
+            // Un campo oculto no recibe el foco, y `visibility` pasa por transiciones (la de la caja y la del propio campo, que tiene
+            // `transition: all`): se muestran YA, sin transición, solo el instante del foco; después manda la clase.
+            caja.style.visibility = 'visible';
+            campo.style.transition = 'none';
+            campo.focus({ preventScroll: true });            // dentro del toque, para que el teclado se abra (iOS lo exige)
+            requestAnimationFrame(() => { caja.style.removeProperty('visibility'); campo.style.removeProperty('transition'); });
+        } else if (!ahora && antes) {
+            campo.blur();                                    // cerrado: el teclado también
+        }
         marcarTexto();
     }
     function marcarTexto() {
@@ -44,7 +54,10 @@ function busquedaMovilCierraAlTocarFuera({ abierta, texto, tocoDentro }) {
 
     boton.addEventListener('click', () => aplicar('alternar'));
     campo.addEventListener('focusin', () => { if (!abierta() && !(escritorio && escritorio.matches)) aplicar('abrir'); });
-    campo.addEventListener('keydown', (e) => { if (e.key === 'Escape' && abierta()) aplicar('cerrar'); });
+    campo.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && abierta()) aplicar('cerrar');
+        else if (e.key === 'Enter' && abierta()) campo.blur();     // la tecla «Buscar» baja el teclado y deja ver los resultados
+    });
     campo.addEventListener('input', marcarTexto);
     document.addEventListener('cctv:busqueda', marcarTexto);
     document.addEventListener('pointerdown', (e) => {

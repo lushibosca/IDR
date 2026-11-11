@@ -61,8 +61,8 @@
     /* ─── Barra superior */
 
     .navbar {
-        --ui-navbar-padding-x: 0;
-        --ui-navbar-padding-y: 0.5rem;
+        --ui-navbar-padding-x: var(--esp-6);
+        --ui-navbar-padding-y: var(--esp-4);
         --ui-navbar-brand-padding-y: 0.3125rem;
         --ui-navbar-brand-margin-end: 1rem;
         --ui-navbar-brand-font-size: var(--texto-lg);
@@ -105,12 +105,25 @@
         color: var(--ui-navbar-brand-hover-color);
     }
 
+    /* Móvil: la barra superior a la mitad de alto (de ~67 a ~34 px): menos relleno y la marca en una línea ajustada */
+    @media (max-width: 767.98px) {
+        .navbar {
+            --ui-navbar-padding-x: var(--esp-3);
+            --ui-navbar-padding-y: var(--esp-1);
+            --ui-navbar-brand-padding-y: 0;
+        }
+
+        .navbar-brand {
+            line-height: 1.2;
+        }
+    }
+
     /* El ícono de la marca lleva al launcher de la suite (como el logo de SGR y SGI) */
     .brand-launcher {
         display: inline-flex;
         align-items: center;
         margin-right: var(--esp-2);
-        padding: var(--esp-1);
+        padding: 0 var(--esp-1);
         border-radius: var(--radio-medio);
         color: inherit;
         text-decoration: none;

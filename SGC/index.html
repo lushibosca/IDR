@@ -13,7 +13,7 @@
     <script src="js/preload.js?v=7"></script>
     <!-- CSS: todo en static/css/, por capas (@layer en tokens.css): tokens, base, iconos, grilla, componentes,
          app, utilidades. Sin !important (docs/diseno/CSS-Y-UI.md). El orden de los <link> es el de las capas. -->
-    <link rel="stylesheet" href="css/tokens.css?v=25">
+    <link rel="stylesheet" href="css/tokens.css?v=26">
     <link rel="stylesheet" href="css/base.css?v=16">
     <link rel="stylesheet" href="css/grilla.css?v=5">
     <link rel="stylesheet" href="css/componentes/transiciones.css?v=12">
@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="css/componentes/formularios.css?v=14">
     <link rel="stylesheet" href="css/componentes/botones.css?v=15">
     <link rel="stylesheet" href="css/componentes/desplegables.css?v=18">
-    <link rel="stylesheet" href="css/componentes/navegacion.css?v=18">
+    <link rel="stylesheet" href="css/componentes/navegacion.css?v=20">
     <link rel="stylesheet" href="css/componentes/tarjetas.css?v=11">
     <link rel="stylesheet" href="css/componentes/acordeon.css?v=17">
     <link rel="stylesheet" href="css/componentes/insignias.css?v=13">
@@ -42,15 +42,15 @@
     <link rel="stylesheet" href="css/app/ajustes.css?v=9">
     <link rel="stylesheet" href="css/app/animaciones.css?v=12">
     <link rel="stylesheet" href="css/app/interaccion.css?v=8">
-    <link rel="stylesheet" href="css/app/barra-movil.css?v=4">
-    <link rel="stylesheet" href="css/utilidades.css?v=33">
+    <link rel="stylesheet" href="css/app/barra-movil.css?v=6">
+    <link rel="stylesheet" href="css/utilidades.css?v=34">
     <link rel="stylesheet" href="vendor/fonts/inter.css">
 </head>
 
 <body>
 
     <!-- Top Navbar -->
-    <nav class="navbar navbar-expand-lg py-3 px-4 shadow-sm">
+    <nav class="navbar navbar-expand-lg shadow-sm">
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1"><a href="../index.html" class="brand-launcher" title="Ir a la página principal"
                     aria-label="Ir a la página principal"><i class="bi bi-shield-lock text-primary"></i></a>SGC</span>
@@ -116,7 +116,7 @@
                     <div class="search-container" id="sidebar-search-container" data-etiqueta="Buscar">
                         <i class="bi bi-search search-icon" id="sidebar-search-icon"></i>
                         <input type="text" id="global-search" class="search-input" placeholder="Buscar en todo..."
-                            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
                         <button class="search-clear" type="button" id="search-clear" title="Limpiar búsqueda"
                             aria-label="Limpiar búsqueda"><i class="bi bi-x-lg"></i></button>
                         <div class="dropdown search-filter-dropdown">
@@ -2178,7 +2178,7 @@
     <script src="js/app.js?v=273"></script>
     <script src="js/sesion-local.js?v=1"></script>
     <script src="js/selector.js?v=2"></script>
-    <script src="js/produccion.js?v=62"></script>
+    <script src="js/produccion.js?v=63"></script>
     <script src="js/resumen.js?v=74"></script>
     <script src="js/favoritos.js?v=20"></script>
     <script src="js/atajos.js?v=27"></script>
@@ -2193,9 +2193,9 @@
     <script src="js/consultas.js?v=1"></script>
     <script src="js/auditoria-bd.js?v=4"></script>
     <script src="js/historial-modal.js?v=1"></script>
-    <script src="js/busqueda-movil.js?v=1"></script>
+    <script src="js/busqueda-movil.js?v=4"></script>
     <script src="js/imagen-ampliada.js?v=1"></script>
-    <script src="js/barra-superior.js?v=1"></script>
+    <script src="js/swipe-pestanas.js?v=1"></script>
     <script src="js/ajustes.js?v=6"></script>
     <script src="js/datos-ui.js?v=1"></script>
     <script src="js/gist.js?v=1"></script>

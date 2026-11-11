@@ -1,39 +1,38 @@
-/* app/barra-movil.css: App, vista móvil (< 768 px). El panel de pestañas es una barra fija ABAJO (Estado, Activos, Producción,
-   búsqueda, Ajustes) y el buscador está oculto: el ícono de la barra lo desliza desde arriba (js/busqueda-movil.js).
-   Historial, Listar y Ayuda están en Ajustes. Va después de estructura.css: mismo selector, gana el orden. */
-
-/* --navbar-height animable: al ocultarse la barra superior, los encabezados pegajosos (top: var(--navbar-height)) suben con ella */
-@property --navbar-height {
-    syntax: "<length>";
-    inherits: true;
-    initial-value: 58px;
-}
+/* app/barra-movil.css: App, vista móvil (< 768 px). Abajo del todo van dos barras fijas: la cabecera (la marca, que lleva al
+   launcher) y, justo encima, el panel de pestañas (Estado, Activos, Producción, búsqueda, Ajustes). Ninguna se oculta al hacer
+   scroll. El buscador está oculto: el ícono de la barra lo desliza desde arriba (js/busqueda-movil.js). Historial, Listar y Ayuda
+   están en Ajustes. Va después de estructura.css: mismo selector, gana el orden. */
 
 @layer app {
     :root {
-        --alto-barra-movil: 0px;                      /* en escritorio no hay barra de abajo */
+        --alto-barra-movil: 0px;                      /* en escritorio no hay barras de abajo */
     }
 
     @media (max-width: 767.98px) {
         :root {
-            --alto-barra-movil: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+            --navbar-alto: 2.25rem;                     /* hasta que app.js mide la cabecera */
+            --alto-pestanas-movil: 3.25rem;
+            --alto-barra-movil: calc(var(--alto-pestanas-movil) + var(--navbar-alto));   /* las dos barras */
         }
 
-        /* La barra superior se oculta al bajar y vuelve al subir (js/barra-superior.js: `html.navbar-oculta`) */
         html {
-            transition: --navbar-height var(--dur-panel) var(--ease-panel);
+            overscroll-behavior-x: none;            /* el swipe de lado cambia de pestaña: sin el «atrás» del navegador al desbordar */
         }
 
+        /* La cabecera, abajo del todo (el panel de pestañas queda encima); el área segura del teléfono es suya */
         .navbar {
-            transition: transform var(--dur-panel) var(--ease-panel), box-shadow var(--dur-panel) var(--ease-panel);
+            position: fixed;
+            top: auto;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 0;
+            box-shadow: 0 -2px 10px rgb(0 0 0 / 0.12);
         }
 
-        html.navbar-oculta .navbar {
-            transform: translateY(-100%);
-            box-shadow: none;
-        }
-
-        /* El contenido termina sobre la barra, no debajo */
+        /* El contenido termina sobre las dos barras, no debajo */
         body {
             padding-bottom: var(--alto-barra-movil);
         }
@@ -41,10 +40,10 @@
         #sidebar-col {                                  /* position: fixed está en estructura.css */
             top: auto;
             right: 0;
-            bottom: 0;
+            bottom: var(--navbar-alto);                 /* justo sobre la cabecera */
             left: 0;
+            height: var(--alto-pestanas-movil);
             padding-top: var(--esp-1);
-            padding-bottom: env(safe-area-inset-bottom, 0px);
             background-color: var(--bg-card);
             border-top: 1px solid var(--border-color);
             box-shadow: 0 -2px 10px rgb(0 0 0 / 0.12);
@@ -71,7 +70,7 @@
             background-color: var(--ui-primary);
         }
 
-        /* Buscador: oculto arriba y fuera del flujo; al abrirlo baja sobre la barra superior */
+        /* Buscador: oculto arriba y fuera del flujo; al abrirlo baja desde el borde de arriba */
         #sidebar-search-container {
             position: fixed;
             top: calc(var(--esp-2) + env(safe-area-inset-top, 0px));
@@ -117,12 +116,7 @@
     }
 
     @media (max-width: 767.98px) and (prefers-reduced-motion: reduce) {
-        #sidebar-search-container,
-        .navbar {
-            transition: none;
-        }
-
-        html {
+        #sidebar-search-container {
             transition: none;
         }
     }

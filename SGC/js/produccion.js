@@ -1619,7 +1619,7 @@ function actualizarAlturaNavbar() {
     if (navbar) {
         const h = navbar.offsetHeight;
         document.documentElement.style.setProperty('--navbar-alto', `${h}px`);          // lo que mide siempre
-        document.documentElement.style.setProperty('--navbar-height', `${document.documentElement.classList.contains('navbar-oculta') ? 0 : h}px`);   // lo que ocupa a la vista
+        document.documentElement.style.setProperty('--navbar-height', `${window.matchMedia('(max-width: 767.98px)').matches ? 0 : h}px`);   // lo que ocupa ARRIBA (en móvil va abajo)
     }
 }
 
