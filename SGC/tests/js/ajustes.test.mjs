@@ -1,4 +1,4 @@
-// Pestaña Ajustes (bloque AJUSTES PURO de static/ajustes.js): qué apartados del panel Estado quedan ocultos y reparto en columnas.
+// Pestaña Ajustes (bloque AJUSTES PURO de js/ajustes.js y shared/ui/js/ajustes-columnas.js): qué apartados del panel Estado quedan ocultos y reparto en columnas.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { cargarBloque, plano } from "./_bloque.mjs";
@@ -7,8 +7,11 @@ const a = cargarBloque(
   "ajustes.js",
   "AJUSTES PURO",
   { Array, Set, Number, Math },
-  ["SECCIONES_ESTADO", "seccionesOcultasVigentes", "alternarSeccionOculta", "calcularColumnasAjustes", "repartirSeccionesAjustes"]
+  ["SECCIONES_ESTADO", "seccionesOcultasVigentes", "alternarSeccionOculta"]
 );
+const columnas = cargarBloque("../shared/ui/js/ajustes-columnas.js", "AJUSTES COLUMNAS PURO", { Array, Number, Math },
+  ["calcularColumnasAjustes", "repartirSeccionesAjustes"]);
+Object.assign(a, columnas);
 
 test("lo oculto es solo lo conocido y sin repetir; lo demás se descarta", () => {
   assert.deepEqual(plano(a.seccionesOcultasVigentes(["infra-chips", "x", "infra-chips"])), ["infra-chips"]);

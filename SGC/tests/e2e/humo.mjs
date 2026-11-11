@@ -129,6 +129,47 @@ try {
 } catch (e) { rechazo = e; }
 check('edición con versión vieja: 409', rechazo && rechazo.status === 409);
 
+// --- deshacer y rehacer (js/historial.js): botones y teclado; lo deshecho es un cambio nuevo (sin lápida, versión mayor)
+{
+    const AL = w.eval('ApiLocal');      // (es una const global: no cuelga de window)
+    const esperar = () => new Promise((r) => setTimeout(r, 40));
+    const buscar = (id) => AL.datos().dispositivos.find((x) => x.id === id);
+    const tecla = (key, extra = {}) => d.body.dispatchEvent(new w.KeyboardEvent('keydown', { key, ctrlKey: true, bubbles: true, cancelable: true, ...extra }));
+    AL.historial.vaciar();
+    check('deshacer: sin cambios, los botones están apagados', $('btn-undo').disabled && $('btn-redo').disabled);
+    const t = await api('/api/stock/dispositivos', 'POST', { tipo: 'domo', marca: 'Axis', modelo: 'U1', serie: 'S-UNDO' });
+    await api(`/api/stock/dispositivos/${t.id}`, 'PUT', { ...t, comentario: 'edicion', version: t.version });
+    check('deshacer: tras cambiar, el botón se enciende y dice qué deshace', !$('btn-undo').disabled && /Edición de dispositivo/.test($('btn-undo').title), $('btn-undo').title);
+    $('btn-undo').click();
+    await esperar();
+    check('deshacer: el botón deshace la edición', buscar(t.id) && buscar(t.id).comentario !== 'edicion');
+    check('deshacer: queda para rehacer', !$('btn-redo').disabled && /Edición de dispositivo/.test($('btn-redo').title));
+    check('deshacer: avisa «Deshecho: …»', /Deshecho: Edición de dispositivo/.test($('toast').textContent));
+    tecla('z');
+    await esperar();
+    check('deshacer: Ctrl+Z deshace el alta (el dispositivo sale y deja lápida)', !buscar(t.id) && AL.datos().eliminados.dispositivos[t.id]);
+    check('deshacer: no hay más que deshacer', $('btn-undo').disabled);
+    tecla('y');
+    tecla('y');
+    await esperar();
+    const vuelto = buscar(t.id);
+    check('rehacer: Ctrl+Y dos veces devuelve el alta y la edición, sin lápida', vuelto && vuelto.comentario === 'edicion'
+        && !AL.datos().eliminados.dispositivos[t.id] && vuelto.version > 2);
+    $('btn-redo').click();
+    check('rehacer: sin más para rehacer queda apagado', $('btn-redo').disabled);
+    // un campo de texto conserva su propio Ctrl+Z; un cambio nuevo borra lo que se podía rehacer
+    const campo = d.createElement('input'); d.body.appendChild(campo); campo.focus();
+    campo.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }));
+    check('deshacer: dentro de un campo de texto no se toca', !!buscar(t.id));
+    campo.remove();
+    tecla('z'); await esperar();
+    await api('/api/stock/dispositivos', 'POST', { tipo: 'domo', marca: 'Axis', modelo: 'U2', serie: 'S-UNDO-2' });
+    check('deshacer: un cambio nuevo vacía lo que se podía rehacer', $('btn-redo').disabled);
+    AL.historial.deshacer(); AL.historial.deshacer(); AL.historial.deshacer();    // deja los datos como estaban
+    AL.historial.vaciar();
+    check('deshacer: importar o sincronizar vacía el historial', $('btn-undo').disabled && $('btn-redo').disabled);
+}
+
 const datos = await api('/api/v2/datos');
 check('/api/v2/datos arma los grabadores instalados', datos.nvrs.length === 1 && datos.nvrs[0].nvr_name === 'NVR Anexo');
 

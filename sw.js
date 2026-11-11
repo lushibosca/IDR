@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261111.1318';
+const CACHE_NAME = 'idr-suite-v261111.1325';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -39,6 +39,8 @@ const PRECACHE_URLS = [
   './SGC/js/ajustes.js',
   './SGC/js/animaciones.js',
   './SGC/js/api-local.js',
+  './SGC/js/historial-puro.js',
+  './SGC/js/historial.js',
   './SGC/js/app.js',
   './SGC/js/atajos.js',
   './SGC/js/auditoria-bd.js',
@@ -135,6 +137,7 @@ const PRECACHE_URLS = [
   './shared/ui/tokens.css',
   './shared/ui/utilidades.css',
   './shared/ui/js/apariencia.js',
+  './shared/ui/js/ajustes-columnas.js',
   './shared/ui/js/ayuda.js',
   './shared/ui/js/navegacion.js',
   './shared/ui/js/busqueda-tokens.js',

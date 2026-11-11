@@ -29,5 +29,11 @@ Estructura y capas: `docs/ARQUITECTURA.md` (fuente de verdad). Contexto y entreg
   `sanearDatos`. No tocar `img/devices/` ni `../shared/vendor/`.
 - **Estilo:** la base (tokens, base, grilla, `componentes/`, utilidades) está en `../shared/ui/` y la usan las otras apps de la
   suite: un cambio ahí se ve en todas. Lo propio de SGC va en `css/app/`. Ver `../docs/PORTE-ESTILO-SGC.md`.
+- **Deshacer / rehacer** (`js/historial-puro.js`, `api-local.js`, `js/historial.js`): cada escritura de `ApiLocal.escribir` apila el
+  estado anterior (30 como máximo, en memoria). Deshacer es un cambio NUEVO (`restaurarEstado`): los dispositivos devueltos salen con
+  `actualizado` de ahora y versión mayor, y los que se van dejan lápida de ahora, para que la sincronización con el Gist (que decide por
+  `actualizado` y lápidas) no lo pierda ni lo vuelva a borrar (probado en `tests/js/historial.test.mjs`). Importar, restablecer, migrar,
+  los parseadores, lo que baja del Gist y los cambios de otra pestaña (`storage`) vacían el historial. El registro de cambios
+  (`historial` de los datos) no se reescribe. Las preferencias del dispositivo (panel, tema, privacidad) no entran.
 - **Seguridad de base** en todo cambio: validar y acotar lo que entra, no meter datos del usuario en HTML ni en URLs,
   nada de tokens ni claves en el repo.

@@ -161,7 +161,7 @@ aplicándolo en SGC, SGR y SGI. **La guía paso a paso, con archivos y líneas, 
       modal de ayuda y atajos común (`ayuda.js` + `ayuda.css`; datos en `SGR/atajos.js`, `SGI/atajos.js`, `SGC/js/atajos.js`; «?» lo abre y está en
       Ajustes > Ayuda); Ctrl+flechas según el lugar del panel y rueda sobre el panel (`navegacion.js`, interruptor en Ajustes > Navegación).
       No se llevaron a SGR/SGI (no aplican): selección masiva, Listar, privacidad, reubicar secciones del Estado, acordeones, popup de equipo.
-- [ ] Paso 6b — deshacer/rehacer en SGC (decisión 10; función nueva).
+- [x] Paso 6b — deshacer/rehacer en SGC (decisión 10; función nueva): hecho, ver `SGC/CLAUDE.md`. El historial de cambios de los datos no registra los deshacer.
 - [ ] Paso 7 — CSS repetido de SGR/SGI a `shared/ui/componentes/`.
 - [ ] Paso 8 — tests de 6.4 y humo de las tres apps.
 

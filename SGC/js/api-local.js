@@ -14,6 +14,8 @@ const ApiLocal = (() => {
 
     let datos = null;
     let avisosCarga = [];
+    let pilas = pilasVacias();                    // deshacer / rehacer (historial-puro.js): en memoria, se pierde al recargar
+    let etiquetaPedido = null;                    // cómo se llama el cambio que está haciendo el pedido en curso
 
     const ahora = () => new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
     function nuevoId() {
@@ -55,12 +57,40 @@ const ApiLocal = (() => {
         if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent('sgc:datos-cambiados'));
     }
 
-    /** Corre `fn` sobre una copia de los datos; si no lanza, la copia pasa a ser la guardada. */
+    const avisarHistorial = () => {
+        if (typeof document !== 'undefined') document.dispatchEvent(new CustomEvent('sgc:historial-cambio'));
+    };
+    /** Lo que se importa, se restablece o llega de otra PC o pestaña no se puede deshacer: el historial parte de cero. */
+    function vaciarHistorial() {
+        if (!pilas.pasado.length && !pilas.futuro.length) return;
+        pilas = pilasVacias();
+        avisarHistorial();
+    }
+    const mismoContenido = (a, b) => a.historial_seq === b.historial_seq && JSON.stringify(a) === JSON.stringify(b);
+
+    /** Corre `fn` sobre una copia de los datos; si no lanza, la copia pasa a ser la guardada (y el estado anterior se puede deshacer). */
     function escribir(fn) {
-        const copia = structuredClone(cargados());
+        const previo = cargados();
+        const etiqueta = etiquetaPedido;          // (guardar() avisa a la página, que pide datos: ese pedido anidado pisaría la etiqueta)
+        const copia = structuredClone(previo);
         const r = fn(copia, ctx());
         guardar(copia);
+        if (!mismoContenido(previo, copia)) {
+            pilas = pilasEmpujar(pilas, previo, etiqueta || 'Cambio');
+            avisarHistorial();
+        }
         return r;
+    }
+
+    /** Vuelve al estado que dice la pila (`paso` = pilasDeshacer o pilasRehacer) como un cambio nuevo; devuelve su etiqueta o null. */
+    function mover(paso) {
+        const actual = cargados();
+        const r = paso(pilas, actual);
+        if (!r) return null;
+        guardar(restaurarEstado(actual, r.destino, ahora()));
+        pilas = r.pilas;
+        avisarHistorial();
+        return r.etiqueta;
     }
 
     const cuerpo = (opciones) => {
@@ -144,6 +174,7 @@ const ApiLocal = (() => {
             if (!partes) continue;
             rutaVista = true;
             if (m !== metodo) continue;
+            etiquetaPedido = etiquetaDeRuta(metodo, u.pathname);
             try {
                 const b = metodo === 'GET' || metodo === 'DELETE' ? {} : cuerpo(opciones);
                 return { status: 200, json: structuredClone(fn(partes, u.searchParams, b)) };
@@ -151,6 +182,8 @@ const ApiLocal = (() => {
                 if (e instanceof ErrorDatos) return { status: e.estado, json: { detail: e.detalle() } };
                 console.error('API local:', e);
                 return { status: 500, json: { detail: 'Error interno al procesar los datos.' } };
+            } finally {
+                etiquetaPedido = null;
             }
         }
         return rutaVista ? { status: 405, json: { detail: 'Método no permitido.' } }
@@ -177,6 +210,7 @@ const ApiLocal = (() => {
         }
         const r = sanearDatos(bruto, ahora());
         guardar(reemplazarConLapidas(cargados(), r.datos, ahora()));
+        vaciarHistorial();
         return { dispositivos: r.datos.dispositivos.length, avisos: r.avisos };
     }
     /** Una copia de los datos guardados (para fusionar con el Gist). */
@@ -186,17 +220,22 @@ const ApiLocal = (() => {
     /** Reemplaza TODO por unos datos ya saneados (migración en modo «reemplazar»): lo que sale deja lápida. */
     function reemplazarTodo(nuevos) {
         guardar(reemplazarConLapidas(cargados(), structuredClone(nuevos), ahora()));
+        vaciarHistorial();
     }
     /** Reemplaza los datos por unos YA saneados (el resultado de fusionar con el Gist). */
     function reemplazar(nuevos) {
         guardar(structuredClone(nuevos));
+        vaciarHistorial();
     }
     /** Una importación (parseadores): `fn(copia, ctx)` con el origen «importacion» en el historial; se guarda si no lanza. */
     function importacion(fn) {
-        return escribir((d, c) => fn(d, { ...c, origen: 'importacion' }));
+        const r = escribir((d, c) => fn(d, { ...c, origen: 'importacion' }));
+        vaciarHistorial();
+        return r;
     }
     function borrarTodo() {
         guardar(datosVacios());
+        vaciarHistorial();
     }
 
     if (typeof window !== 'undefined') {
@@ -204,9 +243,20 @@ const ApiLocal = (() => {
         window.addEventListener('storage', (ev) => {
             if (ev.key !== CLAVE) return;
             datos = null;
+            vaciarHistorial();               // cambió por fuera: lo apilado en esta pestaña ya no corresponde
             avisar();
         });
     }
 
-    return { pedir, atender, exportar, importar, borrarTodo, datos: datosActuales, reemplazar, reemplazarTodo, importacion, avisosCarga: () => { cargados(); return [...avisosCarga]; } };
+    const historial = {
+        puedeDeshacer: () => pilas.pasado.length > 0,
+        puedeRehacer: () => pilas.futuro.length > 0,
+        etiquetaDeshacer: () => (pilas.pasado.length ? pilas.pasado[pilas.pasado.length - 1].etiqueta : null),
+        etiquetaRehacer: () => (pilas.futuro.length ? pilas.futuro[pilas.futuro.length - 1].etiqueta : null),
+        deshacer: () => mover((p, actual) => pilasDeshacer(p, actual)),
+        rehacer: () => mover((p, actual) => pilasRehacer(p, actual)),
+        vaciar: vaciarHistorial,
+    };
+
+    return { pedir, atender, exportar, importar, borrarTodo, historial, datos: datosActuales, reemplazar, reemplazarTodo, importacion, avisosCarga: () => { cargados(); return [...avisosCarga]; } };
 })();

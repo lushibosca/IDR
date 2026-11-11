@@ -95,6 +95,9 @@ async function comunes(app, ctx, pestanas) {
     }
     // tema: el interruptor cambia <html data-tema> y lo guarda para toda la suite
     clic($('tab-ajustes'));
+    const secciones = d.querySelectorAll('.ajustes-grilla .ajuste-seccion');
+    check(app, 'Ajustes: los apartados se reparten en columnas independientes (como SGC)', d.querySelectorAll('.ajustes-grilla > .ajustes-columna').length >= 2
+        && [...secciones].every((x) => x.parentElement.classList.contains('ajustes-columna')), `${d.querySelectorAll('.ajustes-columna').length} columnas`);
     const antes = d.documentElement.getAttribute('data-tema');
     clic($('btn-theme'));
     const despues = d.documentElement.getAttribute('data-tema');
