@@ -23,7 +23,7 @@ botón «atrás»). Es un porte **de estilo y estructura de pantalla**: los dato
 | 4 | ¿Alcance? | **Solo estilo y estructura.** El esqueleto, los modales y Ajustes se reescriben con el marcado de SGC. Las plantillas del contenido (tablas, tarjetas, dashboard; todas escapan con `esc()`) se **reestilan por CSS** con los tokens de la suite y quedan con `innerHTML` (ajustado el 2026-11-11: convertirlas multiplicaba el trabajo; se pasan a `createElement` cuando se toquen). Partir `app.js` y los bloques puros con tests de SGC, para después. |
 
 | 5 | ¿SGL entra al porte? | **Por ahora no.** Queda con su base vieja; no se le exige nada de `shared/ui/` (sigue cumpliendo las reglas de suite: Service Worker único, `IDR_dark`). Se replanifica más adelante. |
-| 6 | ¿El launcher? | **Toma la base común**: tokens, fuente Inter, bootstrap-icons, `IDRTema` y versión de la suite. Sin esqueleto de pestañas (no las tiene). Fase 5. |
+| 6 | ¿El launcher? | **Toma la base común**: tokens, fuente Inter, bootstrap-icons, `IDRTema` y versión de la suite. Sin esqueleto de pestañas (no las tiene). Fase 4. |
 | 7 | ¿Panel plegable y su personalización (posición izquierda/derecha/arriba/abajo, arrastrándolo)? | **Base de todas las apps.** El botón `#btn-toggle-sidebar`, el CSS y el JS salen de SGC a `shared/ui/`; cada app guarda su estado con su prefijo. |
 | 8 | ¿Transiciones de cambio de pestaña? | **Base de todas las apps**: la de SGC (`slide-pestana-saliente`, `SGC/js/animaciones.js` y `css/app/animaciones.css`) pasa a `shared/ui/`; respeta «reducir animaciones». |
 | 9 | ¿Barra superior? | **La misma en todos los módulos**, con deshacer y rehacer (`#btn-undo`, `#btn-redo`) como parte de la barra común. Un solo marcado de referencia; lo vigila un test. |
