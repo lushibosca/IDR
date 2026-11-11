@@ -113,7 +113,14 @@
             --ui-navbar-brand-padding-y: 0;
         }
 
+        .navbar > .container-fluid {
+            justify-content: center;                /* la marca (ícono y texto) centrada */
+        }
+
         .navbar-brand {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 0;
             line-height: 1.2;
         }
     }

@@ -1,0 +1,161 @@
+/* app/detalle-movil.css: App, vista móvil (< 768 px). (Las reglas generales usan :where(): sin especificidad, así las de un caso
+   concreto —modelo plegado, fila de relleno, borde por uso— le ganan aunque lleven un id.) Los modales de detalle (stock por tipo y modelo, canales por grabador) pasan
+   de tabla a tarjetas: cada fila es una tarjeta con el nombre arriba y los números en columnas, cada uno con su rótulo (la
+   cabecera de la tabla se oculta). Solo CSS: el JS arma las mismas filas (resumen.js). Va después de estado.css. */
+
+@layer app {
+    @media (max-width: 767.98px) {
+        /* La tabla deja de serlo: bloques apilados */
+        :where(.modal-detalle-tipos table, #tabla-detalle-capacidad, #tabla-detalle-pantallas) {
+            display: block;
+            width: 100%;
+        }
+
+        :where(.modal-detalle-tipos table, #tabla-detalle-capacidad, #tabla-detalle-pantallas) :is(tbody, tfoot) {
+            display: block;
+        }
+
+        :where(.modal-detalle-tipos table, #tabla-detalle-capacidad, #tabla-detalle-pantallas) thead {
+            display: none;
+        }
+
+        .modal-detalle-tipos .tabla-con-pie,
+        #modal-detalle-capacidad .tabla-con-pie {
+            padding: var(--esp-2) var(--esp-2) 0;
+        }
+
+        /* Cada fila, una tarjeta: nombre a todo el ancho y los números en columnas */
+        :where(.modal-detalle-tipos table, #tabla-detalle-capacidad, #tabla-detalle-pantallas) tr {
+            display: grid;
+            gap: 2px var(--esp-2);
+            align-items: start;
+            margin-bottom: var(--esp-2);
+            padding: var(--esp-2);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radio-medio);
+            background-color: var(--bg-card);
+        }
+
+        .modal-detalle-tipos table tr {
+            grid-template-columns: repeat(4, minmax(0, 1fr));      /* Total, En uso, Disponibles, No disponible */
+        }
+
+        :where(#tabla-detalle-capacidad, #tabla-detalle-pantallas) tr {
+            grid-template-columns: repeat(3, minmax(0, 1fr));      /* Capacidad, En uso, Disponibles */
+        }
+
+        :where(.modal-detalle-tipos table, #tabla-detalle-capacidad, #tabla-detalle-pantallas) :is(td, th) {
+            display: block;
+            padding: 0;
+            border: 0;
+            background-color: transparent;
+            text-align: center;
+            text-transform: none;
+            letter-spacing: normal;
+            font-size: var(--texto-md);
+            white-space: normal;
+        }
+
+        :where(.modal-detalle-tipos table, #tabla-detalle-capacidad, #tabla-detalle-pantallas) tr > :first-child {
+            grid-column: 1 / -1;
+            padding-bottom: var(--esp-1);
+            text-align: left;
+        }
+
+        /* El rótulo de cada número (la cabecera de la tabla ya no está) */
+        :where(.modal-detalle-tipos table, #tabla-detalle-capacidad, #tabla-detalle-pantallas) tr > :not(:first-child)::before {
+            display: block;
+            font-size: var(--texto-xs);
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--color-texto-suave);
+        }
+
+        .modal-detalle-tipos table tr > :nth-child(2)::before { content: "Total"; }
+        .modal-detalle-tipos table tr > :nth-child(3)::before { content: "En uso"; }
+        .modal-detalle-tipos table tr > :nth-child(4)::before { content: "Disponibles"; }
+        .modal-detalle-tipos table tr > :nth-child(5)::before { content: "No disp."; }
+
+        :where(#tabla-detalle-capacidad, #tabla-detalle-pantallas) tr > :nth-child(2)::before { content: "Capacidad"; }
+        :where(#tabla-detalle-capacidad, #tabla-detalle-pantallas) tr > :nth-child(3)::before { content: "En uso"; }
+        :where(#tabla-detalle-capacidad, #tabla-detalle-pantallas) tr > :nth-child(4)::before { content: "Disponibles"; }
+
+        /* Los modelos de un tipo: sub-tarjetas más claras y con sangría; plegados no ocupan lugar */
+        .modal-detalle-tipos tbody tr.resumen-modelo {
+            margin-left: var(--esp-4);
+            background-color: var(--table-hover-bg);
+        }
+
+        .modal-detalle-tipos tbody tr.resumen-modelo > td {
+            background-color: transparent;
+        }
+
+        .modal-detalle-tipos tbody tr.fila-plegable.plegada {
+            display: none;
+        }
+
+        .modal-detalle-tipos tbody tr.resumen-modelo > .resumen-modelo-nombre {
+            display: flex;
+            align-items: center;
+            gap: var(--esp-2);
+            overflow-wrap: anywhere;
+        }
+
+        .modal-detalle-tipos tbody tr.resumen-tipo {
+            cursor: pointer;
+        }
+
+        /* Detalle de canales: el borde de color según el uso pasa de la primera celda a la tarjeta */
+        #tabla-detalle-capacidad tbody tr.cap-fila-ok { border-left: 3px solid var(--color-green); }
+        #tabla-detalle-capacidad tbody tr.cap-fila-aviso { border-left: 3px solid var(--color-orange); }
+        #tabla-detalle-capacidad tbody tr.cap-fila-critico { border-left: 3px solid var(--color-red); }
+
+        #tabla-detalle-capacidad tbody tr.cap-fila-ok > td:first-child,
+        #tabla-detalle-capacidad tbody tr.cap-fila-aviso > td:first-child,
+        #tabla-detalle-capacidad tbody tr.cap-fila-critico > td:first-child {
+            border-left: 0;
+        }
+
+        /* El relleno que bajaba el total al pie no hace falta */
+        :where(.modal-detalle-tipos table, #tabla-detalle-capacidad) tbody.tabla-relleno {
+            display: none;
+        }
+
+        /* El total: una tarjeta fija abajo del cuerpo del modal */
+        :where(.modal-detalle-tipos table, #tabla-detalle-capacidad) tfoot {
+            position: sticky;
+            bottom: 0;
+            z-index: var(--capa-celda-fija);
+            padding: var(--esp-1) 0 var(--esp-2);
+            background-color: var(--ui-modal-bg);           /* el del modal: tapa lo que se desplaza por debajo */
+        }
+
+        :where(.modal-detalle-tipos table, #tabla-detalle-capacidad) tfoot tr {
+            margin-bottom: 0;
+            background-color: var(--table-header-bg);
+        }
+
+        .fila-totales th,
+        .fila-totales td {                              /* (en la tabla eran celdas fijas con sombra y fondo; acá la fija es la tarjeta) */
+            position: static;
+            box-shadow: none;
+            background-color: transparent;
+        }
+
+        :where(.modal-detalle-tipos table, #tabla-detalle-capacidad) tfoot :is(th, td) {
+            font-weight: 700;
+        }
+
+        :where(.modal-detalle-tipos table, #tabla-detalle-capacidad) tfoot th {
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: var(--texto-sm);
+        }
+
+        #cap-pantallas-seccion {
+            padding-right: var(--esp-2);
+            padding-left: var(--esp-2);
+        }
+    }
+}
