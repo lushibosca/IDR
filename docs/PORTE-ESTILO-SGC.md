@@ -151,7 +151,7 @@ jack, que hoy es por *hover*, abierto con un toque en móvil. Pasar la lectura d
 ### Fase 2.5 — unificar la base (pendiente; va antes de SGP)
 Lo que las decisiones 7, 8 y 9 y la sección 6 dejan como base, sacándolo de SGC (o de SGR/SGI) a `shared/ui/` y
 aplicándolo en SGC, SGR y SGI. **La guía paso a paso, con archivos y líneas, es la sección 8.** Se marca acá lo hecho:
-- [ ] Paso 1 — `<head>` de referencia en SGC, SGR y SGI, con test.
+- [x] Paso 1 — `<head>` de referencia en SGC, SGR y SGI, con test (hecho, 2026-11-11).
 - [ ] Paso 2 — un solo arranque (SGC pasa a `arranque.js` + `apariencia.js`).
 - [ ] Paso 3 — avisos (`toast.js`) y «volver arriba» comunes.
 - [ ] Paso 4 — transición de cambio de pestaña común (decisión 8).

@@ -135,6 +135,33 @@ test("apps portadas: cargan la base (tokens primero, utilidades al final), el es
   }
 });
 
+// ─── <head> de referencia (docs/PORTE-ESTILO-SGC.md, sección 8, paso 1): las mismas metas en todas las apps portadas
+test("apps portadas: <head> de referencia (viewport, color-scheme, metas de PWA y CSP base)", () => {
+  const BASE_CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; "
+    + "connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'";
+  const metas = [
+    ["viewport", "width=device-width, initial-scale=1.0, viewport-fit=cover"],
+    ["referrer", "no-referrer"],
+    ["color-scheme", "dark light"],
+    ["mobile-web-app-capable", "yes"],
+    ["apple-mobile-web-app-capable", "yes"],
+    ["apple-mobile-web-app-status-bar-style", "default"],
+  ];
+  for (const app of APPS_PORTADAS) {
+    const head = leer(`${app}/index.html`).split("</head>")[0];
+    assert.match(head, /<meta charset="UTF-8">/, `${app}: charset`);
+    for (const [nombre, valor] of metas) {
+      assert.ok(head.includes(`<meta name="${nombre}" content="${valor}">`), `${app}: <meta name="${nombre}" content="${valor}">`);
+    }
+    assert.equal((head.match(/<title>/g) || []).length, 1, `${app}: un solo <title>`);
+    assert.ok(head.includes(`<title>${app}</title>`), `${app}: <title>${app}</title>`);
+    const csp = head.match(/http-equiv="Content-Security-Policy" content="([^"]*)"/);
+    assert.ok(csp, `${app}: falta la CSP`);
+    // igual a la base salvo los orígenes extra de connect-src (cada app conserva los suyos)
+    assert.equal(csp[1].replace(/connect-src 'self'[^;]*;/, "connect-src 'self';"), BASE_CSP, `${app}: CSP distinta de la base`);
+  }
+});
+
 // ─── arranque.js (antes de pintar): el tema de la suite manda; si nadie eligió, el de la app
 test("arranque.js: tema inicial", async () => {
   const { cargarBloque } = await import("./_bloque.mjs");
