@@ -297,6 +297,16 @@
             padding-left: 0;
         }
 
+        #dashboard-fila {                               /* lo mismo en la fila interna del dashboard (Canales / Activos): se pasaba 4 px */
+            margin-right: 0;
+            margin-left: 0;
+        }
+
+        #dashboard-fila > .dashboard-zona {
+            padding-right: 0;
+            padding-left: 0;
+        }
+
         .sidebar-sticky {
             position: static;
             height: auto;
