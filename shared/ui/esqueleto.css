@@ -36,7 +36,7 @@
     }
 
     :root {
-        --ancho-panel: 240px;            /* el panel lateral con los textos a la vista (plegado: 68 px, solo íconos) */
+        --ancho-panel: 280px;            /* el panel lateral con los textos a la vista (plegado: 68 px, solo íconos) */
     }
 
     /* ─── Escritorio y tablets (>= 768px): panel lateral vertical con ancho suficiente y anclado */
