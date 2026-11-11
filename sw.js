@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261111.1308';
+const CACHE_NAME = 'idr-suite-v261111.1310';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -134,6 +134,7 @@ const PRECACHE_URLS = [
   './shared/ui/utilidades.css',
   './shared/ui/js/apariencia.js',
   './shared/ui/js/gestos.js',
+  './shared/ui/js/instalar.js',
   './shared/ui/js/panel.js',
   './shared/ui/js/panel-mover.js',
   './shared/ui/js/panel-etiquetas.js',

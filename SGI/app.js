@@ -3651,50 +3651,7 @@ function _ejecutarReporte() {
     toast('Reporte descargado. Abrilo en el navegador para verlo.', 'success');
 }
 
-// ═══════════════════════════════════════════════════════
-//  PWA: BOTÓN DE INSTALACIÓN
-// ═══════════════════════════════════════════════════════
-(function initPWA() {
-    let deferredPrompt;
-    const btnInstallApp = document.getElementById('btn-install-app');
-
-    // Escuchamos si el navegador dice "Esta app se puede instalar"
-    window.addEventListener('beforeinstallprompt', (e) => {
-        // Evitamos que el navegador muestre su propio mini-cartel
-        e.preventDefault();
-        // Guardamos el evento para dispararlo cuando el usuario toque nuestro botón
-        deferredPrompt = e;
-        // Mostramos nuestro botón en el header (usamos flex para que respete el diseño)
-        if (btnInstallApp) btnInstallApp.hidden = false;
-    });
-
-    // Qué pasa cuando el usuario toca nuestro botón
-    if (btnInstallApp) {
-        btnInstallApp.addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-
-            // Mostramos el prompt nativo de instalación de Android/Windows
-            deferredPrompt.prompt();
-
-            // Esperamos a ver qué elige el usuario (Instalar o Cancelar)
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`Elección del usuario: ${outcome}`);
-
-            // Limpiamos la variable porque el prompt solo se puede usar una vez
-            deferredPrompt = null;
-
-            // Ocultamos el botón
-            btnInstallApp.hidden = true;
-        });
-    }
-
-    // Si el usuario la instaló exitosamente (o ya la tenía instalada y la abrió)
-    window.addEventListener('appinstalled', () => {
-        if (btnInstallApp) btnInstallApp.hidden = true;
-        deferredPrompt = null;
-        toast('Aplicación instalada con éxito', 'success');
-    });
-}());
+// Botón «Instalar» de la barra: ../shared/ui/js/instalar.js
 
 // ═══════════════════════════════════════════════════════
 //  INIT

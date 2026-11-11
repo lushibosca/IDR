@@ -48,12 +48,14 @@
 
 <body>
 
-    <!-- Barra superior: la marca lleva al launcher; deshacer y rehacer a la derecha -->
+    <!-- Barra superior: la marca lleva al launcher; instalar, deshacer y rehacer a la derecha -->
     <nav class="navbar navbar-expand-lg shadow-sm">
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1"><a href="../index.html" class="brand-launcher" title="Ir a la página principal"
                     aria-label="Ir a la página principal"><i class="bi bi-hdd-rack text-primary"></i></a>SGR</span>
             <div class="d-flex align-items-center gap-2 navbar-acciones">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-install-app" title="Instalar la aplicación"
+                    aria-label="Instalar la aplicación" hidden><i class="bi bi-download"></i></button>
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-undo" title="Deshacer (Ctrl+Z)"
                     aria-label="Deshacer" disabled><i class="bi bi-arrow-counterclockwise"></i></button>
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-redo" title="Rehacer (Ctrl+Y)"
@@ -685,6 +687,7 @@
 
     <script src="../shared/ui/js/ui.js"></script>
     <script src="../shared/ui/js/toast.js"></script>
+    <script src="../shared/ui/js/instalar.js"></script>
     <script src="../shared/ui/js/volver-arriba.js"></script>
     <script src="../shared/ui/js/transicion-pestanas.js"></script>
     <script src="../shared/ui/js/gestos.js"></script>
