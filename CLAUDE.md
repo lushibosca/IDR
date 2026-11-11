@@ -34,6 +34,11 @@ Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se document�
   leen al cargar y la escriben al cambiar el tema, así que se cambia en una y se ve en todas. Las apps nuevas usan
   `shared/idr-tema.js` (`IDRTema.oscuro()` / `guardar()` / `alCambiar()`), cargado en el `<head>` antes de pintar el tema; sin
   valor guardado cada app usa su tema de siempre. SGC mantiene `sgc2/theme` solo como respaldo (lo vigila `tests/tema.test.mjs`).
+- **Panel, transición y barra superior son de la suite.** El panel lateral (plegar con `#btn-toggle-sidebar`, mover a los cuatro lados),
+  el deslizamiento al cambiar de pestaña, la barra superior (marca → launcher, instalar, deshacer, rehacer), los avisos (`mostrarToast`),
+  «volver arriba», el modal de ayuda y atajos y las columnas de Ajustes viven en `shared/ui/` (`js/panel*.js`, `transicion-pestanas.js`,
+  `toast.js`, `ayuda.js`...); una app no los reescribe: carga el script y pone el marcado (receta: `docs/PORTE-ESTILO-SGC.md`, sección 3).
+  `tests/estilo.test.mjs` vigila que las apps portadas lo tengan.
 - Las apps comparten el origen: todas las claves de `localStorage` llevan el prefijo de su app (`sgc2/`, `RCK_`, `PCH_`,
   ...). Lo común entre apps vive solo en `shared/` (hoy `idr-infra.js`: edificios y racks) y se carga con `<script>`;
   una app no lee las claves de otra directamente, pasa por `shared/`.

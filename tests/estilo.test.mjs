@@ -205,6 +205,17 @@ test("toast.js: cola de avisos", async () => {
   assert.equal(toastDuracion(4000, 0), 4000);
 });
 
+// ─── Manifiestos: las apps portadas se instalan con la misma pinta (color de la barra, fondo, modo y orientación)
+test("apps portadas: manifiestos con el mismo theme_color, background_color, display y orientation", () => {
+  const m = APPS_PORTADAS.map((app) => [app, JSON.parse(leer(`${app}/manifest.json`))]);
+  const [, base] = m[0];
+  for (const [app, man] of m) {
+    for (const k of ["theme_color", "background_color", "display", "orientation"]) {
+      assert.equal(man[k], base[k], `${app}: ${k} distinto del de ${m[0][0]}`);
+    }
+  }
+});
+
 // ─── busqueda-tokens.js: la sintaxis del buscador global (palabras, "frases", exclusión con ! o -)
 test("busqueda-tokens.js: tokens, frases, exclusiones y palabra completa", async () => {
   const { cargarBloque } = await import("./_bloque.mjs");
