@@ -11,10 +11,6 @@
         padding: var(--esp-4);
     }
 
-    .card-header > .bi {
-        color: var(--color-texto-suave);
-    }
-
     /* Íconos de bootstrap-icons que giran (chevrones de grupos y del resumen): necesitan caja propia */
     .inv-grupo-chevron,
     .resumen-chevron-icon {
@@ -31,13 +27,6 @@
     .input-flex-row input {
         flex: 1 1 auto;
         min-width: 0;
-    }
-
-    .card-header {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
     }
 
     .card-header h2 {
@@ -130,10 +119,6 @@
     }
 
     /* ── Tabla de materiales ── */
-    .table-wrap {
-        overflow-x: auto;
-        border-radius: var(--radius);
-    }
 
     table {
         width: 100%;
@@ -158,38 +143,7 @@
         transition: background var(--t-fast);
     }
 
-    tbody tr:last-child {
-        border-bottom: none;
-    }
-
-    .tr-clickable {
-        cursor: pointer;
-    }
-
-    tbody td {
-        padding: 0.7rem 0.85rem;
-        vertical-align: middle;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
     /* ── Empty state ── */
-    .empty-state {
-        text-align: center;
-        padding: 3rem 1rem;
-        color: var(--text-muted);
-    }
-
-    .empty-state-hidden {
-        display: none;
-    }
-
-    .empty-state .empty-icon {
-        font-size: 2.5rem;
-        margin-bottom: 0.75rem;
-        opacity: 0.4;
-    }
 
     .empty-state p {
         font-size: var(--fs-md);
@@ -334,30 +288,7 @@
         color: var(--text-muted);
     }
 
-    input[type="file"].hidden {
-        display: none;
-    }
-
     /* ── Gist sync ── */
-    .gist-input-row {
-        display: flex;
-        gap: 0.4rem;
-        align-items: center;
-    }
-
-    .gist-input-row input {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .gist-eye-btn {
-        flex-shrink: 0;
-        padding: 0;
-        background: var(--input-bg);
-        border: var(--border-w) solid var(--border);
-        border-radius: var(--radius);
-        display: flex;
-    }
 
     .toggle-switch {
         flex-shrink: 0;
@@ -370,10 +301,6 @@
         transition: background var(--t-ui);
         padding: 0;
         border: none;
-    }
-
-    .toggle-switch.on {
-        background: var(--c-blue);
     }
 
     .toggle-thumb {
@@ -389,31 +316,8 @@
         pointer-events: none;
     }
 
-    .toggle-switch.on .toggle-thumb {
-        transform: translateX(18px);
-    }
-
-    #gist-link-btn {
-        display: none;
-    }
-
     #gist-link-btn.show {
         display: flex;
-    }
-
-    .icon-link {
-        text-decoration: none;
-        color: inherit;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .gist-actions-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
-        margin-bottom: 0.75rem;
     }
 
     .btn-gist-action {
@@ -430,30 +334,6 @@
         background: var(--input-bg);
         color: var(--text-main);
         transition: filter var(--t-fast), opacity var(--t-fast), transform var(--t-fast);
-    }
-
-    .btn-gist-action:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
-
-    .gist-autosync-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.75rem;
-        background: var(--input-bg);
-        border: var(--border-w) solid var(--border);
-        border-radius: var(--radius);
-        padding: 0.65rem 0.85rem;
-        margin-bottom: 0.6rem;
-        cursor: pointer;
-    }
-
-    .gist-autosync-text {
-        display: flex;
-        flex-direction: column;
-        gap: 0.15rem;
     }
 
     .gist-autosync-title {
@@ -511,12 +391,6 @@
         transition: background-color var(--t-fast);
     }
 
-    .fab-menu-item i {
-        width: 20px;
-        height: 20px;
-        fill: var(--text-muted);
-    }
-
     .fab-menu-item:disabled,
     .fab-menu-item--disabled {
         opacity: 0.4;
@@ -528,16 +402,6 @@
         font-size: var(--fs-md);
         color: var(--text-muted);
         margin-bottom: 0.5rem;
-    }
-
-    .fab-container {
-        position: fixed;
-        bottom: 1.5rem;
-        right: 1.5rem;
-        z-index: 150;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
     }
 
     /* ── FAB principal ── */
@@ -556,10 +420,6 @@
         box-shadow: var(--sombra-media);
         cursor: pointer;
         transition: transform 0.25s var(--t-spring), filter var(--t-ui), background-color var(--dur-base) ease;
-    }
-
-    .fab-main-btn:hover {
-        background-color: var(--color-blue-hover);
     }
 
     .fab-main-btn.active {
@@ -643,23 +503,6 @@
     }
 
     /* ── Stat chips (sidebar de dashboard) ── */
-    .stat-chip {
-        background: var(--bg-card);
-        border-radius: var(--radius);
-        padding: 1rem;
-        box-shadow: var(--shadow);
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        min-width: 0;
-    }
-
-    .stat-chip-value {
-        font-size: 1.75rem;
-        font-weight: 800;
-        letter-spacing: -0.04em;
-        line-height: 1;
-    }
 
     .stat-chip-sub {
         font-size: var(--fs-sm);
@@ -731,14 +574,6 @@
         display: block;
     }
 
-    .import-ok {
-        color: var(--c-green);
-    }
-
-    .import-fail {
-        color: var(--c-red);
-    }
-
     .import-warn {
         color: var(--c-orange);
     }
@@ -780,9 +615,6 @@
     }
 
     @media (max-width: 700px) {
-        .dash-layout {
-            grid-template-columns: 1fr;
-        }
 
         #card-resumen-edificios {
             grid-column: 1;
@@ -806,7 +638,6 @@
             min-width: 0;
             flex: 1 1 140px;
         }
-
 
     }
 
@@ -834,10 +665,6 @@
         align-items: center;
         justify-content: center;
         transition: color var(--t-fast), filter var(--t-fast);
-    }
-
-    .btn-input-side.btn-input-side--baja {
-        background: var(--c-red);
     }
 
     .btn-input-side.btn-input-side--baja.btn-baja--reactivar {
@@ -870,14 +697,6 @@
             opacity: 1;
             transform: scale(1);
         }
-    }
-
-    .mutacion-saliente {
-        animation: mutacionSalida 0.22s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-    }
-
-    .mutacion-entrante {
-        animation: mutacionEntrada 0.22s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     }
 
     @keyframes tabFadeOut {
@@ -1000,17 +819,6 @@
 
     .dash-empty-text--sm-pad {
         padding: 1rem 0;
-    }
-
-    .btn-icon-only {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.55rem;
-        border-radius: 50%;
-        flex-shrink: 0;
-        width: 44px;
-        height: 44px;
     }
 
     .card-header-actions {
@@ -1874,18 +1682,5 @@
 
     /* Al final: pisa la posición de siempre del FAB (misma especificidad, gana el orden). */
     /* «Volver arriba» al lado del FAB (los dos van abajo a la derecha), y en móvil los dos sobre la barra de pestañas */
-    .btn-scroll-top {
-        right: 5.5rem;
-    }
 
-    @media (max-width: 767.98px) {
-        .btn-scroll-top {
-            right: 5rem;
-        }
-
-        .fab-container {
-            bottom: calc(var(--alto-barra-movil) + 1rem);
-            right: 1rem;
-        }
-    }
 }

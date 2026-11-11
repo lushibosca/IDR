@@ -1,0 +1,189 @@
+/* legado/comunes.css: reglas que SGR y SGI tenían IGUALES (estado vacío, encabezado de tarjeta, tabla, botón flotante, Gist, chips...), con
+   las variables viejas de legado/variables.css. Lo usan solo las apps portadas desde la base vieja; va antes de la hoja de cada app. */
+
+@layer app {
+    .card-header > .bi {
+        color: var(--color-texto-suave);
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+        border-radius: var(--radius);
+    }
+
+    tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .tr-clickable {
+        cursor: pointer;
+    }
+
+    tbody td {
+        padding: 0.7rem 0.85rem;
+        vertical-align: middle;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-muted);
+    }
+
+    .empty-state-hidden {
+        display: none;
+    }
+
+    .empty-state .empty-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+        opacity: 0.4;
+    }
+
+    input[type="file"].hidden {
+        display: none;
+    }
+
+    .gist-input-row {
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+    }
+
+    .gist-input-row input {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .gist-eye-btn {
+        flex-shrink: 0;
+        padding: 0;
+        background: var(--input-bg);
+        border: var(--border-w) solid var(--border);
+        border-radius: var(--radius);
+        display: flex;
+    }
+
+    .toggle-switch.on {
+        background: var(--c-blue);
+    }
+
+    .toggle-switch.on .toggle-thumb {
+        transform: translateX(18px);
+    }
+
+    #gist-link-btn {
+        display: none;
+    }
+
+    .gist-actions-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .gist-autosync-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        background: var(--input-bg);
+        border: var(--border-w) solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.65rem 0.85rem;
+        margin-bottom: 0.6rem;
+        cursor: pointer;
+    }
+
+    .fab-menu-item i {
+        width: 20px;
+        height: 20px;
+        fill: var(--text-muted);
+    }
+
+    .fab-container {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        z-index: 150;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .fab-main-btn:hover {
+        background-color: var(--color-blue-hover);
+    }
+
+    .stat-chip {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        padding: 1rem;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        min-width: 0;
+    }
+
+    .stat-chip-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        line-height: 1;
+    }
+
+    .import-ok {
+        color: var(--c-green);
+    }
+
+    .import-fail {
+        color: var(--c-red);
+    }
+
+    @media (max-width: 700px) {
+        .dash-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .btn-input-side.btn-input-side--baja {
+        background: var(--c-red);
+    }
+
+    .mutacion-saliente {
+        animation: mutacionSalida 0.22s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    .mutacion-entrante {
+        animation: mutacionEntrada 0.22s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    .btn-scroll-top {
+        right: 5.5rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .btn-scroll-top {
+            right: 5rem;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .fab-container {
+            bottom: calc(var(--alto-barra-movil) + 1rem);
+            right: 1rem;
+        }
+    }
+}

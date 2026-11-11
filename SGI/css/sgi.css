@@ -11,10 +11,6 @@
         padding: var(--esp-4);
     }
 
-    .card-header > .bi {
-        color: var(--color-texto-suave);
-    }
-
     /* Íconos de bootstrap-icons que giran o se alinean (flechas de año, mes y orden): necesitan caja propia */
     .year-arrow,
     .month-arrow,
@@ -27,9 +23,6 @@
     }
 
     /* Botón principal del FAB (su forma está más abajo, con el resto del FAB) */
-    .fab-main-btn:hover {
-        background-color: var(--color-blue-hover);
-    }
 
     /* Campos de las líneas de material (los arma app.js): el aspecto de .form-control de la suite */
     [id^="lineas-container-"] input {
@@ -89,13 +82,6 @@
                 display: grid;
                 grid-template-columns: 1fr 1fr 1fr;
                 gap: 0.75rem;
-            }
-
-    .card-header {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                margin-bottom: 1rem;
             }
 
     .card-header h2 {
@@ -179,10 +165,6 @@
             }
 
     /* ── Tabla de materiales ── */
-    .table-wrap {
-                overflow-x: auto;
-                border-radius: var(--radius);
-            }
 
     .td-animating,
             .th-animating {
@@ -251,22 +233,6 @@
                 transition: background var(--t-fast);
             }
 
-    tbody tr:last-child {
-                border-bottom: none;
-            }
-
-    .tr-clickable {
-                cursor: pointer;
-            }
-
-    tbody td {
-                padding: 0.7rem 0.85rem;
-                vertical-align: middle;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
     .td-actions {
                 display: flex;
                 gap: 0.3rem;
@@ -274,16 +240,6 @@
             }
 
     /* ── Stat chips (sidebar de dashboard) ── */
-    .stat-chip {
-                background: var(--bg-card);
-                border-radius: var(--radius);
-                padding: 1rem;
-                box-shadow: var(--shadow);
-                display: flex;
-                flex-direction: column;
-                gap: 0.25rem;
-                min-width: 0;
-            }
 
     .stat-chip-label {
                 font-size: 1rem;
@@ -291,13 +247,6 @@
                 text-transform: uppercase;
                 letter-spacing: 0.06em;
                 color: var(--text-muted);
-            }
-
-    .stat-chip-value {
-                font-size: 1.75rem;
-                font-weight: 800;
-                letter-spacing: -0.04em;
-                line-height: 1;
             }
 
     .stat-chip-sub {
@@ -324,16 +273,6 @@
 
     .fade-transition {
                 transition: opacity var(--t-modal);
-            }
-
-    .fab-container {
-                position: fixed;
-                bottom: 1.5rem;
-                right: 1.5rem;
-                z-index: 150;
-                display: flex;
-                flex-direction: column;
-                align-items: flex-end;
             }
 
     .fab-overlay {
@@ -417,12 +356,6 @@
                 border-radius: var(--radius);
                 font-size: 0.95rem;
                 transition: background-color var(--t-fast);
-            }
-
-    .fab-menu-item i {
-                width: 20px;
-                height: 20px;
-                fill: var(--text-muted);
             }
 
     /* ── Badge ── */
@@ -791,21 +724,6 @@
             }
 
     /* ── Empty state ── */
-    .empty-state {
-                text-align: center;
-                padding: 3rem 1rem;
-                color: var(--text-muted);
-            }
-
-    .empty-state-hidden {
-                display: none;
-            }
-
-    .empty-state .empty-icon {
-                font-size: 2.5rem;
-                margin-bottom: 0.75rem;
-                opacity: 0.4;
-            }
 
     .empty-state p {
                 font-size: 0.9rem;
@@ -881,10 +799,6 @@
                 margin: 0;
             }
 
-    input[type="file"].hidden {
-                display: none;
-            }
-
     /* ── Readonly de movimiento ── */
     .mov-lines-readonly {
                 background: var(--input-bg);
@@ -911,41 +825,8 @@
             }
 
     /* ── Gist sync ── */
-    .gist-input-row {
-                display: flex;
-                gap: 0.4rem;
-                align-items: center;
-            }
-
-    .gist-input-row input {
-                flex: 1;
-                min-width: 0;
-            }
-
-    .gist-eye-btn {
-                flex-shrink: 0;
-                padding: 0;
-                background: var(--input-bg);
-                border: var(--border-w) solid var(--border);
-                border-radius: var(--radius);
-                display: flex;
-            }
 
     /* <a> estilizado como icon-btn (sin subrayado, hereda color) */
-    .icon-link {
-                text-decoration: none;
-                color: inherit;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-    .gist-actions-row {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 0.5rem;
-                margin-bottom: 0.75rem;
-            }
 
     .btn-gist-action {
                 display: flex;
@@ -959,30 +840,6 @@
                 cursor: pointer;
                 border: none;
                 transition: filter var(--t-fast), opacity var(--t-fast), transform var(--t-fast);
-            }
-
-    .btn-gist-action:disabled {
-                opacity: 0.4;
-                cursor: not-allowed;
-            }
-
-    .gist-autosync-row {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 0.75rem;
-                background: var(--input-bg);
-                border: var(--border-w) solid var(--border);
-                border-radius: var(--radius);
-                padding: 0.65rem 0.85rem;
-                margin-bottom: 0.6rem;
-                cursor: pointer;
-            }
-
-    .gist-autosync-text {
-                display: flex;
-                flex-direction: column;
-                gap: 0.15rem;
             }
 
     .gist-autosync-title {
@@ -999,10 +856,6 @@
                 transition: background var(--t-ui);
             }
 
-    .toggle-switch.on {
-                background: var(--c-blue);
-            }
-
     .toggle-thumb {
                 position: absolute;
                 top: 3px;
@@ -1013,10 +866,6 @@
                 border-radius: 50%;
                 transition: transform 0.2s var(--t-spring);
                 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-            }
-
-    .toggle-switch.on .toggle-thumb {
-                transform: translateX(18px);
             }
 
     .gist-sync-status {
@@ -1190,18 +1039,7 @@
                 width: 90px;
             }
 
-    #gist-link-btn {
-                display: none;
-            }
-
     /* ── Clases migradas desde style= en strings JS ── */
-    .import-ok {
-                color: var(--c-green);
-            }
-
-    .import-fail {
-                color: var(--c-red);
-            }
 
     .import-sub {
                 font-size: 0.82rem;
@@ -1447,14 +1285,6 @@
                 }
             }
 
-    .mutacion-saliente {
-                animation: mutacionSalida 0.22s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-            }
-
-    .mutacion-entrante {
-                animation: mutacionEntrada 0.22s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-            }
-
     @keyframes tabFadeIn {
                 from {
                     opacity: 0;
@@ -1514,9 +1344,6 @@
             }
 
     @media (max-width: 700px) {
-                .dash-layout {
-                    grid-template-columns: 1fr;
-                }
 
                 /* Forzamos la columna y sacamos el wrap */
                 .dash-sidebar {
@@ -1594,34 +1421,6 @@
                 transition: background var(--t-ui), color var(--t-fast), filter var(--t-fast);
             }
 
-    .btn-input-side.btn-input-side--baja {
-                background: var(--c-red);
-            }
-
-    .btn-icon-only {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 0.55rem;
-                border-radius: 50%;
-                flex-shrink: 0;
-                width: 44px;
-                height: 44px;
-            }
-
     /* Al final: pisa la posición de siempre del FAB y de «volver arriba» (misma especificidad, gana el orden) */
-    .btn-scroll-top {
-        right: 5.5rem;
-    }
 
-    @media (max-width: 767.98px) {
-        .btn-scroll-top {
-            right: 5rem;
-        }
-
-        .fab-container {
-            bottom: calc(var(--alto-barra-movil) + 1rem);
-            right: 1rem;
-        }
-    }
 }
