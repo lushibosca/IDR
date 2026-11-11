@@ -10,8 +10,8 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sw = fs.readFileSync(path.join(RAIZ, "sw.js"), "utf8");
 const PRECACHE = [...sw.matchAll(/^\s*'(\.\/[^']*)',?\s*$/gm)].map((m) => m[1]);
 
-test("CACHE_NAME tiene el formato idr-suite-AAMMDD.HHMM", () => {
-  assert.match(sw, /const CACHE_NAME = 'idr-suite-\d{6}\.\d{4}';/);
+test("CACHE_NAME tiene el formato idr-suite-vAAMMDD.HHMM", () => {
+  assert.match(sw, /const CACHE_NAME = 'idr-suite-v\d{6}\.\d{4}';/);
 });
 
 test("todo lo listado en el precache existe (los directorios terminan en /)", () => {

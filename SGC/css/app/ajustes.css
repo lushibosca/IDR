@@ -1,6 +1,22 @@
 /* app/ajustes.css: App, pestaña «Ajustes» (filas con interruptor deslizante, `.interruptor`, role="switch"). */
 
 @layer app {
+    /* Encabezado de la pestaña: el título y, a la derecha, la versión de la suite (shared/idr-version.js la escribe) */
+    .ajustes-encabezado {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--esp-3);
+        margin-bottom: var(--esp-3);
+    }
+
+    .ajustes-version {
+        font-family: var(--fuente-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+        font-size: var(--texto-sm);
+        color: var(--ui-secondary-color);
+        user-select: all;                                /* se copia de un toque al reportar un problema */
+    }
+
     /* Dos columnas (o más) si hay lugar; cada sección ocupa su alto y no se estira con la vecina */
     .ajustes-grilla {
         display: grid;

@@ -9,8 +9,9 @@ Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se document�
 - **Un solo Service Worker, el de la raíz (`sw.js`).** Es cache-first con `ignoreSearch`: los `?v=` de los `<script>` no
   invalidan nada para la PWA instalada. Por eso, después de cada cambio en cualquier app (código, estilos, HTML):
   1. Si se creó, renombró o borró un archivo, ajustar `PRECACHE_URLS` en `sw.js` (se escribe a mano).
-  2. `node scripts/release.mjs` sube `CACHE_NAME` (`idr-suite-AAMMDD.HHMM`).
-  3. `node --test tests/*.test.mjs` (suite) y los tests de la app tocada (ver su `CLAUDE.md`).
+  2. `npm run release` sube la versión de la suite: `IDR_VERSION` (`shared/idr-version.js`, `vAAMMDD`, la que se muestra en los
+     Ajustes de cada app) y `CACHE_NAME` de `sw.js` (`idr-suite-vAAMMDD.HHMM`). Siempre juntas: lo valida `tests/version.test.mjs`.
+  3. `npm test` (suite) y los tests de la app tocada (ver su `CLAUDE.md`; SGC: `npm run test:sgc`).
 - Si todo pasa, hacer commit automático (sin esperar a que se pida), en español, con el prefijo de la app
   (`SGC: ...`) e incluyendo `sw.js`. **No hacer push.**
 - Una actualización se publica siempre desde la raíz: el cambio de una app solo llega a los usuarios cuando sube
@@ -38,5 +39,10 @@ Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se document�
 - No subir datos de usuario: `.gitignore` ya excluye `*.json` (salvo manifests), `*.env` y `Utilidades/datos/*`.
 
 ## Tests
-- Suite (precache, `CACHE_NAME`, fallback offline): `node --test tests/*.test.mjs` desde la raíz.
-- Cada app trae los suyos (SGC: `node --test tests/js/*.test.mjs`, ver `SGC/CLAUDE.md`).
+- Suite (precache, versión, actualización, tema, fallback offline): `npm test` desde la raíz.
+- Cada app trae los suyos (SGC: `npm run test:sgc`, ver `SGC/CLAUDE.md`).
+
+## Versión visible en cada app
+Cada app muestra la versión de la suite en sus Ajustes con un elemento `<span data-idr-version="NOMBRE"></span>` y el script
+`<script src="../shared/idr-version.js">` (nada de código por app; hoy lo hace SGC). Al portar SGR, SGI y SGP al diseño de SGC,
+agregar esas dos líneas en sus Ajustes.

@@ -4,3 +4,4 @@ Utilidades/datos/*
 !*/manifest.json
 *.log
 *.env
+!package.json

@@ -87,6 +87,8 @@ muestran u ocultan por ancho: son el mecanismo para lo que existe en una sola vi
 
 **Doble toque** (`doble-toque.js`): dentro de lo marcado con `data-doble-toque` (los modales de detalle) dos toques seguidos emiten un `dblclick` propio y se descarta el nativo, que en los teléfonos no es confiable.
 
+**Versión visible:** en Ajustes (`.ajustes-version`, `data-idr-version="SGC"` → «SGC-vAAMMDD»); la escribe `../shared/idr-version.js` y `npm run release` la sube junto con `CACHE_NAME`.
+
 **Actualización de la PWA:** la registra `../shared/idr-actualizacion.js` (toast con barra de progreso); SGC no registra el worker por su cuenta.
 
 ### Comunicación entre archivos

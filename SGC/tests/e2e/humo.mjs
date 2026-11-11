@@ -84,6 +84,8 @@ check('cabecera: el ícono de la marca lleva al launcher de la suite', $('menu-c
     check('tema: un cambio hecho en otra app se sigue en vivo', tema() === 'dark');
     w.localStorage.removeItem('IDR_dark'); w.initTheme();     // nadie eligió: vuelve a lo propio (sgc2/theme)
 }
+check('ajustes: muestra la versión de la suite (SGC-vAAMMDD)', /^SGC-v\d{6}$/.test(($('v-pills-ajustes').querySelector('.ajustes-version') || {}).textContent || ''),
+    ($('v-pills-ajustes').querySelector('.ajustes-version') || {}).textContent);
 check('sin Auditoría ni monitoreo en la página', !$('monitoreo-section') && !$('alertas-section') && !$('logs-sistema'));
 
 // --- alta, edición y producción por la API local (la que usa stock.js)

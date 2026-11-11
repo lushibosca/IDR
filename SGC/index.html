@@ -11,6 +11,7 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="manifest" href="manifest.json">
     <script src="../shared/idr-tema.js"></script>
+    <script src="../shared/idr-version.js"></script>
     <script src="js/preload.js?v=8"></script>
     <!-- CSS: todo en static/css/, por capas (@layer en tokens.css): tokens, base, iconos, grilla, componentes,
          app, utilidades. Sin !important (docs/diseno/CSS-Y-UI.md). El orden de los <link> es el de las capas. -->
@@ -41,7 +42,7 @@
     <link rel="stylesheet" href="css/app/activos.css?v=45">
     <link rel="stylesheet" href="css/app/favoritos.css?v=11">
     <link rel="stylesheet" href="css/app/atajos.css?v=6">
-    <link rel="stylesheet" href="css/app/ajustes.css?v=9">
+    <link rel="stylesheet" href="css/app/ajustes.css?v=10">
     <link rel="stylesheet" href="css/app/animaciones.css?v=12">
     <link rel="stylesheet" href="css/app/interaccion.css?v=8">
     <link rel="stylesheet" href="css/app/detalle-movil.css?v=5">
@@ -629,7 +630,10 @@
 
                     <!-- ================= PESTAÑA: AJUSTES (preferencias de este dispositivo; antes en el menú ⚙) ================= -->
                     <div class="tab-pane" id="v-pills-ajustes" role="tabpanel">
-                        <h6 class="mb-3"><i class="bi bi-sliders me-2"></i> Ajustes</h6>
+                        <div class="ajustes-encabezado">
+                            <h6 class="mb-0"><i class="bi bi-sliders me-2"></i> Ajustes</h6>
+                            <span class="ajustes-version" data-idr-version="SGC" title="Versión de la suite IDR (la misma en todas las apps)"></span>
+                        </div>
                         <div class="ajustes-grilla">
                         <section class="ajuste-seccion" aria-labelledby="ajustes-apariencia">
                             <h6 class="ajuste-seccion-titulo" id="ajustes-apariencia">Apariencia</h6>

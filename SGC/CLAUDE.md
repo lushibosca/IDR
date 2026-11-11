@@ -7,8 +7,8 @@ Estructura y capas: `docs/ARQUITECTURA.md` (fuente de verdad). Contexto y entreg
 ## Después de cada cambio
 1. Si cambió un `js/` o `css/`, subir su `?v=` en `index.html`. Si se creó o borró un archivo, ajustar `../sw.js`
    (`PRECACHE_URLS`) y el `<script>`/`<link>` de `index.html` (el orden de los `<script>` es el de dependencias).
-2. Desde la raíz `idr/`: `node scripts/release.mjs`.
-3. `node --test tests/js/*.test.mjs` (en `SGC/`; no pasar el directorio) y `node --test ../tests/*.test.mjs`.
+2. Desde la raíz `idr/`: `npm run release` (sube `IDR_VERSION` y `CACHE_NAME`; la versión se ve en Ajustes).
+3. `npm run test:sgc` y `npm test` (desde la raíz). Sin npm: `node --test tests/js/*.test.mjs` en `SGC/` (no pasar el directorio).
    Tocar la UI o el `index.html`: también `(cd tests/e2e && npm ci) && node tests/e2e/humo.mjs`.
 4. Si pasan, commit automático (`SGC: ...`, en español, incluyendo `../sw.js`). No hacer push.
 

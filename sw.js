@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-261111.0023';
+const CACHE_NAME = 'idr-suite-v261111.0028';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -154,7 +154,8 @@ const PRECACHE_URLS = [
   './shared/idr-actualizacion.css',
   './shared/idr-actualizacion.js',
   './shared/idr-infra.js',
-  './shared/idr-tema.js'
+  './shared/idr-tema.js',
+  './shared/idr-version.js'
 ];
 
 // Avisa a las páginas abiertas cómo va la descarga de la versión nueva (shared/idr-actualizacion.js muestra el toast con la barra)
