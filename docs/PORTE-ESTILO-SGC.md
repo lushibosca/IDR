@@ -27,8 +27,10 @@ botón «atrás»). Es un porte **de estilo y estructura de pantalla**: los dato
 | 7 | ¿Panel plegable y su personalización (posición izquierda/derecha/arriba/abajo, arrastrándolo)? | **Base de todas las apps.** El botón `#btn-toggle-sidebar`, el CSS y el JS salen de SGC a `shared/ui/`; cada app guarda su estado con su prefijo. |
 | 8 | ¿Transiciones de cambio de pestaña? | **Base de todas las apps**: la de SGC (`slide-pestana-saliente`, `SGC/js/animaciones.js` y `css/app/animaciones.css`) pasa a `shared/ui/`; respeta «reducir animaciones». |
 | 9 | ¿Barra superior? | **La misma en todos los módulos**, con deshacer y rehacer (`#btn-undo`, `#btn-redo`) como parte de la barra común. Un solo marcado de referencia; lo vigila un test. |
+| 10 | ¿Deshacer/rehacer en SGC, que no lo tenía? | **Se implementa de verdad en SGC** (función nueva: es la única excepción a «solo estilo»). Mismo comportamiento que en SGR y SGI: botones en la barra, `Ctrl+Z` / `Ctrl+Y`, aviso «Deshecho: …». |
+| 11 | ¿Menú ⚙ de la barra? | **Queda como está en SGC** y es parte de la barra común: en escritorio, menú desplegable a la derecha; **en móvil no se muestra** (como en SGC, `solo-escritorio`) y sus opciones están en la pestaña Ajustes. |
 
-Decisiones 5 a 9: 2026-11-11, después de la revisión de cobertura (sección 6).
+Decisiones 5 a 11: 2026-11-11, después de la revisión de cobertura (sección 6).
 
 Orden: **SGR → SGI → unificar la base (fase 2.5) → SGP → launcher** (SGL, sin fecha).
 
@@ -154,7 +156,8 @@ aplicándolo en SGC, SGR y SGI. **La guía paso a paso, con archivos y líneas, 
 - [ ] Paso 3 — avisos (`toast.js`) y «volver arriba» comunes.
 - [ ] Paso 4 — transición de cambio de pestaña común (decisión 8).
 - [ ] Paso 5 — panel plegable y personalizable común (decisión 7).
-- [ ] Paso 6 — barra superior única con deshacer/rehacer (decisión 9; **tiene dos preguntas abiertas**, ver paso 6).
+- [ ] Paso 6 — barra superior única: menú ⚙ como en SGC + deshacer/rehacer (decisiones 9 y 11).
+- [ ] Paso 6b — deshacer/rehacer en SGC (decisión 10; función nueva).
 - [ ] Paso 7 — CSS repetido de SGR/SGI a `shared/ui/componentes/`.
 - [ ] Paso 8 — tests de 6.4 y humo de las tres apps.
 
@@ -219,10 +222,9 @@ tests. Nada de esto está hecho; cada punto dice qué falta decidir o hacer.
       `SGI/app.js`) y el `#toast` de SGC no lleva `role="status"` ni `aria-live`. → `shared/ui/js/toast.js`.
 - [ ] **«Volver arriba»**: CSS común, JS repetido en las tres apps, y `sgr.css` y `sgi.css` vuelven a definir `.btn-scroll-top`.
 - [ ] **Barra superior**: SGC tiene el menú ⚙ (`#menu-config`: listar, tema, ayuda y atajos) y `#last-update`; SGR y SGI tienen
-      `.navbar-acciones` (deshacer, rehacer, instalar). → **Decisión 9: la misma barra en todos, con deshacer y rehacer.**
-      SGC hoy no tiene `#btn-undo`/`#btn-redo` ni un historial general de deshacer. **Pendiente de confirmar**: (a) si SGC
-      suma deshacer/rehacer de verdad (lógica nueva, fuera de «solo estilo») o lleva los botones deshabilitados; (b) si el
-      menú ⚙ y `#last-update` de SGC se mantienen como extra de SGC o pasan a Ajustes para que la barra sea idéntica.
+      `.navbar-acciones` (deshacer, rehacer, instalar). → **Decisiones 9, 10 y 11: la misma barra en todos** — el menú ⚙
+      como en SGC (solo escritorio; en móvil, sus opciones en Ajustes) más deshacer y rehacer, que SGC implementa de verdad
+      (hoy no tiene `#btn-undo`/`#btn-redo` ni historial). Pasos 6 y 6b de la sección 8.
 - [ ] **Ajustes**: las secciones cambian de app en app. Mínimo común a exigir: *Apariencia* (`#btn-theme`, `#btn-movimiento`),
       *Datos* (exportar, importar, restablecer), *Sincronización* y la versión (`data-idr-version`). La ayuda de atajos está en un
       modal en SGC, en Ajustes en SGI y no existe en SGR.
@@ -259,8 +261,7 @@ tests. Nada de esto está hecho; cada punto dice qué falta decidir o hacer.
 **Hecho y commiteado:** fases 0, 1 y 2 (SGC sin cambios visibles; SGR y SGI con el diseño de SGC). Todo en verde:
 `npm test`, `npm run test:sgc`, `node SGC/tests/e2e/humo.mjs` (desde `SGC/`) y `node tests/e2e/humo-apps.mjs`.
 
-**Siguiente paso: fase 2.5 (unificar la base)**, con las decisiones 5 a 9 ya tomadas; queda por confirmar lo de la barra
-superior en SGC (6.2). Después SGP, que se porta sobre la base ya unificada (con panel plegable, transición de pestañas y
+**Siguiente paso: fase 2.5 (unificar la base)**, con las decisiones 5 a 11 ya tomadas y sin preguntas abiertas. Después SGP, que se porta sobre la base ya unificada (con panel plegable, transición de pestañas y
 barra superior con deshacer/rehacer desde el primer día), y por último el launcher (fase 4).
 
 **Falta: fase 3, SGP (Patcheras).** Mismo procedimiento que SGR y SGI (sección 5 y la receta de la sección 3), más:
@@ -450,31 +451,79 @@ Hoy cada app tiene el suyo (detalle en 6.2). Dejar en SGC, SGR y SGI, en este or
   recargar conserva plegado y posición sin parpadeo; con el panel arriba o abajo las etiquetas se ocultan si no entran;
   «volver arriba» y lo flotante no quedan tapados. En SGC, un usuario con el panel ya plegado/movido lo encuentra igual.
 
-### Paso 6 — barra superior única (decisión 9)
-- Hoy: SGR (`SGR/index.html:~59–72`) y SGI: marca con `.brand-launcher` + `.navbar-acciones` con `#btn-undo`,
-  `#btn-redo` (SGI suma `#btn-install-app`, oculto hasta `beforeinstallprompt`). SGC (`SGC/index.html:~59–105`): marca +
-  `#last-update` + menú ⚙ `#menu-config` (Listar, `#btn-theme-menu`, `#btn-atajos`); **no tiene deshacer/rehacer ni un
-  historial general**. En SGR/SGI el historial es el objeto `historial` de cada `app.js` (`historial.undo()` /
-  `.redo()`, `SGR/app.js:2785`, `SGI/app.js:3823`).
-- Marcado de referencia (el de SGR), a anotar en la sección 3 cuando se haga:
+### Paso 6 — barra superior única (decisiones 9 y 11)
+- Hoy: SGC (`SGC/index.html:~59–105`): marca + `#last-update` + menú ⚙ `#menu-config` (Listar, `#btn-theme-menu`,
+  `#btn-atajos`); los dos últimos llevan `solo-escritorio` (`shared/ui/utilidades.css:~689`): **en móvil no se ven** y lo
+  que ofrecen está en la pestaña Ajustes (SGC tiene ahí una sección `solo-movil`, «Herramientas», `SGC/index.html:~712`).
+  SGR (`SGR/index.html:~59–72`) y SGI: marca + `.navbar-acciones` con `#btn-undo`, `#btn-redo` (SGI suma
+  `#btn-install-app`, oculto hasta `beforeinstallprompt`); no tienen menú ⚙.
+- **Barra de referencia** (anotarla en la sección 3 al hacerla). De izquierda a derecha:
   ```html
   <nav class="navbar navbar-expand-lg shadow-sm"><div class="container-fluid">
     <span class="navbar-brand mb-0 h1"><a href="../index.html" class="brand-launcher" title="Ir a la página principal"
         aria-label="Ir a la página principal"><i class="bi bi-ICONO text-primary"></i></a>SGx</span>
     <div class="d-flex align-items-center gap-2 navbar-acciones">
+      <!-- (opcional, propio de la app, solo-escritorio: p. ej. #last-update de SGC) -->
       <button … id="btn-install-app" hidden>…</button>
       <button … id="btn-undo" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled>…</button>
       <button … id="btn-redo" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled>…</button>
+      <div class="dropdown solo-escritorio" id="menu-config"> … menú ⚙, marcado de SGC … </div>
     </div></div></nav>
   ```
-- **Dos preguntas sin responder (preguntarle al usuario antes de tocar SGC en este paso; no decidir por él):**
-  1. ¿SGC suma deshacer/rehacer de verdad (lógica nueva: un historial de operaciones de stock/producción; excede «solo
-     estilo») o lleva los dos botones siempre deshabilitados hasta que exista esa lógica?
-  2. ¿El menú ⚙ y `#last-update` de SGC se quedan en la barra como extra de SGC (a la izquierda de `.navbar-acciones`),
-     o sus opciones pasan a la pestaña Ajustes para que la barra sea idéntica?
-- Lo que **sí** se puede hacer sin esas respuestas: agregar `#btn-install-app` a SGR (y su manejador, hoy solo en SGI:
-  pasarlo a `shared/ui/js/instalar.js`), anotar el marcado de referencia en la sección 3 y escribir el test que lo exige
-  en SGR y SGI (SGC entra al test cuando se respondan las preguntas).
+  - El **menú ⚙** usa el marcado y el comportamiento de SGC (`data-ui-toggle="dropdown"`, `UI.desplegable`). Opciones
+    comunes a todas las apps: **Modo oscuro** (`#btn-theme-menu`; lo maneja `apariencia.js`, paso 2) y **Ayuda y atajos**
+    si la app tiene esa ayuda (SGC: modal `#modal-atajos`; SGI: hoy en Ajustes > Ayuda → abrirla desde el menú; SGR: no
+    tiene, se omite). Cada app agrega arriba sus acciones propias (SGC: «Listar»; SGR y SGI: pocas, las de uso frecuente
+    que hoy tienen en Ajustes, p. ej. exportar/importar). *(Qué acciones propias lleva el menú en SGR y SGI no lo definió
+    el usuario: proponerle una lista corta antes de implementarlo.)*
+  - **Móvil (< 768 px), como SGC**: el menú ⚙ y los extras `solo-escritorio` no se muestran; **toda opción del menú tiene
+    que existir también en la pestaña Ajustes** (regla a anotar en la sección 3 y a vigilar con un test). Deshacer y
+    rehacer **sí** se ven en móvil (como hoy en SGR/SGI; la marca va centrada: `shared/ui/esqueleto.css:~270–293` y
+    `navegacion.css`).
+  - `#btn-install-app`: su manejador hoy está solo en `SGI/app.js` (`beforeinstallprompt`): pasarlo a
+    `shared/ui/js/instalar.js` y cargarlo en las tres.
+- En SGC: envolver lo de la derecha en `.navbar-acciones`, agregar `#btn-undo` y `#btn-redo` (se conectan en el paso 6b;
+  hasta entonces quedan `disabled`). Revisar `ubicarPanelEnEncabezado` (paso 5), `html.modo-kiosco #menu-config`
+  (`SGC/css/app/estructura.css:~387`) y `actualizarAlturaNavbar`.
+- En SGR y SGI: agregar `#menu-config` con el marcado de SGC.
+- Test en `tests/estilo.test.mjs`: en cada app portada, `.brand-launcher`, `.navbar-acciones`, `#btn-undo`, `#btn-redo`,
+  `#menu-config` con `solo-escritorio` y `#btn-theme-menu` dentro.
+- Aceptación: la barra se ve igual en SGC, SGR y SGI en escritorio (misma altura, mismo orden, mismo menú) y en móvil
+  (marca centrada, deshacer/rehacer, sin menú ⚙); el panel en posición «arriba» sigue entrando en la barra.
+
+### Paso 6b — deshacer/rehacer en SGC (decisión 10; función nueva)
+Es la única parte de esta fase que agrega comportamiento. Va en su propio commit (`SGC: deshacer y rehacer`), con tests.
+- **Modelo a imitar**: `historial` de `SGR/app.js:152–184` (igual en `SGI/app.js:408`): dos pilas (`_pasado`, `_futuro`)
+  de hasta 30 copias del estado con una etiqueta; `empujar(label)` antes de cada cambio, `undo()`, `redo()`; habilita o
+  deshabilita los botones; avisa «Deshecho: …» / «Rehecho: …». Atajos `Ctrl+Z` / `Ctrl+Y` (`SGR/app.js:~2584`,
+  `SGI/app.js:~2990`).
+- **Dónde engancharlo en SGC**: todos los datos pasan por `SGC/js/api-local.js` (`ApiLocal`): una sola clave
+  (`sgc2/datos_v1`), `escribir(fn)` (línea ~59) trabaja sobre una copia y `guardar(nuevos)` (~44) persiste y emite
+  `sgc:datos-cambiados`, con el que las pestañas ya se redibujan. Ese es el punto natural: antes de guardar, apilar el
+  estado anterior; deshacer = guardar el estado apilado por el mismo camino (así se redibuja todo solo).
+  **Leer `api-local.js` y `datos-puro.js` enteros antes de diseñarlo**; lo que sigue es una propuesta, no código probado.
+- **Diseño propuesto**: `SGC/js/historial.js` (cargado después de `api-local.js`) con un bloque
+  `// ==== HISTORIAL PURO BEGIN/END ====` (las dos pilas como funciones puras: `empujar`, `deshacer`, `rehacer`, tope 30,
+  un cambio nuevo vacía el futuro) y una capa fina que lo conecta a `ApiLocal`, a los botones y al teclado. Etiqueta de
+  cada entrada: derivarla de la operación que llega a `ApiLocal.pedir` (p. ej. «Alta de dispositivo», «Edición»,
+  «Baja»). El historial vive en memoria (se pierde al recargar, como en SGR y SGI).
+- **Puntos delicados (resolver y dejar anotado en `SGC/CLAUDE.md`)**:
+  - **Sincronización con Gist** (`SGC/js/gist.js`): según su cabecera, la fusión usa lápidas (borrados). Deshacer no
+    puede restaurar una copia vieja «tal cual» si eso hace que la fusión la descarte o vuelva a borrar lo recuperado: lo
+    deshecho tiene que quedar como un cambio **nuevo**. Leer cómo fusionan `gist.js` y `datos-puro.js` y cubrirlo con un test.
+  - **Qué NO entra en el historial**: importar, restablecer, lo que llega de una sincronización o de otra pestaña
+    (evento `storage`) y las preferencias del dispositivo (panel, tema, privacidad). Importar, restablecer y sincronizar
+    **vacían** el historial.
+  - **Otra pestaña abierta**: si los datos cambian por fuera, el historial de esta pestaña queda viejo → vaciarlo.
+  - **Modo kiosco** (`SGC/js/sesion-local.js`): ver si restringe escrituras; si es así, botones deshabilitados.
+  - Las confirmaciones en dos pasos que ya tiene SGC (`datos-ui.js`, Favoritos) se mantienen.
+  - `Ctrl+Z` dentro de un `<input>`/`<textarea>` es el deshacer del navegador: no interceptarlo ahí. Anotar los atajos
+    en `ATAJOS` de `SGC/js/atajos.js` (la lista del modal de ayuda es datos).
+- **Normas de SGC** (`SGC/CLAUDE.md`, `SGC/tests/js/arquitectura.test.mjs`): tope de líneas por archivo, solo
+  `textContent`, bloque puro con su test en `SGC/tests/js/`, archivo nuevo en `sw.js`.
+- Aceptación: alta, edición y baja de un dispositivo se deshacen y rehacen con los botones y con el teclado; tablas y
+  dashboard se actualizan solos; tras deshacer, un cambio nuevo deshabilita «rehacer»; importar o sincronizar deshabilita
+  los dos; con Gist configurado, deshacer una baja y sincronizar no la vuelve a borrar.
 
 ### Paso 7 — CSS repetido de SGR y SGI
 - Selectores definidos en las dos hojas (`SGR/css/sgr.css`, `SGI/css/sgi.css`): `.empty-state` (+ `.empty-icon`),
@@ -489,8 +538,8 @@ Hoy cada app tiene el suyo (detalle en 6.2). Dejar en SGC, SGR y SGI, en este or
 
 ### Paso 8 — tests y cierre
 - `tests/estilo.test.mjs`, para cada app de `APPS_PORTADAS`: los scripts nuevos (`arranque.js`, `apariencia.js`,
-  `toast.js`, `volver-arriba.js`, `transicion-pestanas.js`, `panel.js`); los ids `btn-theme`, `btn-movimiento`, `toast`
-  (con `role="status"`), `btn-scroll-top`, `search-clear`, `btn-toggle-sidebar`, `btn-undo`, `btn-redo`; `.brand-launcher`
+  `toast.js`, `volver-arriba.js`, `transicion-pestanas.js`, `panel.js`, `instalar.js`); los ids `btn-theme`, `btn-movimiento`, `toast`
+  (con `role="status"`), `btn-scroll-top`, `search-clear`, `btn-toggle-sidebar`, `btn-undo`, `btn-redo`, `menu-config`, `btn-theme-menu`; `.brand-launcher`
   con `href="../index.html"`; el `<head>` del paso 1. `mm.js` solo se exige a las apps que usan `MM` (SGR, SGI; SGC no).
 - Manifiestos de las apps portadas con los mismos `theme_color`, `background_color`, `display` y `orientation`.
 - `tests/e2e/humo-apps.mjs` (y `SGC/tests/e2e/humo.mjs`): plegar el panel, cambiar de posición, recargar y comprobar que
@@ -504,4 +553,4 @@ Hoy cada app tiene el suyo (detalle en 6.2). Dejar en SGC, SGR y SGI, en este or
 
 ### 8.9 Después de la fase 2.5
 SGP (sección 7, «Falta: fase 3») ya sobre la base unificada: su receta incluye `panel.js`, `transicion-pestanas.js`,
-`toast.js`, `volver-arriba.js`, la barra única y el `<head>` de referencia desde el primer día. Luego el launcher (fase 4).
+`toast.js`, `volver-arriba.js`, la barra única (menú ⚙ y deshacer/rehacer; SGP ya tiene deshacer en su `app.js`) y el `<head>` de referencia desde el primer día. Luego el launcher (fase 4).
