@@ -23,7 +23,7 @@ Cada app tiene su propio `CLAUDE.md` y `docs/ARQUITECTURA.md` si ya se document�
 - **Actualizaciones:** `shared/idr-actualizacion.js` (+ `.css`) registra el Service Worker y muestra el toast con barra de progreso
   («Descargando actualización · 40%» → «Actualización lista. Tocá para recargar»). Toda página de la suite lo carga con
   `<script src="../shared/idr-actualizacion.js" data-sw="../sw.js" data-scope="../">` y su hoja; **ninguna app registra el worker
-  por su cuenta** (lo vigila `tests/actualizacion.test.mjs`). `sw.js` descarga todo en paralelo, informa el avance y es todo o nada:
+  por su cuenta** (lo vigila `tests/actualizacion.test.mjs`). `sw.js` descarga todo en paralelo **después** del evento `install` (dentro de él Chromium limita a 3 descargas simultáneas y la actualización tardaba varios segundos; la página la pide con `sw-descargar` y avisa «lista» al activarse el worker), informa el avance y es todo o nada:
   si falla un archivo se conserva la versión anterior, así que un archivo listado en `PRECACHE_URLS` que no exista rompe las
   actualizaciones (el test de la suite lo vigila). Una app nueva: agregar esa línea y su hoja en su `index.html`.
 - **Botón «atrás» (Android, gesto de volver):** cierra el modal o la capa de arriba en vez de volver al launcher.

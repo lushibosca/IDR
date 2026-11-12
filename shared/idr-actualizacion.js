@@ -109,22 +109,38 @@ const IDRActualizacion = (() => {
             else if (d && d.tipo === 'sw-error') { actualizando = false; fallo(); }
         });
 
+        // Sigue a un worker nuevo hasta que queda activo. La descarga no ocurre dentro de su `install` (Chromium la limita a
+        // 3 pedidos simultáneos ahí, ver sw.js) sino después: al quedar instalado (en espera) se le pide con 'sw-descargar', y
+        // recién cuando termina se activa. Por eso «lista» es al activarse, no al instalarse.
+        const seguir = (reg, worker, avisar) => {
+            if (avisar) {
+                actualizando = true;
+                iniciarDescarga();                        // ya se sabe que hay versión nueva aunque siga descargando
+            }
+            const pedirDescarga = () => worker.postMessage({ tipo: 'sw-descargar' });
+            if (worker.state === 'installed') pedirDescarga();
+            worker.addEventListener('statechange', () => {
+                if (worker.state === 'installed') pedirDescarga();
+                if (!avisar) return;
+                if (worker.state === 'activated') {
+                    if (actualizando) { actualizando = false; listo(); }
+                } else if (worker.state === 'redundant' && actualizando && !reg.installing && !reg.waiting) {
+                    // descartado: es un error salvo que lo haya reemplazado una versión todavía más nueva (esa tiene su seguimiento)
+                    actualizando = false;
+                    fallo();
+                }
+            });
+        };
+
         const registro = () => navigator.serviceWorker.register(cfg.sw, cfg.scope ? { scope: cfg.scope } : undefined)
             .then((reg) => {
                 reg.addEventListener('updatefound', () => {
                     const nuevo = reg.installing;
-                    if (!nuevo || !reg.active) return;    // sin versión activa es la primera instalación: no hay nada que avisar
-                    actualizando = true;
-                    iniciarDescarga();                    // ya se sabe que hay versión nueva aunque siga descargando
-                    nuevo.addEventListener('statechange', () => {
-                        if (nuevo.state === 'installed' || nuevo.state === 'activated') {
-                            if (actualizando) { actualizando = false; listo(); }
-                        } else if (nuevo.state === 'redundant' && actualizando) {
-                            actualizando = false;
-                            fallo();
-                        }
-                    });
+                    if (!nuevo) return;
+                    seguir(reg, nuevo, !!reg.active);     // sin versión activa es la primera instalación: se descarga sin avisar
                 });
+                // Quedó una versión en espera de una apertura anterior (la descarga se cortó o falló): se retoma
+                if (reg.waiting) seguir(reg, reg.waiting, !!reg.active);
                 buscarAlVolver(reg);
             })
             .catch((err) => console.error('IDR: error al registrar el Service Worker:', err));

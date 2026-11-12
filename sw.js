@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261112.0109';
+const CACHE_NAME = 'idr-suite-v261112.0111';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -187,10 +187,14 @@ function avisarAClientes(mensaje) {
     .catch(() => { });
 }
 
-// Instalación: descarga todos los archivos en paralelo (sin usar la caché HTTP) e informa el avance. Es todo o nada: si falla
-// uno, la instalación falla y se conserva la versión anterior (el test de la suite vigila que todo lo listado exista).
-self.addEventListener('install', event => {
-  event.waitUntil((async () => {
+// Descarga todos los archivos de esta versión en paralelo (sin usar la caché HTTP), informa el avance y, al terminar, toma el
+// control. Es todo o nada: si falla uno, este worker queda en espera sin activarse y se conserva la versión anterior (el test de
+// la suite vigila que todo lo listado exista). Una sola descarga a la vez: los pedidos repetidos se suman a la que está en curso;
+// si falla, se puede volver a pedir.
+let descargaEnCurso = null;
+function descargarVersion() {
+  if (descargaEnCurso) return descargaEnCurso;
+  descargaEnCurso = (async () => {
     const cache = await caches.open(CACHE_NAME);
     const total = PRECACHE_URLS.length;
     let descargados = 0;
@@ -216,7 +220,25 @@ self.addEventListener('install', event => {
       throw err;
     }
     await self.skipWaiting();
-  })());
+  })();
+  descargaEnCurso.catch(() => { descargaEnCurso = null; });
+  return descargaEnCurso;
+}
+
+// Instalación: termina enseguida y la descarga corre DESPUÉS del evento, no dentro de él.
+// Chromium (Chrome, Brave, Edge) limita a 3 los pedidos simultáneos de un worker mientras está instalándose: con los archivos de
+// toda la suite, la descarga dentro del install tardaba varios segundos en el celular; fuera del evento van todos en paralelo.
+// El worker arranca la descarga por su cuenta (sirve también para páginas abiertas con código anterior, que no la piden) y la
+// página la pide además con 'sw-descargar' (shared/idr-actualizacion.js), lo que la mantiene viva y permite reintentar.
+self.addEventListener('install', () => {
+  setTimeout(() => { descargarVersion().catch(() => { }); }, 0);
+});
+
+// La página vio este worker ya instalado (en espera) y pide la descarga; si quedó a medias o falló en una apertura anterior,
+// se reintenta acá.
+self.addEventListener('message', event => {
+  if (!event.data || event.data.tipo !== 'sw-descargar') return;
+  event.waitUntil(descargarVersion().catch(() => { }));
 });
 
 // Activación

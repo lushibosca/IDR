@@ -48,8 +48,11 @@ test("buscar una versión nueva al volver: no más de una vez por minuto", () =>
 });
 
 // ---- instalación del sw.js con todo simulado: progreso, todo o nada
+// La descarga no corre dentro del install (Chromium la limita a 3 pedidos simultáneos ahí): el install termina enseguida y la
+// agenda; la página además la pide con 'sw-descargar'.
 function instalar({ falla = null, urls = null } = {}) {
-  const mensajes = [], escuchas = {}, guardado = [];
+  const mensajes = [], escuchas = {}, guardado = [], agendados = [];
+  const red = { falla };
   let omitioEspera = false;
   const clientes = [{ postMessage: (m) => mensajes.push(m) }];
   const self = {
@@ -59,22 +62,32 @@ function instalar({ falla = null, urls = null } = {}) {
   };
   const ctx = {
     self, location: { origin: "http://x" }, console: { log() {}, warn() {}, error() {} },
+    setTimeout: (fn) => { agendados.push(fn); },
     URL, Response, Request: class { constructor(url, o) { this.url = url; this.o = o; } },
     caches: { open: async () => ({ put: async (u) => { guardado.push(u); }, add: async () => {}, addAll: async () => {} }),
       keys: async () => [], delete: async () => true, match: async () => undefined },
-    fetch: async (req) => ({ ok: req.url !== falla, status: req.url === falla ? 404 : 200 }),
+    fetch: async (req) => ({ ok: req.url !== red.falla, status: req.url === red.falla ? 404 : 200 }),
   };
   vm.createContext(ctx);
   vm.runInContext(leer("sw.js"), ctx);
   const total = vm.runInContext("PRECACHE_URLS.length", ctx);
-  let promesa = null;
-  escuchas.install({ waitUntil: (p) => { promesa = p; } });
-  return { promesa, mensajes, guardado, total, omitio: () => omitioEspera };
+  let esperadoPorInstall = null;
+  escuchas.install({ waitUntil: (p) => { esperadoPorInstall = p; } });
+  const pedirDescarga = () => {
+    let promesa = null;
+    escuchas.message({ data: { tipo: "sw-descargar" }, waitUntil: (p) => { promesa = p; } });
+    return promesa;
+  };
+  return { esperadoPorInstall, agendados, pedirDescarga, red, mensajes, guardado, total, omitio: () => omitioEspera };
 }
 
-test("instalar: baja todo, avisa el avance de 0 a 100 sin retroceder y recién ahí toma el control", async () => {
+test("instalar: el install no espera la descarga (la agenda); la descarga baja todo, avisa el avance de 0 a 100 sin retroceder y recién ahí toma el control", async () => {
   const r = instalar();
-  await r.promesa;
+  assert.equal(r.esperadoPorInstall, null, "el install no retiene el evento con la descarga");
+  assert.equal(r.guardado.length, 0, "durante el install no se descarga nada");
+  assert.equal(r.agendados.length, 1, "la descarga queda agendada para cuando termina el install");
+  r.agendados[0]();
+  await r.pedirDescarga();   // el pedido de la página se suma a la descarga en curso, no la duplica
   const prog = r.mensajes.filter((m) => m.tipo === "sw-progreso").map((m) => m.progreso);
   assert.equal(prog[0], 0);
   assert.equal(prog.at(-1), 100);
@@ -85,11 +98,17 @@ test("instalar: baja todo, avisa el avance de 0 a 100 sin retroceder y recién a
   assert.ok(!r.mensajes.some((m) => m.tipo === "sw-error"));
 });
 
-test("instalar: si falla un archivo avisa el error, falla toda la instalación y NO toma el control (queda la versión anterior)", async () => {
+test("instalar: si falla un archivo avisa el error y NO toma el control (queda la versión anterior); un pedido posterior reintenta", async () => {
   const r = instalar({ falla: "./SGC/index.html" });
-  await assert.rejects(r.promesa, /HTTP 404/);
+  await r.pedirDescarga();
   assert.ok(r.mensajes.some((m) => m.tipo === "sw-error"));
+  assert.ok(!r.mensajes.some((m) => m.progreso === 100));
   assert.ok(!r.omitio());
+
+  r.red.falla = null;
+  await r.pedirDescarga();
+  assert.ok(r.omitio(), "el reintento completa la descarga y toma el control");
+  assert.equal(new Set(r.guardado).size, r.total, "quedó guardado todo lo listado");
 });
 
 // ---- activación: limpia las cachés viejas de la suite y deja en paz las de otras apps del mismo origen
