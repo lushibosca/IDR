@@ -4,7 +4,7 @@
  * dos y `tests/version.test.mjs` lo valida. Para mostrarla basta un elemento con `data-idr-version="NOMBRE"`: este módulo le
  * pone «NOMBRE-vAAMMDD» (o solo la versión si el atributo está vacío). Sin código por app: una línea de HTML en cada una.
  */
-const IDR_VERSION = 'v261111';
+const IDR_VERSION = 'v261112';
 
 // ==== VERSION PURO BEGIN ====
 /** «NOMBRE-vAAMMDD»; sin nombre, solo la versión. */

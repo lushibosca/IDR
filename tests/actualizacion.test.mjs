@@ -92,6 +92,26 @@ test("instalar: si falla un archivo avisa el error, falla toda la instalación y
   assert.ok(!r.omitio());
 });
 
+// ---- activación: limpia las cachés viejas de la suite y deja en paz las de otras apps del mismo origen
+test("activar: borra las cachés viejas de la suite (también las de los workers por app de antes) y no toca las de otras apps", async () => {
+  const escuchas = {}, borradas = [];
+  const ctx = {
+    self: { addEventListener: (tipo, fn) => { escuchas[tipo] = fn; }, clients: { claim: async () => {}, matchAll: async () => [] } },
+    location: { origin: "http://x" }, console: { log() {}, warn() {}, error() {} }, URL, Response, Request: class {},
+    caches: { keys: async () => existentes, delete: async (n) => { borradas.push(n); return true; }, open: async () => ({}), match: async () => undefined },
+  };
+  vm.createContext(ctx);
+  vm.runInContext(leer("sw.js"), ctx);
+  const [actual, runtime] = [vm.runInContext("CACHE_NAME", ctx), vm.runInContext("RUNTIME_CACHE", ctx)];
+  const propiasViejas = ["idr-suite-v250101.0000", "idr-runtime-250101.0000", "IDR-v3", "SGR-v12", "SGI-V5-cache", "licencias-v2-cache", "CCTVS-v1-cache"];
+  const ajenas = ["horarios-v261111.2126-cache", "gestion_servicios-v12", "otra-app-v1"];
+  const existentes = [actual, runtime, ...propiasViejas, ...ajenas];
+  let promesa = null;
+  escuchas.activate({ waitUntil: (p) => { promesa = p; } });
+  await promesa;
+  assert.deepEqual([...borradas].sort(), [...propiasViejas].sort());
+});
+
 // ---- toda página de la suite carga el módulo y ninguna registra el worker por su cuenta
 const PAGINAS = { "index.html": "./sw.js", "SGC/index.html": "../sw.js", "SGI/index.html": "../sw.js", "SGL/index.html": "../sw.js",
   "SGP/index.html": "../sw.js", "SGR/index.html": "../sw.js" };

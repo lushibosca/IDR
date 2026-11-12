@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261111.1421';
+const CACHE_NAME = 'idr-suite-v261112.0109';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -222,12 +222,17 @@ self.addEventListener('install', event => {
 // Activación
 self.addEventListener('activate', event => {
   const allowedCaches = [CACHE_NAME, RUNTIME_CACHE];
+  // Solo se limpian cachés de esta suite. El origen de GitHub Pages se comparte con otras apps (Horarios, Servicios):
+  // borrar todo lo que no sea de IDR les rompe el modo sin conexión en cada actualización de la suite.
+  // La lista incluye los nombres que usaron los Service Workers por app antes de unificarse en este.
+  const PREFIJOS_PROPIOS = ['idr-', 'IDR-', 'SGR-', 'SGI-', 'licencias-', 'CCTVS-'];
+  const esDeLaSuite = nombre => PREFIJOS_PROPIOS.some(prefijo => nombre.startsWith(prefijo));
 
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (!allowedCaches.includes(cacheName)) {
+          if (esDeLaSuite(cacheName) && !allowedCaches.includes(cacheName)) {
             console.log('[IDR-SW] Eliminando caché obsoleta:', cacheName);
             return caches.delete(cacheName);
           }
