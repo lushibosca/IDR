@@ -116,12 +116,15 @@ portada), además de los tests de CSS de SGC (`SGC/tests/js/css_limpio.test.mjs`
 <nav class="navbar navbar-expand-lg shadow-sm"><div class="container-fluid">
   <span class="navbar-brand mb-0 h1"><a href="../index.html" class="brand-launcher" title="Ir a la página principal"
       aria-label="Ir a la página principal"><i class="bi bi-ICONO text-primary"></i></a>SGx</span>
+  <span class="navbar-pestana" id="navbar-pestana" aria-live="polite" hidden></span>   <!-- lo llena panel.js: la pestaña actual -->
   <div class="d-flex align-items-center gap-2 navbar-acciones">
     <!-- opcional, propio de la app y solo-escritorio: #last-update de SGC -->
     <button … id="btn-install-app" hidden>…</button> <button … id="btn-undo" disabled>…</button> <button … id="btn-redo" disabled>…</button>
     <!-- solo SGC por ahora: el menú ⚙ (#menu-config, solo-escritorio; en móvil sus opciones están en Ajustes) -->
   </div></div></nav>
 ```
+
+`#navbar-pestana` (`actualizarTituloPestana`, `shared/ui/js/panel.js`): el nombre (`data-etiqueta`) de la pestaña activa, con el panel oculto y SIEMPRE en el móvil, donde queda a la derecha de la marca. El relleno vertical de la barra es 0,75 rem en escritorio y 0,5 rem en el móvil.
 SGR y SGI quedaron sin menú ⚙ (decisión del usuario, 2026-11-11): todo lo que ofrece está en su pestaña Ajustes.
 
 **`<head>` de referencia:** `charset`, `viewport` con `viewport-fit=cover`, CSP igual en todas salvo `connect-src`, `referrer`, `color-scheme`, tres metas de PWA,

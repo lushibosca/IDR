@@ -154,7 +154,15 @@ function formatoCapacidad(val, base, modo) {
     if (modoCapacidadValido(modo) !== 'pct' || !(base > 0)) return String(n);
     return `${Math.round((n / base) * 100)}%`;
 }
+
+// «% del total»: lo que `parte` representa de `total`, con un decimal (el de la columna del detalle de canales); sin base, «-»
+function formatoParticipacion(parte, total) {
+    const p = Number(parte) || 0;
+    if (!(total > 0)) return '-';
+    return `${Math.round((p / total) * 1000) / 10}%`;
+}
 // ==== RESUMEN STOCK PURO END ====
+
 
 let _ultimoResumenStock = null;
 let _ultimosGruposStock = null;
@@ -382,55 +390,6 @@ function repintarModoDetalles() {
     }
 }
 
-// Un grabador del detalle de canales (la tabla principal y la de «solo pantalla» van igual): columnas y fila.
-// Sin capacidad conocida muestra «-» (no 0) y sin porcentaje: no tiene base para calcularlo
-function columnasCapacidad(d, fmt, modo) {
-    return d.cap > 0 ? [d.cap, fmt(d.enUso, d.cap), fmt(d.libres, d.cap)] : ['-', modo === 'pct' ? '-' : d.enUso, '-'];
-}
-// Solo el nombre del grabador (la IP sale de la descripción); doble clic = buscarlo en Activos. `conNivel`: el borde y el
-// color de Disponibles según el uso (lo que se pide del parque; un solo pantalla no lo lleva)
-function ponerFilaCapacidad(tr, d, conNivel) {
-    tr.cells[0].textContent = d.nombre;
-    tr.dataset.nvrIp = d.ip;
-    tr.title = 'Doble clic: buscar en Activos';
-    if (conNivel && d.cap > 0) {
-        const pct = Math.min(100, Math.round((d.enUso / d.cap) * 100));
-        const nivel = typeof nivelCapacidad === 'function' ? nivelCapacidad(pct) : (pct >= 90 ? 'critico' : (pct >= 70 ? 'aviso' : 'ok'));
-        tr.classList.add(nivel === 'critico' ? 'cap-fila-critico' : (nivel === 'aviso' ? 'cap-fila-aviso' : 'cap-fila-ok'));
-    }
-}
-
-function pintarDetalleCapacidad() {
-    const cap = _ultimaCapacidad;
-    if (!cap) return;
-    const modo = modoCapacidadValido(storage.get(CLAVE_MODO_CAPACIDAD));
-    const fmt = (val, base) => formatoCapacidad(val, base, modo);
-    pintarTablaResumen('#tabla-detalle-capacidad tbody', cap.detalle, d => columnasCapacidad(d, fmt, modo),
-        (tr, d) => ponerFilaCapacidad(tr, d, true));
-    // Los grabadores solo pantalla no suman en nada: tabla aparte, sin totales ni colores de uso, y oculta si no hay
-    const pantallas = cap.pantallas || new Map();
-    pintarTablaResumen('#tabla-detalle-pantallas tbody', pantallas, d => columnasCapacidad(d, fmt, modo),
-        (tr, d) => ponerFilaCapacidad(tr, d, false));
-    const seccionPantallas = document.getElementById('cap-pantallas-seccion');
-    if (seccionPantallas) seccionPantallas.classList.toggle('d-none', pantallas.size === 0);
-    uiPonerTexto('cap-detalle-total', cap.total);      // fila de totales: las mismas sumas del chip
-    // en porcentaje, el uso de los grabadores con capacidad conocida (los mismos que suman la capacidad total)
-    uiPonerTexto('cap-detalle-uso', fmt(modo === 'pct' ? cap.enUsoMedido : cap.enUso, cap.total));
-    const nota = document.getElementById('cap-detalle-nota');
-    if (nota) {
-        nota.classList.toggle('d-none', !(cap.sinCapacidad > 0));
-        nota.textContent = cap.sinCapacidad > 0
-            ? `«-»: capacidad desconocida (${cap.sinCapacidad}); no cuenta en la capacidad ni en los porcentajes.` : '';
-    }
-    uiPonerTexto('cap-detalle-libres', fmt(cap.libres, cap.total));
-    for (const b of document.querySelectorAll('[data-cap-modo]')) {
-        const activo = b.dataset.capModo === modo;
-        b.classList.toggle('active', activo);
-        b.setAttribute('aria-pressed', String(activo));
-    }
-    envolverValoresCapacidad();
-}
-
 document.addEventListener('click', (e) => {
     const b = e.target instanceof Element ? e.target.closest('[data-cap-modo]') : null;
     if (!b) return;
@@ -600,12 +559,14 @@ function fijarTiposDesplegados(tbody, abiertos, tipos, abrir) {
 
 // Fila de contadores del detalle de stock: «Total» en cantidad y «En uso», «Disponibles» y «No disponible» en cantidad o en
 // % del total de esa fila (el mismo toggle y la misma preferencia que el detalle de canales). Cada valor va en un `.cap-valor`.
-function celdasContador(tr, c, clases, modo) {
+// Con `base` (el total del tipo, o del grupo para un tipo) suma «% del total»: lo que esa fila pesa dentro de su base.
+function celdasContador(tr, c, clases, modo, base = null) {
     uiCelda(tr, String(c.t), clases[0]);
     [c.u, c.d, c.o].forEach((v, i) => {
         const td = uiCelda(tr, '', clases[i + 1]);
         td.append(uiNodo('span', 'cap-valor', formatoCapacidad(v, c.t, modo)));
     });
+    if (base !== null) uiCelda(tr, formatoParticipacion(c.t, base), clases[4] || 'text-center text-muted');
 }
 
 // Pie fijo de la tabla con el total general (la suma de todos los tipos), como el de canales (`.fila-totales`)
@@ -626,7 +587,7 @@ function pintarTotalGeneral(tabla, porTipo, modo) {
     th.scope = 'row';
     th.textContent = 'Total';
     tr.appendChild(th);
-    celdasContador(tr, total, ['text-center', 'text-center', 'text-center', 'text-center'], modo);
+    celdasContador(tr, total, ['text-center', 'text-center', 'text-center', 'text-center', 'text-center'], modo, total.t);
     pie.replaceChildren(tr);
 }
 
@@ -638,6 +599,8 @@ function pintarTablaTipos(selector, porTipo) {
     const abiertos = _tiposDesplegados.get(selector);
     const clases = ['', 'text-center fw-semibold', 'text-center', 'text-center', 'text-center text-muted'];
     const porNombre = ([a], [b]) => String(a).localeCompare(String(b));
+    let totalGeneral = 0;
+    for (const { c } of porTipo.values()) totalGeneral += c.t;
     const filas = [];
     for (const [tipo, { c, modelos }] of [...porTipo.entries()].sort(porNombre)) {
         const abierto = abiertos.has(tipo);
@@ -663,7 +626,7 @@ function pintarTablaTipos(selector, porTipo) {
         boton.append(icono, nombre, cant);
         td.appendChild(boton);
         tr.appendChild(td);
-        celdasContador(tr, c, clases.slice(1), modo);
+        celdasContador(tr, c, clases.slice(1), modo, totalGeneral);
         filas.push(tr);
         for (const [modelo, m] of [...modelos.entries()].sort(porNombre)) {
             const sub = document.createElement('tr');
@@ -674,7 +637,7 @@ function pintarTablaTipos(selector, porTipo) {
                 sub.dataset.resumenModelo = modelo;
                 sub.title = 'Doble clic: ver este modelo en Activos';
             }
-            celdasContador(sub, m, clases.slice(1), modo);
+            celdasContador(sub, m, clases.slice(1), modo, c.t);
             filas.push(uiFilaPlegable(sub, abierto));
         }
     }
@@ -986,6 +949,7 @@ async function actualizarResumenInfraestructura() {
     _ultimaCapacidad = cap;
     pintarDetalleCapacidad();
     pintarGraficosGrabadores(cap);
+    pintarDistribucionGrabadores(cap);
 
     // 2. Stock: lo avisa la pestaña Stock con 'cctv:stock' cada vez que carga; si todavía no, se pide una vez acá
     if (!_cacheStockResumen) await cargarStockResumen();

@@ -7,7 +7,7 @@ const { uiValorInformado } = cargarBloque("comun.js", "VALOR INFORMADO PURO", { 
 const GLOBALES = { String, Number, Array, Map, Set, Math, Object, ALERTAS_LIMITE_VISIBLES: 4, uiValorInformado };
 const stock = cargarBloque("resumen.js", "RESUMEN STOCK PURO", GLOBALES, [
   "resumirStock", "busquedaDeModelo", "gruposPropiosCatalogo", "metricasDesgloseStock", "EJES_ACTIVOS", "formatoCapacidad",
-  "modoCapacidadValido",
+  "modoCapacidadValido", "formatoParticipacion",
 ]);
 const reorden = cargarBloque("resumen.js", "REORDEN SECCIONES PURO", GLOBALES, ["ordenarIdsSecciones", "evaluarIntercambioSecciones", "IDS_SECCIONES_REUBICABLES", "DISPOSICION_POR_DEFECTO", "distribuirSecciones", "zonaEnPunto", "indiceInsercion", "destinoTeclado"]);
 
@@ -269,3 +269,78 @@ test("detalle de canales: en uso y disponibles en cantidad o en % de la capacida
   assert.equal(modoCapacidadValido("__proto__"), "neto");
 });
 
+const distribucion = cargarBloque("resumen-distribucion.js", "DISTRIBUCION CANALES PURO", GLOBALES, [
+  "MAX_GRABADORES_TORTA", "distribuirUsoGrabadores",
+]);
+
+test("distribuirUsoGrabadores: ordena de mayor a menor uso, ignora sin uso y calcula % sobre el total", () => {
+  const detalle = new Map([
+    ["NVR B (10.0.0.2)", { nombre: "NVR B", ip: "10.0.0.2", enUso: 10, cap: 16 }],
+    ["NVR A (10.0.0.1)", { nombre: "NVR A", ip: "10.0.0.1", enUso: 30, cap: 64 }],
+    ["NVR C (10.0.0.3)", { nombre: "NVR C", ip: "10.0.0.3", enUso: 0, cap: 8 }],
+  ]);
+  const r = distribucion.distribuirUsoGrabadores(detalle);
+  assert.equal(r.total, 40);
+  assert.equal(r.ocultos, 0);
+  assert.deepEqual(plano(r.items.map(i => [i.nombre, i.enUso, i.pct, i.esOtros, i.indice])), [
+    ["NVR A", 30, 75, false, 0],
+    ["NVR B", 10, 25, false, 1],
+  ]);
+  assert.equal(r.todos.length, 2);
+});
+
+test("distribuirUsoGrabadores: muestra hasta 8 máximo y si hay más agrupa el excedente en Otros", () => {
+  const detalle8 = new Map(Array.from({ length: 8 }, (_, i) => [
+    `NVR ${i + 1}`, { nombre: `NVR ${i + 1}`, ip: `10.0.0.${i + 1}`, enUso: 10 - i, cap: 16 },
+  ]));
+  const r8 = distribucion.distribuirUsoGrabadores(detalle8);
+  assert.equal(r8.items.length, 8);
+  assert.equal(r8.ocultos, 0);
+  assert.ok(r8.items.every(i => !i.esOtros));
+
+  const detalle10 = new Map(Array.from({ length: 10 }, (_, i) => [
+    `NVR ${i + 1}`, { nombre: `NVR ${i + 1}`, ip: `10.0.0.${i + 1}`, enUso: 20 - i, cap: 32 },
+  ]));
+  const r10 = distribucion.distribuirUsoGrabadores(detalle10);
+  assert.equal(r10.items.length, 8, "máximo 8 porciones (7 grabadores + Otros)");
+  assert.equal(r10.ocultos, 3);
+  assert.equal(r10.items[7].esOtros, true);
+  assert.equal(r10.items[7].nombre, "Otros (3)");
+  assert.equal(r10.items[7].enUso, 13 + 12 + 11);
+  assert.equal(r10.todos.length, 10, "el detalle del modal conserva los 10 grabadores");
+  assert.equal(r10.todos[6].indice, 6);
+  assert.equal(r10.todos[7].indice, null);
+});
+
+test("distribuirUsoGrabadores: entradas vacías o nulas no rompen", () => {
+  for (const x of [null, undefined, new Map(), new Map([["A", { nombre: "A", enUso: 0 }]])]) {
+    const r = distribucion.distribuirUsoGrabadores(x);
+    assert.deepEqual([r.total, r.items.length, r.todos.length, r.ocultos], [0, 0, 0, 0]);
+  }
+});
+
+test("detalle de stock: «% del total» con un decimal y sin base es «-»", () => {
+  const { formatoParticipacion } = stock;
+  assert.equal(formatoParticipacion(1, 3), "33.3%");
+  assert.equal(formatoParticipacion(5, 5), "100%");
+  assert.equal(formatoParticipacion(0, 7), "0%");
+  assert.equal(formatoParticipacion(undefined, 7), "0%");
+  assert.equal(formatoParticipacion(3, 0), "-", "sin base no hay porcentaje");
+});
+
+test("detalle de canales y de stock: columna «% del total» y chip de canales con la leyenda de participación", async () => {
+  const fs = await import("node:fs");
+  const { ruta } = await import("./_bloque.mjs");
+  const html = fs.readFileSync(ruta("index.html"), "utf8");
+  const resumen = fs.readFileSync(ruta("resumen.js"), "utf8");
+  const distribucion = fs.readFileSync(ruta("resumen-distribucion.js"), "utf8");
+  for (const tabla of ["tabla-detalle-capacidad", "tabla-detalle-stock", "tabla-detalle-stock-otros", "tabla-stock-grupo-tipo", "tabla-stock-cam-tipo"]) {
+    const resto = html.slice(html.indexOf(`id="${tabla}"`));
+    assert.ok(resto.slice(0, resto.indexOf("</thead>")).includes('<th class="text-center">% del total</th>'), tabla);
+  }
+  for (const id of ["card-kpi-capacidad", "kpi-cap-donut-grupo", "cap-distribucion-leyenda", "cap-detalle-part"]) assert.ok(html.includes(`id="${id}"`), id);
+  assert.ok(!html.includes('id="modal-detalle-distribucion"'));
+  assert.ok(resumen.includes("celdasContador(sub, m, clases.slice(1), modo, c.t)"), "un modelo pesa sobre su tipo");
+  assert.ok(resumen.includes("celdasContador(tr, c, clases.slice(1), modo, totalGeneral)"), "un tipo pesa sobre el grupo");
+  assert.ok(distribucion.includes("const MAX_GRABADORES_TORTA = 8;") && resumen.includes("pintarDistribucionGrabadores(cap);"));
+});

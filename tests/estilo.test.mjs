@@ -136,6 +136,8 @@ test("apps portadas: cargan la base (tokens primero, utilidades al final), el es
     }
     // barra superior única: la marca lleva al launcher y a la derecha van instalar, deshacer y rehacer (el menú ⚙ es solo de SGC)
     assert.match(html, /<a href="\.\.\/index\.html" class="brand-launcher"/, `${app}: marca con enlace al launcher`);
+    // el nombre de la pestaña actual en la barra (con el panel oculto y en el móvil): lo llena shared/ui/js/panel.js
+    assert.match(html, /<span class="navbar-brand[^"]*">[\s\S]*?<\/span>\s*<span class="navbar-pestana" id="navbar-pestana"[^>]*\bhidden\b/, `${app}: #navbar-pestana junto a la marca`);
     for (const id of ["btn-install-app", "btn-undo", "btn-redo"]) {
       assert.match(html, new RegExp(`class="[^"]*navbar-acciones[^"]*"[\\s\\S]*?id="${id}"`), `${app}: #${id} dentro de .navbar-acciones`);
     }
@@ -300,4 +302,24 @@ test("arranque.js: tema inicial", async () => {
   assert.equal(f(null, "light", "dark"), "dark");
   assert.equal(f(true, "light", "light"), "dark");   // el de la suite manda sobre el respaldo
   assert.equal(f(null, "dark", "basura"), "dark");
+});
+
+test("barra superior: el nombre de la pestaña (panel oculto o móvil), más baja en escritorio y mide las etiquetas con el ancho final", () => {
+  const panel = leer("shared/ui/js/panel.js");
+  const nav = leer("shared/ui/componentes/navegacion.css");
+  const css = leer("shared/ui/panel.css");
+  const fn = panel.slice(panel.indexOf("function actualizarTituloPestana"), panel.indexOf("function pintarPanelLateral"));
+  assert.match(fn, /sidebar-collapsed/);
+  assert.match(fn, /dataset\.etiqueta/);
+  assert.match(fn, /max-width: 767\.98px/, "en el móvil se ve siempre");
+  assert.match(panel, /ui:pestana-mostrada/);
+  assert.match(panel.slice(panel.indexOf("function pintarPanelLateral")), /actualizarTituloPestana\(\);/);
+  assert.match(nav, /@media \(min-width: 768px\) \{\s*\.navbar \{\s*--ui-navbar-padding-y: var\(--esp-3\);/, "escritorio: un poco más baja");
+  const movil = nav.slice(nav.indexOf("@media (max-width: 767.98px)"));
+  assert.match(movil, /--ui-navbar-padding-y: var\(--esp-2\)/, "móvil: un poco más alta");
+  assert.match(movil, /\.navbar-pestana \{\s*margin-left: auto;/, "móvil: marca a la izquierda, nombre a la derecha");
+  // al mudar el panel de lugar el ancho todavía viaja por la transición: se mide sin ella
+  assert.match(panel, /ajustarEtiquetasPanel\(\{ sinTransicion: true \}\)/);
+  assert.match(panel, /sidebar-midiendo', 'sidebar-sin-transicion'/);
+  assert.match(css, /#sidebar-col\.sidebar-sin-transicion \{\s*transition: none;/);
 });

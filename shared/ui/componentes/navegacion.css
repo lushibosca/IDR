@@ -105,16 +105,56 @@
         color: var(--ui-navbar-brand-hover-color);
     }
 
-    /* Móvil: la barra superior a la mitad de alto (de ~67 a ~34 px): menos relleno y la marca en una línea ajustada */
+    /* Con el panel oculto, el nombre de la pestaña actual va al lado de la marca (panel.js actualizarTituloPestana) */
+    .navbar-pestana {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--esp-2);
+        margin-right: var(--esp-4);
+        color: var(--ui-secondary-color);
+        font-size: var(--texto-lg);
+        white-space: nowrap;
+    }
+
+    .navbar-pestana::before {
+        content: "";
+        width: 1px;
+        height: 1.1em;
+        background-color: var(--border-color);
+    }
+
+    .navbar-pestana[hidden] {
+        display: none;
+    }
+
+    /* Escritorio: la barra un poco más baja (el relleno vertical de 1 a 0,75 rem) */
+    @media (min-width: 768px) {
+        .navbar {
+            --ui-navbar-padding-y: var(--esp-3);
+        }
+    }
+
+    /* Móvil: la barra superior más baja que la de escritorio: poco relleno, la marca en una línea ajustada y el nombre de la pestaña */
     @media (max-width: 767.98px) {
         .navbar {
             --ui-navbar-padding-x: var(--esp-3);
-            --ui-navbar-padding-y: var(--esp-1);
+            --ui-navbar-padding-y: var(--esp-2);
             --ui-navbar-brand-padding-y: 0;
         }
 
         .navbar > .container-fluid {
-            justify-content: center;                /* la marca (ícono y texto) centrada */
+            justify-content: space-between;         /* la marca a la izquierda y el nombre de la pestaña a la derecha */
+        }
+
+        .navbar-pestana {
+            margin-left: auto;
+            margin-right: 0;
+            color: rgba(var(--ui-emphasis-color-rgb), 1);
+            font-weight: 600;
+        }
+
+        .navbar-pestana::before {
+            content: none;
         }
 
         .navbar-brand {

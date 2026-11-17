@@ -153,6 +153,14 @@
         --color-orange: #e37400;
         --color-purple: #7b3fb8;
         --color-purple-on: #ffffff;
+        --donut-1: var(--color-blue);
+        --donut-2: var(--color-green);
+        --donut-3: var(--color-orange);
+        --donut-4: var(--color-purple);
+        --donut-5: #00897b;
+        --donut-6: var(--color-red);
+        --donut-7: #c2185b;
+        --donut-8: #5c6bc0;
         --canal-multi-bg: #6f4ea1;          /* canal de una cámara que está en varios grabadores */
         --nav-active-bg: rgba(var(--color-blue-rgb), 0.08);
         --nav-active-text: var(--color-blue);
@@ -223,6 +231,14 @@
         --color-orange: #fba94b;
         --color-purple: #c9a5f5;
         --color-purple-on: #2a0d4d;
+        --donut-1: var(--color-blue);
+        --donut-2: var(--color-green);
+        --donut-3: var(--color-orange);
+        --donut-4: var(--color-purple);
+        --donut-5: #4db6ac;
+        --donut-6: var(--color-red);
+        --donut-7: #f48fb1;
+        --donut-8: #9fa8da;
         --canal-multi-bg: #6a4691;
         --nav-active-bg: rgba(var(--color-blue-rgb), 0.14);
         --nav-active-text: var(--color-blue);

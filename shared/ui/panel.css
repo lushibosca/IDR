@@ -221,6 +221,11 @@
             transition: none;          /* sin animar: medir y volver a poner la clase no puede reiniciar una transición (parpadeo sin fin) */
         }
 
+        /* Al medir justo después de mudar el panel: el ancho final, no el que viaja por la transición (panel.js ajustarEtiquetasPanel) */
+        #sidebar-col.sidebar-sin-transicion {
+            transition: none;
+        }
+
         /* Ya sin textos, si todavía no entra el buscador cede lugar (hasta un mínimo); con los textos a la vista mantiene su ancho */
         html[data-panel-pos="top"] .navbar #sidebar-col.sidebar-etiquetas-ocultas {
             min-width: 0;              /* sin textos puede achicarse (con ellos no: así se detecta que no entran) */

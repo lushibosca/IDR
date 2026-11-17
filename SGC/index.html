@@ -23,7 +23,7 @@
     <!-- CSS por capas (@layer en tokens.css): tokens, base, iconos, grilla, componentes, app, utilidades. La base común de
          la suite (tokens, base, grilla, componentes, utilidades, íconos y fuentes) está en ../shared/ui y ../shared/vendor;
          lo propio de SGC, en css/app/. Sin !important. El orden de los <link> es el de las capas. -->
-    <link rel="stylesheet" href="../shared/ui/tokens.css?v=27">
+    <link rel="stylesheet" href="../shared/ui/tokens.css?v=28">
     <link rel="stylesheet" href="../shared/ui/base.css?v=16">
     <link rel="stylesheet" href="../shared/ui/grilla.css?v=5">
     <link rel="stylesheet" href="../shared/idr-actualizacion.css">
@@ -32,7 +32,7 @@
     <link rel="stylesheet" href="../shared/ui/componentes/formularios.css?v=14">
     <link rel="stylesheet" href="../shared/ui/componentes/botones.css?v=15">
     <link rel="stylesheet" href="../shared/ui/componentes/desplegables.css?v=18">
-    <link rel="stylesheet" href="../shared/ui/componentes/navegacion.css?v=21">
+    <link rel="stylesheet" href="../shared/ui/componentes/navegacion.css?v=22">
     <link rel="stylesheet" href="../shared/ui/componentes/tarjetas.css?v=11">
     <link rel="stylesheet" href="../shared/ui/componentes/acordeon.css?v=17">
     <link rel="stylesheet" href="../shared/ui/componentes/insignias.css?v=13">
@@ -47,7 +47,7 @@
     <link rel="stylesheet" href="../shared/ui/fondo.css">
     <link rel="stylesheet" href="../shared/ui/ayuda.css">
     <link rel="stylesheet" href="css/app/estructura.css?v=41">
-        <link rel="stylesheet" href="css/app/estado.css?v=54">
+        <link rel="stylesheet" href="css/app/estado.css?v=55">
     <link rel="stylesheet" href="css/app/produccion.css?v=51">
     <link rel="stylesheet" href="css/app/auditoria.css?v=26">
     <link rel="stylesheet" href="css/app/activos.css?v=45">
@@ -55,7 +55,7 @@
     <link rel="stylesheet" href="css/app/ajustes.css?v=10">
     <link rel="stylesheet" href="css/app/animaciones.css?v=12">
     <link rel="stylesheet" href="css/app/interaccion.css?v=8">
-    <link rel="stylesheet" href="css/app/detalle-movil.css?v=6">
+    <link rel="stylesheet" href="css/app/detalle-movil.css?v=7">
     <link rel="stylesheet" href="css/app/barra-movil.css?v=7">
     <link rel="stylesheet" href="../shared/ui/utilidades.css?v=34">
     <link rel="stylesheet" href="../shared/vendor/fonts/inter.css">
@@ -74,6 +74,7 @@
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1"><a href="../index.html" class="brand-launcher" title="Ir a la página principal"
                     aria-label="Ir a la página principal"><i class="bi bi-shield-lock text-primary"></i></a>SGC</span>
+            <span class="navbar-pestana" id="navbar-pestana" aria-live="polite" hidden></span>
 
             <div class="d-flex align-items-center gap-2 navbar-acciones">
                 <span id="last-update"
@@ -333,23 +334,24 @@
                                     </div>
                                     <div id="canales-collapse" class="grid-collapse show">
                                         <div>
-                                            <!-- Capacidad de canales de grabación -->
+                                            <!-- Capacidad de canales de grabación y participación por grabador -->
                                             <div class="card metric-card chip-compact position-relative kpi-clickable border-0 shadow-sm"
                                                 id="card-kpi-capacidad" data-ui-toggle="modal"
                                                 data-ui-target="#modal-detalle-capacidad" role="button" tabindex="0"
                                                 title="Ver detalle de canales">
                                                 <div class="d-flex align-items-center justify-content-between w-100">
-                                                    <!-- Barra Circular de Porcentaje y Leyenda -->
+                                                    <!-- Barra Circular de Porcentaje / Dona dinámica al pasar por un grabador -->
                                                     <div class="d-flex align-items-center gap-3">
                                                         <div
                                                             class="d-flex align-items-center justify-content-center position-relative flex-shrink-0 kpi-anillo">
-                                                            <svg class="progress-ring" width="84" height="84"
-                                                                viewBox="0 0 84 84">
+                                                            <svg id="kpi-cap-svg" class="progress-ring" width="84"
+                                                                height="84" viewBox="0 0 84 84">
                                                                 <circle class="progress-ring-bg" cx="42" cy="42" r="34"
                                                                     stroke-width="8" fill="none" />
                                                                 <circle id="kpi-cap-circle" class="progress-ring-circle"
                                                                     cx="42" cy="42" r="34" stroke-width="8" fill="none"
                                                                     stroke-linecap="round" />
+                                                                <g id="kpi-cap-donut-grupo" class="cap-donut-grupo"></g>
                                                             </svg>
                                                             <div
                                                                 class="position-absolute text-center d-flex align-items-center justify-content-center inset-0">
@@ -357,10 +359,12 @@
                                                                     class="fw-bold lh-1 text-main kpi-anillo-pct">-%</span>
                                                             </div>
                                                         </div>
-                                                        <div>
-                                                            <div
-                                                                class="metric-label-text text-secondary small text-uppercase fw-bold tracking-wide">
+                                                        <div class="cap-etiqueta-col">
+                                                            <div id="kpi-cap-etiqueta"
+                                                                class="metric-label-text text-secondary small text-uppercase fw-bold tracking-wide text-truncate">
                                                                 Usado</div>
+                                                            <div id="kpi-cap-sub"
+                                                                class="small text-secondary text-truncate d-none"></div>
                                                         </div>
                                                     </div>
 
@@ -377,6 +381,10 @@
                                                                 class="fw-bold">-</span>
                                                         </div>
                                                     </div>
+                                                </div>
+                                                <div id="cap-distribucion-caja"
+                                                    class="cap-distribucion-caja border-top d-none">
+                                                    <div id="cap-distribucion-leyenda" class="donut-leyenda"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -2008,6 +2016,7 @@
                                     <th class="text-center">Capacidad</th>
                                     <th class="text-center">En uso</th>
                                     <th class="text-center">Disponibles</th>
+                                    <th class="text-center">% del total</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -2017,6 +2026,7 @@
                                     <td class="text-center" id="cap-detalle-total">-</td>
                                     <td class="text-center" id="cap-detalle-uso">-</td>
                                     <td class="text-center" id="cap-detalle-libres">-</td>
+                                    <td class="text-center" id="cap-detalle-part">-</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -2070,6 +2080,7 @@
                                     <th class="text-center">En uso</th>
                                     <th class="text-center">Disponibles</th>
                                     <th class="text-center">No disponible</th>
+                                    <th class="text-center">% del total</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -2108,6 +2119,7 @@
                                     <th class="text-center">En uso</th>
                                     <th class="text-center">Disponibles</th>
                                     <th class="text-center">No disponible</th>
+                                    <th class="text-center">% del total</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -2147,6 +2159,7 @@
                                     <th class="text-center">En uso</th>
                                     <th class="text-center">Disponibles</th>
                                     <th class="text-center">No disponible</th>
+                                    <th class="text-center">% del total</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -2186,6 +2199,7 @@
                                     <th class="text-center">En uso</th>
                                     <th class="text-center">Disponibles</th>
                                     <th class="text-center">No disponible</th>
+                                    <th class="text-center">% del total</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -2228,7 +2242,8 @@
     <script src="js/sesion-local.js?v=1"></script>
     <script src="js/selector.js?v=2"></script>
     <script src="js/produccion.js?v=66"></script>
-    <script src="js/resumen.js?v=77"></script>
+    <script src="js/resumen.js?v=78"></script>
+    <script src="js/resumen-distribucion.js?v=1"></script>
     <script src="js/favoritos.js?v=20"></script>
     <script src="js/historial.js"></script>
     <script src="js/atajos.js?v=29"></script>

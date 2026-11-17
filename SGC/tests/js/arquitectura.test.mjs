@@ -23,7 +23,7 @@ const TOPES = {
   "favoritos.js": 501,
   "gist.js": 561,
   "produccion.js": 1633,
-  "resumen.js": 1507,
+  "resumen.js": 1471,
   "stock-catalogos.js": 804,
   "stock-listar.js": 514,
   "stock-puro.js": 1134,

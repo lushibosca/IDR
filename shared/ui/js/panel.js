@@ -288,6 +288,25 @@ document.addEventListener('DOMContentLoaded', () => {
     programar();
 });
 
+// Con el panel oculto no se ve qué pestaña está abierta: su nombre (el `data-etiqueta` del botón activo) va en el encabezado,
+// al lado de la marca. En el móvil (la barra de abajo no dice el título) se ve siempre, a la derecha de la marca.
+function actualizarTituloPestana() {
+    const titulo = document.getElementById('navbar-pestana');
+    if (!titulo) return;
+    const col = document.getElementById('sidebar-col');
+    const movil = Boolean(window.matchMedia && window.matchMedia('(max-width: 767.98px)').matches);
+    const activa = document.querySelector('#v-pills-tab .nav-link.active');
+    const visible = movil || (col && col.classList.contains('sidebar-collapsed'));
+    const texto = visible && activa ? (activa.dataset.etiqueta || '') : '';
+    titulo.textContent = texto;
+    titulo.hidden = !texto;
+}
+document.addEventListener('ui:pestana-mostrada', (e) => {
+    if (e.target instanceof Element && e.target.closest('#v-pills-tab')) actualizarTituloPestana();
+});
+if (window.matchMedia) window.matchMedia('(max-width: 767.98px)').addEventListener('change', actualizarTituloPestana);
+document.addEventListener('DOMContentLoaded', actualizarTituloPestana);
+
 function pintarPanelLateral(colapsado, { animar = true } = {}) {
     const sidebarCol = document.getElementById('sidebar-col');
     if (!sidebarCol) return;
@@ -312,6 +331,7 @@ function pintarPanelLateral(colapsado, { animar = true } = {}) {
     }
     sidebarCol.classList.toggle('sidebar-collapsed', colapsado);
     ajustarEtiquetasPanel();
+    actualizarTituloPestana();
     const btnToggle = document.getElementById('btn-toggle-sidebar');
     if (!btnToggle) return;
     const etiqueta = colapsado ? 'Mostrar panel lateral' : 'Ocultar panel lateral';
@@ -359,7 +379,10 @@ function ubicarPanelEnEncabezado() {
 // ajustes o el de actualización del encabezado), se ocultan las etiquetas (queda el ícono; el buscador no se toca). Se mide
 // con las etiquetas a la vista y sin transición (`sidebar-midiendo`), y se decide en el mismo cuadro: no parpadea.
 const CLASE_ETIQUETAS_OCULTAS = 'sidebar-etiquetas-ocultas';
-function ajustarEtiquetasPanel() {
+// `sinTransicion`: al cambiar el panel de lugar (izquierda -> abajo) el ancho de `#sidebar-col` todavía viaja desde el valor viejo
+// (transición de width/flex): medirlo así daba «no entra» y ocultaba las etiquetas sin motivo hasta el próximo ajuste. Con
+// la opción se mide el ancho FINAL (la transición en curso se cancela y no se reinicia al soltar la clase).
+function ajustarEtiquetasPanel({ sinTransicion = false } = {}) {
     const col = document.getElementById('sidebar-col');
     if (!col) return;
     const posicion = posicionPanelActual();
@@ -370,12 +393,13 @@ function ajustarEtiquetasPanel() {
         return;
     }
     col.classList.add('sidebar-midiendo');
+    if (sinTransicion) col.classList.add('sidebar-sin-transicion');
     col.classList.remove(CLASE_ETIQUETAS_OCULTAS);
     const cajas = [col.querySelector('.sidebar-sticky'), col.querySelector('#v-pills-tab'),
         document.querySelector('.navbar > .container-fluid')];
     const medidas = cajas.map(el => (el ? { ancho: el.clientWidth, contenido: el.scrollWidth } : null));
     col.classList.toggle(CLASE_ETIQUETAS_OCULTAS, panelDesborda(medidas));
-    col.classList.remove('sidebar-midiendo');
+    col.classList.remove('sidebar-midiendo', 'sidebar-sin-transicion');
 }
 
 function fijarPosicionPanel(posicion, { animar = true, guardar = true } = {}) {
@@ -386,7 +410,7 @@ function fijarPosicionPanel(posicion, { animar = true, guardar = true } = {}) {
         else document.documentElement.dataset.panelPos = pos;
         ubicarPanelEnEncabezado();
         pintarPanelLateral(estadoPanelLateral.colapsado);
-        ajustarEtiquetasPanel();
+        ajustarEtiquetasPanel({ sinTransicion: true });
         ajustarAltoPanelLateral();           // con el alto que corresponde al lugar nuevo, ya para la medida de la animación
     };
     // el panel y el contenido se deslizan a su lugar nuevo (el mismo recorrido que las secciones del dashboard)

@@ -158,14 +158,6 @@
         container-type: inline-size;
     }
 
-    /* Zona de dos columnas (sección entre 680 y 900 px): el chip de capacidad ocupa media fila, como los de Activos, sin
-       rellenar el resto. Más angosta apila a todo el ancho; más ancha lleva los anillos por grabador y se estira. */
-    @container (min-width: 680px) and (max-width: 899.98px) {
-        #card-kpi-capacidad {
-            width: calc(50% - 0.25rem);
-        }
-    }
-
     .cap-grabadores {
         display: none;
     }
@@ -190,6 +182,125 @@
     .cap-grabador {
         min-width: 0;
     }
+
+    /* ─── Participación por grabador integrada en el chip de Canales (dona dinámica al pasar el cursor) */
+
+    .cap-etiqueta-col {
+        min-width: 0;
+        max-width: 11rem;
+    }
+
+    .cap-donut-grupo {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--dur-fast) ease;
+    }
+
+    .cap-donut-activo .progress-ring-circle {
+        opacity: 0;
+    }
+
+    .cap-donut-activo .cap-donut-grupo {
+        opacity: 1;
+    }
+
+    .cap-distribucion-caja {
+        width: 100%;
+        margin-top: var(--esp-2);
+        padding-top: var(--esp-2);
+    }
+
+    .donut-seg {
+        fill: none;
+        stroke: var(--donut-color);
+        transition: stroke-width var(--dur-fast) ease, opacity var(--dur-fast) ease;
+    }
+
+    .donut-seg.donut-resaltado {
+        stroke-width: 14;
+    }
+
+    .donut-seg.donut-atenuado {
+        opacity: 0.35;
+    }
+
+    .donut-leyenda {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 2px var(--esp-4);
+        min-width: 0;
+    }
+
+    @container (min-width: 420px) {
+        .donut-leyenda {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @container (min-width: 900px) {
+        .donut-leyenda {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
+
+    .donut-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        font-size: var(--texto-xs);
+        color: var(--color-texto-suave);
+        line-height: 1.35;
+        transition: opacity var(--dur-fast) ease, color var(--dur-fast) ease;
+    }
+
+    .donut-item.donut-resaltado {
+        color: var(--color-texto);
+        font-weight: 600;
+    }
+
+    .donut-item.donut-atenuado {
+        opacity: 0.45;
+    }
+
+    .donut-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--donut-color);
+        flex-shrink: 0;
+    }
+
+    .donut-dot-tabla {
+        display: inline-block;
+        margin-right: var(--esp-2);
+        vertical-align: middle;
+    }
+
+    .donut-nombre {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .donut-pct {
+        flex-shrink: 0;
+        font-weight: 600;
+        color: var(--color-texto);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .donut-color-0 { --donut-color: var(--donut-1); }
+    .donut-color-1 { --donut-color: var(--donut-2); }
+    .donut-color-2 { --donut-color: var(--donut-3); }
+    .donut-color-3 { --donut-color: var(--donut-4); }
+    .donut-color-4 { --donut-color: var(--donut-5); }
+    .donut-color-5 { --donut-color: var(--donut-6); }
+    .donut-color-6 { --donut-color: var(--donut-7); }
+    .donut-color-7 { --donut-color: var(--donut-8); }
+    .donut-color-otros { --donut-color: var(--color-texto-suave); }
 
     /* ─── Tarjeta KPI de capacidad: anillo de porcentaje y etiquetas compactas */
 
@@ -434,7 +545,10 @@
     @media (prefers-reduced-motion: reduce) {
         .resumen-tipo-chevron,
         .resumen-seccion-chevron,
-        .resumen-seccion-reubicable {
+        .resumen-seccion-reubicable,
+        .cap-donut-grupo,
+        .donut-seg,
+        .donut-item {
             transition: none;
         }
     }
