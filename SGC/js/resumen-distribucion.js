@@ -16,11 +16,15 @@ function distribuirUsoGrabadores(detalle, limite = MAX_GRABADORES_TORTA) {
         const enUso = Math.max(0, Number(d.enUso) || 0);
         if (enUso <= 0) continue;
         total += enUso;
+        const cap = Math.max(0, Number(d.cap) || 0);
+        const libres = cap > 0 ? Math.max(0, Number.isFinite(Number(d.libres)) ? Number(d.libres) : cap - enUso) : 0;
         activos.push({
             clave: String(clave),
             nombre: String(d.nombre || clave),
             ip: String(d.ip || ''),
             enUso,
+            cap,
+            libres,
         });
     }
     if (total <= 0 || activos.length === 0) return { total: 0, items: [], todos: [], ocultos: 0 };
@@ -55,6 +59,8 @@ function distribuirUsoGrabadores(detalle, limite = MAX_GRABADORES_TORTA) {
             nombre: `Otros (${ocultos})`,
             ip: '',
             enUso: usoOtros,
+            cap: resto.reduce((acc, a) => acc + a.cap, 0),
+            libres: resto.reduce((acc, a) => acc + a.libres, 0),
             pct: redondearPct(usoOtros),
             frac: usoOtros / total,
             esOtros: true,
@@ -64,15 +70,89 @@ function distribuirUsoGrabadores(detalle, limite = MAX_GRABADORES_TORTA) {
     }
     return { total, items, todos, ocultos };
 }
+
+// El texto a mitad de camino (`t` de 0 a 1, con salida suave) entre dos valores numéricos del chip: «78%» → «16.7%», «300» → «50».
+// Los decimales son los del destino; en t >= 1 es el destino tal cual. null si alguno de los dos no es un número (o uno lleva «%» y el
+// otro no): ahí no hay nada que contar.
+function interpolarTextoNumerico(desde, hasta, t) {
+    const re = /^(-?\d+(?:\.(\d+))?)(%?)$/;
+    const a = re.exec(String(desde).trim());
+    const b = re.exec(String(hasta).trim());
+    if (!a || !b || a[3] !== b[3]) return null;
+    const k = Number.isFinite(t) ? Math.min(1, Math.max(0, t)) : 1;
+    if (k >= 1) return String(hasta).trim();
+    const x = Number(a[1]);
+    const y = Number(b[1]);
+    const suave = 1 - (1 - k) ** 3;
+    return `${(x + (y - x) * suave).toFixed(b[2] ? b[2].length : 0)}${b[3]}`;
+}
 // ==== DISTRIBUCION CANALES PURO END ====
 
 // Canales: leyenda de participación por grabador (máx. 8) dentro del chip unificado y dona dinámica al pasar el cursor.
 let _firmaDistribucionGrabadores = '';
-let _capPctActual = 0;
-const DONUT_GRABADOR = { cx: 42, cy: 42, r: 32, trazo: 12 };
+let _capActual = null;           // lo último que midió el chip: se restaura al sacar el cursor de un grabador
+// Misma geometría que el aro de uso (`#kpi-cap-circle`: r 34, trazo 8): al pasar el cursor por un grabador el aro no cambia de tamaño
+const DONUT_GRABADOR = { cx: 42, cy: 42, r: 34, trazo: 8 };
+
+// Las tres filas de la derecha del chip («Capacidad instalada / En uso / Disponibles»): las del parque o, con el cursor sobre un
+// grabador, las suyas. Los tres valores cambian igual (`ponerTextoSuave`: cuentan de uno al otro).
+function ponerDerechaCapacidad(total, enUso, libres) {
+    ponerTextoSuave('kpi-cap-total', total);
+    ponerTextoSuave('kpi-cap-uso', enUso);
+    ponerTextoSuave('kpi-cap-libres', libres);
+}
+
+// El nombre del grabador va de subtexto bajo «Aporte a producción»; sin grabador (o sin cursor encima) no se ve
+function ponerSubtextoGrabador(nombre) {
+    const sub = document.getElementById('kpi-cap-sub');
+    if (!sub) return;
+    if (nombre === null) {
+        sub.classList.add('d-none');
+        sub.textContent = '';
+        return;
+    }
+    sub.classList.remove('d-none');
+    ponerTextoSuave('kpi-cap-sub', nombre);
+}
+
+// Cambia el texto de un elemento del chip de Canales sin saltos ni superposición: de un número a otro («78%» → «16.7%», «300» → «50»)
+// CUENTA del valor viejo al nuevo; cualquier otro texto (nombres, rótulos, «-») se cambia de una y entra con una aparición suave que
+// arranca visible (nunca un cuadro vacío). Un cambio nuevo corta la cuenta anterior. Sin animar con «menos movimiento».
+const DUR_CUENTA_CAPACIDAD_MS = 260;
+const _cuentasCapacidad = new WeakMap();           // el -> id del requestAnimationFrame en curso
+function ponerTextoSuave(id, texto) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const destino = String(texto ?? '');
+    const enCurso = _cuentasCapacidad.get(el);
+    if (enCurso !== undefined) {
+        cancelAnimationFrame(enCurso);
+        _cuentasCapacidad.delete(el);
+    }
+    const desde = el.textContent;
+    if (desde === destino) return;
+    if (prefiereMovimientoReducido() || typeof requestAnimationFrame !== 'function') {
+        el.textContent = destino;
+        return;
+    }
+    if (interpolarTextoNumerico(desde, destino, 0.5) === null) {
+        el.textContent = destino;
+        animarClase(el, 'cap-entra');
+        return;
+    }
+    let inicio = null;
+    const paso = (ahora) => {
+        if (inicio === null) inicio = ahora;
+        const t = (ahora - inicio) / DUR_CUENTA_CAPACIDAD_MS;
+        el.textContent = interpolarTextoNumerico(desde, destino, t) ?? destino;
+        if (t >= 1) _cuentasCapacidad.delete(el);
+        else _cuentasCapacidad.set(el, requestAnimationFrame(paso));
+    };
+    _cuentasCapacidad.set(el, requestAnimationFrame(paso));
+}
 
 function pintarDistribucionGrabadores(cap) {
-    _capPctActual = cap.pct;
+    _capActual = cap;
     const tarjeta = document.getElementById('card-kpi-capacidad');
     const grupoDonut = document.getElementById('kpi-cap-donut-grupo');
     const caja = document.getElementById('cap-distribucion-caja');
@@ -101,22 +181,22 @@ function pintarDistribucionGrabadores(cap) {
             f.classList.toggle('donut-resaltado', Boolean(activo) && j === idx);
             f.classList.toggle('donut-atenuado', Boolean(activo) && j !== idx);
         });
-        const sub = document.getElementById('kpi-cap-sub');
+        // los textos cambian a la vez; los números cuentan de un valor al otro (ponerTextoSuave): sin parpadeo ni superposición
+        const pct = document.getElementById('kpi-cap-pct');
         if (activo) {
+            // El chip pasa a hablar de ese grabador: su aporte al uso total, y a la derecha su nombre, en uso y disponibles
             const it = dist.items[idx];
-            uiPonerTexto('kpi-cap-pct', `${it.pct}%`);
-            uiPonerTexto('kpi-cap-etiqueta', it.nombre);
-            if (sub) {
-                sub.textContent = `${it.enUso} de ${dist.total} ch`;
-                sub.classList.remove('d-none');
-            }
+            if (pct) pct.classList.add('kpi-anillo-pct-chico');             // con decimal no entra en el aro con el tamaño grande
+            ponerTextoSuave('kpi-cap-pct', `${it.pct}%`);
+            ponerTextoSuave('kpi-cap-etiqueta', 'Aporte a producción');
+            ponerSubtextoGrabador(it.nombre);
+            ponerDerechaCapacidad(it.cap > 0 ? it.cap : '-', it.enUso, it.cap > 0 ? it.libres : '-');
         } else if (estabaActivo) {
-            uiPonerTexto('kpi-cap-pct', `${_capPctActual}%`);
-            uiPonerTexto('kpi-cap-etiqueta', 'Usado');
-            if (sub) {
-                sub.textContent = '';
-                sub.classList.add('d-none');
-            }
+            if (pct) pct.classList.remove('kpi-anillo-pct-chico');
+            ponerTextoSuave('kpi-cap-pct', `${_capActual ? _capActual.pct : 0}%`);
+            ponerTextoSuave('kpi-cap-etiqueta', 'Usado');
+            ponerSubtextoGrabador(null);
+            if (_capActual) ponerDerechaCapacidad(_capActual.total, _capActual.enUso, _capActual.libres);
         }
     };
 

@@ -217,7 +217,7 @@
     }
 
     .donut-seg.donut-resaltado {
-        stroke-width: 14;
+        stroke-width: 10;
     }
 
     .donut-seg.donut-atenuado {
@@ -311,6 +311,21 @@
 
     .kpi-anillo-pct {
         font-size: var(--texto-lg);
+    }
+
+    /* Con el cursor sobre un grabador el porcentaje lleva decimal («16.7%»): más chico para que quede dentro del aro */
+    .kpi-anillo-pct-chico {
+        font-size: var(--texto-md);
+    }
+
+    /* Un texto del chip de Canales que cambia de una (nombre, rótulo): aparece desde algo visible, sin pasar por un cuadro vacío */
+    @keyframes cap-entra {
+        from { opacity: 0.35; }
+        to { opacity: 1; }
+    }
+
+    .cap-entra {
+        animation: cap-entra var(--dur-fast) ease-out;
     }
 
     .kpi-etiqueta-compacta,

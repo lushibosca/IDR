@@ -270,7 +270,7 @@ test("detalle de canales: en uso y disponibles en cantidad o en % de la capacida
 });
 
 const distribucion = cargarBloque("resumen-distribucion.js", "DISTRIBUCION CANALES PURO", GLOBALES, [
-  "MAX_GRABADORES_TORTA", "distribuirUsoGrabadores",
+  "MAX_GRABADORES_TORTA", "distribuirUsoGrabadores", "interpolarTextoNumerico",
 ]);
 
 test("distribuirUsoGrabadores: ordena de mayor a menor uso, ignora sin uso y calcula % sobre el total", () => {
@@ -287,6 +287,19 @@ test("distribuirUsoGrabadores: ordena de mayor a menor uso, ignora sin uso y cal
     ["NVR B", 10, 25, false, 1],
   ]);
   assert.equal(r.todos.length, 2);
+  // para el chip: lo que cada grabador tiene instalado y libre (sin capacidad conocida, libres = 0 y se muestra «-»)
+  assert.deepEqual(plano(r.items.map(i => [i.cap, i.libres])), [[64, 34], [16, 6]]);
+});
+
+test("distribuirUsoGrabadores: «Otros» suma la capacidad y los libres de lo que agrupa; sin capacidad no hay libres", () => {
+  const detalle = new Map(Array.from({ length: 10 }, (_, i) => [
+    `NVR ${i + 1}`, { nombre: `NVR ${i + 1}`, ip: `10.0.0.${i + 1}`, enUso: 20 - i, cap: 32, libres: 12 + i },
+  ]));
+  const otros = distribucion.distribuirUsoGrabadores(detalle).items[7];
+  assert.equal(otros.cap, 32 * 3);
+  assert.equal(otros.libres, 19 + 20 + 21);
+  const sin = distribucion.distribuirUsoGrabadores(new Map([["A", { nombre: "A", enUso: 5 }]])).items[0];
+  assert.deepEqual([sin.cap, sin.libres], [0, 0]);
 });
 
 test("distribuirUsoGrabadores: muestra hasta 8 máximo y si hay más agrupa el excedente en Otros", () => {
@@ -319,6 +332,20 @@ test("distribuirUsoGrabadores: entradas vacías o nulas no rompen", () => {
   }
 });
 
+test("interpolarTextoNumerico: cuenta de un número al otro con los decimales del destino; lo que no es número no se cuenta", () => {
+  const { interpolarTextoNumerico: i } = distribucion;
+  assert.equal(i("78%", "16.7%", 1), "16.7%", "al final, el destino tal cual");
+  assert.equal(i("78%", "16.7%", 0), "78.0%", "al principio, el origen con los decimales del destino");
+  const medio = parseFloat(i("78%", "16.7%", 0.5));
+  assert.ok(medio > 16.7 && medio < 78);
+  assert.equal(i("300", "50", 0.5).includes("."), false, "destino entero: sin decimales");
+  assert.equal(i("300", "50", 2), "50", "t fuera de rango se acota");
+  assert.equal(i("300", "50", NaN), "50");
+  for (const [d, h] of [["-", "50"], ["Usado", "Aporte a producción"], ["78%", "50"], ["", "14"], ["14", "-"]]) {
+    assert.equal(i(d, h, 0.5), null, `${d} → ${h}`);
+  }
+});
+
 test("detalle de stock: «% del total» con un decimal y sin base es «-»", () => {
   const { formatoParticipacion } = stock;
   assert.equal(formatoParticipacion(1, 3), "33.3%");
@@ -343,4 +370,10 @@ test("detalle de canales y de stock: columna «% del total» y chip de canales c
   assert.ok(resumen.includes("celdasContador(sub, m, clases.slice(1), modo, c.t)"), "un modelo pesa sobre su tipo");
   assert.ok(resumen.includes("celdasContador(tr, c, clases.slice(1), modo, totalGeneral)"), "un tipo pesa sobre el grupo");
   assert.ok(distribucion.includes("const MAX_GRABADORES_TORTA = 8;") && resumen.includes("pintarDistribucionGrabadores(cap);"));
+  // con el cursor sobre un grabador: aporte a producción con su nombre de subtexto y sus propios valores (que cuentan, sin parpadeo)
+  assert.ok(html.includes('id="kpi-cap-sub"') && distribucion.includes("'Aporte a producción'") && distribucion.includes("ponerSubtextoGrabador(it.nombre);"));
+  assert.ok(distribucion.includes("ponerDerechaCapacidad(it.cap > 0 ? it.cap : '-', it.enUso, it.cap > 0 ? it.libres : '-');"));
+  assert.ok(distribucion.includes("if (_capActual) ponerDerechaCapacidad(_capActual.total, _capActual.enUso, _capActual.libres);"));
+  assert.ok(distribucion.includes("if (interpolarTextoNumerico(desde, destino, 0.5) === null) {"));
+  assert.ok(distribucion.includes("const DONUT_GRABADOR = { cx: 42, cy: 42, r: 34, trazo: 8 };") && html.replace(/\s+/g, " ").includes('cx="42" cy="42" r="34" stroke-width="8"'), "la dona y el aro de uso miden lo mismo");
 });
