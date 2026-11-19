@@ -310,9 +310,9 @@
     /* Ajustamos el tamaño a 46px y unificamos el color */
     .fab-main-btn {
                 background-color: var(--c-blue);
-                color: var(--c-white);
-                width: 50px;
-                height: 50px;
+                color: var(--color-blue-on);
+                width: 46px;
+                height: 46px;
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
@@ -1437,6 +1437,31 @@
                 transition: background var(--t-ui), color var(--t-fast), filter var(--t-fast);
             }
 
-    /* Al final: pisa la posición de siempre del FAB y de «volver arriba» (misma especificidad, gana el orden) */
+    /* Al final: pisa la posición de siempre del FAB y de «volver arriba» (misma especificidad, gana el orden).
+       El «+» queda a la misma altura que «volver arriba» (mismo bottom y mismo tamaño) y lo acompaña cuando el panel lo mueve. */
+    .fab-main-btn i {
+        font-size: var(--texto-lg);
+        line-height: 1;
+    }
+
+    @media (min-width: 768px) {
+        .fab-container {
+            bottom: 2rem;
+            right: 2rem;
+            transition: bottom var(--dur-panel) var(--ease-panel), right var(--dur-panel) var(--ease-panel);
+        }
+
+        html[data-panel-pos="bottom"]:has(#sidebar-col:not(.sidebar-collapsed)) .fab-container {
+            bottom: 6.25rem;
+        }
+
+        html[data-panel-pos="right"] .fab-container {
+            right: 4.5rem;
+        }
+
+        html[data-panel-pos="right"]:has(#sidebar-col:not(.sidebar-collapsed)) .fab-container {
+            right: calc(var(--ancho-panel) + 0rem);
+        }
+    }
 
 }
