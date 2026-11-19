@@ -311,27 +311,40 @@ function pintarPanelLateral(colapsado, { animar = true } = {}) {
     const sidebarCol = document.getElementById('sidebar-col');
     if (!sidebarCol) return;
     const estabaColapsado = sidebarCol.classList.contains('sidebar-collapsed');
-    if (animar && estabaColapsado !== colapsado) {
-        panelLateralTransicionando = true;
-        clearTimeout(pintarPanelLateral.finTransicion);
-        pintarPanelLateral.finTransicion = setTimeout(() => {
-            panelLateralTransicionando = false;
-            ajustarAltoPanelLateral();
-        }, 320);
-        if (!sidebarCol.dataset.transicionEscuchada) {
-            sidebarCol.dataset.transicionEscuchada = '1';
-            sidebarCol.addEventListener('transitionend', (e) => {
-                if (e.target === sidebarCol && (e.propertyName === 'width' || e.propertyName === 'max-width')) {
-                    clearTimeout(pintarPanelLateral.finTransicion);
-                    panelLateralTransicionando = false;
-                    ajustarAltoPanelLateral();
-                }
-            });
-        }
-    }
+    const pos = posicionPanelActual();
+    const lateral = pos === 'left' || pos === 'right';
+    const mainCol = document.getElementById('main-content-col');
+    const reducir = typeof uiMovimientoReducido === 'function' && uiMovimientoReducido();
+    const hacerFlip = animar && estabaColapsado !== colapsado && lateral && !reducir && mainCol && typeof mainCol.animate === 'function';
+    const mainAntes = hacerFlip ? mainCol.getBoundingClientRect().left : null;
+
     sidebarCol.classList.toggle('sidebar-collapsed', colapsado);
     ajustarEtiquetasPanel();
     actualizarTituloPestana();
+
+    if (hacerFlip) {
+        const dx = Math.round(mainAntes - mainCol.getBoundingClientRect().left);
+        const dur = 240;
+        const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
+        if (Math.abs(dx) > 1) {
+            panelLateralTransicionando = true;
+            clearTimeout(pintarPanelLateral.finTransicion);
+            const terminar = () => {
+                clearTimeout(pintarPanelLateral.finTransicion);
+                panelLateralTransicionando = false;
+                ajustarAltoPanelLateral();
+            };
+            pintarPanelLateral.finTransicion = setTimeout(terminar, dur + 80);
+            const anim = mainCol.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: dur, easing });
+            anim.onfinish = anim.oncancel = terminar;
+        }
+        const sticky = !colapsado && sidebarCol.querySelector('.sidebar-sticky');
+        if (sticky && typeof sticky.animate === 'function') {
+            const inicio = pos === 'right' ? 'inset(0 0 0 75% round 20px)' : 'inset(0 75% 0 0 round 20px)';
+            sticky.animate([{ clipPath: inicio }, { clipPath: 'inset(0 0 0 0 round 20px)' }], { duration: dur, easing });
+        }
+    }
+
     const btnToggle = document.getElementById('btn-toggle-sidebar');
     if (!btnToggle) return;
     const etiqueta = colapsado ? 'Mostrar panel lateral' : 'Ocultar panel lateral';
@@ -340,7 +353,7 @@ function pintarPanelLateral(colapsado, { animar = true } = {}) {
     // En el encabezado el botón queda fuera del panel (sin su popup de íconos): el nombre va como ayuda del navegador
     if (btnToggle.closest('.navbar')) btnToggle.title = etiqueta; else btnToggle.removeAttribute('title');
     const icon = btnToggle.querySelector('.sidebar-toggle-icon');
-    if (icon) icon.className = `bi ${iconoTogglePanel(posicionPanelActual(), colapsado)} sidebar-toggle-icon`;
+    if (icon) icon.className = `bi ${iconoTogglePanel(pos, colapsado)} sidebar-toggle-icon`;
 }
 
 

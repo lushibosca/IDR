@@ -326,6 +326,7 @@
         color: var(--color-texto);
         transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, filter var(--dur-fast) ease;
         min-height: 52px;
+        contain: layout style;
         cursor: pointer;
         scroll-margin-top: calc(var(--navbar-height) + 60px);
         scroll-margin-bottom: 40px;

@@ -16,19 +16,10 @@
         margin-right: var(--esp-2);
     }
 
+    /* El panel y el contenido cambian de ancho en un solo layout (sin animar width/flex cuadro a cuadro: con cientos
+       de filas/tarjetas forzaba un reflow completo por frame); el deslizamiento corre en GPU por transform (panel.js). */
     #sidebar-col {
-        transition: width var(--dur-panel) var(--ease-panel),
-                flex var(--dur-panel) var(--ease-panel),
-                max-width var(--dur-panel) var(--ease-panel);
         overflow-x: hidden;
-        will-change: width, max-width;
-    }
-
-    #main-content-col {
-        transition: width var(--dur-panel) var(--ease-panel),
-                flex var(--dur-panel) var(--ease-panel),
-                max-width var(--dur-panel) var(--ease-panel);
-        will-change: width, max-width;
     }
 
     #v-pills-tabContent {
@@ -42,6 +33,10 @@
     /* ─── Escritorio y tablets (>= 768px): panel lateral vertical con ancho suficiente y anclado */
 
     @media (min-width: 768px) {
+        #app-main-row {
+            overflow-x: clip;
+        }
+
         #sidebar-col {
             position: sticky;
             top: calc(var(--navbar-height) + 1.5rem);

@@ -201,6 +201,7 @@
         cursor: pointer;
         user-select: none;
         min-height: 82px;
+        contain: layout style;
         scroll-margin-top: calc(var(--navbar-height) + 60px);
         scroll-margin-bottom: 40px;
     }

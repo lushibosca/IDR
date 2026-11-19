@@ -1609,8 +1609,8 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
     // ------------------------------------------------------------------ eventos
     tab.addEventListener('ui:pestana-mostrada', () => {
         renderListaSiCambio();
-        cargar();
-    });          // abrir la pestaña = la demanda (lectura local, sin red)
+        if (!datos) cargar();
+    });          // primera apertura carga; después `sgc:datos-cambiados` mantiene `datos` al día sin revalidar todo al cambiar de pestaña
     const btnStockActualizar = $('stock-actualizar');
     const btnNuevo = $('stock-nuevo');
     if (btnNuevo) {

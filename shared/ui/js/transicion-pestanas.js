@@ -100,7 +100,7 @@ function clonarAcotado(nodo, tope) {
 }
 // ==== CLON ACOTADO PURO END ====
 
-const MAX_NODOS_CLON_PESTANA = 1500;      // más que esto, el fantasma de la pestaña que sale se copia solo hasta aquí
+const MAX_NODOS_CLON_PESTANA = 350;       // alcanza para lo visible en pantalla sin trabar listas grandes al salir
 
 (function () {
     'use strict';
@@ -119,7 +119,10 @@ const MAX_NODOS_CLON_PESTANA = 1500;      // más que esto, el fantasma de la pe
         if (estado.liberado) return;                       // terminó o se canceló una sola vez
         estado.liberado = true;
         const original = _posicionDeslize.soltar();
-        if (original !== null && estado.parent && estado.parent.style) estado.parent.style.position = original;
+        if (original !== null && estado.parent && estado.parent.style) {
+            estado.parent.style.position = original;
+            estado.parent.style.overflow = '';
+        }
     }
 
     document.addEventListener('ui:pestana-ocultar', function (event) {
@@ -138,10 +141,10 @@ const MAX_NODOS_CLON_PESTANA = 1500;      // más que esto, el fantasma de la pe
         const dist = eje === 'x' ? rectP.width : 80;
         const signo = delta > 0 ? 1 : -1;
         if (_deslizePrincipal) _liberarDeslizePrincipal(_deslizePrincipal);
-        fijarAlturaAnimable(parent, true);
         const estado = { incomingPane, parent, eje, signo, dist, liberado: false };
         _posicionDeslize.tomar(parent.style.position);
         parent.style.position = 'relative';
+        parent.style.overflow = 'clip';
         _deslizePrincipal = estado;
         incomingPane.dataset.skipAnimation = 'true';
         const rect = outgoingPane.getBoundingClientRect();
@@ -150,7 +153,7 @@ const MAX_NODOS_CLON_PESTANA = 1500;      // más que esto, el fantasma de la pe
         clon.classList.remove('active', 'show', 'fade');
         clon.classList.add('slide-pestana-saliente');
         Object.assign(clon.style, { position: 'absolute', top: `${rect.top - rectP.top}px`, left: `${rect.left - rectP.left}px`,
-            width: `${rect.width}px`, height: `${rect.height}px`, margin: '0', pointerEvents: 'none', display: 'block' });
+            width: `${rect.width}px`, height: `${Math.min(rect.height, window.innerHeight)}px`, margin: '0', pointerEvents: 'none', display: 'block' });
         parent.appendChild(clon);
         const salida = clon.animate([_keyframeDeslizar(eje, 0, 1), _keyframeDeslizar(eje, -signo * dist, eje === 'x' ? 1 : 0)],
             { duration: DUR_ANIM_MS, easing: EASING_DESLIZE, fill: 'forwards' });
@@ -169,7 +172,6 @@ const MAX_NODOS_CLON_PESTANA = 1500;      // más que esto, el fantasma de la pe
             const entrada = incomingPane.animate([_keyframeDeslizar(eje, signo * dist, eje === 'x' ? 1 : 0), _keyframeDeslizar(eje, 0, 1)],
                 { duration: DUR_ANIM_MS, easing: EASING_DESLIZE });
             entrada.onfinish = entrada.oncancel = () => _liberarDeslizePrincipal(estado);
-            animarAlturaAlContenido(estado.parent);
             return;
         }
         delete incomingPane.dataset.skipAnimation;          // sin animación (reducida, restaurada al cargar, misma pestaña)
