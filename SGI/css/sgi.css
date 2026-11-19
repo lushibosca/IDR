@@ -291,21 +291,6 @@
                 transition: opacity var(--t-modal);
             }
 
-    .fab-overlay {
-                position: fixed;
-                inset: 0;
-                background: rgba(0, 0, 0, 0.45);
-                backdrop-filter: blur(4px);
-                opacity: 0;
-                visibility: hidden;
-                transition: opacity var(--t-ui), visibility var(--t-ui);
-            }
-
-    .fab-overlay.show {
-                opacity: 1;
-                visibility: visible;
-            }
-
     /* Ajustamos el tamaño a 46px y unificamos el color */
     .fab-main-btn {
                 background-color: var(--c-blue);

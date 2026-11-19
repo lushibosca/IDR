@@ -463,11 +463,6 @@
         min-width: 210px;
     }
 
-    /* Overlay del FAB */
-    .fab-overlay {
-        pointer-events: auto;
-    }
-
     /* ── RACKS: estado color strips ── */
     .rack-badge-inventario {
         color: var(--c-green);
