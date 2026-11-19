@@ -146,7 +146,7 @@
 
         .navbar-brand {
             display: inline-flex;
-            margin-right: 0;
+            align-items: center;
             line-height: 1.2;
         }
     }
