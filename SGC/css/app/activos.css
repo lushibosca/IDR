@@ -191,8 +191,6 @@
     }
 
     .stock-card {
-        content-visibility: auto;
-        contain-intrinsic-size: auto 82px;
         display: flex;
         align-items: center;
         gap: var(--esp-3);
@@ -227,8 +225,6 @@
     #stock-accordion .accordion-item {
         background-color: transparent;
         border: none;
-        content-visibility: auto;
-        contain-intrinsic-size: auto 54px;
     }
 
     #stock-accordion .accordion-button,
@@ -386,10 +382,6 @@
         border: none;
     }
 
-    .stock-subgrupo-cuerpo-tr td > .grid-collapse {
-        content-visibility: auto;
-        contain-intrinsic-size: auto 120px;
-    }
 
     .stock-card-thumb {
         width: 54px;

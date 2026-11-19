@@ -85,3 +85,10 @@ test("css limpio 6: variables CSS sin uso o usadas sin definir", (t) => {
   exigir(t, "variables definidas que nadie lee", sinUso);
   exigir(t, "variables leídas sin definir (sin valor de respaldo)", [...new Set(sinDefinir)]);
 });
+
+test("ninguna lista que muta usa content-visibility (parpadeo al cambiar de vista)", () => {
+  // Con `content-visibility: auto` el DOM recién armado al cambiar de vista en Activos o Producción no se pinta hasta el
+  // cuadro siguiente: al final de la entrada salían las tarjetas vacías o el grupo recortado a su contain-intrinsic-size.
+  const con = hojas.filter((h) => leer(h).includes("content-visibility"));
+  assert.deepEqual(con, []);
+});

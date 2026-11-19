@@ -47,8 +47,6 @@
     #produccion-accordion .accordion-item {
         background-color: transparent;
         border: none;
-        content-visibility: auto;
-        contain-intrinsic-size: auto 54px;
     }
 
     #produccion-accordion .accordion-button,
@@ -318,8 +316,6 @@
     }
 
     .canal-item {
-        content-visibility: auto;
-        contain-intrinsic-size: auto 52px;
         display: flex;
         align-items: center;
         justify-content: space-between;
