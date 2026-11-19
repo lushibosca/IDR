@@ -109,9 +109,11 @@ function ponerSubtextoGrabador(nombre) {
     if (nombre === null) {
         sub.classList.add('d-none');
         sub.textContent = '';
+        sub.removeAttribute('title');
         return;
     }
     sub.classList.remove('d-none');
+    sub.title = String(nombre);
     ponerTextoSuave('kpi-cap-sub', nombre);
 }
 
@@ -183,18 +185,21 @@ function pintarDistribucionGrabadores(cap) {
         });
         // los textos cambian a la vez; los números cuentan de un valor al otro (ponerTextoSuave): sin parpadeo ni superposición
         const pct = document.getElementById('kpi-cap-pct');
+        const etiq = document.getElementById('kpi-cap-etiqueta');
         if (activo) {
             // El chip pasa a hablar de ese grabador: su aporte al uso total, y a la derecha su nombre, en uso y disponibles
             const it = dist.items[idx];
             if (pct) pct.classList.add('kpi-anillo-pct-chico');             // con decimal no entra en el aro con el tamaño grande
             ponerTextoSuave('kpi-cap-pct', `${it.pct}%`);
             ponerTextoSuave('kpi-cap-etiqueta', 'Aporte a producción');
+            if (etiq) etiq.title = 'Aporte a producción';
             ponerSubtextoGrabador(it.nombre);
             ponerDerechaCapacidad(it.cap > 0 ? it.cap : '-', it.enUso, it.cap > 0 ? it.libres : '-');
         } else if (estabaActivo) {
             if (pct) pct.classList.remove('kpi-anillo-pct-chico');
             ponerTextoSuave('kpi-cap-pct', `${_capActual ? _capActual.pct : 0}%`);
             ponerTextoSuave('kpi-cap-etiqueta', 'Usado');
+            if (etiq) etiq.removeAttribute('title');
             ponerSubtextoGrabador(null);
             if (_capActual) ponerDerechaCapacidad(_capActual.total, _capActual.enUso, _capActual.libres);
         }
@@ -302,4 +307,60 @@ function pintarDetalleCapacidad() {
         b.setAttribute('aria-pressed', String(activo));
     }
     envolverValoresCapacidad();
+}
+
+// Canales: un anillo por grabador (porcentaje en uso de su capacidad) dentro de la tarjeta del chip, en el espacio libre;
+// visible solo si la sección ocupa mucho ancho (CSS). Se rearma solo si cambió algún número.
+let _firmaGraficosGrabadores = '';
+const ANILLO_GRABADOR = { tam: 48, radio: 19, trazo: 5 };
+function nodoAnilloGrabador(clave, c) {
+    const nombre = c.nombre || clave;                  // solo el nombre del grabador (la IP está en el tooltip)
+    const { tam, radio, trazo } = ANILLO_GRABADOR;
+    const pct = c.cap > 0 ? Math.min(100, Math.round((c.enUso / c.cap) * 100)) : 0;
+    const circ = 2 * Math.PI * radio;
+    const tarjeta = uiNodo('div', 'cap-grabador');       // sin tarjeta propia: va dentro de la del chip, que abre el detalle
+    tarjeta.title = `${clave}: ${c.enUso} de ${c.cap} canales en uso`;
+    const fila = uiNodo('div', 'd-flex align-items-center gap-2');
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'progress-ring flex-shrink-0');
+    svg.setAttribute('width', String(tam));
+    svg.setAttribute('height', String(tam));
+    svg.setAttribute('viewBox', `0 0 ${tam} ${tam}`);
+    for (const clase of ['progress-ring-bg', 'progress-ring-circle']) {
+        const c2 = document.createElementNS(NS, 'circle');
+        c2.setAttribute('class', clase);
+        c2.setAttribute('cx', String(tam / 2));
+        c2.setAttribute('cy', String(tam / 2));
+        c2.setAttribute('r', String(radio));
+        c2.setAttribute('stroke-width', String(trazo));
+        c2.setAttribute('fill', 'none');
+        if (clase === 'progress-ring-circle') {
+            pintarNivelAnillo(c2, pct);
+            c2.setAttribute('stroke-linecap', 'round');
+            c2.style.strokeDasharray = String(circ);
+            c2.style.strokeDashoffset = String(circ - (pct / 100) * circ);
+        }
+        svg.appendChild(c2);
+    }
+    const caja = uiNodo('div', 'position-relative d-flex align-items-center justify-content-center flex-shrink-0');
+    const centro = uiNodo('span', 'position-absolute fw-bold small lh-1', `${pct}%`);
+    caja.append(svg, centro);
+    const textos = uiNodo('div', 'min-w-0');
+    textos.append(uiNodo('div', 'small fw-semibold text-truncate', nombre),
+        uiNodo('div', 'small text-secondary text-nowrap', `${c.enUso} / ${c.cap} CH`));
+    fila.append(caja, textos);
+    tarjeta.appendChild(fila);
+    return tarjeta;
+}
+
+function pintarGraficosGrabadores(cap) {
+    const caja = document.getElementById('cap-grabadores');
+    if (!caja) return;
+    const entradas = [...cap.detalle.entries()].sort(([a], [b]) => String(a).localeCompare(String(b)));
+    const firma = JSON.stringify(entradas);
+    caja.classList.toggle('d-none', entradas.length === 0);
+    if (firma === _firmaGraficosGrabadores) return;
+    _firmaGraficosGrabadores = firma;
+    caja.replaceChildren(...entradas.map(([clave, c]) => nodoAnilloGrabador(clave, c)));
 }

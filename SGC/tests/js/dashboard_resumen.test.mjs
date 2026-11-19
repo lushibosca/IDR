@@ -7,7 +7,10 @@ const { uiValorInformado } = cargarBloque("comun.js", "VALOR INFORMADO PURO", { 
 const GLOBALES = { String, Number, Array, Map, Set, Math, Object, ALERTAS_LIMITE_VISIBLES: 4, uiValorInformado };
 const stock = cargarBloque("resumen.js", "RESUMEN STOCK PURO", GLOBALES, [
   "resumirStock", "busquedaDeModelo", "gruposPropiosCatalogo", "metricasDesgloseStock", "EJES_ACTIVOS", "formatoCapacidad",
-  "modoCapacidadValido", "formatoParticipacion",
+  "modoCapacidadValido", "formatoParticipacion"
+]);
+const participacion = cargarBloque("resumen-participacion.js", "PARTICIPACION STOCK PURO", GLOBALES, [
+  "modoParticipacionStockValido", "participacionStock", "etiquetaParticipacionStock",
 ]);
 const reorden = cargarBloque("resumen.js", "REORDEN SECCIONES PURO", GLOBALES, ["ordenarIdsSecciones", "evaluarIntercambioSecciones", "IDS_SECCIONES_REUBICABLES", "DISPOSICION_POR_DEFECTO", "distribuirSecciones", "zonaEnPunto", "indiceInsercion", "destinoTeclado"]);
 
@@ -79,6 +82,11 @@ test("stock: unifica estados fuera de servicio (perdido, desafectado, averiado, 
 
 test("busquedaDeModelo: el modelo tal cual; con espacios, entre comillas; vacío o «Sin modelo», nada", () => {
   assert.equal(stock.busquedaDeModelo("DS-2CD2143G2-I"), "DS-2CD2143G2-I");
+  assert.equal(stock.busquedaDeModelo("DS-2CD2143G2-I", "en uso"), 'DS-2CD2143G2-I "en uso"');
+  assert.equal(stock.busquedaDeModelo("DS-2CD2143G2-I", "disponible"), "DS-2CD2143G2-I disponible");
+  assert.equal(stock.busquedaDeModelo("DS-2CD2143G2-I", "no disponible"), 'DS-2CD2143G2-I "no disponible"');
+  assert.equal(stock.busquedaDeModelo("  Axis P3245 ", "no disponible"), '"Axis P3245" "no disponible"');
+  assert.equal(stock.busquedaDeModelo("", "en uso"), "");
   assert.equal(stock.busquedaDeModelo("  Axis P3245 "), '"Axis P3245"');
   assert.equal(stock.busquedaDeModelo('mo"de lo'), '"mode lo"', "sin comillas internas que rompan el término");
   assert.equal(stock.busquedaDeModelo("Sin modelo"), "");
@@ -367,8 +375,8 @@ test("detalle de canales y de stock: columna «% del total» y chip de canales c
   }
   for (const id of ["card-kpi-capacidad", "kpi-cap-donut-grupo", "cap-distribucion-leyenda", "cap-detalle-part"]) assert.ok(html.includes(`id="${id}"`), id);
   assert.ok(!html.includes('id="modal-detalle-distribucion"'));
-  assert.ok(resumen.includes("celdasContador(sub, m, clases.slice(1), modo, c.t)"), "un modelo pesa sobre su tipo");
-  assert.ok(resumen.includes("celdasContador(tr, c, clases.slice(1), modo, totalGeneral)"), "un tipo pesa sobre el grupo");
+  assert.ok(resumen.includes("celdasContador(sub, m, clases.slice(1), modo, participacionStock(m, c.t, totalUso, modoPart),"), "un modelo pesa sobre su tipo");
+  assert.ok(resumen.includes("celdasContador(tr, c, clases.slice(1), modo, participacionStock(c, totalGeneral, totalUso, modoPart))"), "un tipo pesa sobre el grupo");
   assert.ok(distribucion.includes("const MAX_GRABADORES_TORTA = 8;") && resumen.includes("pintarDistribucionGrabadores(cap);"));
   // con el cursor sobre un grabador: aporte a producción con su nombre de subtexto y sus propios valores (que cuentan, sin parpadeo)
   assert.ok(html.includes('id="kpi-cap-sub"') && distribucion.includes("'Aporte a producción'") && distribucion.includes("ponerSubtextoGrabador(it.nombre);"));
@@ -376,4 +384,35 @@ test("detalle de canales y de stock: columna «% del total» y chip de canales c
   assert.ok(distribucion.includes("if (_capActual) ponerDerechaCapacidad(_capActual.total, _capActual.enUso, _capActual.libres);"));
   assert.ok(distribucion.includes("if (interpolarTextoNumerico(desde, destino, 0.5) === null) {"));
   assert.ok(distribucion.includes("const DONUT_GRABADOR = { cx: 42, cy: 42, r: 34, trazo: 8 };") && html.replace(/\s+/g, " ").includes('cx="42" cy="42" r="34" stroke-width="8"'), "la dona y el aro de uso miden lo mismo");
+});
+
+test("participacionStock: modo total usa c.t sobre su base; modo uso usa c.u sobre el total en producción del grupo", () => {
+  const { participacionStock, modoParticipacionStockValido, etiquetaParticipacionStock } = participacion;
+  const { formatoParticipacion } = stock;
+  assert.equal(modoParticipacionStockValido("uso"), "uso");
+  assert.equal(modoParticipacionStockValido("total"), "total");
+  assert.equal(modoParticipacionStockValido("otro"), "total");
+  assert.equal(modoParticipacionStockValido("__proto__"), "total");
+  assert.equal(etiquetaParticipacionStock("total"), "% del total");
+  assert.equal(etiquetaParticipacionStock("uso"), "% de producción");
+  assert.equal(etiquetaParticipacionStock("x"), "% del total");
+
+  const tipo = { t: 60, u: 50, d: 10, o: 0 };
+  const modelo = { t: 40, u: 30, d: 10, o: 0 };
+  // Modo total: tipo sobre total del grupo (100), modelo sobre total de su tipo (60)
+  const ptTipo = participacionStock(tipo, 100, 80, "total");
+  const ptModelo = participacionStock(modelo, tipo.t, 80, "total");
+  assert.deepEqual(plano(ptTipo), { parte: 60, base: 100 });
+  assert.deepEqual(plano(ptModelo), { parte: 40, base: 60 });
+  assert.equal(formatoParticipacion(ptTipo.parte, ptTipo.base), "60%");
+  assert.equal(formatoParticipacion(ptModelo.parte, ptModelo.base), "66.7%");
+
+  // Modo producción (uso): tanto tipo como modelo sobre el total en uso del grupo (80)
+  const puTipo = participacionStock(tipo, 100, 80, "uso");
+  const puModelo = participacionStock(modelo, tipo.t, 80, "uso");
+  assert.deepEqual(plano(puTipo), { parte: 50, base: 80 });
+  assert.deepEqual(plano(puModelo), { parte: 30, base: 80 });
+  assert.equal(formatoParticipacion(puTipo.parte, puTipo.base), "62.5%");
+  assert.equal(formatoParticipacion(puModelo.parte, puModelo.base), "37.5%");
+  assert.equal(formatoParticipacion(0, 0), "-");
 });

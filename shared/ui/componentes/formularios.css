@@ -231,6 +231,11 @@
         float: left;
     }
 
+    .form-check-label {
+        cursor: pointer;
+        user-select: none;
+    }
+
     .form-check-input {
         --ui-form-check-bg: var(--ui-body-bg);
         width: 1em;

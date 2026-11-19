@@ -56,7 +56,7 @@ const ATAJOS = [
     { donde: 'Panel Estado', tipo: 'mouse', gesto: 'Clic en el encabezado', accion: 'Plegar o desplegar la sección' },
     { donde: 'Panel Estado', tipo: 'mouse', gesto: 'Mantener presionado el encabezado', accion: 'Reubicar la sección (entre las zonas y dentro de ellas)' },
     { donde: 'Panel Estado', tipo: 'mouse', gesto: 'Mantener presionado un tile o chip', accion: 'Reubicar un favorito o un chip de Activos' },
-    { donde: 'Panel Estado', tipo: 'mouse', gesto: 'Doble clic en un modelo', accion: 'En el detalle de stock: ir a Activos con ese modelo buscado' },
+    { donde: 'Panel Estado', tipo: 'mouse', gesto: 'Doble clic en un modelo', accion: 'En el detalle de stock: ir a Activos con ese modelo buscado (sobre En uso, Disponibles o No disponible, filtra por ese estado)' },
     { donde: 'Panel Estado', tipo: 'mouse', gesto: 'Doble clic en un grabador', accion: 'En el detalle de canales: buscarlo en Activos' },
     { donde: 'Panel Estado', tipo: 'mouse', gesto: 'Clic en un tipo', accion: 'En el detalle de stock: abrir sus modelos (se abre un tipo a la vez: el anterior se cierra)' },
     { donde: 'Panel lateral', tipo: 'mouse', gesto: 'Rueda sobre el panel', accion: 'Recorrer las pestañas: Estado, Activos, Producción, Historial y Ajustes (se apaga en Ajustes > «Rueda sobre el panel lateral»)' },

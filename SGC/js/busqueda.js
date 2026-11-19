@@ -36,6 +36,7 @@ const ESTADOS_STOCK = {
     descontinuado: new Set(['descontinuado', 'descontinuada', 'descontinuados', 'descontinuadas', 'discontinuado'])
 };
 const ESTADOS_FUERA_SERVICIO = new Set(['fuera', 'fuera de servicio', 'fuera-de-servicio']);
+const ESTADOS_NO_DISPONIBLE = new Set(['no disponible', 'no disponibles', 'no-disponible']);
 
 function normalizarTextoBusqueda(texto) {
     return String(texto ?? '')
@@ -64,6 +65,7 @@ function tokenizarBusqueda(query) {
         .replace(/\ba\s+revisar\b/gi, 'a-revisar')
         .replace(/\ben\s+uso\b/gi, 'en-uso')
         .replace(/\bfuera\s+de\s+servicio\b/gi, 'fuera-de-servicio')
+        .replace(/\bno\s+disponibles?\b/gi, 'no-disponible')
         .replace(/\banexo\s+([a-z0-9]+)\b/gi, 'anexo-$1')
         .replace(/\b(callao|pasco|rivadavia|yrigoyen)\s+(\d+)\b/gi, '$1-$2')
         .replace(/\bpiso[:\s]*([a-z0-9]+)\b/gi, 'piso-$1')
@@ -88,6 +90,7 @@ function tokenizarBusqueda(query) {
                  .replace(/^a-revisar$/i, 'a revisar')
                  .replace(/^en-uso$/i, 'en uso')
                  .replace(/^fuera-de-servicio$/i, 'fuera de servicio')
+                 .replace(/^no-disponible$/i, 'no disponible')
                  .replace(/^domo-ptz$/i, 'domo ptz')
                  .replace(/^minidomo$/i, 'mini domo')
                  .replace(/^minibullet$/i, 'mini bullet')
@@ -239,7 +242,7 @@ function coincideTokenSemanticoEstado(disp, token) {
     if (stockInfo) {
         if (stockInfo.en_uso && (ESTADOS_STOCK.produccion.has(t) || ESTADOS_ONLINE.has(t))) return true;
         if (stockInfo.disponible && ESTADOS_STOCK.disponible.has(t)) return true;
-        if (!stockInfo.en_uso && !stockInfo.disponible && ESTADOS_FUERA_SERVICIO.has(t)) return true;
+        if (!stockInfo.en_uso && !stockInfo.disponible && (ESTADOS_FUERA_SERVICIO.has(t) || ESTADOS_NO_DISPONIBLE.has(t))) return true;
         if (stockInfo.condicion) {
             const cond = normalizarTextoBusqueda(stockInfo.condicion).trim();
             if (ESTADOS_STOCK[cond] && ESTADOS_STOCK[cond].has(t)) return true;

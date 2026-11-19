@@ -81,6 +81,7 @@
         .modal-detalle-tipos table tr > :nth-child(4)::before { content: "Disponibles"; }
         .modal-detalle-tipos table tr > :nth-child(5)::before { content: "No disp."; }
         .modal-detalle-tipos table tr > :nth-child(6)::before { content: "% total"; }
+        .modal-detalle-tipos[data-stock-part="uso"] table tr > :nth-child(6)::before { content: "% prod."; }
 
         .modal-detalle-tipos table tfoot tr > :nth-child(2)::before { content: "Equipos"; }     /* el título de la tarjeta ya dice «Total» */
 

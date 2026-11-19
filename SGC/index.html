@@ -27,12 +27,12 @@
     <link rel="stylesheet" href="../shared/ui/base.css?v=16">
     <link rel="stylesheet" href="../shared/ui/grilla.css?v=5">
     <link rel="stylesheet" href="../shared/idr-actualizacion.css">
-    <link rel="stylesheet" href="../shared/ui/componentes/transiciones.css?v=13">
+    <link rel="stylesheet" href="../shared/ui/componentes/transiciones.css?v=14">
     <link rel="stylesheet" href="../shared/ui/componentes/tablas.css?v=12">
-    <link rel="stylesheet" href="../shared/ui/componentes/formularios.css?v=14">
+    <link rel="stylesheet" href="../shared/ui/componentes/formularios.css?v=15">
     <link rel="stylesheet" href="../shared/ui/componentes/botones.css?v=15">
     <link rel="stylesheet" href="../shared/ui/componentes/desplegables.css?v=18">
-    <link rel="stylesheet" href="../shared/ui/componentes/navegacion.css?v=22">
+    <link rel="stylesheet" href="../shared/ui/componentes/navegacion.css?v=23">
     <link rel="stylesheet" href="../shared/ui/componentes/tarjetas.css?v=11">
     <link rel="stylesheet" href="../shared/ui/componentes/acordeon.css?v=17">
     <link rel="stylesheet" href="../shared/ui/componentes/insignias.css?v=13">
@@ -47,17 +47,17 @@
     <link rel="stylesheet" href="../shared/ui/fondo.css">
     <link rel="stylesheet" href="../shared/ui/ayuda.css">
     <link rel="stylesheet" href="css/app/estructura.css?v=41">
-        <link rel="stylesheet" href="css/app/estado.css?v=56">
+        <link rel="stylesheet" href="css/app/estado.css?v=57">
     <link rel="stylesheet" href="css/app/produccion.css?v=51">
     <link rel="stylesheet" href="css/app/auditoria.css?v=26">
     <link rel="stylesheet" href="css/app/activos.css?v=45">
     <link rel="stylesheet" href="css/app/favoritos.css?v=11">
     <link rel="stylesheet" href="css/app/ajustes.css?v=10">
     <link rel="stylesheet" href="css/app/animaciones.css?v=12">
-    <link rel="stylesheet" href="css/app/interaccion.css?v=8">
-    <link rel="stylesheet" href="css/app/detalle-movil.css?v=7">
+    <link rel="stylesheet" href="css/app/interaccion.css?v=9">
+    <link rel="stylesheet" href="css/app/detalle-movil.css?v=8">
     <link rel="stylesheet" href="css/app/barra-movil.css?v=7">
-    <link rel="stylesheet" href="../shared/ui/utilidades.css?v=34">
+    <link rel="stylesheet" href="../shared/ui/utilidades.css?v=35">
     <link rel="stylesheet" href="../shared/vendor/fonts/inter.css">
 </head>
 
@@ -281,10 +281,9 @@
                                         <h6 class="text-secondary mb-0 fw-bold text-uppercase tracking-wide"><i
                                                 class="bi bi-star me-2"></i>Favoritos
                                         </h6>
-                                        <hr class="flex-grow-1 mx-3 text-secondary my-0">
-                                        <i class="bi bi-chevron-down text-secondary resumen-seccion-chevron"></i>
+                                        <i class="bi bi-chevron-down text-secondary ms-2 resumen-seccion-chevron"></i>
                                     </div>
-                                    <div class="d-flex align-items-center" id="favoritos-acciones">
+                                    <div class="resumen-seccion-acciones" id="favoritos-acciones">
                                         <div class="dropdown ms-2">
                                             <button type="button"
                                                 class="btn btn-sm btn-outline-secondary border-0 py-0 px-2"
@@ -329,8 +328,7 @@
                                         <h6 class="text-secondary mb-0 fw-bold text-uppercase tracking-wide"><i
                                                 class="bi bi-hdd-network me-2"></i>Canales
                                         </h6>
-                                        <hr class="flex-grow-1 mx-3 text-secondary my-0">
-                                        <i class="bi bi-chevron-down text-secondary resumen-seccion-chevron"></i>
+                                        <i class="bi bi-chevron-down text-secondary ms-2 resumen-seccion-chevron"></i>
                                     </div>
                                     <div id="canales-collapse" class="grid-collapse show">
                                         <div>
@@ -339,9 +337,9 @@
                                                 id="card-kpi-capacidad" data-ui-toggle="modal"
                                                 data-ui-target="#modal-detalle-capacidad" role="button" tabindex="0"
                                                 title="Ver detalle de canales">
-                                                <div class="d-flex align-items-center justify-content-between w-100">
+                                                <div class="d-flex align-items-center justify-content-between w-100 cap-superior">
                                                     <!-- Barra Circular de Porcentaje / Dona dinámica al pasar por un grabador -->
-                                                    <div class="d-flex align-items-center gap-3">
+                                                    <div class="d-flex align-items-center cap-principal">
                                                         <div
                                                             class="d-flex align-items-center justify-content-center position-relative flex-shrink-0 kpi-anillo">
                                                             <svg id="kpi-cap-svg" class="progress-ring" width="84"
@@ -361,7 +359,7 @@
                                                         </div>
                                                         <div class="cap-etiqueta-col">
                                                             <div id="kpi-cap-etiqueta"
-                                                                class="metric-label-text text-secondary small text-uppercase fw-bold tracking-wide text-truncate">
+                                                                class="metric-label-text text-secondary small text-uppercase fw-bold tracking-wide cap-etiqueta">
                                                                 Usado</div>
                                                             <div id="kpi-cap-sub"
                                                                 class="small text-secondary text-truncate d-none"></div>
@@ -372,8 +370,9 @@
                                                     <div id="cap-grabadores" class="cap-grabadores d-none"></div>
 
                                                     <!-- 3 Filas a la derecha con el estilo de los otros chips -->
-                                                    <div class="text-end small text-secondary border-start ps-3 py-1">
-                                                        <div class="mb-1">Capacidad instalada: <span id="kpi-cap-total"
+                                                    <div class="text-end small text-secondary border-start py-1 cap-totales text-nowrap">
+                                                        <div class="mb-1"><span class="cap-label-larga">Capacidad instalada</span><span
+                                                                class="cap-label-corta">Capacidad</span>: <span id="kpi-cap-total"
                                                                 class="fw-bold">-</span></div>
                                                         <div class="mb-1">En uso: <span id="kpi-cap-uso"
                                                                 class="fw-bold">-</span></div>
@@ -401,10 +400,9 @@
                                             <h6 class="text-secondary mb-0 fw-bold text-uppercase tracking-wide"><i
                                                     class="bi bi-diagram-3 me-2"></i>Activos
                                             </h6>
-                                            <hr class="flex-grow-1 mx-3 text-secondary my-0">
-                                            <i class="bi bi-chevron-down text-secondary resumen-seccion-chevron"></i>
+                                            <i class="bi bi-chevron-down text-secondary ms-2 resumen-seccion-chevron"></i>
                                         </div>
-                                        <div class="d-flex align-items-center resumen-seccion-acciones"
+                                        <div class="resumen-seccion-acciones"
                                             id="activos-acciones">
                                             <div class="dropdown ms-2">
                                                 <button type="button"
@@ -981,11 +979,29 @@
                         <textarea id="stock-exp-preview-texto" class="form-control form-control-sm font-monospace"
                             rows="10" readonly spellcheck="false" placeholder="No hay IPs para mostrar"></textarea>
                     </div>
+                    <div id="stock-exp-paso-reporte" class="d-none">
+                        <div class="mb-3">
+                            <span class="small text-secondary" id="stock-exp-rep-ayuda"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold" for="stock-exp-rep-titulo">Título del
+                                reporte</label>
+                            <input type="text" class="form-control form-control-sm" id="stock-exp-rep-titulo"
+                                maxlength="120" value="Reporte de stock CCTV" placeholder="Reporte de stock CCTV">
+                        </div>
+                        <div class="form-check form-switch mb-1">
+                            <input class="form-check-input" type="checkbox" id="stock-exp-rep-agrupar" checked>
+                            <label class="form-check-label small" for="stock-exp-rep-agrupar">Agrupar dispositivos en el
+                                detalle</label>
+                        </div>
+                        <p class="small text-secondary mb-0">El resumen siempre se muestra agrupado. Si lo desmarcás, el
+                            detalle se lista en una sola tabla.</p>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <div id="stock-exp-footer-seleccion" class="d-flex gap-2 w-100 justify-content-end">
                         <button type="button" class="btn btn-primary btn-sm" id="stock-exp-reporte"
-                            title="Reporte HTML de los grupos marcados de la vista de Activos">
+                            title="Reporte HTML de los grupos marcados con las columnas elegidas">
                             <i class="bi bi-file-earmark-richtext me-1"></i> Reporte
                         </button>
                         <button type="button" class="btn btn-primary btn-sm" id="stock-exp-descargar">
@@ -1002,6 +1018,14 @@
                                 <i class="bi bi-clipboard me-1"></i> Copiar
                             </button>
                         </div>
+                    </div>
+                    <div id="stock-exp-footer-reporte" class="d-flex gap-2 w-100 justify-content-between d-none">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="stock-exp-rep-volver">
+                            <i class="bi bi-arrow-left me-1"></i> Volver
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" id="stock-exp-rep-descargar">
+                            <i class="bi bi-file-earmark-arrow-down me-1"></i> Descargar
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2087,13 +2111,19 @@
                         </table>
                     </div>
                 </div>
-                <div class="modal-footer py-2 px-3 border-top">
+                <div class="modal-footer py-2 px-3 border-top gap-2">
                     <div class="btn-group btn-group-sm" role="group"
                         aria-label="En uso, disponibles y no disponible como">
                         <button type="button" class="btn btn-outline-primary active" data-cap-modo="neto"
                             title="En uso, disponibles y no disponible en cantidad">Cantidad</button>
                         <button type="button" class="btn btn-outline-primary" data-cap-modo="pct"
                             title="En uso, disponibles y no disponible en porcentaje del total de cada fila">Porcentaje</button>
+                    </div>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Base de % del total">
+                        <button type="button" class="btn btn-outline-primary active" data-part-modo="total"
+                            title="Porcentaje calculado sobre el total de dispositivos">Sobre total</button>
+                        <button type="button" class="btn btn-outline-primary" data-part-modo="uso"
+                            title="Aporte al total en producción (en uso)">En producción</button>
                     </div>
                 </div>
             </div>
@@ -2126,13 +2156,19 @@
                         </table>
                     </div>
                 </div>
-                <div class="modal-footer py-2 px-3 border-top">
+                <div class="modal-footer py-2 px-3 border-top gap-2">
                     <div class="btn-group btn-group-sm" role="group"
                         aria-label="En uso, disponibles y no disponible como">
                         <button type="button" class="btn btn-outline-primary active" data-cap-modo="neto"
                             title="En uso, disponibles y no disponible en cantidad">Cantidad</button>
                         <button type="button" class="btn btn-outline-primary" data-cap-modo="pct"
                             title="En uso, disponibles y no disponible en porcentaje del total de cada fila">Porcentaje</button>
+                    </div>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Base de % del total">
+                        <button type="button" class="btn btn-outline-primary active" data-part-modo="total"
+                            title="Porcentaje calculado sobre el total de dispositivos">Sobre total</button>
+                        <button type="button" class="btn btn-outline-primary" data-part-modo="uso"
+                            title="Aporte al total en producción (en uso)">En producción</button>
                     </div>
                 </div>
             </div>
@@ -2166,13 +2202,19 @@
                         </table>
                     </div>
                 </div>
-                <div class="modal-footer py-2 px-3 border-top">
+                <div class="modal-footer py-2 px-3 border-top gap-2">
                     <div class="btn-group btn-group-sm" role="group"
                         aria-label="En uso, disponibles y no disponible como">
                         <button type="button" class="btn btn-outline-primary active" data-cap-modo="neto"
                             title="En uso, disponibles y no disponible en cantidad">Cantidad</button>
                         <button type="button" class="btn btn-outline-primary" data-cap-modo="pct"
                             title="En uso, disponibles y no disponible en porcentaje del total de cada fila">Porcentaje</button>
+                    </div>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Base de % del total">
+                        <button type="button" class="btn btn-outline-primary active" data-part-modo="total"
+                            title="Porcentaje calculado sobre el total de dispositivos">Sobre total</button>
+                        <button type="button" class="btn btn-outline-primary" data-part-modo="uso"
+                            title="Aporte al total en producción (en uso)">En producción</button>
                     </div>
                 </div>
             </div>
@@ -2206,13 +2248,19 @@
                         </table>
                     </div>
                 </div>
-                <div class="modal-footer py-2 px-3 border-top">
+                <div class="modal-footer py-2 px-3 border-top gap-2">
                     <div class="btn-group btn-group-sm" role="group"
                         aria-label="En uso, disponibles y no disponible como">
                         <button type="button" class="btn btn-outline-primary active" data-cap-modo="neto"
                             title="En uso, disponibles y no disponible en cantidad">Cantidad</button>
                         <button type="button" class="btn btn-outline-primary" data-cap-modo="pct"
                             title="En uso, disponibles y no disponible en porcentaje del total de cada fila">Porcentaje</button>
+                    </div>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Base de % del total">
+                        <button type="button" class="btn btn-outline-primary active" data-part-modo="total"
+                            title="Porcentaje calculado sobre el total de dispositivos">Sobre total</button>
+                        <button type="button" class="btn btn-outline-primary" data-part-modo="uso"
+                            title="Aporte al total en producción (en uso)">En producción</button>
                     </div>
                 </div>
             </div>
@@ -2231,7 +2279,7 @@
     <!-- Lógica Externa (Hardening) con versionado para evitar caché -->
     <script src="../shared/ui/js/transicion-pestanas.js"></script>
     <script src="js/animaciones.js?v=20"></script>
-    <script src="js/busqueda.js?v=8"></script>
+    <script src="js/busqueda.js?v=9"></script>
     <script src="js/datos-puro.js?v=3"></script>
     <script src="js/historial-puro.js"></script>
     <script src="js/api-local.js?v=5"></script>
@@ -2242,16 +2290,18 @@
     <script src="js/sesion-local.js?v=1"></script>
     <script src="js/selector.js?v=2"></script>
     <script src="js/produccion.js?v=66"></script>
-    <script src="js/resumen.js?v=78"></script>
-    <script src="js/resumen-distribucion.js?v=2"></script>
+    <script src="js/resumen.js?v=79"></script>
+    <script src="js/resumen-distribucion.js?v=3"></script>
+    <script src="js/resumen-participacion.js?v=2"></script>
     <script src="js/favoritos.js?v=20"></script>
     <script src="js/historial.js"></script>
-    <script src="js/atajos.js?v=29"></script>
+    <script src="js/atajos.js?v=30"></script>
     <script src="../shared/ui/js/ayuda.js"></script>
     <script src="../shared/ui/js/fondo.js"></script>
-    <script src="js/stock-puro.js?v=5"></script>
+    <script src="js/stock-puro.js?v=6"></script>
+    <script src="js/stock-reporte-puro.js?v=2"></script>
     <script src="js/stock.js?v=128"></script>
-    <script src="js/stock-listar.js?v=9"></script>
+    <script src="js/stock-listar.js?v=10"></script>
     <script src="js/stock-catalogos.js?v=14"></script>
     <script src="js/stock-seleccion.js?v=17"></script>
     <script src="js/stock-alta-lote.js?v=4"></script>

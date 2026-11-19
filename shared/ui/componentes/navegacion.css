@@ -110,17 +110,16 @@
         display: inline-flex;
         align-items: center;
         gap: var(--esp-2);
-        margin-right: var(--esp-4);
+        margin-left: calc(-1 * var(--esp-3));
+        margin-right: auto;
         color: var(--ui-secondary-color);
         font-size: var(--texto-lg);
         white-space: nowrap;
     }
 
+    /* «SGC - Estado»: el guion une el nombre de la pestaña con la marca */
     .navbar-pestana::before {
-        content: "";
-        width: 1px;
-        height: 1.1em;
-        background-color: var(--border-color);
+        content: "-";
     }
 
     .navbar-pestana[hidden] {

@@ -15,8 +15,14 @@
         border-radius: var(--radio-medio);
     }
 
-    .disp-etiqueta-abrible,
-    td.stock-ubicacion {
+    /* Un título en un <div> (Auditoría > Dispositivos) ocupaba todo el ancho: el hover tiene que abarcar solo su texto */
+    div.disp-etiqueta-abrible {
+        width: fit-content;
+        max-width: 100%;
+    }
+
+    /* Una celda de tabla NO anima: el hover de la fila es instantáneo y la celda tiene que cambiar a la par */
+    .disp-etiqueta-abrible:not(td) {
         transition: background-color var(--dur-base) ease;
     }
 

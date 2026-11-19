@@ -177,6 +177,11 @@
             border-left: 1px solid var(--ui-border-color);
             border-right: 1px solid var(--ui-border-color);
         }
+
+        /* Con los anillos a la vista, la leyenda de porcentajes sería lo mismo por grabador: queda solo uno */
+        #card-kpi-capacidad:has(.cap-grabadores:not(.d-none)) .cap-distribucion-caja {
+            display: none;
+        }
     }
 
     .cap-grabador {
@@ -185,9 +190,59 @@
 
     /* ─── Participación por grabador integrada en el chip de Canales (dona dinámica al pasar el cursor) */
 
+    /* min-width: 0 en el bloque izquierdo permite que #kpi-cap-etiqueta parta en 2 líneas cuando falta ancho y
+       #kpi-cap-sub se resuma con «...», sin comprimir ni partir los totales de la derecha */
+    .cap-superior {
+        gap: var(--esp-3);
+        min-width: 0;
+    }
+
+    .cap-principal {
+        flex: 0 1 auto;
+        min-width: 0;
+        gap: var(--esp-3);
+    }
+
     .cap-etiqueta-col {
+        flex: 0 1 auto;
         min-width: 0;
         max-width: 11rem;
+    }
+
+    .cap-etiqueta {
+        line-height: 1.25;
+        overflow-wrap: break-word;
+    }
+
+    .cap-totales {
+        flex: 0 0 auto;
+        padding-left: var(--esp-3);
+    }
+
+    .cap-label-corta {
+        display: none;
+    }
+
+    @container (max-width: 450px) {
+        .cap-superior {
+            gap: var(--esp-2);
+        }
+
+        .cap-principal {
+            gap: var(--esp-2);
+        }
+
+        .cap-totales {
+            padding-left: var(--esp-2);
+        }
+
+        .cap-label-larga {
+            display: none;
+        }
+
+        .cap-label-corta {
+            display: inline;
+        }
     }
 
     .cap-donut-grupo {
@@ -366,7 +421,8 @@
 
     /* Detalle de canales: el valor de «En uso» y «Disponibles» es lo que muta al alternar cantidad/porcentaje */
 
-    .cap-valor {
+    .cap-valor,
+    .part-valor {
         display: inline-block;
     }
 
@@ -401,6 +457,14 @@
 
     /* ─── Modales de detalle de stock (`.modal-detalle-tipos`): tipo con sus modelos plegables (pintarTablaTipos) */
 
+    /* Desde 768 px usa hasta 960 px (o casi todo el ancho disponible entre 768 y 991 px) para que entren las 6 columnas
+       sin comprimir el nombre ni recortar los rótulos antes del corte móvil (< 768 px). */
+    @media (min-width: 768px) {
+        .modal-detalle-tipos .modal-dialog {
+            --ui-modal-width: min(960px, calc(100vw - 2rem));
+        }
+    }
+
     .modal-detalle-tipos .table-responsive {
         overflow: visible;
     }
@@ -413,8 +477,14 @@
     }
 
     .modal-detalle-tipos thead th:not(:first-child) {
-        width: 15%;
+        padding: var(--esp-3) var(--esp-1);
     }
+
+    .modal-detalle-tipos thead th:nth-child(2) { width: 9%; }
+    .modal-detalle-tipos thead th:nth-child(3) { width: 10%; }
+    .modal-detalle-tipos thead th:nth-child(4) { width: 14%; }
+    .modal-detalle-tipos thead th:nth-child(5) { width: 15%; }
+    .modal-detalle-tipos thead th:nth-child(6) { width: 17%; }
 
     .modal-detalle-tipos td:first-child {
         overflow-wrap: anywhere;
@@ -540,8 +610,15 @@
 
     /* Los botones de opciones del encabezado, por encima de la fila de chips (que sube con su margen negativo) y de sus menús */
     .resumen-seccion-acciones {
+        display: flex;
+        align-items: center;
         position: relative;
         z-index: 2;
+    }
+
+    /* Sección plegada: sin el ícono de opciones de vista (no hay nada que ver ni ordenar) */
+    :has(> .resumen-seccion-toggle[aria-expanded="false"]) > .resumen-seccion-acciones {
+        display: none;
     }
 
     .resumen-seccion-toggle:hover h6,

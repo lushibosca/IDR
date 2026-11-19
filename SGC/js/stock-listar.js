@@ -8,6 +8,24 @@
     if (!nucleo || !$('stockExportModal')) return;
     const { estado, visibles, armarMapaCamaras, cargar, animarModal, toast, modal } = nucleo;
 
+    const CLAVE_COLUMNAS_LISTAR = 'cctv:listar_columnas';
+    // Al cargar/recargar la página se restablecen las columnas por defecto; durante la sesión se recuerdan al cerrar el modal.
+    try { sessionStorage.removeItem(CLAVE_COLUMNAS_LISTAR); } catch (e) {}
+
+    function leerColumnasGuardadas() {
+        try {
+            const raw = sessionStorage.getItem(CLAVE_COLUMNAS_LISTAR);
+            return stockColumnasListarValidas(raw ? JSON.parse(raw) : null);
+        } catch (e) {
+            return ['ip'];
+        }
+    }
+
+    function guardarColumnas(cols) {
+        const limpias = stockColumnasListarValidas(cols);
+        try { sessionStorage.setItem(CLAVE_COLUMNAS_LISTAR, JSON.stringify(limpias)); } catch (e) {}
+    }
+
     let exportacion = null;      // Listar: { modo, columnas, opciones: [{ clave, etiqueta, detalle, deshabilitada }] }
 
     // Lo que se lista en «Vista» y «Selección»: lo que se ve en Activos, o lo que se eligió en el modo selección (se toma de
@@ -24,15 +42,9 @@
             const mapaCamaras = armarMapaCamaras();
             const bloques = stockAgruparBloques(listaDelModo(), criterio, etiquetasTipo, catalogo);
             return bloques.map(bloque => {
-                const items = (bloque.items || []).map(dispositivo => {
-                    const macNorm = dispositivo.mac ? String(dispositivo.mac).trim().toUpperCase() : '';
-                    const ipNorm = dispositivo.instalacion && dispositivo.instalacion.ip
-                        ? String(dispositivo.instalacion.ip).trim() : '';
-                    const camara = mapaCamaras
-                        ? ((macNorm && mapaCamaras.get(macNorm)) || (ipNorm && mapaCamaras.get(ipNorm)) || null)
-                        : null;
-                    return stockNormalizarDispositivo(dispositivo, camara, etiquetasTipo);
-                });
+                const items = (bloque.items || []).map(dispositivo =>
+                    stockNormalizarDispositivo(dispositivo, stockCamaraDeDispositivo(dispositivo, mapaCamaras),
+                        etiquetasTipo, catalogo));
                 const ips = items.map(it => it.ip).filter(Boolean);
                 return {
                     clave: bloque.etiqueta,
@@ -73,7 +85,7 @@
                         const ipNorm = cam.ip_address ? String(cam.ip_address).trim() : '';
                         const stockDev = (macNorm && stockPorMac.get(macNorm))
                             || (ipNorm && stockPorIp.get(ipNorm)) || null;
-                        return stockNormalizarDispositivo(stockDev, cam, etiquetasTipo);
+                        return stockNormalizarDispositivo(stockDev, cam, etiquetasTipo, catalogo);
                     });
                     const ips = items.map(it => it.ip).filter(Boolean);
                     return {
@@ -89,20 +101,28 @@
         return [];
     }
 
-    function mostrarPasoSeleccion(animar = true) {
-        const elSalida = $('stock-exp-paso-preview');
-        const elEntrada = $('stock-exp-paso-seleccion');
+    const PASOS_EXPORTACION = [
+        ['stock-exp-paso-seleccion', 'stock-exp-footer-seleccion'],
+        ['stock-exp-paso-preview', 'stock-exp-footer-preview'],
+        ['stock-exp-paso-reporte', 'stock-exp-footer-reporte'],
+    ];
+
+    function cambiarPasoExportacion(idEntrada, prepararDOM, animar = true) {
+        const elEntrada = $(idEntrada);
         if (!elEntrada) return;
+        const parSalida = PASOS_EXPORTACION.find(([p]) => p !== idEntrada && $(p) && !$(p).classList.contains('d-none'));
+        const elSalida = parSalida ? $(parSalida[0]) : null;
 
         const aplicarDOM = () => {
-            elSalida?.classList.add('d-none');
-            elEntrada.classList.remove('d-none');
-            $('stock-exp-footer-preview')?.classList.add('d-none');
-            $('stock-exp-footer-seleccion')?.classList.remove('d-none');
-            $('stock-exp-titulo').textContent = 'Listar';
+            for (const [pasoId, footerId] of PASOS_EXPORTACION) {
+                const visible = pasoId === idEntrada;
+                $(pasoId)?.classList.toggle('d-none', !visible);
+                $(footerId)?.classList.toggle('d-none', !visible);
+            }
+            if (prepararDOM) prepararDOM();
         };
 
-        const debeAnimar = Boolean(animar && elSalida && !elSalida.classList.contains('d-none')
+        const debeAnimar = Boolean(animar && elSalida
             && typeof mutarContenido === 'function'
             && (!window.prefiereMovimientoReducido || !window.prefiereMovimientoReducido()));
 
@@ -111,6 +131,12 @@
         } else {
             aplicarDOM();
         }
+    }
+
+    function mostrarPasoSeleccion(animar = true) {
+        cambiarPasoExportacion('stock-exp-paso-seleccion', () => {
+            $('stock-exp-titulo').textContent = 'Listar';
+        }, animar);
     }
 
     let arrastrandoCol = null;
@@ -189,6 +215,7 @@
                         if (origen !== -1 && destino !== -1) {
                             exportacion.columnas.splice(origen, 1);
                             exportacion.columnas.splice(destino, 0, arrastrandoCol);
+                            guardarColumnas(exportacion.columnas);
                             animarModal('stockExportModal', renderColumnas);
                         }
                     }
@@ -214,6 +241,7 @@
                         return;
                     }
                     exportacion.columnas = exportacion.columnas.filter(itemCol => itemCol !== colId);
+                    guardarColumnas(exportacion.columnas);
                     animarModal('stockExportModal', renderColumnas);
                 });
 
@@ -246,6 +274,7 @@
                         if (origen !== -1 && origen !== exportacion.columnas.length - 1) {
                             exportacion.columnas.splice(origen, 1);
                             exportacion.columnas.push(arrastrandoCol);
+                            guardarColumnas(exportacion.columnas);
                             animarModal('stockExportModal', renderColumnas);
                         }
                     }
@@ -253,6 +282,7 @@
 
                 chip.addEventListener('click', () => {
                     exportacion.columnas.push(info.id);
+                    guardarColumnas(exportacion.columnas);
                     animarModal('stockExportModal', renderColumnas);
                 });
 
@@ -263,41 +293,26 @@
         });
     }
 
-    function mostrarPasoPreview(lineas) {
-        const elSalida = $('stock-exp-paso-seleccion');
-        const elEntrada = $('stock-exp-paso-preview');
-        if (!elEntrada) return;
+    function etiquetasColumnasExportacion() {
+        return (exportacion?.columnas || ['ip']).map(cid => {
+            const inf = CAMPOS_LISTAR.find(itemCol => itemCol.id === cid);
+            return inf ? inf.etiqueta : cid;
+        }).join(' - ');
+    }
 
-        const aplicarDOM = () => {
-            elSalida?.classList.add('d-none');
-            elEntrada.classList.remove('d-none');
-            $('stock-exp-footer-seleccion')?.classList.add('d-none');
-            $('stock-exp-footer-preview')?.classList.remove('d-none');
+    function mostrarPasoPreview(lineas) {
+        cambiarPasoExportacion('stock-exp-paso-preview', () => {
             $('stock-exp-titulo').textContent = 'Listar';
             const plural = lineas.length === 1 ? '' : 's';
-            const colsTxt = (exportacion.columnas || ['ip']).map(cid => {
-                const inf = CAMPOS_LISTAR.find(itemCol => itemCol.id === cid);
-                return inf ? inf.etiqueta : cid;
-            }).join(' - ');
             $('stock-exp-preview-ayuda').textContent =
-                `${lineas.length} elemento${plural} listo${plural} para copiar (${colsTxt}):`;
+                `${lineas.length} elemento${plural} listo${plural} para copiar (${etiquetasColumnasExportacion()}):`;
             const txt = $('stock-exp-preview-texto');
             if (txt) {
                 txt.value = lineas.join('\n');
                 txt.focus();
                 txt.select();
             }
-        };
-
-        const debeAnimar = Boolean(elSalida && !elSalida.classList.contains('d-none')
-            && typeof mutarContenido === 'function'
-            && (!window.prefiereMovimientoReducido || !window.prefiereMovimientoReducido()));
-
-        if (debeAnimar) {
-            mutarContenido(elSalida, aplicarDOM, null, () => elEntrada, true);
-        } else {
-            aplicarDOM();
-        }
+        });
     }
 
     function renderExportacion() {
@@ -311,14 +326,14 @@
             b.classList.toggle('active', b.dataset.stockExpModo === exportacion.modo);
             if (b.dataset.stockExpModo === 'seleccion') b.classList.toggle('d-none', !exportacion.seleccion);   // solo desde la selección
         });
-        // el reporte es de lo agrupado como en Activos: con Grabador no hay grupos de la vista que elegir
         const btnReporte = $('stock-exp-reporte');
         if (btnReporte) {
-            const conGrupos = exportacion.modo === 'vista' || exportacion.modo === 'seleccion';
-            btnReporte.disabled = !conGrupos;
-            btnReporte.title = !conGrupos ? 'El reporte se arma sobre la pestaña Vista o Selección'
-                : (exportacion.modo === 'seleccion' ? 'Reporte HTML de los grupos marcados de lo seleccionado'
-                    : 'Reporte HTML de los grupos marcados de la vista de Activos');
+            btnReporte.disabled = false;
+            btnReporte.title = exportacion.modo === 'grabador'
+                ? 'Reporte HTML de los grabadores marcados con las columnas elegidas'
+                : (exportacion.modo === 'seleccion'
+                    ? 'Reporte HTML de los grupos marcados de lo seleccionado con las columnas elegidas'
+                    : 'Reporte HTML de los grupos marcados con las columnas elegidas');
         }
         exportacion.opciones = opcionesExportacion();
         $('stock-exp-ayuda').textContent = exportacion.modo === 'vista'
@@ -373,6 +388,10 @@
 
     // Abre Listar con el foco en «Ver»: marcar, abrir con el atajo y Enter ya muestra el resultado
     function mostrarListar() {
+        const inpTitulo = $('stock-exp-rep-titulo');
+        if (inpTitulo) inpTitulo.value = 'Reporte de stock CCTV';
+        const chkAgrupar = $('stock-exp-rep-agrupar');
+        if (chkAgrupar) chkAgrupar.checked = true;
         modal('stockExportModal').show();
         $('stock-exp-descargar').focus({ preventScroll: true });
     }
@@ -380,7 +399,7 @@
     async function abrirExportacion() {
         if (!estado().datos) await cargar();
         if (!estado().datos) return;
-        exportacion = { modo: 'vista', columnas: ['ip'], opciones: [] };
+        exportacion = { modo: 'vista', columnas: leerColumnasGuardadas(), opciones: [] };
         renderExportacion();
         mostrarListar();
     }
@@ -389,7 +408,7 @@
     async function abrirExportacionSeleccion(ids) {
         if (!estado().datos) await cargar();
         if (!estado().datos || !ids.length) return;
-        exportacion = { modo: 'seleccion', columnas: ['ip'], opciones: [], seleccion: new Set(ids) };
+        exportacion = { modo: 'seleccion', columnas: leerColumnasGuardadas(), opciones: [], seleccion: new Set(ids) };
         renderExportacion();
         mostrarListar();
     }
@@ -417,21 +436,73 @@
         mostrarPasoPreview(lineas);
     }
 
-    // «Reporte» de Listar: el HTML por grupos de la vista de Activos (lo visible, con su agrupación y la búsqueda), con
-    // los grupos marcados. Solo con la pestaña Vista o Selección (con Grabador el botón queda deshabilitado).
-    function generarReporte() {
-        if (!exportacion || (exportacion.modo !== 'vista' && exportacion.modo !== 'seleccion')) return;
+    function datosReporteActual() {
+        if (!exportacion) return null;
         const { etiquetasTipo, catalogo, criterio } = estado();
+        if (exportacion.modo === 'grabador') {
+            const elegidas = casillas().filter(chk => chk.checked)
+                .map(chk => exportacion.opciones[Number(chk.dataset.stockExpOpcion)]);
+            const bloques = elegidas.map(o => ({ etiqueta: o.etiqueta, items: o.items || [] })).filter(b => b.items.length);
+            if (!bloques.length) { toast('Elegí al menos un grabador con cámaras.', 'info'); return null; }
+            return { bloques, criterio: 'grabador', criterioTexto: 'Grabador', normalizados: true, busqueda: '' };
+        }
+        if (exportacion.modo !== 'vista' && exportacion.modo !== 'seleccion') return null;
         const claves = new Set(casillas().filter(chk => chk.checked)
             .map(chk => exportacion.opciones[Number(chk.dataset.stockExpOpcion)].clave));
         const bloques = stockAgruparBloques(listaDelModo(), criterio, etiquetasTipo, catalogo)
             .filter(g => claves.has(g.etiqueta));
-        if (!bloques.length) { toast('Elegí al menos un grupo con dispositivos.', 'info'); return; }
+        if (!bloques.length) { toast('Elegí al menos un grupo con dispositivos.', 'info'); return null; }
+        return {
+            bloques,
+            criterio,
+            criterioTexto: STOCK_AGRUPAMIENTOS.get(criterio),
+            normalizados: false,
+            busqueda: terminoBusquedaActual().trim(),
+        };
+    }
+
+    function abrirPasoReporte() {
+        const datos = datosReporteActual();
+        if (!datos) return;
+        const total = datos.bloques.reduce((acc, b) => acc + b.items.length, 0);
+        const unidad = datos.normalizados ? 'grabador' : 'grupo';
+        const pluralGrp = datos.bloques.length === 1 ? '' : (datos.normalizados ? 'es' : 's');
+        const pluralDisp = total === 1 ? '' : 's';
+        cambiarPasoExportacion('stock-exp-paso-reporte', () => {
+            $('stock-exp-titulo').textContent = 'Opciones del reporte';
+            $('stock-exp-rep-ayuda').textContent =
+                `${datos.bloques.length} ${unidad}${pluralGrp}, ${total} dispositivo${pluralDisp} (${etiquetasColumnasExportacion()}).`;
+            const inpTitulo = $('stock-exp-rep-titulo');
+            if (inpTitulo) {
+                if (!inpTitulo.value.trim()) inpTitulo.value = 'Reporte de stock CCTV';
+                inpTitulo.focus();
+                inpTitulo.select();
+            }
+        });
+    }
+
+    // «Reporte» de Listar: el HTML con las columnas elegidas y opciones configuradas.
+    function generarReporte() {
+        const datos = datosReporteActual();
+        if (!datos) return;
+        const { etiquetasTipo, catalogo } = estado();
         const ahora = new Date();
-        const html = stockReporteHtml(bloques, { criterio, criterioTexto: STOCK_AGRUPAMIENTOS.get(criterio),
+        const titulo = $('stock-exp-rep-titulo')?.value || 'Reporte de stock CCTV';
+        const agrupar = $('stock-exp-rep-agrupar')?.checked !== false;
+        const html = stockReporteHtml(datos.bloques, {
+            criterio: datos.criterio,
+            criterioTexto: datos.criterioTexto,
             fecha: ahora.toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' }),
-            busqueda: terminoBusquedaActual().trim(), etiquetasTipo, catalogo });
-        uiDescargarTexto(html, uiNombreArchivo(`reporte-stock-${criterio}`, ahora, 'html'), 'text/html;charset=utf-8');
+            busqueda: datos.busqueda,
+            etiquetasTipo,
+            catalogo,
+            columnas: exportacion.columnas,
+            mapaCamaras: datos.normalizados ? null : armarMapaCamaras(),
+            normalizados: datos.normalizados,
+            titulo,
+            agrupar,
+        });
+        uiDescargarTexto(html, uiNombreArchivo(`reporte-stock-${datos.criterio}`, ahora, 'html'), 'text/html;charset=utf-8');
         toast('Reporte descargado.', 'success');
         modal('stockExportModal').hide();
     }
@@ -468,7 +539,17 @@
         actualizarBotonTodos();
     });
     $('stock-exp-descargar').addEventListener('click', descargarExportacion);
-    $('stock-exp-reporte').addEventListener('click', generarReporte);
+    $('stock-exp-reporte').addEventListener('click', abrirPasoReporte);
+    $('stock-exp-rep-volver')?.addEventListener('click', () => {
+        mostrarPasoSeleccion(true);
+    });
+    $('stock-exp-rep-descargar')?.addEventListener('click', generarReporte);
+    $('stock-exp-rep-titulo')?.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') {
+            ev.preventDefault();
+            generarReporte();
+        }
+    });
     const contenedorChips = $('stock-exp-chips-columnas');
     if (contenedorChips) {
         contenedorChips.addEventListener('dragover', (e) => {
@@ -485,6 +566,7 @@
                 if (origen !== -1 && origen !== exportacion.columnas.length - 1) {
                     exportacion.columnas.splice(origen, 1);
                     exportacion.columnas.push(arrastrandoCol);
+                    guardarColumnas(exportacion.columnas);
                     animarModal('stockExportModal', renderColumnas);
                 }
             }

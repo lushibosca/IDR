@@ -31,6 +31,7 @@
 
     .grid-collapse {
         display: grid;
+        grid-template-columns: minmax(0, 1fr);
         grid-template-rows: 0fr;
         overflow: clip;
         opacity: 0;           /* el contenido se desvanece mientras el alto cambia: suaviza la entrada y la salida */
@@ -56,6 +57,7 @@
 
     .grid-collapse>:first-child {
         min-height: 0;
+        min-width: 0;
     }
 
     /* Fila de tabla plegable (uiFilaPlegable): el grid-collapse de cada celda anima el alto; plegada, la celda pierde

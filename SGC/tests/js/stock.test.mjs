@@ -2,6 +2,7 @@
 // Ejecutar: node --test tests/js/*.test.mjs
 import test from "node:test";
 import assert from "node:assert/strict";
+import vm from "node:vm";
 import { cargarBloque, plano } from "./_bloque.mjs";
 
 // normalizarTextoBusqueda vive en busqueda.js (una sola definición; en la página se carga antes que stock.js)
@@ -17,14 +18,20 @@ const api = cargarBloque("stock-puro.js", "STOCK PURO", { String, Number, URL, A
     "stockHistorialTexto", "stockHistorialLinea", "stockHistorialValido", "stockEquipoMonitoreado", "stockMuestraGraficoDisponibilidad", "STOCK_EDIFICIO_NUEVO", "stockEtiquetas", "stockCondicionTexto",
     "stockMacTexto", "stockUbicacionTexto", "stockMarcaModelo", "stockFiltrar",
     "STOCK_AGRUPAMIENTOS", "stockTipoTexto", "stockEstadoEfectivo", "stockPisoPeso",
-    "stockGrupoDe", "stockAgruparBloques", "stockComparadorColumna", "STOCK_COLUMNAS_ORDEN", "stockOrdenColumnas", "stockIdGrupo", "stockSubsecciones", "stockEscHtml",
-    "stockReporteHtml", "stockTarjetaDatos", "stockInsigniaLista",
+    "stockGrupoDe", "stockAgruparBloques", "stockComparadorColumna", "STOCK_COLUMNAS_ORDEN", "stockOrdenColumnas", "stockIdGrupo", "stockSubsecciones",
+    "STOCK_ND", "STOCK_ESTADOS", "stockCamaraDeDispositivo", "stockTarjetaDatos", "stockInsigniaLista",
     "stockCamaraRepresentante", "stockCatalogo", "stockEsCamara", "stockGrupoTexto", "stockCatalogoValido", "stockMotivoNoBorrarGrupo",
     "stockMotivoNoBorrarTipo", "stockMotivoNoMoverTipo", "stockVistoEn", "stockDatosEscaneo", "stockCampoBloqueadoPorEscaneo", "stockAvisoProduccion", "stockMensajeGuardado",
     "stockGrupoDeTipo", "stockIconoTipo", "stockNombreVisible",
-    "stockNormalizarDispositivo", "stockFormatearRegistro", "CAMPOS_LISTAR", "stockEsAtajoListar",
+    "stockNormalizarDispositivo", "stockFormatearRegistro", "CAMPOS_LISTAR", "stockColumnasListarValidas", "stockEsAtajoListar",
     "stockHistorialCambio", "stockHistorialUrl", "stockHistorialRecienteValido", "stockHistorialElemento",
     "STOCK_ACCIONES", "STOCK_ORIGENES", "stockSubgrupoAMover", "TIPO_ARRASTRE_SUBGRUPO"]);
+
+// El reporte vive en su propio archivo (stock-reporte-puro.js) y usa los helpers de stock-puro.js
+const { stockEscHtml, stockReporteHtml } = cargarBloque("stock-reporte-puro.js", "STOCK REPORTE PURO",
+  { String, Number, Array, Map, Set, Math, Object, ...api }, ["stockEscHtml", "stockReporteHtml"]);
+api.stockEscHtml = stockEscHtml;
+api.stockReporteHtml = stockReporteHtml;
 
 const inst = (o = {}) => ({ descripcion: "ANX C 8vo PASILLO", ip: "10.32.30.3", edificio: "Anexo C", piso: "8",
   rack: "0380", puerto: "3/0/21", comentario: "", ...o });
@@ -211,18 +218,156 @@ test("ids de acordeón: estables, solo caracteres seguros y sin choques", () => 
   assert.match(api.stockIdGrupo("tipo", '"><img src=x>', usados), /^stock-g-tipo-[A-Za-z0-9_]+$/);
 });
 
-test("reporte HTML: escapa todo dato, trae resumen, total y subsecciones por piso, y no lleva scripts", () => {
-  const xss = '<img src=x onerror=alert(1)>';
-  const bloques = [{ etiqueta: `Anexo ${xss}`, items: [enUso({ id: "1", serie: xss, instalacion: inst({ piso: "PB", descripcion: xss }) }),
-    enUso({ id: "2", instalacion: inst({ piso: "8" }) })] }];
+test("reporte HTML: escapa todo dato, trae resumen con porcentaje, total, subsecciones y orden por columnas", () => {
+  const xss = '<img src=x onerror=alert(1)><script>alert(1)</script>';
+  const bloques = [
+    { etiqueta: `Anexo ${xss}`, items: [enUso({ id: "1", serie: xss, instalacion: inst({ piso: "PB", descripcion: xss }) }),
+      enUso({ id: "2", instalacion: inst({ piso: "8" }) })] },
+    { etiqueta: "Palacio", items: [enUso({ id: "3", instalacion: inst({ edificio: "Palacio", piso: "1" }) })] },
+  ];
   const html = api.stockReporteHtml(bloques, { criterio: "edificio", criterioTexto: "Edificio / Piso", fecha: "8 de octubre",
     busqueda: xss, etiquetasTipo: tipos, catalogo: api.stockCatalogo(GRUPOS) });
-  assert.ok(!html.includes("<img") && !/<script/i.test(html));
-  assert.ok(html.includes("&lt;img src=x onerror=alert(1)&gt;"));
-  assert.ok(html.includes("TOTAL DE DISPOSITIVOS</strong></td><td><strong>2"));
+  assert.ok(!html.includes("<img") && !html.includes("<script>alert(1)</script>"));
+  assert.equal((html.match(/<script\b/gi) || []).length, 1);
+  assert.ok(html.includes("&lt;img src=x onerror=alert(1)&gt;&lt;script&gt;alert(1)&lt;/script&gt;"));
+  assert.ok(html.includes('<th data-col="grupo" tabindex="0" role="button" aria-sort="none">Grupo</th>'
+    + '<th class="num" data-col="cantidad" tabindex="0" role="button" aria-sort="none">Cantidad</th>'
+    + '<th class="num" data-col="participacion" tabindex="0" role="button" aria-sort="none">Participación</th>'));
+  assert.ok(html.includes('<td class="num">2</td><td class="num">66.7%</td>'));
+  assert.ok(html.includes('<strong>Palacio</strong></td><td class="num">1</td><td class="num">33.3%</td>'));
+  assert.ok(html.includes('TOTAL DE DISPOSITIVOS</strong></td><td class="num"><strong>3</strong></td><td class="num"><strong>100%</strong>'));
   assert.ok(html.includes("— Piso: PB (1)") && html.includes("— Piso: 8 (1)"));
-  assert.ok(html.includes("<th>Grupo</th><th>Tipo</th>") && html.includes("<td>Cámaras</td><td>Cámara (sin especificar)</td>"));
+  assert.ok(html.includes('<th data-col="grupo" tabindex="0" role="button" aria-sort="none">Grupo</th>'
+    + '<th data-col="tipo" tabindex="0" role="button" aria-sort="none">Tipo</th>')
+    && html.includes("<td>Cámaras</td><td>Cámara (sin especificar)</td>"));
   assert.equal(api.stockEscHtml(`"'&`), "&quot;&#39;&amp;");
+  // Sin dispositivos: sin división por cero
+  const vacio = api.stockReporteHtml([{ etiqueta: "Vacío", items: [] }], { criterio: "edificio", criterioTexto: "Edificio / Piso",
+    fecha: "8 de octubre", etiquetasTipo: tipos, catalogo: api.stockCatalogo(GRUPOS) });
+  assert.ok(vacio.includes('<td class="num">0</td><td class="num">-</td>') && vacio.includes('TOTAL DE DISPOSITIVOS</strong></td><td class="num"><strong>0</strong></td><td class="num"><strong>-</strong>'));
+  // Reporte integrado con columnas seleccionables de Listar (en su orden, con lookup de mapaCamaras para Canal/Grabador)
+  const cat = api.stockCatalogo(GRUPOS);
+  const bloqueCustom = [{ etiqueta: "Anexo A", items: [
+    enUso({ id: "c1", tipo: "domo", modelo: "DS-2CD", mac: "aa:bb:cc:dd:ee:01",
+      instalacion: inst({ ip: "10.0.0.5", piso: "PB", descripcion: "Hall" }) })
+  ] }];
+  const mapaCamaras = new Map([["10.0.0.5", { nvr_name: "NVR-Principal", channel_id: 7 }]]);
+  const htmlCols = api.stockReporteHtml(bloqueCustom, {
+    criterio: "edificio", criterioTexto: "Edificio / Piso", fecha: "8 de octubre",
+    etiquetasTipo: tipos, catalogo: cat,
+    columnas: ["modelo", "canal", "grabador", "grupo", "estado", "ip"],
+    mapaCamaras
+  });
+  assert.ok(htmlCols.includes('<th data-col="modelo" tabindex="0" role="button" aria-sort="none">Modelo</th>')
+    && htmlCols.includes('<th data-col="ip" tabindex="0" role="button" aria-sort="none">IP</th>'));
+  assert.ok(htmlCols.includes("<td><strong>DS-2CD</strong></td><td>7</td><td>NVR-Principal</td><td>Cámaras</td><td>En producción</td><td>10.0.0.5</td>"));
+  assert.ok(!htmlCols.includes('data-col="mac"') && !htmlCols.includes('data-col="patrimonio"'));
+
+  // El script incluido en el reporte ordena asc/desc números, %, IP, pisos y deja '-' siempre al final;
+  // en grupos ordena TODOS los grupos a la vez sin tocar Resumen; en Resumen ordena solo Resumen
+  const mScript = htmlCols.match(/<script>([\s\S]*?)<\/script>/);
+  assert.ok(mScript);
+  const listeners = {};
+  const hacerTabla = (cols, filasDatos, esResumen = false) => {
+    const trHead = { children: [] };
+    const ths = cols.map((col) => {
+      const attrs = { "data-col": col, "aria-sort": "none" };
+      const th = {
+        parentElement: trHead,
+        getAttribute: (k) => attrs[k] ?? null,
+        setAttribute: (k, v) => { attrs[k] = String(v); },
+        closest: (s) => (s === "th[data-col]" ? th : s === "table" ? tabla : null),
+      };
+      return th;
+    });
+    trHead.children = ths;
+    const rows = filasDatos.map((vals) => ({ cells: vals.map(v => ({ textContent: v })) }));
+    const tbody = { rows, appendChild: (r) => { rows.splice(rows.indexOf(r), 1); rows.push(r); } };
+    const tabla = {
+      tBodies: [tbody],
+      tHead: { rows: [trHead] },
+      classList: { contains: (c) => esResumen && c === "resumen" },
+    };
+    return { tabla, ths, rows };
+  };
+  const resumenTbl = hacerTabla(["grupo", "cantidad", "participacion"], [
+    ["Palacio", "10", "20%"],
+    ["Anexo A", "40", "80%"],
+  ], true);
+  const g1 = hacerTabla(["ip", "piso", "cantidad"], [
+    ["10.11.30.37", "2", "5%"],
+    ["-", "-", "-"],
+    ["10.1.30.10", "1SS", "50%"],
+    ["10.1.30.2", "PB", "10%"],
+  ]);
+  const g2 = hacerTabla(["ip", "piso", "cantidad"], [
+    ["10.20.0.5", "3", "30%"],
+    ["10.2.0.1", "PB", "70%"],
+  ]);
+  vm.runInNewContext(mScript[1], {
+    document: {
+      addEventListener: (ev, fn) => { listeners[ev] = fn; },
+      querySelectorAll: (sel) => (sel === "table:not(.resumen)" ? [g1.tabla, g2.tabla] : []),
+    },
+  });
+  const orden = (t, colIdx) => t.rows.map(r => r.cells[colIdx].textContent);
+  listeners.click({ target: g1.ths[0] });
+  assert.deepEqual(orden(g1, 0), ["10.1.30.2", "10.1.30.10", "10.11.30.37", "-"]);
+  assert.deepEqual(orden(g2, 0), ["10.2.0.1", "10.20.0.5"]);
+  assert.equal(g1.ths[0].getAttribute("aria-sort"), "ascending");
+  assert.equal(g2.ths[0].getAttribute("aria-sort"), "ascending");
+  assert.deepEqual(orden(resumenTbl, 0), ["Palacio", "Anexo A"]);
+  listeners.click({ target: g1.ths[0] });
+  assert.deepEqual(orden(g1, 0), ["10.11.30.37", "10.1.30.10", "10.1.30.2", "-"]);
+  assert.deepEqual(orden(g2, 0), ["10.20.0.5", "10.2.0.1"]);
+  assert.equal(g1.ths[0].getAttribute("aria-sort"), "descending");
+  assert.equal(g2.ths[0].getAttribute("aria-sort"), "descending");
+  listeners.click({ target: g1.ths[1] });
+  assert.deepEqual(orden(g1, 1), ["1SS", "PB", "2", "-"]);
+  assert.deepEqual(orden(g2, 1), ["PB", "3"]);
+  listeners.click({ target: g1.ths[2] });
+  assert.deepEqual(orden(g1, 2), ["5%", "10%", "50%", "-"]);
+  // Resumen ordena solo Resumen, sin alterar los grupos
+  listeners.click({ target: resumenTbl.ths[1] });
+  assert.deepEqual(orden(resumenTbl, 0), ["Palacio", "Anexo A"]);
+  listeners.click({ target: resumenTbl.ths[1] });
+  assert.deepEqual(orden(resumenTbl, 0), ["Anexo A", "Palacio"]);
+  assert.deepEqual(orden(g1, 2), ["5%", "10%", "50%", "-"]);
+
+  // Modo Grabador (ítems ya normalizados, sin subsecciones)
+  const htmlGrab = api.stockReporteHtml([{
+    etiqueta: "NVR Central (10.0.0.1)",
+    items: [{ ip: "10.0.1.2", canal: "1", modelo: "DS-2CD", firmware: "V5.7" }],
+  }], {
+    criterio: "grabador", criterioTexto: "Grabador", fecha: "8 de octubre",
+    columnas: ["ip", "canal", "firmware"], normalizados: true,
+  });
+  assert.ok(htmlGrab.includes("Agrupado por: Grabador"));
+  assert.ok(htmlGrab.includes("NVR Central (10.0.0.1) (1)"));
+  assert.ok(htmlGrab.includes("<td><strong>10.0.1.2</strong></td><td>1</td><td>V5.7</td>"));
+
+  // Título personalizado (escapado), respaldo por defecto y detalle sin agrupar manteniendo el Resumen agrupado
+  const htmlSinAgrupar = api.stockReporteHtml([
+    { etiqueta: "Palacio", items: [{ ip: "10.1.0.1", modelo: "M1" }] },
+    { etiqueta: "Anexo A", items: [{ ip: "10.2.0.2", modelo: "M2" }] },
+  ], {
+    criterio: "edificio", criterioTexto: "Edificio / Piso", fecha: "8 de octubre",
+    columnas: ["ip", "modelo"], normalizados: true,
+    titulo: "Cámaras PB <script>", agrupar: false,
+  });
+  assert.ok(htmlSinAgrupar.includes("<h1>Cámaras PB &lt;script&gt;</h1>"));
+  assert.ok(htmlSinAgrupar.includes("<title>Cámaras PB &lt;script&gt; — 8 de octubre</title>"));
+  assert.ok(htmlSinAgrupar.includes("<td><strong>Palacio</strong></td><td class=\"num\">1</td>"));
+  assert.ok(htmlSinAgrupar.includes("<td><strong>Anexo A</strong></td><td class=\"num\">1</td>"));
+  assert.ok(htmlSinAgrupar.includes("<h2>Dispositivos (2)</h2>"));
+  assert.ok(!htmlSinAgrupar.includes("<h2>Palacio (1)</h2>"));
+  const htmlTituloVacio = api.stockReporteHtml([
+    { etiqueta: "Palacio", items: [{ ip: "10.1.0.1" }] },
+  ], {
+    criterio: "edificio", criterioTexto: "Edificio", fecha: "8 de octubre",
+    columnas: ["ip"], normalizados: true, titulo: "   ",
+  });
+  assert.ok(htmlTituloVacio.includes("<h1>Reporte de stock CCTV</h1>"));
 });
 
 test("nombres de archivo de las exportaciones", () => {
@@ -605,6 +750,16 @@ test("normalización y formateo de dispositivo para Listar (columnas ordenadas)"
   assert.ok(api.CAMPOS_LISTAR.some((c) => c.id === "puerto"));
   assert.ok(api.CAMPOS_LISTAR.some((c) => c.id === "edificio"));
   assert.ok(api.CAMPOS_LISTAR.some((c) => c.id === "piso"));
+  assert.ok(api.CAMPOS_LISTAR.some((c) => c.id === "grupo"));
+  assert.ok(api.CAMPOS_LISTAR.some((c) => c.id === "estado"));
+  const normCat = api.stockNormalizarDispositivo({ ...dev, condicion: "operativo", disponible: true }, cam, tipos, api.stockCatalogo(GRUPOS));
+  assert.equal(normCat.grupo, "Cámaras");
+  assert.equal(normCat.estado, "Disponibles");
+
+  assert.deepEqual(plano(api.stockColumnasListarValidas(["piso", "modelo", "piso", "invalida", 123])), ["piso", "modelo"]);
+  assert.deepEqual(plano(api.stockColumnasListarValidas([])), ["ip"]);
+  assert.deepEqual(plano(api.stockColumnasListarValidas(null)), ["ip"]);
+  assert.deepEqual(plano(api.stockColumnasListarValidas(["__proto__"])), ["ip"]);
 
   // Una sola columna
   assert.equal(api.stockFormatearRegistro(norm, ["ip"]), "10.0.0.9");

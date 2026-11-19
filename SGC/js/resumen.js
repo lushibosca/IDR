@@ -119,11 +119,14 @@ function gruposPropiosCatalogo(grupos) {
 }
 
 // Búsqueda de un modelo del detalle de stock (doble clic en su fila): entre comillas para que un modelo con espacios
-// sea un solo término. '' = sin modelo (no se busca).
-function busquedaDeModelo(modelo) {
+// sea un solo término; opcionalmente suma el estado de la celda («en uso», «disponible», «no disponible»). '' = sin modelo.
+function busquedaDeModelo(modelo, estado = '') {
     const m = String(modelo ?? '').replace(/"/g, '').trim();
     if (!m || m === RESUMEN_SIN_MODELO) return '';
-    return /\s/.test(m) ? `"${m}"` : m;
+    const base = /\s/.test(m) ? `"${m}"` : m;
+    const est = String(estado ?? '').replace(/"/g, '').trim();
+    if (!est) return base;
+    return `${base} ${/\s/.test(est) ? `"${est}"` : est}`;
 }
 
 const METRICAS_STOCK = [
@@ -161,6 +164,7 @@ function formatoParticipacion(parte, total) {
     if (!(total > 0)) return '-';
     return `${Math.round((p / total) * 1000) / 10}%`;
 }
+
 // ==== RESUMEN STOCK PURO END ====
 
 
@@ -375,19 +379,23 @@ function crearFantasmaCelda(celda) {
 let _ultimaCapacidad = null;        // lo último que pintó el resumen: el toggle repinta sin recalcular
 preferencias.alAplicar(CLAVE_MODO_CAPACIDAD, () => repintarModoDetalles());
 
-// El modo (cantidad / porcentaje) cambia el detalle de canales y los de stock: se repintan los dos con lo último que se pintó
+function sincronizarBotonesModo(selector, datasetClave, valor) {
+    for (const b of document.querySelectorAll(selector)) {
+        const activo = b.dataset[datasetClave] === valor;
+        b.classList.toggle('active', activo);
+        b.setAttribute('aria-pressed', String(activo));
+    }
+}
+
+// El modo (cantidad / porcentaje) y la base de participación (total / en producción) repintan con lo último que se pintó
 function repintarModoDetalles() {
     pintarDetalleCapacidad();
     if (_ultimoResumenStock) {
         pintarTablasDetalleStock(_ultimoResumenStock);
         pintarDetalleGrupo();
     }
-    const modo = modoCapacidadValido(storage.get(CLAVE_MODO_CAPACIDAD));
-    for (const b of document.querySelectorAll('[data-cap-modo]')) {
-        const activo = b.dataset.capModo === modo;
-        b.classList.toggle('active', activo);
-        b.setAttribute('aria-pressed', String(activo));
-    }
+    sincronizarBotonesModo('[data-cap-modo]', 'capModo', modoCapacidadValido(storage.get(CLAVE_MODO_CAPACIDAD)));
+    sincronizarParticipacionStock(storage.get(CLAVE_PARTICIPACION_STOCK));
 }
 
 document.addEventListener('click', (e) => {
@@ -557,20 +565,31 @@ function fijarTiposDesplegados(tbody, abiertos, tipos, abrir) {
     }
 }
 
+const ESTADOS_CELDA_STOCK = ['en uso', 'disponible', 'no disponible'];
+
 // Fila de contadores del detalle de stock: «Total» en cantidad y «En uso», «Disponibles» y «No disponible» en cantidad o en
 // % del total de esa fila (el mismo toggle y la misma preferencia que el detalle de canales). Cada valor va en un `.cap-valor`.
-// Con `base` (el total del tipo, o del grupo para un tipo) suma «% del total»: lo que esa fila pesa dentro de su base.
-function celdasContador(tr, c, clases, modo, base = null) {
+// Con `participacion` suma «% del total» en un `.part-valor` (base total o en producción según `CLAVE_PARTICIPACION_STOCK`).
+// Si `modeloFiltro` trae texto, marca las tres celdas de estado (`data-stock-filtro`) para filtrar por estado al doble clic.
+function celdasContador(tr, c, clases, modo, participacion = null, modeloFiltro = '') {
     uiCelda(tr, String(c.t), clases[0]);
     [c.u, c.d, c.o].forEach((v, i) => {
         const td = uiCelda(tr, '', clases[i + 1]);
+        if (modeloFiltro) {
+            td.dataset.stockFiltro = ESTADOS_CELDA_STOCK[i];
+            td.title = `Doble clic: ver «${modeloFiltro}» (${ESTADOS_CELDA_STOCK[i]}) en Activos`;
+        }
         td.append(uiNodo('span', 'cap-valor', formatoCapacidad(v, c.t, modo)));
     });
-    if (base !== null) uiCelda(tr, formatoParticipacion(c.t, base), clases[4] || 'text-center text-muted');
+    if (participacion !== null) {
+        const { parte, base } = typeof participacion === 'object' ? participacion : { parte: c.t, base: participacion };
+        const td = uiCelda(tr, '', clases[4] || 'text-center text-muted');
+        td.append(uiNodo('span', 'part-valor', formatoParticipacion(parte, base)));
+    }
 }
 
 // Pie fijo de la tabla con el total general (la suma de todos los tipos), como el de canales (`.fila-totales`)
-function pintarTotalGeneral(tabla, porTipo, modo) {
+function pintarTotalGeneral(tabla, porTipo, modo, modoPart) {
     if (!tabla) return;
     const total = { t: 0, u: 0, d: 0, o: 0 };
     for (const { c } of porTipo.values()) {
@@ -587,7 +606,8 @@ function pintarTotalGeneral(tabla, porTipo, modo) {
     th.scope = 'row';
     th.textContent = 'Total';
     tr.appendChild(th);
-    celdasContador(tr, total, ['text-center', 'text-center', 'text-center', 'text-center', 'text-center'], modo, total.t);
+    celdasContador(tr, total, ['text-center', 'text-center', 'text-center', 'text-center', 'text-center'], modo,
+        participacionStock(total, total.t, total.u, modoPart));
     pie.replaceChildren(tr);
 }
 
@@ -595,12 +615,15 @@ function pintarTablaTipos(selector, porTipo) {
     const tbody = document.querySelector(selector);
     if (!tbody) return;
     const modo = modoCapacidadValido(storage.get(CLAVE_MODO_CAPACIDAD));
+    const modoPart = modoParticipacionStockValido(storage.get(CLAVE_PARTICIPACION_STOCK));
+    sincronizarParticipacionStock(modoPart);
     if (!_tiposDesplegados.has(selector)) _tiposDesplegados.set(selector, new Set());
     const abiertos = _tiposDesplegados.get(selector);
     const clases = ['', 'text-center fw-semibold', 'text-center', 'text-center', 'text-center text-muted'];
     const porNombre = ([a], [b]) => String(a).localeCompare(String(b));
     let totalGeneral = 0;
-    for (const { c } of porTipo.values()) totalGeneral += c.t;
+    let totalUso = 0;
+    for (const { c } of porTipo.values()) { totalGeneral += c.t; totalUso += c.u; }
     const filas = [];
     for (const [tipo, { c, modelos }] of [...porTipo.entries()].sort(porNombre)) {
         const abierto = abiertos.has(tipo);
@@ -626,23 +649,25 @@ function pintarTablaTipos(selector, porTipo) {
         boton.append(icono, nombre, cant);
         td.appendChild(boton);
         tr.appendChild(td);
-        celdasContador(tr, c, clases.slice(1), modo, totalGeneral);
+        celdasContador(tr, c, clases.slice(1), modo, participacionStock(c, totalGeneral, totalUso, modoPart));
         filas.push(tr);
         for (const [modelo, m] of [...modelos.entries()].sort(porNombre)) {
             const sub = document.createElement('tr');
             sub.className = 'resumen-modelo';
             sub.dataset.resumenDe = tipo;
             sub.appendChild(celdaModeloResumen(modelo));
-            if (busquedaDeModelo(modelo)) {
+            const tieneModelo = Boolean(busquedaDeModelo(modelo));
+            if (tieneModelo) {
                 sub.dataset.resumenModelo = modelo;
                 sub.title = 'Doble clic: ver este modelo en Activos';
             }
-            celdasContador(sub, m, clases.slice(1), modo, c.t);
+            celdasContador(sub, m, clases.slice(1), modo, participacionStock(m, c.t, totalUso, modoPart),
+                tieneModelo ? modelo : '');
             filas.push(uiFilaPlegable(sub, abierto));
         }
     }
     tbody.replaceChildren(...filas);
-    pintarTotalGeneral(tbody.closest('table'), porTipo, modo);
+    pintarTotalGeneral(tbody.closest('table'), porTipo, modo, modoPart);
     if (!tbody.dataset.resumenPlegable) {           // una sola delegación por tabla: el clic abre o cierra ese tipo
         tbody.dataset.resumenPlegable = '1';
         tbody.addEventListener('click', (e) => {
@@ -655,10 +680,13 @@ function pintarTablaTipos(selector, porTipo) {
                 .map((x) => x.dataset.resumenTipo).filter((t) => t !== tipo)), false);
             fijarTiposDesplegados(tbody, abiertos, new Set([tipo]), abrir);
         });
-        // doble clic en un modelo: cierra el modal y busca ese modelo en Activos
+        // doble clic en un modelo: cierra el modal y busca ese modelo en Activos (sobre En uso/Disponibles/No disponible, filtra por estado)
         tbody.addEventListener('dblclick', (e) => {
             const fila = e.target instanceof Element ? e.target.closest('tr.resumen-modelo[data-resumen-modelo]') : null;
-            const query = fila ? busquedaDeModelo(fila.dataset.resumenModelo) : '';
+            if (!fila) return;
+            const celda = e.target instanceof Element ? e.target.closest('td[data-stock-filtro]') : null;
+            const filtro = celda && fila.contains(celda) ? celda.dataset.stockFiltro : '';
+            const query = busquedaDeModelo(fila.dataset.resumenModelo, filtro);
             if (!query) return;
             window.getSelection()?.removeAllRanges();
             const modal = tbody.closest('.modal');
@@ -867,62 +895,6 @@ function pintarNivelAnillo(circulo, pct) {
     if (!circulo) return;
     const nivel = nivelCapacidad(pct);
     for (const n of NIVELES_ANILLO) circulo.classList.toggle(`progress-ring-${n}`, n === nivel);
-}
-
-// Canales: un anillo por grabador (porcentaje en uso de su capacidad) dentro de la tarjeta del chip, en el espacio libre;
-// visible solo si la sección ocupa mucho ancho (CSS). Se rearma solo si cambió algún número.
-let _firmaGraficosGrabadores = '';
-const ANILLO_GRABADOR = { tam: 48, radio: 19, trazo: 5 };
-function nodoAnilloGrabador(clave, c) {
-    const nombre = c.nombre || clave;                  // solo el nombre del grabador (la IP está en el tooltip)
-    const { tam, radio, trazo } = ANILLO_GRABADOR;
-    const pct = c.cap > 0 ? Math.min(100, Math.round((c.enUso / c.cap) * 100)) : 0;
-    const circ = 2 * Math.PI * radio;
-    const tarjeta = uiNodo('div', 'cap-grabador');       // sin tarjeta propia: va dentro de la del chip, que abre el detalle
-    tarjeta.title = `${clave}: ${c.enUso} de ${c.cap} canales en uso`;
-    const fila = uiNodo('div', 'd-flex align-items-center gap-2');
-    const NS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(NS, 'svg');
-    svg.setAttribute('class', 'progress-ring flex-shrink-0');
-    svg.setAttribute('width', String(tam));
-    svg.setAttribute('height', String(tam));
-    svg.setAttribute('viewBox', `0 0 ${tam} ${tam}`);
-    for (const clase of ['progress-ring-bg', 'progress-ring-circle']) {
-        const c2 = document.createElementNS(NS, 'circle');
-        c2.setAttribute('class', clase);
-        c2.setAttribute('cx', String(tam / 2));
-        c2.setAttribute('cy', String(tam / 2));
-        c2.setAttribute('r', String(radio));
-        c2.setAttribute('stroke-width', String(trazo));
-        c2.setAttribute('fill', 'none');
-        if (clase === 'progress-ring-circle') {
-            pintarNivelAnillo(c2, pct);
-            c2.setAttribute('stroke-linecap', 'round');
-            c2.style.strokeDasharray = String(circ);
-            c2.style.strokeDashoffset = String(circ - (pct / 100) * circ);
-        }
-        svg.appendChild(c2);
-    }
-    const caja = uiNodo('div', 'position-relative d-flex align-items-center justify-content-center flex-shrink-0');
-    const centro = uiNodo('span', 'position-absolute fw-bold small lh-1', `${pct}%`);
-    caja.append(svg, centro);
-    const textos = uiNodo('div', 'min-w-0');
-    textos.append(uiNodo('div', 'small fw-semibold text-truncate', nombre),
-        uiNodo('div', 'small text-secondary', `${c.enUso} / ${c.cap} CH`));
-    fila.append(caja, textos);
-    tarjeta.appendChild(fila);
-    return tarjeta;
-}
-
-function pintarGraficosGrabadores(cap) {
-    const caja = document.getElementById('cap-grabadores');
-    if (!caja) return;
-    const entradas = [...cap.detalle.entries()].sort(([a], [b]) => String(a).localeCompare(String(b)));
-    const firma = JSON.stringify(entradas);
-    caja.classList.toggle('d-none', entradas.length === 0);
-    if (firma === _firmaGraficosGrabadores) return;
-    _firmaGraficosGrabadores = firma;
-    caja.replaceChildren(...entradas.map(([clave, c]) => nodoAnilloGrabador(clave, c)));
 }
 
 async function actualizarResumenInfraestructura() {

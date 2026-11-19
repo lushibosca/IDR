@@ -346,7 +346,7 @@ function _stockDispositivoCoincideTokenPositivo(d, tok, campos, etiquetasTipo = 
         if (d.condicion && stockMatchTexto(d.condicion, tok)) return true;
         if (d.en_uso && (stockMatchTexto('produccion', tok) || stockMatchTexto('en uso', tok) || stockMatchTexto('operativo', tok))) return true;
         if (d.disponible && stockMatchTexto('disponible', tok)) return true;
-        if (!d.en_uso && !d.disponible && stockMatchTexto('fuera de servicio', tok)) return true;
+        if (!d.en_uso && !d.disponible && (stockMatchTexto('fuera de servicio', tok) || stockMatchTexto('no disponible', tok))) return true;
     }
 
     // 3. Nombre / Ubicación
@@ -569,68 +569,6 @@ function stockSubsecciones(items, criterio, etiquetasTipo = new Map(), cat = nul
     }));
 }
 
-function stockEscHtml(v) {
-    return String(v ?? '').replace(/[&<>"']/g,
-        (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-}
-
-// Reporte imprimible por grupos (documento HTML autónomo, como el del SGC; sin scripts: se imprime con Ctrl+P).
-// TODO dato pasa por stockEscHtml. `bloques`: [{ etiqueta, items }] ya elegidos.
-function stockReporteHtml(bloques, { criterio, criterioTexto, fecha, busqueda = '', etiquetasTipo = new Map(),
-    catalogo = null }) {
-    const e = stockEscHtml;
-    const total = bloques.reduce((acc, b) => acc + b.items.length, 0);
-    const resumen = bloques.map(b => `<tr><td><strong>${e(b.etiqueta)}</strong></td><td>${b.items.length}</td></tr>`).join('');
-    const fila = (d) => {
-        const i = d.instalacion || {};
-        const estado = d.en_uso ? (i.descripcion || 'En producción') : (STOCK_ESTADOS.get(stockEstadoEfectivo(d)) || d.condicion);
-        return `<tr><td><strong>${e(stockMacTexto(d.mac) || STOCK_ND)}</strong></td><td>${e(i.ip || STOCK_ND)}</td>`
-            + `<td>${e(d.modelo || STOCK_ND)}</td><td>${e(d.serie || STOCK_ND)}</td>`
-            + `<td>${e(stockGrupoTexto(d, catalogo) || STOCK_ND)}</td><td>${e(stockTipoTexto(d, etiquetasTipo))}</td>`
-            + `<td>${e(d.patrimonio || 'Sin patrimonio')}</td>`
-            + `<td>${e(estado)}</td><td>${e(stockUbicacionTexto(i))}</td></tr>`;
-    };
-    const cab = '<tr><th>MAC</th><th>IP</th><th>Modelo</th><th>Serie</th><th>Grupo</th><th>Tipo</th><th>Patrimonio</th>'
-        + '<th>Estado / Descripción</th><th>Ubicación</th></tr>';
-    const secciones = bloques.flatMap(b => stockSubsecciones(b.items, criterio, etiquetasTipo, catalogo).map(sub =>
-        `<section><h2>${e(sub.titulo ? `${b.etiqueta} — ${sub.titulo}` : b.etiqueta)} (${sub.items.length})</h2>`
-        + `<table><thead>${cab}</thead><tbody>${sub.items.map(fila).join('')}</tbody></table></section>`)).join('\n');
-    return `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Reporte de stock CCTV — ${e(fecha)}</title>
-<style>
-  :root { --azul: #1a73e8; --borde: #e2e6ef; --tenue: #5a6070; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f6fa; color: #1a1d23; padding: 2rem 1.5rem; }
-  .reporte { max-width: 1280px; margin: 0 auto; }
-  header { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid var(--azul); display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; }
-  header h1 { font-size: 1.3rem; color: var(--azul); }
-  header .meta { font-size: .8rem; color: var(--tenue); text-align: right; line-height: 1.5; }
-  section { background: #fff; border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid var(--borde); }
-  h2 { font-size: .95rem; color: var(--azul); margin-bottom: .75rem; padding-bottom: .4rem; border-bottom: 1px solid var(--borde); }
-  table { width: 100%; border-collapse: collapse; font-size: .7rem; table-layout: fixed; }
-  th { text-align: left; color: var(--tenue); padding: .25rem; border-bottom: 1px solid var(--borde); background: #f0f2f8; text-transform: uppercase; }
-  td { padding: .25rem; border-bottom: 1px solid var(--borde); word-break: break-word; }
-  @media print { body { background: #fff; padding: 0; } section { page-break-inside: avoid; } }
-</style>
-</head>
-<body>
-<div class="reporte">
-  <header>
-    <h1>Reporte de stock CCTV</h1>
-    <div class="meta">Exportado el ${e(fecha)}<br>Agrupado por: ${e(criterioTexto)}${busqueda ? `<br>Búsqueda: ${e(busqueda)}` : ''}</div>
-  </header>
-  <section><h2>Resumen</h2><table><thead><tr><th>Grupo</th><th>Cantidad</th></tr></thead><tbody>${resumen}</tbody>
-  <tfoot><tr><td><strong>TOTAL DE DISPOSITIVOS</strong></td><td><strong>${total}</strong></td></tr></tfoot></table></section>
-${secciones}
-</div>
-</body>
-</html>
-`;
-}
 
 // ---- edición
 
@@ -1049,10 +987,32 @@ const CAMPOS_LISTAR = [
     { id: 'rack', etiqueta: 'Rack' },
     { id: 'puerto', etiqueta: 'Puerto' },
     { id: 'edificio', etiqueta: 'Edificio' },
-    { id: 'piso', etiqueta: 'Piso' }
+    { id: 'piso', etiqueta: 'Piso' },
+    { id: 'grupo', etiqueta: 'Grupo' },
+    { id: 'estado', etiqueta: 'Estado' }
 ];
 
-function stockNormalizarDispositivo(dispositivo, camara = null, etiquetasTipo = new Map()) {
+// Valida las columnas elegidas en Listar (desde sessionStorage: entrada no confiable): solo ids de CAMPOS_LISTAR,
+// sin repetir y preservando el orden; vacío o inválido cae en ['ip'].
+function stockColumnasListarValidas(guardado) {
+    if (!Array.isArray(guardado)) return ['ip'];
+    const validas = new Set(CAMPOS_LISTAR.map(col => col.id));
+    const limpias = [];
+    for (const id of guardado) {
+        if (typeof id === 'string' && validas.has(id) && !limpias.includes(id)) limpias.push(id);
+    }
+    return limpias.length > 0 ? limpias : ['ip'];
+}
+
+function stockCamaraDeDispositivo(dispositivo, mapaCamaras) {
+    if (!dispositivo || !mapaCamaras) return null;
+    const macNorm = dispositivo.mac ? String(dispositivo.mac).trim().toUpperCase() : '';
+    const ipNorm = dispositivo.instalacion && dispositivo.instalacion.ip
+        ? String(dispositivo.instalacion.ip).trim() : '';
+    return (macNorm && mapaCamaras.get(macNorm)) || (ipNorm && mapaCamaras.get(ipNorm)) || null;
+}
+
+function stockNormalizarDispositivo(dispositivo, camara = null, etiquetasTipo = new Map(), catalogo = null) {
     const inst = (dispositivo && dispositivo.instalacion) || (camara && camara.stock) || {};
     let ip = (inst.ip && String(inst.ip).trim())
         || (camara && camara.ip_address && camara.ip_address !== 'N/A' ? String(camara.ip_address).trim() : '');
@@ -1083,9 +1043,14 @@ function stockNormalizarDispositivo(dispositivo, camara = null, etiquetasTipo = 
     const puerto = inst.puerto ? String(inst.puerto).trim() : '';
     const edificio = inst.edificio ? String(inst.edificio).trim() : '';
     const piso = inst.piso ? String(inst.piso).trim() : '';
+    const grupo = dispositivo ? (stockGrupoTexto(dispositivo, catalogo) || '') : '';
+    const estado = dispositivo
+        ? (dispositivo.en_uso ? 'En producción'
+            : (STOCK_ESTADOS.get(stockEstadoEfectivo(dispositivo)) || dispositivo.condicion || ''))
+        : (camara ? 'En producción' : '');
     return {
         ip, mac, modelo, patrimonio, tipo, descripcion, serial, firmware,
-        canal, grabador, rack, puerto, edificio, piso
+        canal, grabador, rack, puerto, edificio, piso, grupo, estado
     };
 }
 

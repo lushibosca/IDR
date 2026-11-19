@@ -60,6 +60,8 @@ test("tokenizarBusqueda: separa palabras, respeta comillas y normaliza frases co
   assert.deepEqual(plano(api.tokenizarBusqueda("mini domo minibullet")), ["mini domo", "mini bullet"]);
   assert.deepEqual(plano(api.tokenizarBusqueda("sin grabación a revisar")), ["sin grabacion", "a revisar"]);
   assert.deepEqual(plano(api.tokenizarBusqueda("servidores fuera de servicio")), ["servidores", "fuera de servicio"]);
+  assert.deepEqual(plano(api.tokenizarBusqueda("DS-2CD no disponible")), ["ds-2cd", "no disponible"]);
+  assert.deepEqual(plano(api.tokenizarBusqueda("camaras no disponibles")), ["camaras", "no disponible"]);
   assert.deepEqual(plano(api.tokenizarBusqueda("   ")), []);
   assert.deepEqual(plano(api.tokenizarBusqueda("")), []);
   assert.deepEqual(plano(api.tokenizarBusqueda(null)), []);
@@ -118,6 +120,9 @@ test("coincideTokenSemanticoEstado: detecta estados de monitoreo y stock con sin
   const dispAveriado = { en_uso: false, disponible: false, condicion: "averiado" };
   assert.equal(api.coincideTokenSemanticoEstado(dispAveriado, "fuera de servicio"), true);
   assert.equal(api.coincideTokenSemanticoEstado(dispAveriado, "fuera"), true);
+  assert.equal(api.coincideTokenSemanticoEstado(dispAveriado, "no disponible"), true);
+  assert.equal(api.coincideTokenSemanticoEstado({ en_uso: true, disponible: false, is_offline: true }, "no disponible"), false,
+    "una cámara en uso caída no es «no disponible» en stock");
 });
 
 test("búsqueda compuesta 'camaras offline': sólo encuentra cámaras caídas", () => {
@@ -214,6 +219,12 @@ test("búsqueda tokenizada en stock: 'servidores perdidos' y 'servidores producc
   const resFuera = apiStock.stockFiltrar(dispositivos, "servidores fuera de servicio", etiquetasTipo);
   assert.equal(resFuera.length, 1);
   assert.equal(resFuera[0].id, "s1");
+
+  // 'DS-2CD "no disponible"' / 'DS-2CD no disponible': solo la cámara no en uso ni disponible (s3, no s4)
+  const resNoDisp = apiStock.stockFiltrar(dispositivos, 'DS-2CD "no disponible"', etiquetasTipo);
+  assert.equal(resNoDisp.length, 1);
+  assert.equal(resNoDisp[0].id, "s3");
+  assert.equal(apiStock.stockFiltrar(dispositivos, "DS-2CD no disponible", etiquetasTipo)[0].id, "s3");
 });
 
 test("tipoInsigniaTexto: mapea tipos (y los del grupo Cámaras) a insignias compactas", () => {
