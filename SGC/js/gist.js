@@ -252,13 +252,39 @@ function gistErrorHttp(estado, accion) {
     if (estado === 422) return 'GitHub no aceptó el contenido.';
     return `GitHub respondió con el error ${estado}.`;
 }
+
+// ---- textos de estado para el modal de respaldo y Ajustes
+function gistEstadoDestino({ gistId, tieneToken, ultimaTexto = '' }) {
+    if (gistId && tieneToken) {
+        return { insignia: 'Conectado', clase: 'respaldo-pill-ok',
+            detalle: ultimaTexto ? `Conectado · última sync: ${ultimaTexto}` : 'Conectado · sin sincronizar' };
+    }
+    if (gistId) {
+        return { insignia: 'Solo lectura', clase: 'respaldo-pill-lectura',
+            detalle: ultimaTexto ? `Solo lectura · última sync: ${ultimaTexto}` : 'Solo lectura · sin sincronizar' };
+    }
+    if (tieneToken) {
+        return { insignia: 'Sin Gist', clase: 'respaldo-pill-lectura', detalle: 'Token cargado · creá un Gist para subir' };
+    }
+    return { insignia: 'Sin conectar', clase: 'respaldo-pill-neutro', detalle: 'Sin configurar' };
+}
+function gistResumenCifrado(frase, recordar) {
+    const e = gistEvaluarFrase(frase);
+    if (!e.frase) return `Sin configurar · mínimo ${GIST_FRASE_MIN} caracteres`;
+    if (!e.ok) return `Faltan ${GIST_FRASE_MIN - e.frase.length} caracteres (mínimo ${GIST_FRASE_MIN})`;
+    return recordar ? 'Configurada · recordada en este navegador' : 'Configurada · vale hasta cerrar el navegador';
+}
+function gistResumenAjustes({ gistId, tieneToken, auto }) {
+    if (gistId && tieneToken) return `Archivo local y GitHub Gist · Conectado${auto ? ' · automática' : ''}`;
+    if (gistId) return 'Archivo local y GitHub Gist · Solo lectura';
+    return 'Archivo local (exportar e importar) y Gist cifrado de GitHub.';
+}
 // ==== GIST PURO END ====
 
 if (typeof document !== 'undefined') {
     const GIST_API = 'https://api.github.com';
     const ESPERA_AUTO_MS = 5000;
     const TIEMPO_MAX_MS = 25000;
-    const $ = (id) => document.getElementById(id);
 
     // ---- configuración y secretos: el token y la frase solo se guardan si la persona lo pide («Recordar»)
     const config = {
@@ -334,7 +360,7 @@ if (typeof document !== 'undefined') {
     let epoca = 0;                      // sube al olvidar la configuración: una sincronización en curso se descarta
     let pendiente = null;
     let reloj = null;
-    const estado = { texto: '', tipo: 'info' };
+    let ejecutor = (op) => sincronizar(op).catch(() => {});
 
     function fraseActual() {
         return gistNormalizarFrase(secreto.leer('gist_frase'));
@@ -413,45 +439,8 @@ if (typeof document !== 'undefined') {
             if (pendiente) {
                 const p = pendiente;
                 pendiente = null;
-                setTimeout(() => ejecutar(p), 0);
+                setTimeout(() => ejecutor(p), 0);
             }
-        }
-    }
-
-    function mostrarEstado(texto, tipo = 'info') {
-        estado.texto = texto;
-        estado.tipo = tipo;
-        const el = $('gist-estado');
-        if (!el) return;
-        el.textContent = texto;
-        el.classList.toggle('text-danger', tipo === 'error');
-    }
-    function pintarUltima() {
-        const el = $('gist-ultima');
-        if (!el) return;
-        const c = config.leer();
-        el.textContent = c.ultima ? `Última sincronización: ${new Date(c.ultima).toLocaleString()}.` : 'Todavía no se sincronizó.';
-    }
-    async function ejecutar(opciones, { silencioso = false } = {}) {
-        const botones = document.querySelectorAll('.gist-accion');
-        botones.forEach(b => { b.disabled = true; });
-        mostrarEstado('Sincronizando…');
-        try {
-            const r = await sincronizar(opciones);
-            if (r.accion === 'pendiente') return;
-            const resto = r.avisos.length ? ` Observaciones: ${r.avisos.join('; ')}.` : '';
-            mostrarEstado(r.texto + resto, r.avisos.length ? 'warning' : 'success');
-            if (!silencioso || r.avisos.length || r.accion === 'sincronizado') {
-                mostrarToast(r.texto + resto, r.avisos.length ? 'warning' : 'success', r.avisos.length ? 8000 : 3500);
-            }
-            if (r.gistId && $('gist-id')) $('gist-id').value = r.gistId;
-        } catch (e) {
-            const m = e && typeof e.detalle === 'function' ? e.detalle() : e && e.message ? e.message : 'No se pudo sincronizar.';
-            mostrarEstado(m, 'error');
-            mostrarToast(m, 'error', 7000);
-        } finally {
-            botones.forEach(b => { b.disabled = false; });
-            pintarUltima();
         }
     }
 
@@ -459,107 +448,32 @@ if (typeof document !== 'undefined') {
     document.addEventListener('sgc:datos-cambiados', () => {
         if (ocupado || !listoParaAuto()) return;
         clearTimeout(reloj);
-        reloj = setTimeout(() => ejecutar({}, { silencioso: true }), ESPERA_AUTO_MS);
+        reloj = setTimeout(() => ejecutor({}, { silencioso: true }), ESPERA_AUTO_MS);
     });
 
-    // ---- pantalla de Ajustes
-    function leerCampos() {
-        const c = config.leer();
-        const gistId = ($('gist-id').value || '').trim();
-        if (gistId && !GIST_RE_ID.test(gistId)) throw new ErrorGist('El ID del Gist no es válido (letras a-f y números).', 'config');
-        const recordarToken = $('gist-recordar-token').checked;
-        const recordarFrase = $('gist-recordar-frase').checked;
-        secreto.guardar('gist_token', ($('gist-token').value || '').trim(), recordarToken);
-        secreto.guardar('gist_frase', gistNormalizarFrase($('gist-frase').value), recordarFrase);
-        config.guardar({ ...c, gistId, recordarToken, recordarFrase });
-    }
-    function pintarAuto() {
-        uiInterruptor($('gist-auto'), config.leer().auto);
-    }
-    function pintarFrase() {
-        const e = gistEvaluarFrase($('gist-frase').value);
-        const el = $('gist-frase-aviso');
-        if (!el) return;
-        el.textContent = $('gist-frase').value ? e.motivo : '';
-        el.classList.toggle('text-danger', !e.ok);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        if (!$('gist-id')) return;
-        const c = config.leer();
-        $('gist-id').value = c.gistId;
-        $('gist-token').value = secreto.leer('gist_token');
-        $('gist-frase').value = secreto.leer('gist_frase');
-        $('gist-recordar-token').checked = c.recordarToken;
-        $('gist-recordar-frase').checked = c.recordarFrase;
-        pintarAuto();
-        pintarUltima();
-        pintarFrase();
-        $('gist-frase').addEventListener('input', pintarFrase);
-
-        const alPulsar = (id, fn) => $(id).addEventListener('click', fn);
-        const verCampo = (boton, campo, ver) => {      // ojo por campo: muestra u oculta el texto y cambia el ícono
-            $(campo).type = ver ? 'text' : 'password';
-            $(boton).querySelector('i').className = ver ? 'bi bi-eye-slash' : 'bi bi-eye';
-        };
-        const conCampos = (opciones) => () => {
-            try { leerCampos(); } catch (e) { mostrarEstado(e.message, 'error'); mostrarToast(e.message, 'error', 5000); return; }
-            ejecutar(opciones);
-        };
-        alPulsar('gist-sincronizar', conCampos({}));
-        alPulsar('gist-crear', conCampos({ crear: true }));
-        alPulsar('gist-generar', () => {
-            const f = gistGenerarFrase((n) => [...crypto.getRandomValues(new Uint8Array(n))]);
-            $('gist-frase').value = f;
-            verCampo('gist-ver', 'gist-frase', true);
-            pintarFrase();
-            mostrarToast('Frase generada: anotala en un lugar seguro. Sin ella no se puede leer el Gist.', 'warning', 9000);
-        });
-        for (const [boton, campo] of [['gist-ver-token', 'gist-token'], ['gist-ver', 'gist-frase']]) {
-            alPulsar(boton, () => verCampo(boton, campo, $(campo).type === 'password'));
-        }
-        alPulsar('gist-auto', () => {
-            const actual = config.leer();
-            const auto = !actual.auto;
-            try { leerCampos(); } catch (e) { mostrarToast(e.message, 'error', 5000); return; }
-            config.guardar({ ...config.leer(), auto });
-            pintarAuto();
-            mostrarToast(auto ? 'Los cambios se suben solos a los pocos segundos.' : 'Sincronización automática desactivada.', 'info', 3000);
-        });
-        alPulsar('gist-olvidar', () => {
+    // «Borrar todo» (Ajustes > Datos) deja este navegador sin Gist: sin ID, token, frase ni sincronización automática
+    // (el Gist en sí no se toca: las otras PC conservan sus datos).
+    window.GistSync = Object.freeze({
+        config,
+        secreto,
+        sincronizar,
+        listoParaAuto,
+        conEjecutor(fn) { ejecutor = fn; },
+        olvidarSecretos() {
             secreto.guardar('gist_token', '', false);
             secreto.guardar('gist_frase', '', false);
             gistOlvidarClave();
-            $('gist-token').value = '';
-            $('gist-frase').value = '';
             config.guardar({ ...config.leer(), auto: false });
-            pintarAuto();
-            pintarFrase();
-            mostrarToast('Token y frase olvidados en este navegador.', 'info', 3000);
-        });
-
-        // «Borrar todo» (Ajustes > Datos) deja este navegador sin Gist: sin ID, token, frase ni sincronización automática (el Gist
-        // en sí no se toca: las otras PC conservan sus datos)
-        window.GistSync = Object.freeze({
-            olvidar() {
-                epoca++;
-                clearTimeout(reloj);
-                pendiente = null;
-                secreto.guardar('gist_token', '', false);
-                secreto.guardar('gist_frase', '', false);
-                storage.remove('gist_cfg');
-                gistOlvidarClave();
-                for (const id of ['gist-id', 'gist-token', 'gist-frase']) $(id).value = '';
-                $('gist-recordar-token').checked = false;
-                $('gist-recordar-frase').checked = false;
-                pintarAuto();
-                pintarFrase();
-                pintarUltima();
-                mostrarEstado('');
-            }
-        });
-
-        // al abrir: si está todo guardado y la automática activa, se baja lo que hayan subido otros
-        if (listoParaAuto()) ejecutar({}, { silencioso: true });
+        },
+        olvidar() {
+            epoca++;
+            clearTimeout(reloj);
+            pendiente = null;
+            secreto.guardar('gist_token', '', false);
+            secreto.guardar('gist_frase', '', false);
+            storage.remove('gist_cfg');
+            gistOlvidarClave();
+            document.dispatchEvent(new CustomEvent('sgc:gist-olvidado'));
+        }
     });
 }

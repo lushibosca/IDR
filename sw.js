@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261119.1105';
+const CACHE_NAME = 'idr-suite-v261119.1519';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -51,6 +51,7 @@ const PRECACHE_URLS = [
   './SGC/js/datos-ui.js',
   './SGC/js/favoritos.js',
   './SGC/js/gist.js',
+  './SGC/js/gist-ui.js',
   './SGC/js/historial-modal.js',
   './SGC/js/imagen-ampliada.js',
   './SGC/js/migrar-sgc.js',

@@ -11,7 +11,8 @@ const G = cargarBloque("gist.js", "GIST PURO",
   { String, Number, Array, Map, Set, Math, Object, JSON, URL, RegExp, Error, Date, Uint8Array, TextEncoder, TextDecoder,
     btoa, atob, crypto: globalThis.crypto },
   ["gistCifrar", "gistDescifrar", "gistSobreValido", "gistEvaluarFrase", "gistGenerarFrase", "gistFusionar",
-    "gistResumenTexto", "gistRawValida", "gistErrorHttp", "gistABase64", "gistDesdeBase64", "ErrorGist"]);
+    "gistResumenTexto", "gistRawValida", "gistErrorHttp", "gistABase64", "gistDesdeBase64", "ErrorGist",
+    "gistEstadoDestino", "gistResumenCifrado", "gistResumenAjustes"]);
 
 const FRASE = "frase de prueba bien larga 123";
 let n = 0;
@@ -198,4 +199,24 @@ test("reemplazar (importar o migrar): lo que sale deja lápida y la sincronizaci
   D.modificarDispositivo(editado, x.id, entrada({ serie: "SALE", modelo: "Despues" }), 1, ctx(59));
   editado.dispositivos.find(d => d.id === x.id).actualizado = "2026-11-05T14:00:00Z";
   assert.equal(G.gistFusionar(copia(r), copia(editado), D.sanearDatos, "2026-11-05T14:05:00Z").datos.dispositivos.length, 2);
+});
+
+test("estado de destino, resumen de cifrado y resumen de Ajustes", () => {
+  assert.deepEqual(plano(G.gistEstadoDestino({ gistId: "", tieneToken: false })),
+    { insignia: "Sin conectar", clase: "respaldo-pill-neutro", detalle: "Sin configurar" });
+  assert.deepEqual(plano(G.gistEstadoDestino({ gistId: "", tieneToken: true })),
+    { insignia: "Sin Gist", clase: "respaldo-pill-lectura", detalle: "Token cargado · creá un Gist para subir" });
+  assert.deepEqual(plano(G.gistEstadoDestino({ gistId: "abc", tieneToken: false, ultimaTexto: "10:00" })),
+    { insignia: "Solo lectura", clase: "respaldo-pill-lectura", detalle: "Solo lectura · última sync: 10:00" });
+  assert.deepEqual(plano(G.gistEstadoDestino({ gistId: "abc", tieneToken: true, ultimaTexto: "10:00" })),
+    { insignia: "Conectado", clase: "respaldo-pill-ok", detalle: "Conectado · última sync: 10:00" });
+
+  assert.match(G.gistResumenCifrado("", false), /Sin configurar/);
+  assert.match(G.gistResumenCifrado("corta", true), /Faltan 15 caracteres/);
+  assert.match(G.gistResumenCifrado(FRASE, true), /recordada en este navegador/);
+  assert.match(G.gistResumenCifrado(FRASE, false), /hasta cerrar el navegador/);
+
+  assert.match(G.gistResumenAjustes({ gistId: "abc", tieneToken: true, auto: true }), /Conectado · automática/);
+  assert.match(G.gistResumenAjustes({ gistId: "abc", tieneToken: false, auto: false }), /Solo lectura/);
+  assert.match(G.gistResumenAjustes({ gistId: "", tieneToken: false, auto: false }), /Archivo local/);
 });

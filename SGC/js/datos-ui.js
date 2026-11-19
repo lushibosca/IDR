@@ -7,7 +7,7 @@
     const $ = (id) => document.getElementById(id);
 
     function titulo(fila) {
-        return fila ? fila.querySelector('.ajuste-titulo') : null;
+        return fila ? fila.querySelector('.ajuste-titulo, .respaldo-btn-texto') : null;
     }
 
     /** `fila` pasa a pedir confirmación; un segundo toque dentro del plazo hace `accion`. */
@@ -15,11 +15,13 @@
         const t = titulo(fila);
         if (!fila || !t) return;
         const original = t.textContent;
+        const esBoton = fila.tagName === 'BUTTON';
         let armado = false;
         const pintar = (a) => {
             armado = a;
             t.textContent = a ? textoConfirmar : original;
-            t.classList.toggle('text-danger', a);
+            if (esBoton) fila.classList.toggle('respaldo-btn-peligro', a);
+            else t.classList.toggle('text-danger', a);
         };
         const volver = uiConfirmacionTemporizada(() => pintar(false));
         const alActivar = () => {
@@ -33,21 +35,25 @@
             accion();
         };
         fila.addEventListener('click', alActivar);
-        fila.addEventListener('keydown', (e) => {
-            if (e.key !== 'Enter' && e.key !== ' ') return;
-            e.preventDefault();
-            alActivar();
-        });
+        if (!esBoton) {
+            fila.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                alActivar();
+            });
+        }
     }
 
     function alPulsar(fila, accion) {
         if (!fila) return;
         fila.addEventListener('click', accion);
-        fila.addEventListener('keydown', (e) => {
-            if (e.key !== 'Enter' && e.key !== ' ') return;
-            e.preventDefault();
-            accion();
-        });
+        if (fila.tagName !== 'BUTTON') {
+            fila.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                accion();
+            });
+        }
     }
 
     function exportar() {
@@ -74,7 +80,7 @@
         alPulsar($('respaldo-abrir'), abrirRespaldo);
         alPulsar($('datos-exportar'), exportar);
         const archivo = $('datos-archivo');
-        enDosPasos($('datos-importar'), 'Tocá de nuevo para elegir el archivo (reemplaza todo)', () => archivo && archivo.click());
+        enDosPasos($('datos-importar'), '¿Reemplazar todo?', () => archivo && archivo.click());
         if (archivo) {
             archivo.addEventListener('change', async () => {
                 const f = archivo.files && archivo.files[0];
