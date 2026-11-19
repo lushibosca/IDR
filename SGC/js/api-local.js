@@ -28,15 +28,39 @@ const ApiLocal = (() => {
     function leerGuardado() {
         let texto = null;
         try { texto = localStorage.getItem(CLAVE); } catch (e) { /* sin almacenamiento: se trabaja en memoria */ }
-        if (!texto) return datosVacios();
-        try {
-            const r = sanearDatos(JSON.parse(texto), ahora());
-            avisosCarga = r.avisos;
-            return r.datos;
-        } catch (e) {
-            avisosCarga = ['los datos guardados no se pudieron leer'];
-            return datosVacios();
+        let d;
+        if (!texto) {
+            d = datosVacios();
+        } else {
+            try {
+                const r = sanearDatos(JSON.parse(texto), ahora());
+                avisosCarga = r.avisos;
+                d = r.datos;
+            } catch (e) {
+                avisosCarga = ['los datos guardados no se pudieron leer'];
+                d = datosVacios();
+            }
         }
+        // Siembra única de las páginas de modelos de cctv_monitor (no pisa enlaces existentes ni reaparece si luego se borran)
+        if (typeof sembrarModelosPagina === 'function') {
+            let sembrado = false;
+            try { sembrado = localStorage.getItem('sgc2/' + 'modelos_base_v1') === '1'; } catch (e) { sembrado = true; }
+            if (!sembrado) {
+                const s = sembrarModelosPagina(d.modelos_pagina);
+                if (s.agregados > 0) {
+                    d.modelos_pagina = s.lista;
+                    if (texto) {
+                        try {
+                            localStorage.setItem(CLAVE, JSON.stringify(exportarDatos(d, ahora())));
+                            localStorage.setItem('sgc2/' + 'modelos_base_v1', '1');
+                        } catch (e) { /* queda en memoria */ }
+                    }
+                } else if (texto) {
+                    try { localStorage.setItem('sgc2/' + 'modelos_base_v1', '1'); } catch (e) { /* sin almacenamiento */ }
+                }
+            }
+        }
+        return d;
     }
     function cargados() {
         if (!datos) datos = leerGuardado();
