@@ -776,19 +776,11 @@
                         </section>
                         <section class="ajuste-seccion" aria-labelledby="ajustes-datos">
                             <h6 class="ajuste-seccion-titulo" id="ajustes-datos">Datos</h6>
-                            <div class="ajuste-fila" id="datos-exportar" role="button" tabindex="0">
-                                <i class="bi bi-download ajuste-icono" aria-hidden="true"></i>
+                            <div class="ajuste-fila" id="respaldo-abrir" role="button" tabindex="0">
+                                <i class="bi bi-cloud-arrow-up ajuste-icono" aria-hidden="true"></i>
                                 <div class="ajuste-texto">
-                                    <span class="ajuste-titulo">Exportar</span>
-                                    <span class="ajuste-desc">Descarga todo el stock (dispositivos, catálogos e historial) en un archivo JSON.</span>
-                                </div>
-                                <span class="ajuste-accion-estado"><i class="bi bi-chevron-right"></i></span>
-                            </div>
-                            <div class="ajuste-fila" id="datos-importar" role="button" tabindex="0">
-                                <i class="bi bi-upload ajuste-icono" aria-hidden="true"></i>
-                                <div class="ajuste-texto">
-                                    <span class="ajuste-titulo">Importar</span>
-                                    <span class="ajuste-desc">Reemplaza los datos de este navegador por los de un archivo exportado (antes se puede deshacer exportando).</span>
+                                    <span class="ajuste-titulo">Respaldo y sincronización</span>
+                                    <span class="ajuste-desc">Archivo local (exportar e importar) y Gist cifrado de GitHub.</span>
                                 </div>
                                 <span class="ajuste-accion-estado"><i class="bi bi-chevron-right"></i></span>
                             </div>
@@ -827,41 +819,6 @@
                                     <span class="ajuste-desc">Pone cada cámara en el canal de su grabador, con descripción e IP, desde el archivo del escáner.</span>
                                 </div>
                                 <span class="ajuste-accion-estado"><i class="bi bi-chevron-right"></i></span>
-                            </div>
-                        </section>
-                        <section class="ajuste-seccion" aria-labelledby="ajustes-gist">
-                            <h6 class="ajuste-seccion-titulo" id="ajustes-gist">Sincronización (Gist cifrado)</h6>
-                            <div class="ajuste-fila">
-                                <i class="bi bi-cloud-arrow-up ajuste-icono" aria-hidden="true"></i>
-                                <div class="ajuste-texto gist-campos">
-                                    <span class="ajuste-desc">Los datos se cifran en este navegador antes de subirse a un Gist secreto de GitHub. Sin la frase nadie puede leerlos, ni siquiera con el ID.</span>
-                                    <label class="ajuste-titulo" for="gist-id">ID del Gist</label>
-                                    <input type="text" class="form-control form-control-sm" id="gist-id" autocomplete="off" spellcheck="false" maxlength="40" placeholder="Vacío para crear uno nuevo">
-                                    <label class="ajuste-titulo" for="gist-token">Token de GitHub (permiso «gist»)</label>
-                                    <input type="password" class="form-control form-control-sm" id="gist-token" autocomplete="off" spellcheck="false" maxlength="255" placeholder="Sin token solo se baja">
-                                    <label class="form-check gist-recordar"><input type="checkbox" class="form-check-input" id="gist-recordar-token"><span>Recordar el token en este navegador</span></label>
-                                    <label class="ajuste-titulo" for="gist-frase">Frase de cifrado (mínimo 20 caracteres)</label>
-                                    <input type="password" class="form-control form-control-sm" id="gist-frase" autocomplete="off" spellcheck="false" maxlength="200">
-                                    <span class="ajuste-desc" id="gist-frase-aviso" aria-live="polite"></span>
-                                    <label class="form-check gist-recordar"><input type="checkbox" class="form-check-input" id="gist-recordar-frase"><span>Recordar la frase en este navegador (quien use esta PC podrá leer los datos)</span></label>
-                                    <div class="gist-botones">
-                                        <button type="button" class="btn btn-primary btn-sm gist-accion" id="gist-sincronizar">Sincronizar</button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm gist-accion" id="gist-crear">Crear Gist nuevo y subir</button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-generar">Generar frase</button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-ver">Mostrar / ocultar</button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-olvidar">Olvidar token y frase</button>
-                                    </div>
-                                    <span class="ajuste-desc" id="gist-estado" role="status" aria-live="polite"></span>
-                                    <span class="ajuste-desc" id="gist-ultima"></span>
-                                </div>
-                            </div>
-                            <div class="ajuste-fila">
-                                <i class="bi bi-arrow-repeat ajuste-icono" aria-hidden="true"></i>
-                                <div class="ajuste-texto">
-                                    <span class="ajuste-titulo" id="gist-auto-titulo">Sincronizar solo</span>
-                                    <span class="ajuste-desc">Al abrir baja lo que subieron otros, y cada cambio se sube a los pocos segundos (necesita token y frase guardados).</span>
-                                </div>
-                                <button type="button" class="interruptor" id="gist-auto" role="switch" aria-labelledby="gist-auto-titulo"><span class="interruptor-perilla"></span></button>
                             </div>
                         </section>
                         <section class="ajuste-seccion" aria-labelledby="ajustes-privacidad">
@@ -1094,6 +1051,79 @@
                         <i class="bi bi-plus-lg me-1"></i>Nuevo dispositivo en este canal
                     </button>
                     <button type="button" class="btn btn-outline-secondary btn-sm" data-ui-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Respaldo y sincronización (js/gist.js, js/datos-ui.js): archivo local y Gist cifrado -->
+    <div class="modal fade" id="respaldoModal" tabindex="-1" aria-labelledby="respaldo-titulo-modal" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+            <div class="modal-content modal-tema border-0 shadow">
+                <div class="modal-header border-0 pb-1">
+                    <h5 class="modal-title fs-6 fw-bold text-primary" id="respaldo-titulo-modal">
+                        <i class="bi bi-cloud-arrow-up me-2"></i>Respaldo y sincronización
+                    </h5>
+                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body py-2">
+                    <section class="ajuste-seccion" aria-labelledby="respaldo-local">
+                        <h6 class="ajuste-seccion-titulo" id="respaldo-local">Archivo local</h6>
+                            <div class="ajuste-fila" id="datos-exportar" role="button" tabindex="0">
+                            <i class="bi bi-download ajuste-icono" aria-hidden="true"></i>
+                            <div class="ajuste-texto">
+                                <span class="ajuste-titulo">Exportar</span>
+                                <span class="ajuste-desc">Descarga todo el stock (dispositivos, catálogos e historial) en un archivo JSON.</span>
+                            </div>
+                            <span class="ajuste-accion-estado"><i class="bi bi-chevron-right"></i></span>
+                        </div>
+                        <div class="ajuste-fila" id="datos-importar" role="button" tabindex="0">
+                            <i class="bi bi-upload ajuste-icono" aria-hidden="true"></i>
+                            <div class="ajuste-texto">
+                                <span class="ajuste-titulo">Importar</span>
+                                <span class="ajuste-desc">Reemplaza los datos de este navegador por los de un archivo exportado (antes se puede deshacer exportando).</span>
+                            </div>
+                            <span class="ajuste-accion-estado"><i class="bi bi-chevron-right"></i></span>
+                        </div>
+                    </section>
+                    <section class="ajuste-seccion" aria-labelledby="ajustes-gist">
+                        <h6 class="ajuste-seccion-titulo" id="ajustes-gist">GitHub Gist (cifrado)</h6>
+                            <div class="ajuste-fila">
+                                <i class="bi bi-cloud-arrow-up ajuste-icono" aria-hidden="true"></i>
+                                <div class="ajuste-texto gist-campos">
+                                    <span class="ajuste-desc">Los datos se cifran en este navegador antes de subirse a un Gist secreto de GitHub. Sin la frase nadie puede leerlos, ni siquiera con el ID.</span>
+                                    <label class="ajuste-titulo" for="gist-id">ID del Gist</label>
+                                    <input type="text" class="form-control form-control-sm" id="gist-id" autocomplete="off" spellcheck="false" maxlength="40" placeholder="Vacío para crear uno nuevo">
+                                    <label class="ajuste-titulo" for="gist-token">Token de GitHub (permiso «gist»)</label>
+                                    <input type="password" class="form-control form-control-sm" id="gist-token" autocomplete="off" spellcheck="false" maxlength="255" placeholder="Sin token solo se baja">
+                                    <label class="form-check gist-recordar"><input type="checkbox" class="form-check-input" id="gist-recordar-token"><span>Recordar el token en este navegador</span></label>
+                                    <label class="ajuste-titulo" for="gist-frase">Frase de cifrado (mínimo 20 caracteres)</label>
+                                    <input type="password" class="form-control form-control-sm" id="gist-frase" autocomplete="off" spellcheck="false" maxlength="200">
+                                    <span class="ajuste-desc" id="gist-frase-aviso" aria-live="polite"></span>
+                                    <label class="form-check gist-recordar"><input type="checkbox" class="form-check-input" id="gist-recordar-frase"><span>Recordar la frase en este navegador (quien use esta PC podrá leer los datos)</span></label>
+                                    <div class="gist-botones">
+                                        <button type="button" class="btn btn-primary btn-sm gist-accion" id="gist-sincronizar">Sincronizar</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm gist-accion" id="gist-crear">Crear Gist nuevo y subir</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-generar">Generar frase</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-ver">Mostrar / ocultar</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-olvidar">Olvidar token y frase</button>
+                                    </div>
+                                    <span class="ajuste-desc" id="gist-estado" role="status" aria-live="polite"></span>
+                                    <span class="ajuste-desc" id="gist-ultima"></span>
+                                </div>
+                            </div>
+                            <div class="ajuste-fila">
+                                <i class="bi bi-arrow-repeat ajuste-icono" aria-hidden="true"></i>
+                                <div class="ajuste-texto">
+                                    <span class="ajuste-titulo" id="gist-auto-titulo">Sincronizar solo</span>
+                                    <span class="ajuste-desc">Al abrir baja lo que subieron otros, y cada cambio se sube a los pocos segundos (necesita token y frase guardados).</span>
+                                </div>
+                                <button type="button" class="interruptor" id="gist-auto" role="switch" aria-labelledby="gist-auto-titulo"><span class="interruptor-perilla"></span></button>
+                            </div>
+                    </section>
+                </div>
+                <div class="modal-footer border-0 pt-1 pb-3">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-ui-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>

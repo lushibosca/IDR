@@ -70,6 +70,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        const abrirRespaldo = () => UI.modal.abrir($('respaldoModal'));
+        alPulsar($('respaldo-abrir'), abrirRespaldo);
         alPulsar($('datos-exportar'), exportar);
         const archivo = $('datos-archivo');
         enDosPasos($('datos-importar'), 'Tocá de nuevo para elegir el archivo (reemplaza todo)', () => archivo && archivo.click());
