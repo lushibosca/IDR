@@ -317,7 +317,8 @@ test("barra superior: el nombre de la pestaña (panel oculto o móvil), más baj
   assert.match(nav, /@media \(min-width: 768px\) \{\s*\.navbar \{\s*--ui-navbar-padding-y: var\(--esp-3\);/, "escritorio: un poco más baja");
   const movil = nav.slice(nav.indexOf("@media (max-width: 767.98px)"));
   assert.match(movil, /--ui-navbar-padding-y: var\(--esp-2\)/, "móvil: un poco más alta");
-  assert.match(movil, /\.navbar-pestana \{\s*margin-left: auto;/, "móvil: marca a la izquierda, nombre a la derecha");
+  assert.doesNotMatch(movil, /\.navbar-pestana/, "móvil: mismo «SGC - Pestaña» que en escritorio, sin pasar el nombre a la derecha (pisaba deshacer/rehacer)");
+  assert.match(nav, /\.navbar-pestana \{[^}]*text-overflow: ellipsis/, "el nombre se recorta antes de pisar los botones");
   // al mudar el panel de lugar el ancho todavía viaja por la transición: se mide sin ella
   assert.match(panel, /ajustarEtiquetasPanel\(\{ sinTransicion: true \}\)/);
   assert.match(panel, /sidebar-midiendo', 'sidebar-sin-transicion'/);

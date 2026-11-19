@@ -124,7 +124,7 @@ portada), además de los tests de CSS de SGC (`SGC/tests/js/css_limpio.test.mjs`
   </div></div></nav>
 ```
 
-`#navbar-pestana` (`actualizarTituloPestana`, `shared/ui/js/panel.js`): el nombre (`data-etiqueta`) de la pestaña activa, con el panel oculto y SIEMPRE en el móvil, donde queda a la derecha de la marca. El relleno vertical de la barra es 0,75 rem en escritorio y 0,5 rem en el móvil.
+`#navbar-pestana` (`actualizarTituloPestana`, `shared/ui/js/panel.js`): el nombre (`data-etiqueta`) de la pestaña activa, con el panel oculto y SIEMPRE en el móvil, pegado a la marca como «SGC - Pestaña» (se recorta con «…» si no entra, nunca pisa los botones de la derecha). El relleno vertical de la barra es 0,75 rem en escritorio y 0,5 rem en el móvil.
 SGR y SGI quedaron sin menú ⚙ (decisión del usuario, 2026-11-11): todo lo que ofrece está en su pestaña Ajustes.
 
 **`<head>` de referencia:** `charset`, `viewport` con `viewport-fit=cover`, CSP igual en todas salvo `connect-src`, `referrer`, `color-scheme`, tres metas de PWA,

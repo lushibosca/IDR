@@ -115,6 +115,9 @@
         color: var(--ui-secondary-color);
         font-size: var(--texto-lg);
         white-space: nowrap;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;                    /* en pantallas angostas se recorta antes de pisar los botones de la derecha */
     }
 
     /* «SGC - Estado»: el guion une el nombre de la pestaña con la marca */
@@ -133,27 +136,12 @@
         }
     }
 
-    /* Móvil: la barra superior más baja que la de escritorio: poco relleno, la marca en una línea ajustada y el nombre de la pestaña */
+    /* Móvil: la barra superior más baja que la de escritorio: poco relleno, la marca en una línea ajustada */
     @media (max-width: 767.98px) {
         .navbar {
             --ui-navbar-padding-x: var(--esp-3);
             --ui-navbar-padding-y: var(--esp-2);
             --ui-navbar-brand-padding-y: 0;
-        }
-
-        .navbar > .container-fluid {
-            justify-content: space-between;         /* la marca a la izquierda y el nombre de la pestaña a la derecha */
-        }
-
-        .navbar-pestana {
-            margin-left: auto;
-            margin-right: 0;
-            color: rgba(var(--ui-emphasis-color-rgb), 1);
-            font-weight: 600;
-        }
-
-        .navbar-pestana::before {
-            content: none;
         }
 
         .navbar-brand {
