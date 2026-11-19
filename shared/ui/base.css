@@ -385,4 +385,12 @@
         background-color: var(--franja-modal);
         scrollbar-color: var(--franja-modal) var(--franja-modal);
     }
+
+    /* Sin «Fondo de página» el color de la página está en <html> y <body> es transparente: con un modal abierto, <html> se oscurece
+       (arriba, para la franja de la barra de scroll) y la página entera quedaba oscurecida DOS veces (esto y el 50 % del modal).
+       Con ese ajuste apagado el color de la página lo pone <body> (que no incluye la franja), y <html> queda solo para la franja. */
+    html[data-fondo="sin"] body {
+        min-height: 100vh;
+        background-color: var(--bg-main);
+    }
 }
