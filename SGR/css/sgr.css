@@ -422,8 +422,8 @@
 
     /* ── FAB principal ── */
     .fab-main-btn {
-        width: 52px;
-        height: 52px;
+        width: 46px;
+        height: 46px;
         padding: 0;
         display: flex;
         align-items: center;
@@ -1698,5 +1698,30 @@
 
     /* Al final: pisa la posición de siempre del FAB (misma especificidad, gana el orden). */
     /* «Volver arriba» al lado del FAB (los dos van abajo a la derecha), y en móvil los dos sobre la barra de pestañas */
+    /* El «+» queda a la misma altura que «volver arriba» (mismo bottom y tamaño) y lo acompaña cuando el panel lo mueve. */
+    .fab-main-btn i {
+        font-size: var(--texto-lg);
+        line-height: 1;
+    }
+
+    @media (min-width: 768px) {
+        .fab-container {
+            bottom: 2rem;
+            right: 2rem;
+            transition: bottom var(--dur-panel) var(--ease-panel), right var(--dur-panel) var(--ease-panel);
+        }
+
+        html[data-panel-pos="bottom"]:has(#sidebar-col:not(.sidebar-collapsed)) .fab-container {
+            bottom: 6.25rem;
+        }
+
+        html[data-panel-pos="right"] .fab-container {
+            right: 4.5rem;
+        }
+
+        html[data-panel-pos="right"]:has(#sidebar-col:not(.sidebar-collapsed)) .fab-container {
+            right: var(--ancho-panel);
+        }
+    }
 
 }
