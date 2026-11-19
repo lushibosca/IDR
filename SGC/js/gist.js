@@ -498,6 +498,10 @@ if (typeof document !== 'undefined') {
         $('gist-frase').addEventListener('input', pintarFrase);
 
         const alPulsar = (id, fn) => $(id).addEventListener('click', fn);
+        const verCampo = (boton, campo, ver) => {      // ojo por campo: muestra u oculta el texto y cambia el ícono
+            $(campo).type = ver ? 'text' : 'password';
+            $(boton).querySelector('i').className = ver ? 'bi bi-eye-slash' : 'bi bi-eye';
+        };
         const conCampos = (opciones) => () => {
             try { leerCampos(); } catch (e) { mostrarEstado(e.message, 'error'); mostrarToast(e.message, 'error', 5000); return; }
             ejecutar(opciones);
@@ -507,13 +511,13 @@ if (typeof document !== 'undefined') {
         alPulsar('gist-generar', () => {
             const f = gistGenerarFrase((n) => [...crypto.getRandomValues(new Uint8Array(n))]);
             $('gist-frase').value = f;
-            $('gist-frase').type = 'text';
+            verCampo('gist-ver', 'gist-frase', true);
             pintarFrase();
             mostrarToast('Frase generada: anotala en un lugar seguro. Sin ella no se puede leer el Gist.', 'warning', 9000);
         });
-        alPulsar('gist-ver', () => {
-            for (const id of ['gist-token', 'gist-frase']) $(id).type = $(id).type === 'password' ? 'text' : 'password';
-        });
+        for (const [boton, campo] of [['gist-ver-token', 'gist-token'], ['gist-ver', 'gist-frase']]) {
+            alPulsar(boton, () => verCampo(boton, campo, $(campo).type === 'password'));
+        }
         alPulsar('gist-auto', () => {
             const actual = config.leer();
             const auto = !actual.auto;

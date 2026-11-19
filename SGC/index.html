@@ -1095,17 +1095,22 @@
                                     <label class="ajuste-titulo" for="gist-id">ID del Gist</label>
                                     <input type="text" class="form-control form-control-sm" id="gist-id" autocomplete="off" spellcheck="false" maxlength="40" placeholder="Vacío para crear uno nuevo">
                                     <label class="ajuste-titulo" for="gist-token">Token de GitHub (permiso «gist»)</label>
-                                    <input type="password" class="form-control form-control-sm" id="gist-token" autocomplete="off" spellcheck="false" maxlength="255" placeholder="Sin token solo se baja">
+                                    <div class="gist-campo-fila">
+                                        <input type="password" class="form-control form-control-sm" id="gist-token" autocomplete="off" spellcheck="false" maxlength="255" placeholder="Sin token solo se baja">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-ver-token" title="Mostrar u ocultar el token" aria-label="Mostrar u ocultar el token"><i class="bi bi-eye" aria-hidden="true"></i></button>
+                                    </div>
                                     <label class="form-check gist-recordar"><input type="checkbox" class="form-check-input" id="gist-recordar-token"><span>Recordar el token en este navegador</span></label>
                                     <label class="ajuste-titulo" for="gist-frase">Frase de cifrado (mínimo 20 caracteres)</label>
-                                    <input type="password" class="form-control form-control-sm" id="gist-frase" autocomplete="off" spellcheck="false" maxlength="200">
+                                    <div class="gist-campo-fila">
+                                        <input type="password" class="form-control form-control-sm" id="gist-frase" autocomplete="off" spellcheck="false" maxlength="200">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-ver" title="Mostrar u ocultar la frase" aria-label="Mostrar u ocultar la frase"><i class="bi bi-eye" aria-hidden="true"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-generar" title="Generar una frase" aria-label="Generar una frase"><i class="bi bi-magic" aria-hidden="true"></i></button>
+                                    </div>
                                     <span class="ajuste-desc" id="gist-frase-aviso" aria-live="polite"></span>
                                     <label class="form-check gist-recordar"><input type="checkbox" class="form-check-input" id="gist-recordar-frase"><span>Recordar la frase en este navegador (quien use esta PC podrá leer los datos)</span></label>
                                     <div class="gist-botones">
                                         <button type="button" class="btn btn-primary btn-sm gist-accion" id="gist-sincronizar">Sincronizar</button>
                                         <button type="button" class="btn btn-outline-secondary btn-sm gist-accion" id="gist-crear">Crear Gist nuevo y subir</button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-generar">Generar frase</button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-ver">Mostrar / ocultar</button>
                                         <button type="button" class="btn btn-outline-secondary btn-sm" id="gist-olvidar">Olvidar token y frase</button>
                                     </div>
                                     <span class="ajuste-desc" id="gist-estado" role="status" aria-live="polite"></span>

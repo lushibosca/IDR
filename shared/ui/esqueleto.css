@@ -788,6 +788,18 @@
         font-size: var(--texto-md);
     }
 
+    /* campo con botones de ícono (sin texto) a su lado: ver/ocultar y generar frase */
+    .gist-campo-fila {
+        display: flex;
+        align-items: center;
+        gap: var(--esp-2);
+    }
+
+    .gist-campo-fila .form-control {
+        flex: 1;
+        min-width: 0;
+    }
+
     .gist-botones {
         display: flex;
         flex-wrap: wrap;
