@@ -465,7 +465,6 @@
 
     /* Overlay del FAB */
     .fab-overlay {
-        z-index: 140;
         pointer-events: auto;
     }
 

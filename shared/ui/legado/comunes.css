@@ -112,11 +112,16 @@
         fill: var(--text-muted);
     }
 
+    /* Con el menú del FAB abierto, el velo tapa el panel y «volver arriba» (queda la barra superior) y el FAB va sobre el velo */
+    .fab-overlay {
+        z-index: calc(var(--capa-barra) - 1);
+    }
+
     .fab-container {
         position: fixed;
         bottom: 1.5rem;
         right: 1.5rem;
-        z-index: 150;
+        z-index: calc(var(--capa-barra) + 1);
         display: flex;
         flex-direction: column;
         align-items: flex-end;
