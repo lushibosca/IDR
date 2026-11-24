@@ -943,7 +943,7 @@ async function actualizarResumenInfraestructura() {
 }
 
 let _animacionCargaDashboardHecha = false;
-const CASCADA_PASO_MS = 140;          // entre una fila de secciones y la siguiente
+const CASCADA_PASO_MS = 45;           // entre una fila de secciones y la siguiente
 const CASCADA_VENTANA_MS = 4000;      // secciones que aparecen tarde (sin datos al principio) entran igual en la cascada
 // ==== CASCADA DE CARGA BEGIN ====
 // Fila de cada sección según su lugar en el panel (zona y posición dentro de ella), no según lo que mida al pintar:
@@ -982,7 +982,7 @@ function animarCargaDashboard() {
     // todas, también para las que se muestran más tarde (se descuenta lo ya transcurrido).
     const animar = (el) => {
         const espera = retrasoCascada(zonas, el.id, CASCADA_PASO_MS) - (performance.now() - inicio);
-        animarCargaBlur(el, { delay: Math.max(0, Math.round(espera)), duracion: 650 });
+        animarCargaBlur(el, { delay: Math.max(0, Math.round(espera)), duracion: 220 });
     };
     const visibles = secciones.filter((el) => !el.classList.contains('d-none'));
     visibles.forEach(animar);

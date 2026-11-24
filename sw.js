@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261119.1621';
+const CACHE_NAME = 'idr-suite-v261124.1513';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [

@@ -736,20 +736,10 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         return [firmaDatos, criterio, modoVista, `${ordenColumna}:${ordenDir}`, ordenColumnas.join(), terminoBusquedaActual(), campos ? [...campos].sort().join(',') : '*',
             camaras].join('\u0000');
     }
-    function renderListaSiCambio() {
-        if (datos && firmaRender() !== firmaPintada) renderLista();
-    }
-
-    let criterioPintado = null;          // el agrupamiento de la última lista pintada
-    let _stockCargaAnimada = false;
-
-    function renderLista(opciones = {}) {
-        const acordeon = $('stock-accordion');
-        if (postergarSiAnima(acordeon.id, () => renderLista(opciones))) return;
-        firmaPintada = firmaRender();
+    function sincronizarControles() {
         const editable = !!(datos && datos.editable);
         $('stock-vacio-base').classList.toggle('d-none', !datos || datos.inicializado || editable);
-        for (const id of ['stock-nuevo', 'stock-catalogo']) {          // la fila de Ajustes se va con su botón
+        for (const id of ['stock-nuevo', 'stock-catalogo']) {
             $(id).classList.toggle('d-none', !editable);
             $(id).closest('.ajuste-fila')?.classList.toggle('d-none', !editable);
         }
@@ -758,13 +748,23 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         const hayDisp = Boolean(datos && datos.dispositivos && datos.dispositivos.length);
         if ($('stock-exportar')) $('stock-exportar').disabled = !hayDisp;
         document.querySelectorAll('[data-stock-exportar]').forEach(b => { b.disabled = !hayDisp; });
+    }
+    function renderListaSiCambio() {
+        if (!datos) return;
+        sincronizarControles();
+        if (tab.classList.contains('active') && firmaRender() !== firmaPintada) renderLista();
+    }
+    let criterioPintado = null, _stockCargaAnimada = false;
+    function renderLista(opciones = {}) {
+        const acordeon = $('stock-accordion');
+        if (postergarSiAnima(acordeon.id, () => renderLista(opciones))) return;
+        firmaPintada = firmaRender();
+        const editable = !!(datos && datos.editable);
+        sincronizarControles();
         renderMenuAgrupar();
-
-        const btnLista = $('stock-btn-vista-lista');
-        const btnTarjetas = $('stock-btn-vista-tarjetas');
+        const btnLista = $('stock-btn-vista-lista'), btnTarjetas = $('stock-btn-vista-tarjetas');
         if (btnLista) btnLista.classList.toggle('active', modoVista === 'lista');
         if (btnTarjetas) btnTarjetas.classList.toggle('active', modoVista === 'tarjetas');
-
         const buscando = !!terminoBusquedaActual().trim();
         const vis = visibles();
         const abiertos = buscando ? null : leerAcordeonAbierto(acordeon);
@@ -799,7 +799,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
             sincronizarAlturasSticky();
             if (!_stockCargaAnimada && nuevosHijos.length > 0) {
                 _stockCargaAnimada = true;
-                if (typeof animarCargaBlur === 'function') animarCargaBlur(acordeon, { duracion: 650 });
+                if (document.documentElement.hasAttribute('data-cargando-lista') && typeof animarCargaBlur === 'function') animarCargaBlur(acordeon, { duracion: 220 });
                 document.documentElement.removeAttribute('data-cargando-lista');
             }
         };

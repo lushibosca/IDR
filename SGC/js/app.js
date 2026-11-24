@@ -127,9 +127,9 @@ function selectorAtributo(nombre, valor) {
 // Abre en su pestaña el acordeón de un NVR (lo usa "Cámaras de este NVR"). Busca por id directo, luego por IP, luego por nombre (atributo) y por último por el texto.
 function abrirAcordeonDeNvr({ tabId, accordionId, idDirecto, nvrIp, nombre, porAtributoNombre = false,
                               claveStorage, antesDeMostrar }) {
-    const tabBtn = document.getElementById(tabId);
-    const accordion = document.getElementById(accordionId);
+    const tabBtn = document.getElementById(tabId), accordion = document.getElementById(accordionId);
     if (!tabBtn || !accordion) return;
+    if (accordionId === 'produccion-accordion' && typeof asegurarProduccionPintada === 'function') asegurarProduccionPintada();
 
     // Si había un filtro de búsqueda que pudiera ocultar este grabador, lo limpiamos
     const searchEl = document.getElementById('global-search');

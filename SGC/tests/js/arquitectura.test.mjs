@@ -21,7 +21,7 @@ const TOPES = {
   "comun.js": 1786,
   "datos-puro.js": 1242,
   "favoritos.js": 501,
-  "produccion.js": 1633,
+  "produccion.js": 1622,
   "resumen.js": 1443,
   "stock-catalogos.js": 804,
   "stock-listar.js": 596,

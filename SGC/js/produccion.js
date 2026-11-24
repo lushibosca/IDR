@@ -172,6 +172,7 @@ function initModoVistaProduccion() {
             ejecutarFiltro(terminoBusquedaActual(), { animar: true });
         });
     }
+    document.getElementById('v-pills-produccion-tab')?.addEventListener('ui:pestana-mostrada', asegurarProduccionPintada);
 }
 uiAlCambiarMovil(() => {                                   // girar el aparato: de tarjetas forzadas a la vista guardada y al revés
     const nuevo = leerModoVistaProduccion();
@@ -182,48 +183,37 @@ uiAlCambiarMovil(() => {                                   // girar el aparato: 
 });
 window.produccionModoVista = () => modoVistaProduccion;
 
+let _produccionPendiente = null;
+function asegurarProduccionPintada() {
+    if (!_produccionPendiente) return;
+    const p = _produccionPendiente; _produccionPendiente = null;
+    renderizarCamarasOnline(p.camaras, p.isSearching, { ...p.opciones, forzar: true });
+}
 function renderizarCamarasOnline(camaras, isSearching = false, opciones = {}) {
     sincronizarBotonesModoVistaProduccion();
     const accordion = document.getElementById('produccion-accordion');
     if (!accordion) return;
+    const panelProd = document.getElementById('v-pills-produccion');
+    if (panelProd && !panelProd.classList.contains('active') && !opciones.forzar) { _produccionPendiente = { camaras, isSearching, opciones }; return; }
+    _produccionPendiente = null;
     if (postergarSiAnima(accordion.id, () => renderizarCamarasOnline(camaras, isSearching, opciones))) return;
-
-    // En búsqueda activa se abren todos los grupos con resultados; en modo normal, como máximo UN grupo abierto (el
-    // guardado, o el que ya estaba abierto). "Otros dispositivos" sale del stock, filtrado por la misma búsqueda.
     const abiertos = isSearching ? new Set() : leerAcordeonAbierto(accordion);
     const otrosTodos = obtenerOtrosDispositivosProduccion();
     const term = terminoBusquedaActual();
     const tokens = (isSearching && term) ? tokenizarBusqueda(term) : [];
     const campos = (typeof busqCamposActivos !== 'undefined') ? busqCamposActivos : null;
     const otros = tokens.length > 0 ? otrosTodos.filter(d => otroDispositivoCumpleBusqueda(d, tokens, campos)) : otrosTodos;
-
     const modelo = modeloProduccion(camaras, {
-        nvrs: uiNvrsCargados(),
-        camarasTodas: uiCamarasCargadas(),
-        buscando: isSearching,
-        abiertos,
-        vista: modoVistaProduccion,
-        otros,
-        equiposRed: uiDatosCargados('equipos_red'),
-        limpiarNombre: limpiarNombreNvr,
-        capacidad: (nvrObj) => {
-            // La que informó el grabador si se lo consultó en Auditoría > Grabador; si no, la estimada por modelo
-            const consultada = (typeof capacidadConsultadaNvr === 'function') ? capacidadConsultadaNvr(nvrObj.ip) : null;
-            return consultada || obtenerCapacidadCanalesNvr(nvrObj.modelo);
-        },
-        completar: completarCanalesDisponibles,
-        ubicacion: (equipo) => ubicacionStockTexto(equipo),
+        nvrs: uiNvrsCargados(), camarasTodas: uiCamarasCargadas(), buscando: isSearching, abiertos, vista: modoVistaProduccion,
+        otros, equiposRed: uiDatosCargados('equipos_red'), limpiarNombre: limpiarNombreNvr,
+        capacidad: (nvrObj) => ((typeof capacidadConsultadaNvr === 'function') ? capacidadConsultadaNvr(nvrObj.ip) : null) || obtenerCapacidadCanalesNvr(nvrObj.modelo),
+        completar: completarCanalesDisponibles, ubicacion: (equipo) => ubicacionStockTexto(equipo),
         ubicacionInstalacion: (inst) => (typeof stockUbicacionTexto === 'function' && inst) ? stockUbicacionTexto(inst) : '',
-        imagen: (m) => buscarImagenDispositivo(m),
-        nombre: (d, defecto) => stockNombreVisible(d, defecto),
+        imagen: (m) => buscarImagenDispositivo(m), nombre: (d, defecto) => stockNombreVisible(d, defecto),
         icono: (tipo) => stockIconoTipo(tipo, stockCatalogo(_cacheStockResumen && _cacheStockResumen.grupos))
     });
-
-    // Sin cambios (el refresco periódico casi siempre): no se toca el DOM. Repintar cientos de tarjetas recargaba las
-    // miniaturas y perdía el hover y el foco.
     const firma = JSON.stringify(modelo);
     if (firma === _produccionFirmaPintada && accordion.firstChild) return;
-
     const aplicarDOM = () => {
         _produccionFirmaPintada = firma;
         accordion.replaceChildren(...construirProduccion(modelo));
@@ -231,14 +221,13 @@ function renderizarCamarasOnline(camaras, isSearching = false, opciones = {}) {
         sincronizarAlturasStickyProduccion();
         if (!_produccionCargaAnimada && accordion.firstChild) {
             _produccionCargaAnimada = true;
-            if (typeof animarCargaBlur === 'function') animarCargaBlur(accordion, { duracion: 650 });
+            if (document.documentElement.hasAttribute('data-cargando-lista') && typeof animarCargaBlur === 'function') animarCargaBlur(accordion, { duracion: 220 });
             document.documentElement.removeAttribute('data-cargando-lista');
         }
     };
     mutarContenido(accordion, aplicarDOM, null, null, Boolean(opciones.animar));
 }
-let _produccionFirmaPintada = null;
-let _produccionCargaAnimada = false;
+let _produccionFirmaPintada = null, _produccionCargaAnimada = false;
 
 // ==== PRODUCCION MODELO PURO BEGIN ====
 // Qué muestra Producción, sin DOM (lo prueba tests/js/produccion_modelo.test.mjs): un grupo por NVR con sus canales
