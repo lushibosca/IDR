@@ -252,7 +252,7 @@ async function cargarDatos() {
         ejecutarFiltro(terminoBusquedaActual());
         ultimaActualizacionTexto = `Última act: ${new Date().toLocaleTimeString()}`;
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error:', error); document.getElementById('produccion-accordion')?.removeAttribute('data-cargando');
         mostrarErrorApi(error);
         ultimaActualizacionTexto = `Sin actualizar: ${error.message || 'error desconocido'}`;
     } finally {

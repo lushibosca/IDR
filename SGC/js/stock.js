@@ -790,10 +790,10 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
 
         const aplicarDOM = () => {
             acordeon.replaceChildren(...nuevosHijos);
+            acordeon.removeAttribute('data-cargando');
             restaurarSeleccionStock(acordeon);
             seleccion.repintarLista();
-            const vacio = $('stock-vacio');
-            const hayDatos = !!datos && datos.dispositivos.length > 0;
+            const vacio = $('stock-vacio'), hayDatos = !!datos && datos.dispositivos.length > 0;
             vacio.classList.toggle('d-none', !datos || vis.length > 0 || (!hayDatos && !editable && !datos.inicializado));
             vacio.textContent = hayDatos ? 'Ningún dispositivo coincide con la búsqueda.' : 'No hay dispositivos cargados.';
             sincronizarAlturasSticky();
@@ -864,7 +864,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
             actualizarBadgeStock();
             document.dispatchEvent(new CustomEvent('cctv:stock', { detail: r }));   // resumen del dashboard (app.js)
         } catch (e) {
-            uiErrorConsulta(e, mostrarError, 'No se pudo cargar el stock.');
+            $('stock-accordion')?.removeAttribute('data-cargando'); uiErrorConsulta(e, mostrarError, 'No se pudo cargar el stock.');
         } finally {
             if (boton) {
                 boton.disabled = false;

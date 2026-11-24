@@ -77,9 +77,58 @@
         opacity: 0;
     }
 
-    html[data-cargando-lista] #produccion-accordion,
-    html[data-cargando-lista] #stock-accordion {
+    html[data-cargando-lista] #produccion-accordion > *,
+    html[data-cargando-lista] #stock-accordion > * {
         opacity: 0;
+    }
+
+    /* Aro de carga en el área de datos del panel (mismo estilo y ritmo que Horarios) */
+    @keyframes girarCarga {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    html.preload-tab #v-pills-tabContent,
+    html[data-cargando]:not(.preload-tab) #v-pills-dashboard.active,
+    #produccion-accordion[data-cargando],
+    #stock-accordion[data-cargando] {
+        position: relative;
+        min-height: 240px;
+    }
+
+    html.preload-tab #v-pills-tabContent::after,
+    html[data-cargando]:not(.preload-tab) #v-pills-dashboard.active::after,
+    #produccion-accordion[data-cargando]::after,
+    #stock-accordion[data-cargando]::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 36px;
+        height: 36px;
+        margin: -18px 0 0 -18px;
+        border: 3px solid var(--border-color);
+        border-top-color: var(--color-texto-suave);
+        border-radius: 50%;
+        animation: girarCarga 900ms linear infinite;
+        pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html.preload-tab #v-pills-tabContent::after,
+        html[data-cargando]:not(.preload-tab) #v-pills-dashboard.active::after,
+        #produccion-accordion[data-cargando]::after,
+        #stock-accordion[data-cargando]::after {
+            animation: none;
+        }
+    }
+
+    html[data-movimiento="reducido"] #v-pills-tabContent::after,
+    html[data-movimiento="reducido"] #v-pills-dashboard::after,
+    html[data-movimiento="reducido"] #produccion-accordion[data-cargando]::after,
+    html[data-movimiento="reducido"] #stock-accordion[data-cargando]::after {
+        animation: none;
     }
 
     /* Listas largas (Stock y Producción, cientos de filas): el blur obliga a repintar toda la lista en cada cuadro y

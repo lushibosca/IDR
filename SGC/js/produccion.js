@@ -216,7 +216,7 @@ function renderizarCamarasOnline(camaras, isSearching = false, opciones = {}) {
     if (firma === _produccionFirmaPintada && accordion.firstChild) return;
     const aplicarDOM = () => {
         _produccionFirmaPintada = firma;
-        accordion.replaceChildren(...construirProduccion(modelo));
+        accordion.replaceChildren(...construirProduccion(modelo)); accordion.removeAttribute('data-cargando');
         restaurarSeleccionProduccion(accordion);
         sincronizarAlturasStickyProduccion();
         if (!_produccionCargaAnimada && accordion.firstChild) {
