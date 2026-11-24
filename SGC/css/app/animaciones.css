@@ -91,19 +91,19 @@
 
     html.preload-tab #v-pills-tabContent,
     html[data-cargando]:not(.preload-tab) #v-pills-dashboard.active,
-    #produccion-accordion[data-cargando],
-    #stock-accordion[data-cargando] {
+    #v-pills-produccion.active:has(> #produccion-accordion[data-cargando]),
+    #v-pills-stock.active:has(> #stock-accordion[data-cargando]) {
         position: relative;
-        min-height: 240px;
+        min-height: calc(100vh - var(--navbar-height, 58px) - 3rem);
     }
 
     html.preload-tab #v-pills-tabContent::after,
     html[data-cargando]:not(.preload-tab) #v-pills-dashboard.active::after,
-    #produccion-accordion[data-cargando]::after,
-    #stock-accordion[data-cargando]::after {
+    #v-pills-produccion.active:has(> #produccion-accordion[data-cargando])::after,
+    #v-pills-stock.active:has(> #stock-accordion[data-cargando])::after {
         content: '';
         position: absolute;
-        top: 50%;
+        top: calc(50vh - var(--navbar-height, 58px) - 1.5rem);
         left: 50%;
         width: 36px;
         height: 36px;
@@ -118,16 +118,16 @@
     @media (prefers-reduced-motion: reduce) {
         html.preload-tab #v-pills-tabContent::after,
         html[data-cargando]:not(.preload-tab) #v-pills-dashboard.active::after,
-        #produccion-accordion[data-cargando]::after,
-        #stock-accordion[data-cargando]::after {
+        #v-pills-produccion.active:has(> #produccion-accordion[data-cargando])::after,
+        #v-pills-stock.active:has(> #stock-accordion[data-cargando])::after {
             animation: none;
         }
     }
 
     html[data-movimiento="reducido"] #v-pills-tabContent::after,
     html[data-movimiento="reducido"] #v-pills-dashboard::after,
-    html[data-movimiento="reducido"] #produccion-accordion[data-cargando]::after,
-    html[data-movimiento="reducido"] #stock-accordion[data-cargando]::after {
+    html[data-movimiento="reducido"] #v-pills-produccion::after,
+    html[data-movimiento="reducido"] #v-pills-stock::after {
         animation: none;
     }
 
