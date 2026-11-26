@@ -23,18 +23,18 @@
     <!-- CSS por capas (@layer en tokens.css): tokens, base, iconos, grilla, componentes, app, utilidades. La base común de
          la suite (tokens, base, grilla, componentes, utilidades, íconos y fuentes) está en ../shared/ui y ../shared/vendor;
          lo propio de SGC, en css/app/. Sin !important. El orden de los <link> es el de las capas. -->
-    <link rel="stylesheet" href="../shared/ui/tokens.css?v=28">
+    <link rel="stylesheet" href="../shared/ui/tokens.css?v=29">
     <link rel="stylesheet" href="../shared/ui/base.css?v=17">
     <link rel="stylesheet" href="../shared/ui/grilla.css?v=5">
     <link rel="stylesheet" href="../shared/idr-actualizacion.css">
     <link rel="stylesheet" href="../shared/ui/componentes/transiciones.css?v=14">
-    <link rel="stylesheet" href="../shared/ui/componentes/tablas.css?v=12">
+    <link rel="stylesheet" href="../shared/ui/componentes/tablas.css?v=13">
     <link rel="stylesheet" href="../shared/ui/componentes/formularios.css?v=15">
     <link rel="stylesheet" href="../shared/ui/componentes/botones.css?v=15">
     <link rel="stylesheet" href="../shared/ui/componentes/desplegables.css?v=18">
-    <link rel="stylesheet" href="../shared/ui/componentes/navegacion.css?v=26">
+    <link rel="stylesheet" href="../shared/ui/componentes/navegacion.css?v=27">
     <link rel="stylesheet" href="../shared/ui/componentes/tarjetas.css?v=11">
-    <link rel="stylesheet" href="../shared/ui/componentes/acordeon.css?v=17">
+    <link rel="stylesheet" href="../shared/ui/componentes/acordeon.css?v=18">
     <link rel="stylesheet" href="../shared/ui/componentes/insignias.css?v=13">
     <link rel="stylesheet" href="../shared/ui/componentes/alertas.css?v=8">
     <link rel="stylesheet" href="../shared/ui/componentes/progreso.css?v=9">
@@ -47,11 +47,11 @@
     <link rel="stylesheet" href="../shared/ui/fondo.css">
     <link rel="stylesheet" href="../shared/ui/ayuda.css">
     <link rel="stylesheet" href="css/app/estructura.css?v=41">
-        <link rel="stylesheet" href="css/app/estado.css?v=58">
-    <link rel="stylesheet" href="css/app/produccion.css?v=53">
-    <link rel="stylesheet" href="css/app/auditoria.css?v=26">
-    <link rel="stylesheet" href="css/app/activos.css?v=47">
-    <link rel="stylesheet" href="css/app/favoritos.css?v=11">
+        <link rel="stylesheet" href="css/app/estado.css?v=59">
+    <link rel="stylesheet" href="css/app/produccion.css?v=54">
+    <link rel="stylesheet" href="css/app/auditoria.css?v=27">
+    <link rel="stylesheet" href="css/app/activos.css?v=48">
+    <link rel="stylesheet" href="css/app/favoritos.css?v=12">
     <link rel="stylesheet" href="css/app/ajustes.css?v=11">
     <link rel="stylesheet" href="css/app/animaciones.css?v=15">
     <link rel="stylesheet" href="css/app/interaccion.css?v=9">
@@ -599,7 +599,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="accordion" id="produccion-accordion" data-cargando>
+                        <div class="accordion accordion-limpio" id="produccion-accordion" data-cargando>
                             <!-- Se llena dinámicamente -->
                         </div>
                     </div>
@@ -646,7 +646,7 @@
                                             <span id="bd-titulo" class="fw-semibold"></span>
                                         </div>
                                         <div class="table-responsive">
-                                            <table class="table table-sm table-hover align-middle mb-0 small"
+                                            <table class="table table-sm table-hover align-middle mb-0 small thead-pegajoso"
                                                 id="bd-table">
                                                 <thead>
                                                     <tr>
@@ -902,7 +902,7 @@
                             <i class="bi bi-lock me-1"></i> Solo lectura: editar el stock requiere un usuario con rol
                             operador o admin.
                         </div>
-                        <div class="accordion" id="stock-accordion" data-cargando>
+                        <div class="accordion accordion-limpio" id="stock-accordion" data-cargando>
                             <!-- Se llena dinámicamente (js/stock.js) -->
                         </div>
                         <div class="text-center text-secondary py-4 d-none" id="stock-vacio"></div>
@@ -2312,7 +2312,7 @@
     <script src="js/sesion-local.js?v=1"></script>
     <script src="js/selector.js?v=2"></script>
     <script src="js/produccion.js?v=68"></script>
-    <script src="js/resumen.js?v=81"></script>
+    <script src="js/resumen.js?v=82"></script>
     <script src="js/resumen-distribucion.js?v=4"></script>
     <script src="js/resumen-participacion.js?v=3"></script>
     <script src="js/resumen-detalle.js?v=1"></script>
@@ -2321,9 +2321,9 @@
     <script src="js/atajos.js?v=31"></script>
     <script src="../shared/ui/js/ayuda.js"></script>
     <script src="../shared/ui/js/fondo.js"></script>
-    <script src="js/stock-puro.js?v=7"></script>
-    <script src="js/stock-reporte-puro.js?v=2"></script>
-    <script src="js/stock.js?v=132"></script>
+    <script src="js/stock-puro.js?v=8"></script>
+    <script src="js/stock-reporte-puro.js?v=3"></script>
+    <script src="js/stock.js?v=133"></script>
     <script src="js/stock-listar.js?v=11"></script>
     <script src="js/stock-catalogos.js?v=14"></script>
     <script src="js/stock-seleccion.js?v=17"></script>

@@ -161,9 +161,7 @@ function formatoCapacidad(val, base, modo) {
 
 // «% del total»: lo que `parte` representa de `total`, con un decimal (el de la columna del detalle de canales); sin base, «-»
 function formatoParticipacion(parte, total) {
-    const p = Number(parte) || 0;
-    if (!(total > 0)) return '-';
-    return `${Math.round((p / total) * 1000) / 10}%`;
+    return uiFormatoPorcentaje(parte, total);
 }
 
 // ==== RESUMEN STOCK PURO END ====

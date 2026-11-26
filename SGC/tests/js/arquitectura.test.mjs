@@ -22,10 +22,10 @@ const TOPES = {
   "datos-puro.js": 1242,
   "favoritos.js": 501,
   "produccion.js": 1622,
-  "resumen.js": 1115,
+  "resumen.js": 1113,
   "stock-catalogos.js": 804,
   "stock-listar.js": 595,
-  "stock-puro.js": 1051,
+  "stock-puro.js": 1043,
   "stock.js": 1897,
 };
 

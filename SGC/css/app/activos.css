@@ -74,7 +74,7 @@
     .popup-disp-acciones .btn:focus,
     .popup-disp-acciones .btn:focus-visible,
     .popup-disp-acciones .btn:active {
-        outline: 2px solid var(--ui-primary);
+        outline: var(--foco-contorno);
         outline-offset: 1px;
         box-shadow: none;
         background-color: transparent;
@@ -208,7 +208,7 @@
 
     .stock-card:focus,
     .stock-card:focus-visible {
-        outline: 2px solid var(--ui-primary);
+        outline: var(--foco-contorno);
         outline-offset: 1px;
     }
 
@@ -223,28 +223,8 @@
         color: var(--color-orange);
     }
 
-    #stock-accordion .accordion-item {
-        background-color: transparent;
-        border: none;
-    }
-
-    #stock-accordion .accordion-button,
-    #stock-accordion .accordion-button:not(.collapsed) {
-        background-color: transparent;
-        border: none;
-    }
-
-    #stock-accordion .accordion-body {
-        background-color: transparent;
-        border: none;
-    }
-
     #stock-accordion .accordion-header {
         background-color: var(--bg-main);
-    }
-
-    #stock-accordion .accordion-button:hover {
-        background-color: var(--table-hover-bg);
     }
 
     #stock-accordion .table-responsive {
@@ -262,30 +242,8 @@
         border-bottom: 1px solid var(--border-color);
     }
 
-    #stock-accordion .tabla-stock thead th {
-        position: sticky;
-        top: calc(var(--navbar-height) + var(--stock-header-height, 41px));
-        z-index: var(--capa-pegajosa);
-        background-color: var(--table-header-bg);
-        box-shadow: 0 1px 0 var(--border-color);
-    }
-
-    #stock-accordion .tabla-stock thead th[data-sort] {
-        cursor: pointer;
-        user-select: none;
-        white-space: nowrap;
-        transition: color var(--dur-fast) ease;
-    }
-
-    #stock-accordion .tabla-stock thead th[data-sort]:hover,
-    #stock-accordion .tabla-stock thead th[data-sort]:focus-visible {
-        color: var(--ui-primary);
-        outline: none;
-    }
-
-    #stock-accordion .tabla-stock thead th[data-sort] .bi {
-        font-size: var(--texto-xs);
-        vertical-align: baseline;
+    #stock-accordion {
+        --thead-pegajoso-top: calc(var(--navbar-height) + var(--stock-header-height, 41px));   /* bajo la cabecera de Activos */
     }
 
     /* la columna que se está moviendo (mantener presionado y arrastrar el encabezado) */
@@ -363,7 +321,7 @@
     }
 
     .stock-subgrupo-header:focus-visible {
-        outline: 2px solid var(--ui-primary);
+        outline: var(--foco-contorno);
         outline-offset: -2px;
     }
 

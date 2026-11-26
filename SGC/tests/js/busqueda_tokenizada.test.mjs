@@ -42,9 +42,11 @@ const api = cargarBloque("busqueda.js", "BUSQUEDA TOKENIZADA PURO", GLOBALES, [
 ]);
 
 const comun = cargarBloque("comun.js", "VALOR INFORMADO PURO", { String }, ["uiValorInformado", "uiNumeroCanal"]);
+const { uiCompararTexto } = cargarBloque("comun-orden.js", "COMUN ORDEN PURO", { String }, ["uiCompararTexto"]);
 const apiStock = cargarBloque("stock-puro.js", "STOCK PURO", {
   ...GLOBALES,
   ...comun,
+  uiCompararTexto,
   tokenizarBusqueda: api.tokenizarBusqueda,
   coincideTokenSemanticoEstado: api.coincideTokenSemanticoEstado,
   coincideTokenUbicacion: api.coincideTokenUbicacion,

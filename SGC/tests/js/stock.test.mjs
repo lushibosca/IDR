@@ -6,13 +6,14 @@ import vm from "node:vm";
 import { cargarBloque, plano } from "./_bloque.mjs";
 
 // normalizarTextoBusqueda vive en busqueda.js (una sola definición; en la página se carga antes que stock.js)
-const { normalizarTextoBusqueda, tokenizarBusqueda, coincideTokenUbicacion } = cargarBloque("busqueda.js", "BUSQUEDA TOKENIZADA PURO", { String, Map, Set, Array, RegExp },
-  ["normalizarTextoBusqueda", "tokenizarBusqueda", "coincideTokenUbicacion"]);
+const { normalizarTextoBusqueda, tokenizarBusqueda, coincideTokenUbicacion, coincideTokenSemanticoEstado } = cargarBloque("busqueda.js", "BUSQUEDA TOKENIZADA PURO", { String, Map, Set, Array, RegExp },
+  ["normalizarTextoBusqueda", "tokenizarBusqueda", "coincideTokenUbicacion", "coincideTokenSemanticoEstado"]);
 const comun = cargarBloque("comun.js", "VALOR INFORMADO PURO", { String }, ["uiValorInformado", "uiNumeroCanal"]);
 const { uiEsAtajoAltShift } = cargarBloque("comun.js", "MODO SELECCION PURO", { String }, ["uiEsAtajoAltShift"]);
-const { uiSiguienteOrden } = cargarBloque("comun-orden.js", "COMUN ORDEN PURO", { String, Number, Math }, ["uiSiguienteOrden"]);
-const api = cargarBloque("stock-puro.js", "STOCK PURO", { String, Number, URL, Array, Object, Map, Set, Boolean, URLSearchParams, normalizarTextoBusqueda, tokenizarBusqueda, coincideTokenUbicacion,
-  ...comun, uiEsAtajoAltShift, uiSiguienteOrden },
+const { uiSiguienteOrden, uiCompararTexto, uiFormatoPorcentaje } = cargarBloque("comun-orden.js", "COMUN ORDEN PURO", { String, Number, Math },
+  ["uiSiguienteOrden", "uiCompararTexto", "uiFormatoPorcentaje"]);
+const api = cargarBloque("stock-puro.js", "STOCK PURO", { String, Number, URL, Array, Object, Map, Set, Boolean, URLSearchParams, normalizarTextoBusqueda, tokenizarBusqueda, coincideTokenUbicacion, coincideTokenSemanticoEstado,
+  ...comun, uiEsAtajoAltShift, uiSiguienteOrden, uiCompararTexto },
   ["stockRespuestaValida", "stockDispositivoValido", "stockValoresDeDispositivo", "stockPayload", "stockUrlPagina", "stockModelosSugeridos", "stockModeloParecido", "stockDistanciaTexto", "stockValoresUnicos",
     "stockEdificioDelCatalogo", "stockValoresDesdeEscaneo", "stockConciliacionValida", "stockConciliacionResumen",
     "stockConciliacionAplicables", "stockProduccionTexto", "stockOpcionesPiso", "stockUbicacionesValidas",
@@ -28,9 +29,9 @@ const api = cargarBloque("stock-puro.js", "STOCK PURO", { String, Number, URL, A
     "stockHistorialCambio", "stockHistorialUrl", "stockHistorialRecienteValido", "stockHistorialElemento",
     "STOCK_ACCIONES", "STOCK_ORIGENES", "stockSubgrupoAMover", "TIPO_ARRASTRE_SUBGRUPO"]);
 
-// El reporte vive en su propio archivo (stock-reporte-puro.js) y usa los helpers de stock-puro.js
+// El reporte vive en su propio archivo (stock-reporte-puro.js) y usa los helpers de stock-puro.js y comun-orden.js
 const { stockEscHtml, stockReporteHtml } = cargarBloque("stock-reporte-puro.js", "STOCK REPORTE PURO",
-  { String, Number, Array, Map, Set, Math, Object, ...api }, ["stockEscHtml", "stockReporteHtml"]);
+  { String, Number, Array, Map, Set, Math, Object, uiFormatoPorcentaje, ...api }, ["stockEscHtml", "stockReporteHtml"]);
 api.stockEscHtml = stockEscHtml;
 api.stockReporteHtml = stockReporteHtml;
 
@@ -971,4 +972,18 @@ test("stockSiguienteOrden: ascendente → descendente → sin orden al tercer to
   assert.deepEqual(plano(api.stockSiguienteOrden("modelo", "asc", "modelo")), ["modelo", "desc"]);
   assert.deepEqual(plano(api.stockSiguienteOrden("modelo", "desc", "modelo")), [null, "asc"]);
   assert.deepEqual(plano(api.stockSiguienteOrden("modelo", "desc", "tipo")), ["tipo", "asc"]);
+});
+
+test("reporte HTML: los datos del equipo salen escapados en todas las columnas (las de siempre y las elegidas en Listar)", () => {
+  const xss = '<img src=x onerror=alert(1)>';
+  const equipo = enUso({ id: "1", modelo: xss, serie: xss, patrimonio: xss, mac: xss,
+    instalacion: inst({ ip: xss, descripcion: xss, edificio: xss, piso: xss }) });
+  const bloques = [{ etiqueta: "Grupo", items: [equipo] }];
+  const comun = { criterio: "grupo", criterioTexto: "Grupo", fecha: "hoy", etiquetasTipo: tipos, catalogo: api.stockCatalogo(GRUPOS) };
+  const deSiempre = api.stockReporteHtml(bloques, comun);
+  const elegidas = api.stockReporteHtml(bloques, { ...comun, columnas: ["modelo", "serial", "patrimonio", "ip", "ubicacion"] });
+  for (const html of [deSiempre, elegidas]) {
+    assert.ok(!html.includes("<img"), html.slice(html.indexOf("<img") - 80, html.indexOf("<img") + 40));
+    assert.ok(html.includes("&lt;img src=x onerror=alert(1)&gt;"));
+  }
 });

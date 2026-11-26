@@ -25,7 +25,7 @@
     }
 
     .metric-card.kpi-clickable:focus-visible {
-        outline: 2px solid var(--color-blue);
+        outline: var(--foco-contorno);
         outline-offset: 2px;
     }
 
@@ -507,24 +507,6 @@
 
     .modal-detalle-tipos thead th:not(:first-child) {
         padding: var(--esp-3) var(--esp-1);
-    }
-
-    .modal-detalle-tipos thead th[data-sort] {
-        cursor: pointer;
-        user-select: none;
-        white-space: nowrap;
-        transition: color var(--dur-fast) ease;
-    }
-
-    .modal-detalle-tipos thead th[data-sort]:hover,
-    .modal-detalle-tipos thead th[data-sort]:focus-visible {
-        color: var(--ui-primary);
-        outline: none;
-    }
-
-    .modal-detalle-tipos thead th[data-sort] .bi {
-        font-size: var(--texto-xs);
-        vertical-align: baseline;
     }
 
     .modal-detalle-tipos thead th.detalle-col-ultima {

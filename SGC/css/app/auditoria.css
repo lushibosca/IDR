@@ -2,31 +2,10 @@
 
 @layer app {
 
-    /* ─── Acordeones de Auditoría de Video (estilo simple como Producción y Activos) */
-
-    #audvid-resultado .accordion-item {
-        background-color: transparent;
-        border: none;
-    }
-
-    #audvid-resultado .accordion-button,
-    #audvid-resultado .accordion-button:not(.collapsed) {
-        background-color: transparent;
-        border: none;
-    }
+    /* ─── Acordeones de Auditoría de Video (`.accordion-limpio` en acordeon.css; sin relleno propio en el cuerpo) */
 
     #audvid-resultado .accordion-body {
-        background-color: transparent;
-        border: none;
         padding: 0;
-    }
-
-    #audvid-resultado .accordion-header {
-        background-color: var(--bg-card);
-    }
-
-    #audvid-resultado .accordion-button:hover {
-        background-color: var(--table-hover-bg);
     }
 
     /* ─── Paneles de resultado de las consultas a demanda (index.html: `.panel-resultado`, hijo directo de su tarjeta;
@@ -60,40 +39,9 @@
             overflow: visible;
         }
 
-        .resultado-tabla thead th {
-            position: sticky;
-            top: var(--navbar-height);
-            z-index: var(--capa-pegajosa);
-            background-color: var(--table-header-bg);
-            box-shadow: 0 1px 0 var(--border-color);
+        #audvid-table {
+            --thead-pegajoso-top: calc(var(--navbar-height) + var(--stock-header-height, 41px));
         }
-
-        #audvid-table thead th {
-            position: sticky;
-            top: calc(var(--navbar-height) + var(--stock-header-height, 41px));
-            z-index: var(--capa-pegajosa);
-            background-color: var(--table-header-bg);
-            box-shadow: 0 1px 0 var(--border-color);
-        }
-    }
-
-    #audvid-table thead th[data-sort] {
-        cursor: pointer;
-        user-select: none;
-        white-space: nowrap;
-        transition: color var(--dur-fast) ease;
-    }
-
-    #audvid-table thead th[data-sort]:hover,
-    #audvid-table thead th[data-sort]:focus-visible {
-        color: var(--ui-primary);
-        outline: none;
-    }
-
-    #audvid-table thead th[data-sort] .bi {
-        font-size: var(--texto-xs);
-        vertical-align: baseline;
-        transition: color var(--dur-fast) ease;
     }
 
     /* ─── Tablas de discrepancias en Homogeneidad por modelo */

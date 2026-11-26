@@ -379,7 +379,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         const caja = document.createElement('div');
         caja.className = 'table-responsive';
         const tabla = document.createElement('table');
-        tabla.className = 'table table-hover table-sm align-middle mb-0 small tabla-stock';
+        tabla.className = 'table table-hover table-sm align-middle mb-0 small tabla-stock thead-pegajoso';
         const trh = tabla.createTHead().insertRow();
         const columnas = [COLUMNA_IMAGEN, ...ordenColumnas.map(clave => COLUMNAS_LISTA.get(clave))];
         function crearColgroup() {

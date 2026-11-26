@@ -42,30 +42,10 @@
         }
     }
 
-    /* ─── Acordeón Producción / Cámaras: Disposición SGC en 2 columnas */
-
-    #produccion-accordion .accordion-item {
-        background-color: transparent;
-        border: none;
-    }
-
-    #produccion-accordion .accordion-button,
-    #produccion-accordion .accordion-button:not(.collapsed) {
-        background-color: transparent;
-        border: none;
-    }
-
-    #produccion-accordion .accordion-body {
-        background-color: transparent;
-        border: none;
-    }
+    /* ─── Acordeón Producción / Cámaras (`.accordion-limpio` en acordeon.css) */
 
     #produccion-accordion .accordion-header {
         background-color: var(--bg-main);
-    }
-
-    #produccion-accordion .accordion-button:hover {
-        background-color: var(--table-hover-bg);
     }
 
     /* Nombre del grupo en Producción: naranja, abierto o cerrado */
@@ -339,7 +319,7 @@
 
     .canal-item:focus,
     .canal-item:focus-visible {
-        outline: 2px solid var(--ui-primary);
+        outline: var(--foco-contorno);
         outline-offset: 1px;
     }
 

@@ -108,7 +108,7 @@
 
     /* Aro de foco por teclado adentro del botón (con el contorno de afuera, el borde redondeado del grupo y los vecinos lo recortaban) */
     .accordion-button:focus-visible {
-        outline: 2px solid var(--ui-primary);
+        outline: var(--foco-contorno);
         outline-offset: -2px;
     }
 
@@ -159,6 +159,20 @@
     }
 
 
+
+    /* ─── Acordeón sin borde ni fondo propio (Activos, Producción) */
+
+    .accordion-limpio .accordion-item,
+    .accordion-limpio .accordion-button,
+    .accordion-limpio .accordion-button:not(.collapsed),
+    .accordion-limpio .accordion-body {
+        background-color: transparent;
+        border: none;
+    }
+
+    .accordion-limpio .accordion-button:hover {
+        background-color: var(--table-hover-bg);
+    }
 
     /* ─── Solo acordeones: cerrado no debe dejar padding ni borde visibles */
 

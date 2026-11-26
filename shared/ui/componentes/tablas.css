@@ -75,6 +75,38 @@
         color: var(--color-texto);
     }
 
+    /* Encabezados de tabla ordenables (Activos, Detalle de Stock, tablas de la suite) */
+    .table thead th[data-sort] {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+        transition: color var(--dur-fast) ease;
+    }
+
+    .table thead th[data-sort]:hover,
+    .table thead th[data-sort]:focus-visible {
+        color: var(--ui-primary);
+        outline: none;
+    }
+
+    .table thead th[data-sort] .bi {
+        font-size: var(--texto-xs);
+        vertical-align: baseline;
+        transition: color var(--dur-fast) ease;
+    }
+
+    /* Encabezado pegajoso de una tabla larga, solo en escritorio (en móvil va dentro de su scroll horizontal).
+       Quien la usa puede ajustar `--thead-pegajoso-top` si la pestaña tiene cabecera propia. */
+    @media (min-width: 768px) {
+        .thead-pegajoso thead th {
+            position: sticky;
+            top: var(--thead-pegajoso-top, var(--navbar-height));
+            z-index: var(--capa-pegajosa);
+            background-color: var(--table-header-bg);
+            box-shadow: 0 1px 0 var(--border-color);
+        }
+    }
+
     /* ─── Tabla de Activos / Stock: filas compactas de hasta 2 líneas */
 
     .tabla-stock {
@@ -96,7 +128,7 @@
 
     .tabla-stock tbody tr:focus,
     .tabla-stock tbody tr:focus-visible {
-        outline: 2px solid var(--ui-primary);
+        outline: var(--foco-contorno);
         outline-offset: -2px;
         background-color: var(--table-hover-bg);
     }

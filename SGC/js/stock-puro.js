@@ -248,11 +248,6 @@ function stockCoincideUbicacion(inst, token) {
     return coincideTokenUbicacion(inst, token);
 }
 
-// La tokenización es una sola: la de busqueda.js (se carga antes). No se duplica su tabla de frases compuestas.
-function stockTokenizar(texto) {
-    return tokenizarBusqueda(texto);
-}
-
 function _stockDispositivoCoincideTokenPositivo(d, tok, campos, etiquetasTipo = new Map(), cat = null) {
     if (!d || !tok) return true;
     if (!campos || campos.size === 0) return false;
@@ -284,16 +279,17 @@ function _stockDispositivoCoincideTokenPositivo(d, tok, campos, etiquetasTipo = 
 
     // 2. Estado
     if (campos.has('estado')) {
-        if (typeof coincideTokenSemanticoEstado === 'function' && coincideTokenSemanticoEstado(d, tok)) {
+        if (coincideTokenSemanticoEstado(d, tok)) {             // busqueda.js (se carga antes)
             return true;
         }
         const condTexto = stockCondicionTexto(d.condicion);
         if (condTexto && stockMatchTexto(condTexto, tok)) return true;
         if (d.condicion && stockMatchTexto(d.condicion, tok)) return true;
         if (d.en_uso && (stockMatchTexto('produccion', tok) || stockMatchTexto('en uso', tok) || stockMatchTexto('operativo', tok))) return true;
-        if (d.disponible && (tokNorm === 'disponible' || tokNorm === 'disponibles' || stockMatchTexto('disponible', tok))) return true;
-        if (!d.en_uso && !d.disponible && (tokNorm === 'no disponible' || tokNorm === 'no disponibles' || tokNorm === 'no-disponible'
-            || stockMatchTexto('fuera de servicio', tok))) return true;
+        // «disponible(s)» y «no disponible(s)» enteros ya los resolvió coincideTokenSemanticoEstado; acá solo lo que se está
+        // escribiendo («dispo», «fuera de serv»). Nunca `stockMatchTexto('no disponible', tok)`: «disponible» está adentro.
+        if (d.disponible && stockMatchTexto('disponible', tok)) return true;
+        if (!d.en_uso && !d.disponible && stockMatchTexto('fuera de servicio', tok)) return true;
     }
 
     // 3. Nombre / Ubicación
@@ -345,11 +341,7 @@ function stockDispositivoCumpleToken(d, tok, campos, etiquetasTipo = new Map(), 
 function stockFiltrar(lista, texto = '', etiquetasTipo = new Map(), camposActivos = null, cat = null) {
     const t = String(texto).trim();
     if (!t) return lista;
-    const tokens = (typeof tokenizarBusqueda === 'function')
-        ? tokenizarBusqueda(t)
-        : (typeof window !== 'undefined' && typeof window.tokenizarBusqueda === 'function')
-            ? window.tokenizarBusqueda(t)
-            : stockTokenizar(t);
+    const tokens = tokenizarBusqueda(t);                        // busqueda.js (se carga antes)
     if (!tokens.length) return lista;
 
     const campos = stockNormalizarCampos(camposActivos);
@@ -371,7 +363,7 @@ function stockPisoPeso(piso) {
 }
 
 function stockCompararTexto(a, b) {
-    return String(a).localeCompare(String(b), 'es', { numeric: true, sensitivity: 'base' });
+    return uiCompararTexto(a, b);                               // comun-orden.js (se carga antes)
 }
 
 // Grupo de un dispositivo según el criterio: { etiqueta, orden } (el orden decide la posición del acordeón)

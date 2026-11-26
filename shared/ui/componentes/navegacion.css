@@ -173,7 +173,7 @@
     }
 
     .brand-launcher:focus-visible {
-        outline: 2px solid var(--ui-primary);
+        outline: var(--foco-contorno);
         outline-offset: 2px;
     }
 
@@ -314,7 +314,7 @@
     #auditoria-subtabs .nav-link:focus-visible,
     #stock-exp-modos .nav-link:focus-visible,
     #stock-exp-modos [data-stock-exp-modo]:focus-visible {
-        outline: 2px solid var(--ui-primary);
+        outline: var(--foco-contorno);
         outline-offset: 1px;
     }
 
