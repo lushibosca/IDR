@@ -343,6 +343,7 @@
 
 
     .stock-card-thumb {
+        position: relative;
         width: 54px;
         height: 48px;
         display: flex;

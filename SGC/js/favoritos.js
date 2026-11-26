@@ -269,7 +269,7 @@ const ICONOS_FAVORITO = { cam: 'bi-camera-video', nvr: 'bi-hdd-rack', eq: 'bi-pc
     }
 
     function guardarFavoritos(lista) {
-        preferencias.setLista(CLAVE_FAVORITOS, lista);
+        preferencias.setLista(CLAVE_FAVORITOS, lista); document.dispatchEvent(new CustomEvent('cctv:favoritos'));
     }
 
     function datosActuales() {
@@ -491,7 +491,7 @@ const ICONOS_FAVORITO = { cam: 'bi-camera-video', nvr: 'bi-hdd-rack', eq: 'bi-pc
             if (abrirMenu) abrirMenu.addEventListener('click', () => { volver.cancelar(); pintarQuitar(false); });
         }
         if (typeof ResizeObserver === 'function') new ResizeObserver(ajustarColumnas).observe(grilla);
-        preferencias.alAplicar(CLAVE_FAVORITOS, pintarFavoritos);
+        preferencias.alAplicar(CLAVE_FAVORITOS, () => { pintarFavoritos(); document.dispatchEvent(new CustomEvent('cctv:favoritos')); });
         document.addEventListener('cctv:datos', pintarFavoritos);
         pintarFavoritos();
     }

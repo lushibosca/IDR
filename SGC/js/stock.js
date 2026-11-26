@@ -255,7 +255,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         } else {
             miniatura.appendChild(uiNodo('i', `${stockIconoTipo(d.tipo, catalogo)} text-secondary opacity-50`));
         }
-        tdImg.appendChild(miniatura);
+        uiAplicarMarcaFavorito(miniatura, favsRender.has(d.id)); tdImg.appendChild(miniatura);
 
         // 1. Tipo / Estado (tipo arriba, estado/condición debajo si corresponde)
         const tdTipo = celda(tr, '');
@@ -539,7 +539,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         } else {
             thumb.appendChild(crearIconoFallback(item.tipo));
         }
-        card.appendChild(thumb);
+        uiAplicarMarcaFavorito(thumb, favsRender.has(item.id)); card.appendChild(thumb);
 
         // Bloque de información derecha
         const info = document.createElement('div');
@@ -753,11 +753,11 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         sincronizarControles();
         if (tab.classList.contains('active') && firmaRender() !== firmaPintada) renderLista();
     }
-    let criterioPintado = null, _stockCargaAnimada = false;
+    let criterioPintado = null, _stockCargaAnimada = false, favsRender = new Set();
     function renderLista(opciones = {}) {
         const acordeon = $('stock-accordion');
         if (postergarSiAnima(acordeon.id, () => renderLista(opciones))) return;
-        firmaPintada = firmaRender();
+        firmaPintada = firmaRender(); favsRender = window.favoritosStockActivos();
         const editable = !!(datos && datos.editable);
         sincronizarControles();
         renderMenuAgrupar();

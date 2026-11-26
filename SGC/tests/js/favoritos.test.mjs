@@ -10,6 +10,7 @@ const f = cargarBloque("favoritos.js", "FAVORITOS PURO", { String, Array, Set, R
   "resolverFavorito", "modeloFavoritos", "firmaFavoritos", "etiquetaFavorito", "columnasFavoritos", "reordenarFavoritos", "favoritosDeStock", "sumarFavoritos", "textoSumaFavoritos",
   "dispositivoPorIp", "dispositivoDeCanal", "dispositivoTitulo",
 ]);
+const { favoritosStockIds } = cargarBloque("favoritos-marca.js", "FAVORITOS MARCA PURO", { Set, modeloFavoritos: f.modeloFavoritos }, ["favoritosStockIds"]);
 
 const DATOS = {
   nvrs: [{ ip: "10.0.0.1", nvr_name: "NVR Principal", modelo: "DS-7616NI", is_offline: false },
@@ -178,4 +179,20 @@ test("dispositivoDeCanal: la cámara de ese canal de ese grabador, o null", () =
 test("dispositivoTitulo: dice qué es y cómo se llama", () => {
   assert.equal(f.dispositivoTitulo(f.dispositivoPorIp("192.168.1.101", DATOS)), "Cámara en producción: Cam 01");
   assert.equal(f.dispositivoTitulo(f.dispositivoPorIp("10.9.9.9", DATOS)), "Equipo de red en producción: Decoder");
+});
+
+test("favoritosStockIds: devuelve los ids del stock cuyos equipos monitoreados están en favoritos", () => {
+  const datos = {
+    camaras: [
+      { nvr_ip: "10.0.0.1", channel_id: 1, camera_name: "Cam A", stock: { id: "s-cam1" } },
+      { nvr_ip: "10.0.0.2", channel_id: 2, camera_name: "Cam A dup", stock: { id: "s-cam1" } },
+      { nvr_ip: "10.0.0.1", channel_id: 3, camera_name: "Cam sin stock" },
+    ],
+    nvrs: [{ ip: "10.0.0.1", nvr_name: "NVR 1", stock: { id: "s-nvr1" } }],
+    equipos_red: [{ ip: "10.9.9.9", nombre: "Decoder", estado: "online", stock: { id: "s-eq1" } }],
+  };
+  const ids = favoritosStockIds(["cam:10.0.0.2:2", "cam:10.0.0.1:3", "nvr:10.0.0.1", "eq:10.9.9.9", "nvr:10.0.0.9"], datos);
+  assert.deepEqual([...ids].sort(), ["s-cam1", "s-eq1", "s-nvr1"]);
+  assert.deepEqual([...favoritosStockIds([], datos)], []);
+  assert.deepEqual([...favoritosStockIds(["nvr:10.0.0.1"], null)], []);
 });

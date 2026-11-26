@@ -520,7 +520,7 @@ const colaCapturasProduccion = uiColaImagenes({
         const caja = img.closest('.canal-item-captura');
         if (!caja) return;
         caja.classList.remove('canal-item-captura-cargando');
-        caja.replaceChildren(produccionCapturaVacia('Sin captura', 'bi bi-camera-video-off'));
+        const mf = caja.querySelector(':scope > .disp-fav-marca'); caja.replaceChildren(produccionCapturaVacia('Sin captura', 'bi bi-camera-video-off')); if (mf) caja.appendChild(mf);
     },
 });
 // «Actualizar capturas» terminó: lo recordado ya no vale (y la dirección lleva una marca nueva, ver uiRutaCaptura)
@@ -572,7 +572,7 @@ function produccionCaptura(it) {
         caja.appendChild(it.tipo === 'otro' ? uiNodo('i', `${it.icono} fs-1 text-secondary opacity-50`)
             : produccionCapturaVacia(it.tipo === 'libre' ? 'Canal libre' : 'Sin captura', 'bi bi-camera-video-off'));
     }
-    return caja;
+    uiAplicarMarcaFavorito(caja, window.esFavoritoProduccion(it.tipo, it.stockId, it.nvrIp, it.canalId)); return caja;
 }
 
 // Vista snapshot: la tarjeta se arma en columna y queda cuadrada: arriba el canal, el estado y la IP (la cabecera de siempre),
@@ -656,7 +656,7 @@ function produccionItem(it, lista = false, snapshot = false) {
         } else {
             thumb.appendChild(uiNodo('i', `${it.icono} text-secondary canal-item-fallback-icon opacity-50`));
         }
-        ubic.dataset.stockUbicacion = it.stockId;
+        uiAplicarMarcaFavorito(thumb, window.esFavoritoProduccion('otro', it.stockId, '', '')); ubic.dataset.stockUbicacion = it.stockId;
         ubic.textContent = it.ubicacion || 'En producción';
         firstColNode = thumb;
         ip.classList.add('copy-cell');
@@ -771,7 +771,7 @@ window.addEventListener('error', (e) => {
         const parent = target.parentElement;
         if (parent) {
             const iconClase = target.dataset.fallbackIcon || 'bi bi-camera-video';
-            parent.replaceChildren(uiNodo('i', `${iconClase} text-secondary canal-item-fallback-icon opacity-50`));
+            target.replaceWith(uiNodo('i', `${iconClase} text-secondary canal-item-fallback-icon opacity-50`));
         }
     }
 }, true);

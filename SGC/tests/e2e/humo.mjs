@@ -534,6 +534,23 @@ check('importar otro formato: se rechaza sin tocar nada', mal && (await api('/ap
     check('atajo Alt+Shift+L: abre Listar desde cualquier pestaña', $('stockExportModal').classList.contains('show'));
     $('stockExportModal').querySelector('[data-ui-dismiss="modal"]').click();
     await hasta(() => !$('stockExportModal').classList.contains('show'));
+
+    // Estrella distintiva de favoritos en Activos
+    const datosActuales = await api('/api/v2/datos');
+    const nvrFav = datosActuales.nvrs.find((n) => n && n.ip && n.stock && n.stock.id);
+    if (nvrFav) {
+        $('v-pills-stock-tab').click();
+        await hasta(() => !!d.querySelector(`#stock-accordion [data-stock-id="${nvrFav.stock.id}"]`));
+        w.localStorage.setItem('sgc2/cctv:favoritos', JSON.stringify([`nvr:${nvrFav.ip}`]));
+        d.dispatchEvent(new w.CustomEvent('cctv:favoritos'));
+        const item = d.querySelector(`#stock-accordion [data-stock-id="${nvrFav.stock.id}"]`);
+        check('favoritos en Activos: muestra la estrella distintiva sobre la miniatura', !!item.querySelector('.disp-fav-marca'));
+        w.localStorage.setItem('sgc2/cctv:favoritos', JSON.stringify([]));
+        d.dispatchEvent(new w.CustomEvent('cctv:favoritos'));
+        check('favoritos en Activos: quita la estrella al sacar de favoritos', !item.querySelector('.disp-fav-marca'));
+    } else {
+        check('favoritos en Activos: existe un NVR vinculado para probar', false);
+    }
 }
 
 await esperar(300);
