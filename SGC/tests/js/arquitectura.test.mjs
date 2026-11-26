@@ -17,16 +17,16 @@ const MAX_LINEAS = 500;
 const TOPES = {
   "animaciones.js": 653,
   "app.js": 1668,
-  "busqueda.js": 526,
+  "busqueda.js": 525,
   "comun.js": 1786,
   "datos-puro.js": 1242,
   "favoritos.js": 501,
   "produccion.js": 1622,
-  "resumen.js": 1443,
+  "resumen.js": 1115,
   "stock-catalogos.js": 804,
-  "stock-listar.js": 596,
-  "stock-puro.js": 1099,
-  "stock.js": 1898,
+  "stock-listar.js": 595,
+  "stock-puro.js": 1051,
+  "stock.js": 1897,
 };
 
 test("cada js/ respeta su tope de líneas (500, o el congelado si ya lo pasaba)", () => {
@@ -61,7 +61,7 @@ test("los bloques PURO no tocan DOM, storage ni red (el reloj y los efectos se i
   const malos = [];
   let bloques = 0;
   for (const f of archivos) {
-    const re = /\/\/ ==== ([^\n]*?PURO) BEGIN ====\n([\s\S]*?)\/\/ ==== \1 END ====/g;
+    const re = /\/\/ ==== ([^\r\n]*?PURO) BEGIN ====\r?\n([\s\S]*?)\/\/ ==== \1 END ====/g;
     let m;
     while ((m = re.exec(fuente(f)))) {
       bloques++;

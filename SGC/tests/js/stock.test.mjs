@@ -6,19 +6,20 @@ import vm from "node:vm";
 import { cargarBloque, plano } from "./_bloque.mjs";
 
 // normalizarTextoBusqueda vive en busqueda.js (una sola definición; en la página se carga antes que stock.js)
-const { normalizarTextoBusqueda, tokenizarBusqueda } = cargarBloque("busqueda.js", "BUSQUEDA TOKENIZADA PURO", { String, Map, Set, Array, RegExp },
-  ["normalizarTextoBusqueda", "tokenizarBusqueda"]);
+const { normalizarTextoBusqueda, tokenizarBusqueda, coincideTokenUbicacion } = cargarBloque("busqueda.js", "BUSQUEDA TOKENIZADA PURO", { String, Map, Set, Array, RegExp },
+  ["normalizarTextoBusqueda", "tokenizarBusqueda", "coincideTokenUbicacion"]);
 const comun = cargarBloque("comun.js", "VALOR INFORMADO PURO", { String }, ["uiValorInformado", "uiNumeroCanal"]);
 const { uiEsAtajoAltShift } = cargarBloque("comun.js", "MODO SELECCION PURO", { String }, ["uiEsAtajoAltShift"]);
-const api = cargarBloque("stock-puro.js", "STOCK PURO", { String, Number, URL, Array, Object, Map, Set, Boolean, URLSearchParams, normalizarTextoBusqueda, tokenizarBusqueda,
-  ...comun, uiEsAtajoAltShift },
+const { uiSiguienteOrden } = cargarBloque("comun-orden.js", "COMUN ORDEN PURO", { String, Number, Math }, ["uiSiguienteOrden"]);
+const api = cargarBloque("stock-puro.js", "STOCK PURO", { String, Number, URL, Array, Object, Map, Set, Boolean, URLSearchParams, normalizarTextoBusqueda, tokenizarBusqueda, coincideTokenUbicacion,
+  ...comun, uiEsAtajoAltShift, uiSiguienteOrden },
   ["stockRespuestaValida", "stockDispositivoValido", "stockValoresDeDispositivo", "stockPayload", "stockUrlPagina", "stockModelosSugeridos", "stockModeloParecido", "stockDistanciaTexto", "stockValoresUnicos",
     "stockEdificioDelCatalogo", "stockValoresDesdeEscaneo", "stockConciliacionValida", "stockConciliacionResumen",
     "stockConciliacionAplicables", "stockProduccionTexto", "stockOpcionesPiso", "stockUbicacionesValidas",
     "stockHistorialTexto", "stockHistorialLinea", "stockHistorialValido", "stockEquipoMonitoreado", "stockMuestraGraficoDisponibilidad", "STOCK_EDIFICIO_NUEVO", "stockEtiquetas", "stockCondicionTexto",
     "stockMacTexto", "stockUbicacionTexto", "stockMarcaModelo", "stockFiltrar",
     "STOCK_AGRUPAMIENTOS", "stockTipoTexto", "stockEstadoEfectivo", "stockPisoPeso",
-    "stockGrupoDe", "stockAgruparBloques", "stockComparadorColumna", "STOCK_COLUMNAS_ORDEN", "stockOrdenColumnas", "stockIdGrupo", "stockSubsecciones",
+    "stockGrupoDe", "stockAgruparBloques", "stockComparadorColumna", "STOCK_COLUMNAS_ORDEN", "stockOrdenColumnas", "stockSiguienteOrden", "stockIdGrupo", "stockSubsecciones",
     "STOCK_ND", "STOCK_ESTADOS", "stockCamaraDeDispositivo", "stockTarjetaDatos", "stockInsigniaLista",
     "stockCamaraRepresentante", "stockCatalogo", "stockEsCamara", "stockGrupoTexto", "stockCatalogoValido", "stockMotivoNoBorrarGrupo",
     "stockMotivoNoBorrarTipo", "stockMotivoNoMoverTipo", "stockVistoEn", "stockDatosEscaneo", "stockCampoBloqueadoPorEscaneo", "stockAvisoProduccion", "stockMensajeGuardado",
@@ -953,4 +954,21 @@ test("stockPayload / stockValoresDeDispositivo: solo pantalla va solo en un NVR/
   assert.equal(api.stockPayload({ ...v, tipo: "nvr" }).solo_pantalla, true);
   assert.equal(api.stockPayload({ ...v, tipo: "domo" }).solo_pantalla, false);
   assert.equal(api.stockPayload({ ...v, tipo: "nvr", soloPantalla: false }).solo_pantalla, false);
+});
+
+test("stockFiltrar: «disponible» no coincide con equipos «no disponible» (averiados o en uso)", () => {
+  const lista = [
+    d({ id: "disp", disponible: true, en_uso: false }),
+    enUso({ id: "uso" }),
+    fuera({ id: "averiado" }),
+  ];
+  assert.deepEqual(api.stockFiltrar(lista, "disponible", tipos).map(x => x.id), ["disp"]);
+  assert.deepEqual(api.stockFiltrar(lista, "no disponible", tipos).map(x => x.id), ["averiado"]);
+});
+
+test("stockSiguienteOrden: ascendente → descendente → sin orden al tercer toque", () => {
+  assert.deepEqual(plano(api.stockSiguienteOrden(null, "asc", "modelo")), ["modelo", "asc"]);
+  assert.deepEqual(plano(api.stockSiguienteOrden("modelo", "asc", "modelo")), ["modelo", "desc"]);
+  assert.deepEqual(plano(api.stockSiguienteOrden("modelo", "desc", "modelo")), [null, "asc"]);
+  assert.deepEqual(plano(api.stockSiguienteOrden("modelo", "desc", "tipo")), ["tipo", "asc"]);
 });

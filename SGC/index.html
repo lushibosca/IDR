@@ -47,7 +47,7 @@
     <link rel="stylesheet" href="../shared/ui/fondo.css">
     <link rel="stylesheet" href="../shared/ui/ayuda.css">
     <link rel="stylesheet" href="css/app/estructura.css?v=41">
-        <link rel="stylesheet" href="css/app/estado.css?v=57">
+        <link rel="stylesheet" href="css/app/estado.css?v=58">
     <link rel="stylesheet" href="css/app/produccion.css?v=53">
     <link rel="stylesheet" href="css/app/auditoria.css?v=26">
     <link rel="stylesheet" href="css/app/activos.css?v=47">
@@ -55,7 +55,7 @@
     <link rel="stylesheet" href="css/app/ajustes.css?v=11">
     <link rel="stylesheet" href="css/app/animaciones.css?v=15">
     <link rel="stylesheet" href="css/app/interaccion.css?v=9">
-    <link rel="stylesheet" href="css/app/detalle-movil.css?v=8">
+    <link rel="stylesheet" href="css/app/detalle-movil.css?v=9">
     <link rel="stylesheet" href="css/app/barra-movil.css?v=7">
     <link rel="stylesheet" href="../shared/ui/utilidades.css?v=35">
     <link rel="stylesheet" href="../shared/vendor/fonts/inter.css">
@@ -321,14 +321,37 @@
                             <div class="col-lg-6 dashboard-zona" id="dashboard-col-infra" data-zona="izq">
                                 <!-- Sección Canales -->
                                 <div id="canales-section" class="mb-3 resumen-seccion-reubicable">
-                                    <div class="d-flex align-items-center mb-2 resumen-seccion-toggle"
-                                        id="canales-toggle" role="button" tabindex="0" aria-expanded="true"
-                                        aria-controls="canales-collapse"
-                                        title="Alternar sección Canales (mantener presionado para reordenar)">
-                                        <h6 class="text-secondary mb-0 fw-bold text-uppercase tracking-wide"><i
-                                                class="bi bi-hdd-network me-2"></i>Canales
-                                        </h6>
-                                        <i class="bi bi-chevron-down text-secondary ms-2 resumen-seccion-chevron"></i>
+                                    <div class="d-flex align-items-center mb-2" id="canales-encabezado">
+                                        <div class="d-flex align-items-center flex-grow-1 resumen-seccion-toggle"
+                                            id="canales-toggle" role="button" tabindex="0" aria-expanded="true"
+                                            aria-controls="canales-collapse"
+                                            title="Alternar sección Canales (mantener presionado para reordenar)">
+                                            <h6 class="text-secondary mb-0 fw-bold text-uppercase tracking-wide"><i
+                                                    class="bi bi-hdd-network me-2"></i>Canales
+                                            </h6>
+                                            <i class="bi bi-chevron-down text-secondary ms-2 resumen-seccion-chevron"></i>
+                                        </div>
+                                        <div class="resumen-seccion-acciones" id="canales-acciones">
+                                            <div class="dropdown ms-2">
+                                                <button type="button"
+                                                    class="btn btn-sm btn-outline-secondary border-0 py-0 px-2"
+                                                    id="canales-opciones-btn" data-ui-toggle="dropdown"
+                                                    data-ui-auto-close="outside" aria-expanded="false"
+                                                    title="Opciones de Canales" aria-label="Opciones de Canales">
+                                                    <i class="bi bi-sliders"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end"
+                                                    aria-labelledby="canales-opciones-btn" id="canales-opciones-menu">
+                                                    <li>
+                                                        <h6 class="dropdown-header">Canales</h6>
+                                                    </li>
+                                                    <li><button type="button" class="dropdown-item item-casilla active"
+                                                            id="canales-mostrar-distribucion" aria-pressed="true"
+                                                            title="Mostrar la participación por grabador debajo del anillo">
+                                                            <i class="bi bi-check2 me-2"></i>Detalle por grabador</button></li>
+                                                </ul>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div id="canales-collapse" class="grid-collapse show">
                                         <div>
@@ -443,7 +466,7 @@
                                                     data-activos-chip="camaras">
                                                     <div class="card metric-card chip-compact position-relative kpi-clickable border-0 shadow-sm h-100"
                                                         id="card-kpi-stock-camaras" data-ui-toggle="modal"
-                                                        data-ui-target="#modal-detalle-stock-camaras" role="button"
+                                                        data-ui-target="#modal-detalle-stock" role="button"
                                                         tabindex="0">
                                                         <div
                                                             class="d-flex align-items-center justify-content-between w-100 h-100">
@@ -515,7 +538,7 @@
                                                 <div class="col-12 col-infra-half col-xxl-6" data-activos-chip="otros">
                                                     <div class="card metric-card chip-compact position-relative kpi-clickable border-0 shadow-sm h-100"
                                                         id="card-kpi-stock-otros" data-ui-toggle="modal"
-                                                        data-ui-target="#modal-detalle-stock-otros" role="button"
+                                                        data-ui-target="#modal-detalle-stock" role="button"
                                                         tabindex="0" title="Ver detalle de otros dispositivos">
                                                         <div
                                                             class="d-flex align-items-center justify-content-between w-100 h-100">
@@ -2196,17 +2219,28 @@
         </div>
     </div>
 
-    <!-- Modal Detalle Stock -->
+    <!-- Modal Detalle Stock (compartido por todos los chips de Activos: Cámaras, Servidores, Otros y grupos propios; resumen-detalle.js) -->
     <div class="modal fade modal-detalle-tipos modal-altura-fija" id="modal-detalle-stock" data-doble-toque tabindex="-1" aria-labelledby="modalStockLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header bg-primary border-0">
-                    <h5 class="modal-title" id="modalStockLabel"><i class="bi bi-hdd-rack me-2"></i>Detalle de servidores</h5>
+                    <h5 class="modal-title" id="modalStockLabel"><i class="bi bi-hdd-rack me-2" id="modal-stock-icono"></i><span
+                            id="modal-stock-texto">Detalle de Stock</span></h5>
                     <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                <div class="modal-body p-0">
+                <div class="modal-body p-0 modal-body-estable">
                     <div class="table-responsive tabla-con-pie">
+                        <div class="detalle-cols-barra">
+                            <div class="dropdown">
+                                <button type="button" class="btn btn-sm btn-outline-secondary border-0 py-0 px-2"
+                                    data-ui-toggle="dropdown" data-ui-auto-close="outside" aria-expanded="false"
+                                    title="Columnas visibles" aria-label="Columnas visibles">
+                                    <i class="bi bi-sliders"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" data-detalle-cols-menu></ul>
+                            </div>
+                        </div>
                         <table class="table table-hover table-sm align-middle mb-0" id="tabla-detalle-stock">
                             <thead class="table-light sticky-top">
                                 <tr>
@@ -2223,143 +2257,19 @@
                     </div>
                 </div>
                 <div class="modal-footer py-2 px-3 border-top gap-2">
-                    <div class="btn-group btn-group-sm" role="group"
-                        aria-label="En uso, disponibles y no disponible como">
-                        <button type="button" class="btn btn-outline-primary active" data-cap-modo="neto"
-                            title="En uso, disponibles y no disponible en cantidad">Cantidad</button>
-                        <button type="button" class="btn btn-outline-primary" data-cap-modo="pct"
-                            title="En uso, disponibles y no disponible en porcentaje del total de cada fila">Porcentaje</button>
+                    <div class="dropdown me-auto">
+                        <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                            data-ui-toggle="dropdown" data-ui-lado="top" aria-expanded="false"
+                            title="Agrupar dispositivos del detalle">
+                            <i class="bi bi-collection me-1"></i><span data-stock-detalle-agrupar-texto>Tipo / Modelo</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><button type="button" class="dropdown-item active" data-stock-detalle-agrupar="tipo">Tipo / Modelo</button></li>
+                            <li><button type="button" class="dropdown-item" data-stock-detalle-agrupar="edificio">Edificio</button></li>
+                            <li><button type="button" class="dropdown-item" data-stock-detalle-agrupar="edificio-piso">Edificio / Piso</button></li>
+                            <li><button type="button" class="dropdown-item" data-stock-detalle-agrupar="patrimonio">Patrimonio</button></li>
+                        </ul>
                     </div>
-                    <div class="btn-group btn-group-sm" role="group" aria-label="Base de % del total">
-                        <button type="button" class="btn btn-outline-primary active" data-part-modo="total"
-                            title="Porcentaje calculado sobre el total de dispositivos">Sobre total</button>
-                        <button type="button" class="btn btn-outline-primary" data-part-modo="uso"
-                            title="Aporte al total en producción (en uso)">En producción</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Detalle Stock Otros Dispositivos -->
-    <div class="modal fade modal-detalle-tipos modal-altura-fija" id="modal-detalle-stock-otros" data-doble-toque tabindex="-1"
-        aria-labelledby="modalStockOtrosLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header bg-primary border-0">
-                    <h5 class="modal-title" id="modalStockOtrosLabel"><i class="bi bi-cpu me-2"></i>Detalle de otros</h5>
-                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body p-0">
-                    <div class="table-responsive tabla-con-pie">
-                        <table class="table table-hover table-sm align-middle mb-0" id="tabla-detalle-stock-otros">
-                            <thead class="table-light sticky-top">
-                                <tr>
-                                    <th class="ps-3">Tipo / Modelo</th>
-                                    <th class="text-center">Total</th>
-                                    <th class="text-center">En uso</th>
-                                    <th class="text-center">Disponibles</th>
-                                    <th class="text-center">No disponible</th>
-                                    <th class="text-center">% del total</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="modal-footer py-2 px-3 border-top gap-2">
-                    <div class="btn-group btn-group-sm" role="group"
-                        aria-label="En uso, disponibles y no disponible como">
-                        <button type="button" class="btn btn-outline-primary active" data-cap-modo="neto"
-                            title="En uso, disponibles y no disponible en cantidad">Cantidad</button>
-                        <button type="button" class="btn btn-outline-primary" data-cap-modo="pct"
-                            title="En uso, disponibles y no disponible en porcentaje del total de cada fila">Porcentaje</button>
-                    </div>
-                    <div class="btn-group btn-group-sm" role="group" aria-label="Base de % del total">
-                        <button type="button" class="btn btn-outline-primary active" data-part-modo="total"
-                            title="Porcentaje calculado sobre el total de dispositivos">Sobre total</button>
-                        <button type="button" class="btn btn-outline-primary" data-part-modo="uso"
-                            title="Aporte al total en producción (en uso)">En producción</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Detalle Stock de un grupo creado por el usuario (compartido: lo llena el chip tocado; resumen.js) -->
-    <div class="modal fade modal-detalle-tipos modal-altura-fija" id="modal-detalle-stock-grupo" data-doble-toque tabindex="-1"
-        aria-labelledby="modal-stock-grupo-titulo" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header bg-primary border-0">
-                    <h5 class="modal-title" id="modal-stock-grupo-titulo"><i class="bi bi-box-seam me-2"></i><span
-                            id="modal-stock-grupo-texto">Detalle</span></h5>
-                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body p-0">
-                    <div class="table-responsive tabla-con-pie">
-                        <table class="table table-hover table-sm align-middle mb-0" id="tabla-stock-grupo-tipo">
-                            <thead class="table-light sticky-top">
-                                <tr>
-                                    <th class="ps-3">Tipo / Modelo</th>
-                                    <th class="text-center">Total</th>
-                                    <th class="text-center">En uso</th>
-                                    <th class="text-center">Disponibles</th>
-                                    <th class="text-center">No disponible</th>
-                                    <th class="text-center">% del total</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="modal-footer py-2 px-3 border-top gap-2">
-                    <div class="btn-group btn-group-sm" role="group"
-                        aria-label="En uso, disponibles y no disponible como">
-                        <button type="button" class="btn btn-outline-primary active" data-cap-modo="neto"
-                            title="En uso, disponibles y no disponible en cantidad">Cantidad</button>
-                        <button type="button" class="btn btn-outline-primary" data-cap-modo="pct"
-                            title="En uso, disponibles y no disponible en porcentaje del total de cada fila">Porcentaje</button>
-                    </div>
-                    <div class="btn-group btn-group-sm" role="group" aria-label="Base de % del total">
-                        <button type="button" class="btn btn-outline-primary active" data-part-modo="total"
-                            title="Porcentaje calculado sobre el total de dispositivos">Sobre total</button>
-                        <button type="button" class="btn btn-outline-primary" data-part-modo="uso"
-                            title="Aporte al total en producción (en uso)">En producción</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Todas las Alertas -->
-
-    <!-- Modal Detalle Stock Cámaras -->
-    <div class="modal fade modal-detalle-tipos modal-altura-fija" id="modal-detalle-stock-camaras" data-doble-toque tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header bg-primary border-0">
-                    <h5 class="modal-title"><i class="bi bi-camera-video me-2"></i>Detalle de cámaras</h5>
-                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body p-0">
-                    <div class="table-responsive tabla-con-pie">
-                        <table class="table table-hover table-sm align-middle mb-0" id="tabla-stock-cam-tipo">
-                            <thead class="table-light sticky-top">
-                                <tr>
-                                    <th class="ps-3">Tipo / Modelo</th>
-                                    <th class="text-center">Total</th>
-                                    <th class="text-center">En uso</th>
-                                    <th class="text-center">Disponibles</th>
-                                    <th class="text-center">No disponible</th>
-                                    <th class="text-center">% del total</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="modal-footer py-2 px-3 border-top gap-2">
                     <div class="btn-group btn-group-sm" role="group"
                         aria-label="En uso, disponibles y no disponible como">
                         <button type="button" class="btn btn-outline-primary active" data-cap-modo="neto"
@@ -2379,7 +2289,7 @@
     </div>
 
     <!-- Componentes propios (pestañas, modales, desplegables): reemplazan al JS de Bootstrap -->
-    <script src="../shared/ui/js/ui.js?v=13"></script>
+    <script src="../shared/ui/js/ui.js?v=14"></script>
     <script src="../shared/ui/js/gestos.js"></script>
     <script src="../shared/ui/js/panel.js" data-clave-colapsado="sgc2/cctv:sidebar_collapsed" data-clave-posicion="sgc2/cctv:sidebar_posicion" data-busqueda-propia></script>
     <script src="../shared/ui/js/panel-mover.js"></script>
@@ -2390,33 +2300,35 @@
     <!-- Lógica Externa (Hardening) con versionado para evitar caché -->
     <script src="../shared/ui/js/transicion-pestanas.js"></script>
     <script src="js/animaciones.js?v=20"></script>
-    <script src="js/busqueda.js?v=9"></script>
+    <script src="js/busqueda.js?v=10"></script>
     <script src="js/datos-puro.js?v=3"></script>
     <script src="js/historial-puro.js"></script>
     <script src="js/api-local.js?v=7"></script>
-    <script src="js/comun.js?v=60"></script>
+    <script src="js/comun.js?v=61"></script>
+    <script src="js/comun-orden.js?v=1"></script>
     <script src="js/doble-toque.js?v=1"></script>
         <script src="../shared/ui/js/atras-modales.js?v=1"></script>
     <script src="js/app.js?v=279"></script>
     <script src="js/sesion-local.js?v=1"></script>
     <script src="js/selector.js?v=2"></script>
     <script src="js/produccion.js?v=68"></script>
-    <script src="js/resumen.js?v=80"></script>
-    <script src="js/resumen-distribucion.js?v=3"></script>
-    <script src="js/resumen-participacion.js?v=2"></script>
+    <script src="js/resumen.js?v=81"></script>
+    <script src="js/resumen-distribucion.js?v=4"></script>
+    <script src="js/resumen-participacion.js?v=3"></script>
+    <script src="js/resumen-detalle.js?v=1"></script>
     <script src="js/favoritos.js?v=20"></script>
     <script src="js/historial.js"></script>
-    <script src="js/atajos.js?v=30"></script>
+    <script src="js/atajos.js?v=31"></script>
     <script src="../shared/ui/js/ayuda.js"></script>
     <script src="../shared/ui/js/fondo.js"></script>
-    <script src="js/stock-puro.js?v=6"></script>
+    <script src="js/stock-puro.js?v=7"></script>
     <script src="js/stock-reporte-puro.js?v=2"></script>
-    <script src="js/stock.js?v=131"></script>
-    <script src="js/stock-listar.js?v=10"></script>
+    <script src="js/stock.js?v=132"></script>
+    <script src="js/stock-listar.js?v=11"></script>
     <script src="js/stock-catalogos.js?v=14"></script>
     <script src="js/stock-seleccion.js?v=17"></script>
     <script src="js/stock-alta-lote.js?v=4"></script>
-    <script src="js/produccion-seleccion.js?v=7"></script>
+    <script src="js/produccion-seleccion.js?v=8"></script>
     <script src="js/produccion-asignar.js?v=1"></script>
     <script src="js/consultas.js?v=1"></script>
     <script src="js/auditoria-bd.js?v=4"></script>

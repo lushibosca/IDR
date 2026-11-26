@@ -19,7 +19,7 @@ const ATAJOS = [
     { donde: 'Búsqueda', tipo: 'teclado', teclas: ['Enter'], accion: 'Con un resultado enfocado: abrir el popup del equipo (en Producción también Espacio)' },
     { donde: 'Popup del equipo', tipo: 'teclado', teclas: ['← → ↑ ↓ / Inicio / Fin'], accion: 'Moverse entre sus botones' },
     { donde: 'Popup del equipo', tipo: 'teclado', teclas: ['Esc'], accion: 'Cerrarlo y volver al equipo' },
-    { donde: 'Activos', tipo: 'teclado', teclas: ['Alt', 'Shift', 'L'], accion: 'Listar (con selección activa, lista lo seleccionado; también en Producción, con los que tienen alta en el stock)' },
+    { donde: 'General', tipo: 'teclado', teclas: ['Alt', 'Shift', 'L'], accion: 'Listar desde cualquier pestaña (con selección activa en Activos o Producción, lista lo seleccionado)' },
     { donde: 'General', tipo: 'teclado', teclas: ['Ctrl', 'Z'], accion: 'Deshacer el último cambio del stock (altas, ediciones, bajas, lotes...); importar o sincronizar vacía el historial' },
     { donde: 'General', tipo: 'teclado', teclas: ['Ctrl', 'Y'], accion: 'Rehacer lo deshecho (también Ctrl + Mayús + Z)' },
     { donde: 'General', tipo: 'teclado', teclas: ['Alt', 'Shift', 'P'], accion: 'Ocultar o mostrar las IP y MAC en pantalla (modo privacidad)' },

@@ -87,7 +87,7 @@ function resumenEnTipo(porTipo, tipo, modelo, d) {
 // detallan igual: `porTipo` (tipo con sus modelos). Son Map porque sus claves (grupo, tipo, modelo) vienen de los datos.
 function resumirStock(dispositivos, etiquetasTipo, grupoDe = grupoResumenPorDefecto) {
     const etiqueta = (mapa, clave) => (mapa && mapa.get(clave)) || clave;
-    const nuevoGrupo = () => ({ total: resumenContador(), porTipo: new Map() });
+    const nuevoGrupo = () => ({ total: resumenContador(), porTipo: new Map(), dispositivos: [] });
     const r = { servidores: nuevoGrupo(), camaras: nuevoGrupo(), otros: nuevoGrupo(), personalizados: new Map() };
     for (const d of Array.isArray(dispositivos) ? dispositivos : []) {
         if (!d) continue;
@@ -99,6 +99,7 @@ function resumirStock(dispositivos, etiquetasTipo, grupoDe = grupoResumenPorDefe
             if (!r.personalizados.has(clave)) r.personalizados.set(clave, nuevoGrupo());
             g = r.personalizados.get(clave);
         }
+        g.dispositivos.push(d);
         resumenSumar(g.total, d);
         resumenEnTipo(g.porTipo, etiqueta(etiquetasTipo, d.tipo) || 'Sin tipo', d.modelo || RESUMEN_SIN_MODELO, d);
     }
@@ -302,115 +303,7 @@ function valorEntero(rect, area) {
 }
 // ==== FANTASMA RECORTE PURO END ====
 
-// ==== PIE TABLA PURO BEGIN ====
-// Alto del relleno que empuja la fila de totales al pie del cuerpo del modal cuando hay pocas filas (`cuerpo`: alto visible del
-// cuerpo; `tabla`: alto de la tabla SIN relleno). Con muchas filas no hace falta (la fila de totales es pegajosa y queda abajo).
-function alturaRellenoPie(cuerpo, tabla) {
-    const libre = Math.floor(Number(cuerpo) - Number(tabla));
-    return Number.isFinite(libre) && libre > 0 ? libre : 0;
-}
-// ==== PIE TABLA PURO END ====
-
-// La fila de totales de una tabla de detalle va siempre al pie del cuerpo del modal: con pocas filas un relleno (un tbody vacío
-// con el alto que sobra) la baja, así no queda pegada a la última fila con un hueco blanco debajo. Se recalcula cuando cambia
-// el cuerpo (ventana, apertura del modal) o las filas (repintado, tipos que se abren y cierran).
-function ajustarRellenoPie(tabla) {
-    const cuerpo = tabla.closest('.modal-body');
-    const pie = tabla.tFoot;
-    if (!cuerpo || !pie) return;
-    let relleno = tabla.querySelector(':scope > tbody.tabla-relleno');
-    if (!relleno) {
-        relleno = document.createElement('tbody');
-        relleno.className = 'tabla-relleno';
-        relleno.setAttribute('aria-hidden', 'true');
-        const td = relleno.insertRow().insertCell();
-        td.colSpan = Math.max(1, pie.rows[0] ? pie.rows[0].cells.length : 1);
-        tabla.insertBefore(relleno, pie);
-    }
-    const td = relleno.rows[0].cells[0];
-    td.style.height = '0px';                                  // se mide la tabla sin relleno
-    td.style.height = `${alturaRellenoPie(cuerpo.clientHeight, tabla.offsetHeight)}px`;
-}
-
-function iniciarRellenoPie() {
-    if (typeof ResizeObserver !== 'function') return;
-    for (const tabla of document.querySelectorAll('.tabla-con-pie > table')) {
-        const cuerpo = tabla.closest('.modal-body');
-        if (!cuerpo) continue;
-        const observador = new ResizeObserver(() => ajustarRellenoPie(tabla));
-        observador.observe(cuerpo);
-        if (tabla.tBodies[0]) observador.observe(tabla.tBodies[0]);
-    }
-}
-
-function crearFantasmaCelda(celda) {
-    // Dentro de la tarjeta del modal (position: relative) y en absoluto: un ancestro con transform (la entrada del modal)
-    // vuelve «fixed» relativo a él y el valor aparecería corrido fuera de la tarjeta.
-    // Se ubica sobre el rectángulo del TEXTO (no de la celda): así coincide al píxel con el valor que ya está debajo.
-    const padre = celda.closest('.modal-content') || document.body;
-    const rango = document.createRange();
-    rango.selectNodeContents(celda);
-    const r = rango.getBoundingClientRect();
-    const pr = padre.getBoundingClientRect();
-    const est = getComputedStyle(celda);
-    const f = document.createElement('div');
-    f.textContent = celda.textContent;
-    Object.assign(f.style, fantasmaCaja(r, pr, padre.clientTop, padre.clientLeft), {
-        whiteSpace: 'nowrap', textAlign: 'center', pointerEvents: 'none',
-        zIndex: '1000', transformOrigin: '50% 50%', font: est.font, color: est.color, letterSpacing: est.letterSpacing,
-    });
-    f.style.lineHeight = `${r.height}px`;       // después de `font`: el atajo reinicia el interlineado (corría el texto ~2 px)
-    // Solo se ve lo que se ve del cuerpo del modal: ni sobre el encabezado y el pie del modal, ni debajo del encabezado de la
-    // tabla o de su fila de totales (pegajosos)
-    const cuerpo = celda.closest('.modal-body');
-    if (cuerpo) {
-        const tabla = celda.closest('table');
-        const cabecera = tabla ? tabla.querySelector('thead') : null;
-        const totales = tabla ? tabla.querySelector('.fila-totales') : null;
-        const visible = fantasmaAreaVisible(cuerpo.getBoundingClientRect(), cabecera && cabecera.getBoundingClientRect(),
-            totales && !totales.contains(celda) ? totales.getBoundingClientRect() : null);
-        const recorte = fantasmaRecorte(r, visible);
-        if (recorte) f.style.clipPath = recorte;
-    }
-    f._padre = padre;                 // mutarEnParalelo lo agrega
-    return f;
-}
-
-let _ultimaCapacidad = null;        // lo último que pintó el resumen: el toggle repinta sin recalcular
-preferencias.alAplicar(CLAVE_MODO_CAPACIDAD, () => repintarModoDetalles());
-
-function sincronizarBotonesModo(selector, datasetClave, valor) {
-    for (const b of document.querySelectorAll(selector)) {
-        const activo = b.dataset[datasetClave] === valor;
-        b.classList.toggle('active', activo);
-        b.setAttribute('aria-pressed', String(activo));
-    }
-}
-
-// El modo (cantidad / porcentaje) y la base de participación (total / en producción) repintan con lo último que se pintó
-function repintarModoDetalles() {
-    pintarDetalleCapacidad();
-    if (_ultimoResumenStock) {
-        pintarTablasDetalleStock(_ultimoResumenStock);
-        pintarDetalleGrupo();
-    }
-    sincronizarBotonesModo('[data-cap-modo]', 'capModo', modoCapacidadValido(storage.get(CLAVE_MODO_CAPACIDAD)));
-    sincronizarParticipacionStock(storage.get(CLAVE_PARTICIPACION_STOCK));
-}
-
-document.addEventListener('click', (e) => {
-    const b = e.target instanceof Element ? e.target.closest('[data-cap-modo]') : null;
-    if (!b) return;
-    const nuevo = modoCapacidadValido(b.dataset.capModo);
-    const cambia = nuevo !== modoCapacidadValido(storage.get(CLAVE_MODO_CAPACIDAD));
-    preferencias.set(CLAVE_MODO_CAPACIDAD, nuevo);
-    // Cambio de cantidad <-> porcentaje: la mutación estándar y EN PARALELO (como el cambio de pestaña): el valor viejo
-    // sale como fantasma sobre la celda mientras el nuevo entra, solo en las celdas que cambian
-    if (!cambia || prefiereMovimientoReducido()) { repintarModoDetalles(); return; }
-    // solo los del modal abierto: los de los modales cerrados no tienen dónde animarse
-    mutarEnParalelo(() => [...document.querySelectorAll(SELECTOR_VALORES_CAPACIDAD)].filter(valorVisible),
-        repintarModoDetalles, crearFantasmaCelda);
-});
+let _ultimaCapacidad = null;        // lo último que pintó el resumen: el toggle repinta sin recalcular (resumen-detalle.js)
 
 // Lo que cambia al elegir otro eje central en los chips de Activos
 const SELECTOR_CAMBIA_CON_EJE = '#infra-chips [data-eje-rotulo], #infra-chips .metric-value:not(.mutacion-fantasma), '
@@ -546,205 +439,11 @@ function pintarTablaResumen(selector, grupos, columnas = c => [c.t, c.u, c.d, c.
     tbody.replaceChildren(...filas);
 }
 
-// Tipos con sus modelos plegables (mismas columnas). Lo que estaba desplegado sigue así al repintar con cada
-// /api/v2/datos. Claves de los datos: Set/Map, nunca {}. Solo textContent. Los modelos de un tipo se abren y cierran
-// como acordeón (uiFilaPlegable: cada fila anima su alto y el modal la acompaña) y se abre un tipo a la vez: al abrir uno
-// se cierra el que estaba abierto (como los grupos de Activos y Producción).
-const _tiposDesplegados = new Map();      // selector -> Set de tipos abiertos
-
-// Abre o cierra los modelos de los tipos `tipos` de esa tabla
-function fijarTiposDesplegados(tbody, abiertos, tipos, abrir) {
-    for (const b of tbody.querySelectorAll('.resumen-tipo-btn')) {
-        if (tipos.has(b.dataset.resumenTipo)) b.setAttribute('aria-expanded', String(abrir));
-    }
-    for (const fila of tbody.querySelectorAll('tr.resumen-modelo')) {
-        if (tipos.has(fila.dataset.resumenDe)) uiPlegarFila(fila, abrir);
-    }
-    for (const t of tipos) {
-        if (abrir) abiertos.add(t); else abiertos.delete(t);
-    }
-}
-
-const ESTADOS_CELDA_STOCK = ['en uso', 'disponible', 'no disponible'];
-
-// Fila de contadores del detalle de stock: «Total» en cantidad y «En uso», «Disponibles» y «No disponible» en cantidad o en
-// % del total de esa fila (el mismo toggle y la misma preferencia que el detalle de canales). Cada valor va en un `.cap-valor`.
-// Con `participacion` suma «% del total» en un `.part-valor` (base total o en producción según `CLAVE_PARTICIPACION_STOCK`).
-// Si `modeloFiltro` trae texto, marca las tres celdas de estado (`data-stock-filtro`) para filtrar por estado al doble clic.
-function celdasContador(tr, c, clases, modo, participacion = null, modeloFiltro = '') {
-    uiCelda(tr, String(c.t), clases[0]);
-    [c.u, c.d, c.o].forEach((v, i) => {
-        const td = uiCelda(tr, '', clases[i + 1]);
-        if (modeloFiltro) {
-            td.dataset.stockFiltro = ESTADOS_CELDA_STOCK[i];
-            td.title = `Doble clic: ver «${modeloFiltro}» (${ESTADOS_CELDA_STOCK[i]}) en Activos`;
-        }
-        td.append(uiNodo('span', 'cap-valor', formatoCapacidad(v, c.t, modo)));
-    });
-    if (participacion !== null) {
-        const { parte, base } = typeof participacion === 'object' ? participacion : { parte: c.t, base: participacion };
-        const td = uiCelda(tr, '', clases[4] || 'text-center text-muted');
-        td.append(uiNodo('span', 'part-valor', formatoParticipacion(parte, base)));
-    }
-}
-
-// Pie fijo de la tabla con el total general (la suma de todos los tipos), como el de canales (`.fila-totales`)
-function pintarTotalGeneral(tabla, porTipo, modo, modoPart) {
-    if (!tabla) return;
-    const total = { t: 0, u: 0, d: 0, o: 0 };
-    for (const { c } of porTipo.values()) {
-        total.t += c.t; total.u += c.u; total.d += c.d; total.o += c.o;
-    }
-    let pie = tabla.tFoot;
-    if (!pie) {
-        pie = tabla.createTFoot();
-        pie.className = 'fila-totales';
-    }
-    const tr = document.createElement('tr');
-    const th = document.createElement('th');
-    th.className = 'ps-3';
-    th.scope = 'row';
-    th.textContent = 'Total';
-    tr.appendChild(th);
-    celdasContador(tr, total, ['text-center', 'text-center', 'text-center', 'text-center', 'text-center'], modo,
-        participacionStock(total, total.t, total.u, modoPart));
-    pie.replaceChildren(tr);
-}
-
-function pintarTablaTipos(selector, porTipo) {
-    const tbody = document.querySelector(selector);
-    if (!tbody) return;
-    const modo = modoCapacidadValido(storage.get(CLAVE_MODO_CAPACIDAD));
-    const modoPart = modoParticipacionStockValido(storage.get(CLAVE_PARTICIPACION_STOCK));
-    sincronizarParticipacionStock(modoPart);
-    if (!_tiposDesplegados.has(selector)) _tiposDesplegados.set(selector, new Set());
-    const abiertos = _tiposDesplegados.get(selector);
-    const clases = ['', 'text-center fw-semibold', 'text-center', 'text-center', 'text-center text-muted'];
-    const porNombre = ([a], [b]) => String(a).localeCompare(String(b));
-    let totalGeneral = 0;
-    let totalUso = 0;
-    for (const { c } of porTipo.values()) { totalGeneral += c.t; totalUso += c.u; }
-    const filas = [];
-    for (const [tipo, { c, modelos }] of [...porTipo.entries()].sort(porNombre)) {
-        const abierto = abiertos.has(tipo);
-        const tr = document.createElement('tr');
-        tr.className = 'resumen-tipo';                  // toda la fila abre o cierra el tipo (no solo el nombre)
-        tr.title = 'Clic para abrir o cerrar (se abre un tipo a la vez)';
-        const td = document.createElement('td');
-        td.className = 'ps-3';
-        const boton = document.createElement('button');
-        boton.type = 'button';
-        boton.className = 'resumen-tipo-btn';
-        boton.setAttribute('aria-expanded', String(abierto));
-        boton.dataset.resumenTipo = tipo;
-        const icono = document.createElement('i');
-        icono.className = 'bi bi-chevron-right resumen-tipo-chevron me-2';
-        const nombre = document.createElement('span');
-        nombre.className = 'fw-semibold';
-        nombre.textContent = tipo;
-        const cant = document.createElement('span');
-        cant.className = 'badge bg-secondary ms-2';          // solo la cantidad de modelos, como las insignias de los grupos
-        cant.textContent = String(modelos.size);
-        cant.title = `${modelos.size} ${modelos.size === 1 ? 'modelo' : 'modelos'}`;
-        boton.append(icono, nombre, cant);
-        td.appendChild(boton);
-        tr.appendChild(td);
-        celdasContador(tr, c, clases.slice(1), modo, participacionStock(c, totalGeneral, totalUso, modoPart));
-        filas.push(tr);
-        for (const [modelo, m] of [...modelos.entries()].sort(porNombre)) {
-            const sub = document.createElement('tr');
-            sub.className = 'resumen-modelo';
-            sub.dataset.resumenDe = tipo;
-            sub.appendChild(celdaModeloResumen(modelo));
-            const tieneModelo = Boolean(busquedaDeModelo(modelo));
-            if (tieneModelo) {
-                sub.dataset.resumenModelo = modelo;
-                sub.title = 'Doble clic: ver este modelo en Activos';
-            }
-            celdasContador(sub, m, clases.slice(1), modo, participacionStock(m, c.t, totalUso, modoPart),
-                tieneModelo ? modelo : '');
-            filas.push(uiFilaPlegable(sub, abierto));
-        }
-    }
-    tbody.replaceChildren(...filas);
-    pintarTotalGeneral(tbody.closest('table'), porTipo, modo, modoPart);
-    if (!tbody.dataset.resumenPlegable) {           // una sola delegación por tabla: el clic abre o cierra ese tipo
-        tbody.dataset.resumenPlegable = '1';
-        tbody.addEventListener('click', (e) => {
-            const fila = e.target instanceof Element ? e.target.closest('tr.resumen-tipo') : null;
-            const b = fila ? fila.querySelector('.resumen-tipo-btn') : null;
-            if (!b) return;
-            const tipo = b.dataset.resumenTipo, abrir = b.getAttribute('aria-expanded') !== 'true';
-            // uno a la vez, como los grupos de Activos y Producción: abrir uno cierra el que estaba abierto
-            if (abrir) fijarTiposDesplegados(tbody, abiertos, new Set([...tbody.querySelectorAll('.resumen-tipo-btn')]
-                .map((x) => x.dataset.resumenTipo).filter((t) => t !== tipo)), false);
-            fijarTiposDesplegados(tbody, abiertos, new Set([tipo]), abrir);
-        });
-        // doble clic en un modelo: cierra el modal y busca ese modelo en Activos (sobre En uso/Disponibles/No disponible, filtra por estado)
-        tbody.addEventListener('dblclick', (e) => {
-            const fila = e.target instanceof Element ? e.target.closest('tr.resumen-modelo[data-resumen-modelo]') : null;
-            if (!fila) return;
-            const celda = e.target instanceof Element ? e.target.closest('td[data-stock-filtro]') : null;
-            const filtro = celda && fila.contains(celda) ? celda.dataset.stockFiltro : '';
-            const query = busquedaDeModelo(fila.dataset.resumenModelo, filtro);
-            if (!query) return;
-            window.getSelection()?.removeAllRanges();
-            const modal = tbody.closest('.modal');
-            if (modal && typeof UI !== 'undefined' && UI.modal) UI.modal.cerrar(modal);
-            window.buscarConAtajo(query, { campos: CAMPOS_BUSQUEDA, tab: 'v-pills-stock-tab' });
-        });
-    }
-}
-
-// Doble clic en un grabador del detalle de canales: cierra el modal y lo busca en Activos (por su IP)
-function iniciarIrAGrabadorDesdeCapacidad() {
-    for (const tbody of document.querySelectorAll('#tabla-detalle-capacidad tbody, #tabla-detalle-pantallas tbody')) {
-        irAGrabadorAlDobleClic(tbody);
-    }
-}
-function irAGrabadorAlDobleClic(tbody) {
-    tbody.addEventListener('dblclick', (e) => {
-        const fila = e.target instanceof Element ? e.target.closest('tr[data-nvr-ip]') : null;
-        if (!fila) return;
-        window.getSelection()?.removeAllRanges();
-        const modal = tbody.closest('.modal');
-        if (modal && typeof UI !== 'undefined' && UI.modal) UI.modal.cerrar(modal);
-        const query = fila.dataset.nvrIp;
-        if (query && typeof window.buscarConAtajo === 'function') {
-            window.buscarConAtajo(query, { campos: CAMPOS_BUSQUEDA, tab: 'v-pills-stock-tab' });
-        }
-    });
-}
-
-// Primera celda de un modelo del detalle de stock: miniatura (si hay imagen del modelo) + nombre. Solo textContent.
-function celdaModeloResumen(modelo) {
-    const td = document.createElement('td');
-    td.className = 'resumen-modelo-nombre';
-    const thumb = document.createElement('span');
-    thumb.className = 'resumen-modelo-thumb';
-    const ruta = buscarImagenDispositivo(modelo);
-    if (ruta) {
-        const img = document.createElement('img');
-        img.className = 'resumen-modelo-img';
-        img.alt = '';
-        img.loading = 'lazy';
-        img.onerror = () => img.remove();
-        img.src = ruta;
-        thumb.appendChild(img);
-    }
-    const nombre = document.createElement('span');
-    nombre.textContent = modelo;
-    td.append(thumb, nombre);
-    return td;
-}
-
 // ---- Chips de los grupos creados por el usuario (Activos) ----
 // Un chip por grupo propio del catálogo, después de los tres del sistema, con los mismos datos (total, en uso, disponibles,
-// no disponible). Todos abren el MISMO modal de detalle, que se llena con el grupo tocado. Ids de los números: contador
-// propio, nunca la clave del grupo (la define el usuario).
+// no disponible). Todos abren el MISMO modal de detalle (#modal-detalle-stock; resumen-detalle.js lo llena al abrir).
 const _chipsGrupo = new Map();        // clave del grupo -> { col, prefijo, etiqueta }
 let _chipsGrupoSerie = 0;
-let _grupoDetalle = null;             // grupo que muestra el modal compartido
 
 function filaChipGrupo(prefijo, rotulo, valorId, clase) {
     const fila = uiNodo('div', clase, `${rotulo}: `);
@@ -762,8 +461,7 @@ function crearChipGrupo(clave, etiqueta) {
     card.setAttribute('role', 'button');
     card.tabIndex = 0;
     card.dataset.uiToggle = 'modal';
-    card.dataset.uiTarget = '#modal-detalle-stock-grupo';
-    card.addEventListener('click', () => mostrarDetalleGrupo(clave));      // antes que el delegado de ui.js que abre el modal
+    card.dataset.uiTarget = '#modal-detalle-stock';
     const fila = uiNodo('div', 'd-flex align-items-center justify-content-between w-100 h-100');
     const izq = uiNodo('div', 'd-flex align-items-center gap-2');
     const icono = uiNodo('div', 'metric-icon text-primary bg-primary bg-opacity-10 rounded p-2');
@@ -809,7 +507,7 @@ function sincronizarChipsGrupos(res, grupos) {
         const datos = res.personalizados.get(clave);
         pintarKpisStock(chip.prefijo, datos ? datos.total : resumenContador());
     }
-    if (_grupoDetalle && !_chipsGrupo.has(_grupoDetalle)) _grupoDetalle = null;
+    descartarGrupoDetalle(clave => _chipsGrupo.has(clave));
     aplicarOrdenChipsActivos(propios.map(g => g.clave));
 }
 
@@ -866,29 +564,6 @@ function iniciarReordenChipsActivos() {
     _pintarVisibilidadActivos(false);
 }
 
-// Las tablas de los modales de detalle de stock (servidores, otros y cámaras; el grupo propio lo pinta pintarDetalleGrupo)
-function pintarTablasDetalleStock(res) {
-    pintarTablaTipos('#tabla-detalle-stock tbody', res.servidores.porTipo);
-    pintarTablaTipos('#tabla-detalle-stock-otros tbody', res.otros.porTipo);
-    pintarTablaTipos('#tabla-stock-cam-tipo tbody', res.camaras.porTipo);
-}
-
-// Llena el modal compartido con el grupo `clave` (el chip lo pide al tocarlo; después se renueva con cada resumen)
-function mostrarDetalleGrupo(clave) {
-    if (_grupoDetalle !== clave) _tiposDesplegados.delete('#tabla-stock-grupo-tipo tbody');
-    _grupoDetalle = clave;
-    pintarDetalleGrupo();
-}
-
-function pintarDetalleGrupo() {
-    const chip = _grupoDetalle ? _chipsGrupo.get(_grupoDetalle) : null;
-    if (!chip || !_cacheStockResumen) return;
-    const res = resumirStock(_cacheStockResumen.dispositivos, stockEtiquetas(_cacheStockResumen.tipos), stockGrupoDeActual);
-    const datos = res.personalizados.get(_grupoDetalle);
-    uiPonerTexto('modal-stock-grupo-texto', `Detalle de ${chip.etiqueta}`);
-    pintarTablaTipos('#tabla-stock-grupo-tipo tbody', datos ? datos.porTipo : new Map());
-}
-
 // Pinta el color del anillo (`progress-ring-ok|aviso|critico`) según el porcentaje usado (nivelCapacidad)
 const NIVELES_ANILLO = ['ok', 'aviso', 'critico'];
 function pintarNivelAnillo(circulo, pct) {
@@ -932,9 +607,8 @@ async function actualizarResumenInfraestructura() {
         pintarKpisStock('kpi-stock-', res.servidores.total);
         pintarKpisStock('kpi-stock-cam-', res.camaras.total);
         pintarKpisStock('kpi-stock-otros-', res.otros.total);
-        pintarTablasDetalleStock(res);
         sincronizarChipsGrupos(res, _cacheStockResumen.grupos);
-        pintarDetalleGrupo();
+        pintarDetalleGrupo(res);
     }
     
     if (secCanales) secCanales.classList.remove('d-none');
@@ -1426,9 +1100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     inicializarSeccionesColapsablesDashboard();
     inicializarReordenSeccionesDashboard();
     iniciarReordenChipsActivos();
-    iniciarIrAGrabadorDesdeCapacidad();
     initEjeActivos();
-    iniciarRellenoPie();
 });
 
 document.addEventListener('cctv:datos', actualizarResumenInfraestructura);

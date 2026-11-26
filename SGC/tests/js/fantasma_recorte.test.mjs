@@ -6,7 +6,6 @@ import { cargarBloque } from "./_bloque.mjs";
 
 const { fantasmaRecorte, fantasmaAreaVisible, fantasmaCaja, areaVisibleTabla, valorEntero } = cargarBloque("resumen.js",
   "FANTASMA RECORTE PURO", { Math }, ["fantasmaRecorte", "fantasmaAreaVisible", "fantasmaCaja", "areaVisibleTabla", "valorEntero"]);
-const { alturaRellenoPie } = cargarBloque("resumen.js", "PIE TABLA PURO", { Math, Number }, ["alturaRellenoPie"]);
 const caja = (top, bottom, left = 0, right = 100) => ({ top, bottom, left, right });
 
 test("un valor dentro de lo visible no se recorta", () => {
@@ -72,13 +71,4 @@ test("valor entero: solo se anima lo que se ve completo (no cortado, ni tapado a
   const chica = areaVisibleTabla({ top: 100, bottom: 700, left: 0, right: 500 }, null, null, { top: 0, bottom: 600, left: 0, right: 800 });
   assert.equal(valorEntero(valor(590), chica), false);
   assert.equal(valorEntero(valor(500), chica), true);
-});
-
-test("relleno del pie: lo que sobra del cuerpo; sin sobra (o medidas raras) no hay relleno", () => {
-  assert.equal(alturaRellenoPie(500, 320), 180);
-  assert.equal(alturaRellenoPie(500.9, 320.2), 180);
-  assert.equal(alturaRellenoPie(300, 320), 0);
-  assert.equal(alturaRellenoPie(300, 300), 0);
-  assert.equal(alturaRellenoPie(NaN, 300), 0);
-  assert.equal(alturaRellenoPie(undefined, 300), 0);
 });

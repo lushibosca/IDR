@@ -51,7 +51,7 @@ test("shared/ui/js: sin innerHTML ni ejecución dinámica, y los bloques PURO si
     for (const m of s.matchAll(/\/\/ ==== (.+?) BEGIN ====/g)) {
       if (!s.includes(`// ==== ${m[1]} END ====`)) malos.push(`${f}: ${m[1]} sin END`);
     }
-    for (const m of s.matchAll(/\/\/ ==== ([^\n]*?PURO) BEGIN ====\n([\s\S]*?)\/\/ ==== \1 END ====/g)) {
+    for (const m of s.matchAll(/\/\/ ==== ([^\r\n]*?PURO) BEGIN ====\r?\n([\s\S]*?)\/\/ ==== \1 END ====/g)) {
       const hit = sinComentarios(m[2]).match(prohibido);
       if (hit) malos.push(`${f} · ${m[1]}: ${hit[0]}`);
     }

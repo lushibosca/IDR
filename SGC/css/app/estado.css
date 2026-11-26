@@ -396,14 +396,43 @@
         font-size: var(--texto-xs);
     }
 
-    /* ─── Fila de totales al pie de una tabla de detalle (Detalle de canales): fija abajo, como el encabezado arriba.
-       Su contenedor lleva `.tabla-con-pie`: sin overflow propio, el sticky se ata al cuerpo del modal que se desplaza */
+    /* ─── Fila de totales al pie de una tabla de detalle (Detalle de canales y stock): fija abajo, como el encabezado arriba.
+       Su contenedor lleva `.tabla-con-pie`: sin overflow propio, el sticky se ata al cuerpo del modal que se desplaza.
+       En escritorio el cuerpo flex estira la tabla al alto del modal y `.tabla-relleno` (height: 100%) absorbe el espacio
+       sobrante en el mismo layout, colapsando a 0 cuando las filas desbordan (sin ResizeObserver ni parpadeo al plegar). */
 
     .tabla-con-pie {
         overflow: visible;
     }
 
-    /* Relleno que baja la fila de totales al pie del cuerpo del modal cuando hay pocas filas (resumen.js `ajustarRellenoPie`) */
+    @media (min-width: 768px) {
+        .modal-body:has(> .tabla-con-pie) {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tabla-con-pie {
+            flex: 1 0 auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tabla-con-pie > table {
+            flex: 1 0 auto;
+            height: 100%;
+        }
+
+        .tabla-relleno,
+        .tabla-relleno tr,
+        .tabla-relleno td {
+            height: 100%;
+        }
+    }
+
+    .tabla-relleno {
+        pointer-events: none;
+    }
+
     .tabla-relleno td {
         padding: 0;
         border: 0;
@@ -480,11 +509,50 @@
         padding: var(--esp-3) var(--esp-1);
     }
 
-    .modal-detalle-tipos thead th:nth-child(2) { width: 9%; }
-    .modal-detalle-tipos thead th:nth-child(3) { width: 10%; }
+    .modal-detalle-tipos thead th[data-sort] {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+        transition: color var(--dur-fast) ease;
+    }
+
+    .modal-detalle-tipos thead th[data-sort]:hover,
+    .modal-detalle-tipos thead th[data-sort]:focus-visible {
+        color: var(--ui-primary);
+        outline: none;
+    }
+
+    .modal-detalle-tipos thead th[data-sort] .bi {
+        font-size: var(--texto-xs);
+        vertical-align: baseline;
+    }
+
+    .modal-detalle-tipos thead th.detalle-col-ultima {
+        padding-right: var(--esp-8);
+    }
+
+    .modal-detalle-tipos thead th:nth-child(2) { width: 10%; }
+    .modal-detalle-tipos thead th:nth-child(3) { width: 11%; }
     .modal-detalle-tipos thead th:nth-child(4) { width: 14%; }
     .modal-detalle-tipos thead th:nth-child(5) { width: 15%; }
-    .modal-detalle-tipos thead th:nth-child(6) { width: 17%; }
+    .modal-detalle-tipos thead th:nth-child(6) { width: 20%; }
+
+    /* Botón de columnas visibles flotando al costado derecho del encabezado pegajoso (sin sumar columna a la tabla) */
+    .detalle-cols-barra {
+        position: sticky;
+        top: 0;
+        height: 0;
+        z-index: calc(var(--capa-celda-fija) + 1);
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-start;
+        pointer-events: none;
+    }
+
+    .detalle-cols-barra > .dropdown {
+        pointer-events: auto;
+        padding: var(--esp-2) var(--esp-1) 0 0;
+    }
 
     .modal-detalle-tipos td:first-child {
         overflow-wrap: anywhere;

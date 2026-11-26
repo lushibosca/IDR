@@ -483,6 +483,59 @@ check('importar otro formato: se rechaza sin tocar nada', mal && (await api('/ap
     $('global-search').dispatchEvent(new w.Event('input'));
 }
 
+// --- Bloque 1: modal unificado de detalle de stock, menú de Canales y atajo global Alt+Shift+L
+{
+    // Volver al dashboard para probar Canales, Detalle de Stock y Alt+Shift+L global
+    $('v-pills-dashboard-tab').click();
+    await esperar(150);
+
+    // Canales: ocultar y volver a mostrar el detalle por grabador
+    const btnCanales = $('canales-mostrar-distribucion');
+    check('canales: existe el toggle de detalle por grabador', !!btnCanales && btnCanales.getAttribute('aria-pressed') === 'true');
+    btnCanales.click();
+    await hasta(() => $('cap-distribucion-caja').classList.contains('d-none'));
+    check('canales: guarda preferencia en sgc2/ y oculta el bloque',
+        w.localStorage.getItem('sgc2/cctv:canales_distribucion') === '0'
+        && btnCanales.getAttribute('aria-pressed') === 'false'
+        && $('cap-distribucion-caja').classList.contains('d-none'));
+    btnCanales.click();
+    await hasta(() => w.localStorage.getItem('sgc2/cctv:canales_distribucion') === '1');
+    check('canales: vuelve a activar el detalle por grabador',
+        w.localStorage.getItem('sgc2/cctv:canales_distribucion') === '1'
+        && btnCanales.getAttribute('aria-pressed') === 'true');
+
+    // Detalle de stock unificado: abrir desde Cámaras, agrupar por edificio y ordenar 3 toques
+    $('card-kpi-stock-camaras').click();
+    await hasta(() => $('modal-detalle-stock').classList.contains('show'));
+    check('detalle de stock: abre el modal unificado con título Cámaras', /Cámaras/i.test($('modal-stock-texto').textContent),
+        $('modal-stock-texto').textContent);
+    d.querySelector('[data-stock-detalle-agrupar="edificio"]').click();
+    await hasta(() => d.querySelector('#tabla-detalle-stock thead th').textContent === 'Edificio / Modelo');
+    check('detalle de stock: cambia la columna al agrupar por edificio',
+        d.querySelector('#tabla-detalle-stock thead th').textContent === 'Edificio / Modelo',
+        d.querySelector('#tabla-detalle-stock thead th').textContent);
+    const thTotal = d.querySelector('#tabla-detalle-stock th[data-sort="total"]');
+    thTotal.click();
+    await hasta(() => thTotal.getAttribute('aria-sort') === 'ascending');
+    const s1 = thTotal.getAttribute('aria-sort');
+    thTotal.click();
+    await hasta(() => thTotal.getAttribute('aria-sort') === 'descending');
+    const s2 = thTotal.getAttribute('aria-sort');
+    thTotal.click();
+    await hasta(() => thTotal.getAttribute('aria-sort') === 'none');
+    const s3 = thTotal.getAttribute('aria-sort');
+    check('detalle de stock: 3 toques en columna alterna asc → desc → none', s1 === 'ascending' && s2 === 'descending' && s3 === 'none', `${s1}/${s2}/${s3}`);
+    $('modal-detalle-stock').querySelector('[data-ui-dismiss="modal"]').click();
+    await hasta(() => !$('modal-detalle-stock').classList.contains('show'));
+
+    // Atajo global Alt+Shift+L desde Estado abre Listar
+    d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'L', code: 'KeyL', altKey: true, shiftKey: true, bubbles: true, cancelable: true }));
+    await hasta(() => $('stockExportModal').classList.contains('show'));
+    check('atajo Alt+Shift+L: abre Listar desde cualquier pestaña', $('stockExportModal').classList.contains('show'));
+    $('stockExportModal').querySelector('[data-ui-dismiss="modal"]').click();
+    await hasta(() => !$('stockExportModal').classList.contains('show'));
+}
+
 await esperar(300);
 check('sin errores de JavaScript', errores.length === 0, errores.join(' | '));
 console.log(fallos ? `\n${fallos} FALLO(S)` : '\nTODO OK');

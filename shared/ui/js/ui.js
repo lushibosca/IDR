@@ -56,9 +56,9 @@ function uiPosicionDesplegable(ref, menu, ventana, opciones = {}) {
     const desplazamiento = Number.isFinite(opciones.desplazamiento) ? opciones.desplazamiento : 0;
     const distancia = Number.isFinite(opciones.distancia) ? opciones.distancia : 2;
 
-    const espacioAbajo = ventana.height - ref.bottom - distancia;
-    const espacioArriba = ref.top - distancia;
-    const lado = (menu.height > espacioAbajo && espacioArriba >= menu.height) ? 'top' : 'bottom';
+    const abajo = ventana.height - ref.bottom - distancia, arriba = ref.top - distancia;
+    const lado = opciones.lado === 'top' ? (menu.height > arriba && abajo >= menu.height ? 'bottom' : 'top')
+        : (menu.height > abajo && arriba >= menu.height ? 'top' : 'bottom');
     const y = lado === 'bottom' ? ref.bottom + distancia : ref.top - distancia - menu.height;
 
     let x = alinear === 'end' ? ref.right - menu.width - desplazamiento : ref.left + desplazamiento;
@@ -560,11 +560,11 @@ const UI = (() => {
             return;
         }
         const [desplazamiento, distancia] = uiLeerOffset(boton.getAttribute('data-ui-offset'));
-        const r = uiPosicionDesplegable(
-            boton.getBoundingClientRect(),
+        const r = uiPosicionDesplegable(boton.getBoundingClientRect(),
             { width: menu.offsetWidth, height: menu.offsetHeight },
             { width: document.documentElement.clientWidth, height: window.innerHeight },
-            { alinear: menu.classList.contains('dropdown-menu-end') ? 'end' : 'start', desplazamiento, distancia });
+            { alinear: menu.classList.contains('dropdown-menu-end') ? 'end' : 'start',
+                lado: boton.getAttribute('data-ui-lado') === 'top' ? 'top' : 'bottom', desplazamiento, distancia });
         // De coordenadas de la ventana a coordenadas del contenedor posicionado del menú.
         const padre = menu.offsetParent || document.documentElement;
         const rp = padre.getBoundingClientRect();

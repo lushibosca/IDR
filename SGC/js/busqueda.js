@@ -107,6 +107,12 @@ function tokenizarBusqueda(query) {
         .filter(Boolean);
 }
 
+// «piso X» literal en texto normalizado (escapa metacaracteres para que "piso (" no rompa y "piso .*" no sea comodín).
+function contienePiso(texto, valor) {
+    const escapado = String(valor).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(^|[^a-z0-9])piso\\s+${escapado}([^a-z0-9]|$)`, 'i').test(texto);
+}
+
 function coincideTokenUbicacion(inst, token) {
     if (!inst || !token) return false;
     const t = normalizarTextoBusqueda(token).trim();
@@ -115,11 +121,7 @@ function coincideTokenUbicacion(inst, token) {
     // Si inst es un string con el texto formateado de ubicación
     if (typeof inst === 'string') {
         const sNorm = normalizarTextoBusqueda(inst);
-        if (t.startsWith('piso ')) {
-            const valPiso = t.slice(5).trim();
-            const rx = new RegExp('(^|[^a-z0-9])piso\\s+' + valPiso + '([^a-z0-9]|$)', 'i');
-            return rx.test(sNorm);
-        }
+        if (t.startsWith('piso ')) return contienePiso(sNorm, t.slice(5).trim());
         if (t === 'piso') {
             const rxPiso = /(^|[^a-z0-9])piso([^a-z0-9]|$)/i;
             return rxPiso.test(sNorm);
@@ -132,10 +134,7 @@ function coincideTokenUbicacion(inst, token) {
     if (t.startsWith('piso ')) {
         const valPiso = t.slice(5).trim();
         if (inst.piso && normalizarTextoBusqueda(inst.piso).trim() === valPiso) return true;
-        if (inst.descripcion) {
-            const rx = new RegExp('(^|[^a-z0-9])piso\\s+' + valPiso + '([^a-z0-9]|$)', 'i');
-            if (rx.test(normalizarTextoBusqueda(inst.descripcion))) return true;
-        }
+        if (inst.descripcion && contienePiso(normalizarTextoBusqueda(inst.descripcion), valPiso)) return true;
         return false;
     }
     if (t === 'piso') {

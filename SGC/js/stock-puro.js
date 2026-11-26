@@ -243,63 +243,9 @@ function stockNormalizarCampos(campos) {
     return new Set([String(campos)]);
 }
 
+// La coincidencia de ubicación vive en busqueda.js (cargado antes): una sola fuente, sin copia de respaldo.
 function stockCoincideUbicacion(inst, token) {
-    if (typeof coincideTokenUbicacion === 'function') return coincideTokenUbicacion(inst, token);
-    if (typeof window !== 'undefined' && typeof window.coincideTokenUbicacion === 'function') {
-        return window.coincideTokenUbicacion(inst, token);
-    }
-    if (!inst || !token) return false;
-    const t = normalizarTextoBusqueda(token).trim();
-    if (!t) return false;
-
-    if (typeof inst === 'string') {
-        const sNorm = normalizarTextoBusqueda(inst);
-        if (t.startsWith('piso ')) {
-            const valPiso = t.slice(5).trim();
-            const rx = new RegExp('(^|[^a-z0-9])piso\\s+' + valPiso + '([^a-z0-9]|$)', 'i');
-            return rx.test(sNorm);
-        }
-        if (t === 'piso') {
-            const rxPiso = /(^|[^a-z0-9])piso([^a-z0-9]|$)/i;
-            return rxPiso.test(sNorm);
-        }
-        return sNorm.includes(t);
-    }
-
-    if (t.startsWith('piso ')) {
-        const valPiso = t.slice(5).trim();
-        if (inst.piso && normalizarTextoBusqueda(inst.piso).trim() === valPiso) return true;
-        if (inst.descripcion) {
-            const rx = new RegExp('(^|[^a-z0-9])piso\\s+' + valPiso + '([^a-z0-9]|$)', 'i');
-            if (rx.test(normalizarTextoBusqueda(inst.descripcion))) return true;
-        }
-        return false;
-    }
-    if (t === 'piso') return Boolean(inst.piso);
-
-    if (t.startsWith('rack ')) {
-        const valRack = t.slice(5).trim();
-        if (inst.rack && normalizarTextoBusqueda(inst.rack).includes(valRack)) return true;
-        return false;
-    }
-
-    if (t.startsWith('puerto ')) {
-        const valPuerto = t.slice(7).trim();
-        if (inst.puerto && normalizarTextoBusqueda(inst.puerto).includes(valPuerto)) return true;
-        return false;
-    }
-
-    if (inst.edificio && normalizarTextoBusqueda(inst.edificio).includes(t)) return true;
-    if (inst.piso && normalizarTextoBusqueda(inst.piso).trim() === t) return true;
-    if (inst.rack && normalizarTextoBusqueda(inst.rack).includes(t)) return true;
-    if (inst.puerto && normalizarTextoBusqueda(inst.puerto).includes(t)) return true;
-    if (inst.descripcion && normalizarTextoBusqueda(inst.descripcion).includes(t)) return true;
-    if (inst.comentario && normalizarTextoBusqueda(inst.comentario).includes(t)) return true;
-
-    const uTexto = (typeof stockUbicacionTexto === 'function') ? stockUbicacionTexto(inst) : '';
-    if (uTexto && normalizarTextoBusqueda(uTexto).includes(t)) return true;
-
-    return false;
+    return coincideTokenUbicacion(inst, token);
 }
 
 // La tokenización es una sola: la de busqueda.js (se carga antes). No se duplica su tabla de frases compuestas.
@@ -345,8 +291,9 @@ function _stockDispositivoCoincideTokenPositivo(d, tok, campos, etiquetasTipo = 
         if (condTexto && stockMatchTexto(condTexto, tok)) return true;
         if (d.condicion && stockMatchTexto(d.condicion, tok)) return true;
         if (d.en_uso && (stockMatchTexto('produccion', tok) || stockMatchTexto('en uso', tok) || stockMatchTexto('operativo', tok))) return true;
-        if (d.disponible && stockMatchTexto('disponible', tok)) return true;
-        if (!d.en_uso && !d.disponible && (stockMatchTexto('fuera de servicio', tok) || stockMatchTexto('no disponible', tok))) return true;
+        if (d.disponible && (tokNorm === 'disponible' || tokNorm === 'disponibles' || stockMatchTexto('disponible', tok))) return true;
+        if (!d.en_uso && !d.disponible && (tokNorm === 'no disponible' || tokNorm === 'no disponibles' || tokNorm === 'no-disponible'
+            || stockMatchTexto('fuera de servicio', tok))) return true;
     }
 
     // 3. Nombre / Ubicación
@@ -496,6 +443,11 @@ function stockOrdenColumnas(guardado) {
     const claves = [...STOCK_COLUMNAS_ORDEN.keys()];
     const elegidas = Array.isArray(lista) ? lista.filter((c, i) => claves.includes(c) && lista.indexOf(c) === i) : [];
     return [...elegidas, ...claves.filter(c => !elegidas.includes(c))];
+}
+
+// Siguiente orden al tocar una columna: sin orden -> asc -> desc -> sin orden (vuelve al orden natural)
+function stockSiguienteOrden(columnaActual, dirActual, columna) {
+    return uiSiguienteOrden(columnaActual, dirActual, columna, STOCK_COLUMNAS_ORDEN);
 }
 
 // Comparador de una columna (`dir`: 'asc' | 'desc'), o null si la columna no se ordena

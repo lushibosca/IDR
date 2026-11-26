@@ -54,6 +54,15 @@ test("uiPosicionDesplegable: si no entra en ningún lado, se queda abajo (como a
   assert.equal(r.lado, "bottom");
 });
 
+test("uiPosicionDesplegable: lado 'top' abre arriba si entra, y cae abajo si arriba no entra y abajo sí", () => {
+  const medio = { left: 100, top: 300, right: 200, bottom: 330 };
+  const r = ui.uiPosicionDesplegable(medio, { width: 180, height: 150 }, VENTANA, { lado: "top", distancia: 8 });
+  assert.deepEqual(plano(r), { x: 100, y: 142, lado: "top", posicion: "top-start" });
+  const arriba = { left: 100, top: 50, right: 200, bottom: 80 };
+  const r2 = ui.uiPosicionDesplegable(arriba, { width: 180, height: 150 }, VENTANA, { lado: "top", distancia: 8 });
+  assert.equal(r2.lado, "bottom");
+});
+
 test("uiPosicionDesplegable: nunca se sale de la ventana en horizontal", () => {
   const derecha = { left: 950, top: 100, right: 990, bottom: 130 };
   assert.equal(ui.uiPosicionDesplegable(derecha, { width: 200, height: 50 }, VENTANA).x, 800);

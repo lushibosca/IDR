@@ -923,7 +923,7 @@ function uiItemAcordeon({ id, abierto, titulo, claseTitulo, icono = null, insign
     b.dataset.uiTarget = `#${id}`;
     if (icono) b.appendChild(uiNodo('i', `${icono} me-2`));
     b.appendChild(uiNodo('span', `fw-medium ${claseTitulo}`, titulo));
-    for (const ins of insignias) b.appendChild(uiNodo('span', `badge ${ins.clase} ms-2`, ins.texto));
+    for (const ins of insignias) { const sp = uiNodo('span', `badge ${ins.clase} ms-2`, ins.texto); if (ins.titulo) sp.title = ins.titulo; b.appendChild(sp); }
     if (detalle) {
         b.classList.add('accordion-con-detalle');
         const valor = uiValorInformado(copiar);

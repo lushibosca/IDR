@@ -3,11 +3,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { cargarBloque } from "./_bloque.mjs";
 
-const GLOBALES = { Date, Number, String, Array, Object, Math };
-const { normalizarTextoBusqueda, tokenizarBusqueda } = cargarBloque("busqueda.js", "BUSQUEDA TOKENIZADA PURO", GLOBALES,
-  ["normalizarTextoBusqueda", "tokenizarBusqueda"]);
+const GLOBALES = { Date, Number, String, Array, Object, Math, RegExp };
+const { normalizarTextoBusqueda, tokenizarBusqueda, coincideTokenUbicacion } = cargarBloque("busqueda.js", "BUSQUEDA TOKENIZADA PURO", GLOBALES,
+  ["normalizarTextoBusqueda", "tokenizarBusqueda", "coincideTokenUbicacion"]);
 const comun = cargarBloque("comun.js", "VALOR INFORMADO PURO", { String }, ["uiValorInformado", "uiNumeroCanal"]);
-const apiStock = cargarBloque("stock-puro.js", "STOCK PURO", { ...GLOBALES, ...comun, normalizarTextoBusqueda, tokenizarBusqueda }, ["stockFiltrar"]);
+const apiStock = cargarBloque("stock-puro.js", "STOCK PURO", { ...GLOBALES, ...comun, normalizarTextoBusqueda, tokenizarBusqueda, coincideTokenUbicacion }, ["stockFiltrar"]);
 const apiNav = cargarBloque("app.js", "RESOLVER PESTAÑA BUSQUEDA PURO", GLOBALES, ["resolverPestanaBusqueda"]);
 
 // Implementación de la función de actualización de insignias para pruebas

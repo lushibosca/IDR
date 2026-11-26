@@ -39,7 +39,7 @@ test("el módulo de la versión está en el precache y SGC lo muestra en Ajustes
 });
 
 test("npm run release deja las dos versiones iguales y con el formato (se prueba sobre una copia, sin tocar el repo)", () => {
-  const tmp = fs.mkdtempSync(path.join(fs.realpathSync(process.env.TMPDIR || "/tmp"), "idr-release-"));
+  const tmp = fs.mkdtempSync(path.join(fs.realpathSync(process.env.TMPDIR || process.env.TEMP || "/tmp"), "idr-release-"));
   try {
     fs.mkdirSync(path.join(tmp, "scripts")); fs.mkdirSync(path.join(tmp, "shared"));
     fs.copyFileSync(path.join(RAIZ, "scripts/release.mjs"), path.join(tmp, "scripts/release.mjs"));

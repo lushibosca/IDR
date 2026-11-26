@@ -4,13 +4,20 @@ import assert from "node:assert/strict";
 import { cargarBloque, plano } from "./_bloque.mjs";
 
 const { uiValorInformado } = cargarBloque("comun.js", "VALOR INFORMADO PURO", { String }, ["uiValorInformado"]);
-const GLOBALES = { String, Number, Array, Map, Set, Math, Object, ALERTAS_LIMITE_VISIBLES: 4, uiValorInformado };
+const comunOrden = cargarBloque("comun-orden.js", "COMUN ORDEN PURO", { String, Number, Math, Array }, [
+  "uiFormatoPorcentaje", "uiCompararTexto", "uiSiguienteOrden", "uiIconoOrdenClase",
+]);
+const GLOBALES = { String, Number, Array, Map, Set, Math, Object, ALERTAS_LIMITE_VISIBLES: 4, uiValorInformado, ...comunOrden };
 const stock = cargarBloque("resumen.js", "RESUMEN STOCK PURO", GLOBALES, [
   "resumirStock", "busquedaDeModelo", "gruposPropiosCatalogo", "metricasDesgloseStock", "EJES_ACTIVOS", "formatoCapacidad",
-  "modoCapacidadValido", "formatoParticipacion"
+  "modoCapacidadValido", "formatoParticipacion", "RESUMEN_SIN_MODELO", "resumenContador", "resumenSumar"
 ]);
 const participacion = cargarBloque("resumen-participacion.js", "PARTICIPACION STOCK PURO", GLOBALES, [
   "modoParticipacionStockValido", "participacionStock", "etiquetaParticipacionStock",
+]);
+const detalleStock = cargarBloque("resumen-participacion.js", "DETALLE STOCK PURO", { ...GLOBALES, ...stock, ...participacion }, [
+  "agrupamientoDetalleStockValido", "etiquetaColumnaDetalleStock", "agruparDetalleStock",
+  "ordenDetalleStockValido", "siguienteOrdenDetalleStock", "valorOrdenDetalleStock",
 ]);
 const reorden = cargarBloque("resumen.js", "REORDEN SECCIONES PURO", GLOBALES, ["ordenarIdsSecciones", "evaluarIntercambioSecciones", "IDS_SECCIONES_REUBICABLES", "DISPOSICION_POR_DEFECTO", "distribuirSecciones", "zonaEnPunto", "indiceInsercion", "destinoTeclado"]);
 
@@ -368,15 +375,21 @@ test("detalle de canales y de stock: columna «% del total» y chip de canales c
   const { ruta } = await import("./_bloque.mjs");
   const html = fs.readFileSync(ruta("index.html"), "utf8");
   const resumen = fs.readFileSync(ruta("resumen.js"), "utf8");
+  const detalle = fs.readFileSync(ruta("resumen-detalle.js"), "utf8");
   const distribucion = fs.readFileSync(ruta("resumen-distribucion.js"), "utf8");
-  for (const tabla of ["tabla-detalle-capacidad", "tabla-detalle-stock", "tabla-detalle-stock-otros", "tabla-stock-grupo-tipo", "tabla-stock-cam-tipo"]) {
+  for (const tabla of ["tabla-detalle-capacidad", "tabla-detalle-stock"]) {
     const resto = html.slice(html.indexOf(`id="${tabla}"`));
-    assert.ok(resto.slice(0, resto.indexOf("</thead>")).includes('<th class="text-center">% del total</th>'), tabla);
+    const thead = resto.slice(0, resto.indexOf("</thead>"));
+    assert.ok(thead.includes("% del total"), tabla);
   }
-  for (const id of ["card-kpi-capacidad", "kpi-cap-donut-grupo", "cap-distribucion-leyenda", "cap-detalle-part"]) assert.ok(html.includes(`id="${id}"`), id);
+  for (const id of ["card-kpi-capacidad", "kpi-cap-donut-grupo", "cap-distribucion-leyenda", "cap-detalle-part", "canales-mostrar-distribucion"]) {
+    assert.ok(html.includes(`id="${id}"`), id);
+  }
   assert.ok(!html.includes('id="modal-detalle-distribucion"'));
-  assert.ok(resumen.includes("celdasContador(sub, m, clases.slice(1), modo, participacionStock(m, c.t, totalUso, modoPart),"), "un modelo pesa sobre su tipo");
-  assert.ok(resumen.includes("celdasContador(tr, c, clases.slice(1), modo, participacionStock(c, totalGeneral, totalUso, modoPart))"), "un tipo pesa sobre el grupo");
+  assert.ok(!html.includes('id="modal-detalle-stock-otros"') && !html.includes('id="modal-detalle-stock-grupo"') && !html.includes('id="modal-detalle-stock-camaras"'),
+    "un solo modal unificado de detalle de stock");
+  assert.ok(detalle.includes("celdasContador(sub, m, clases.slice(1), modo, participacionStock(m, c.t, totalUso, modoPart),"), "un modelo pesa sobre su tipo");
+  assert.ok(detalle.includes("celdasContador(tr, c, clases.slice(1), modo, participacionStock(c, totalGeneral, totalUso, modoPart))"), "un tipo pesa sobre el grupo");
   assert.ok(distribucion.includes("const MAX_GRABADORES_TORTA = 8;") && resumen.includes("pintarDistribucionGrabadores(cap);"));
   // con el cursor sobre un grabador: aporte a producción con su nombre de subtexto y sus propios valores (que cuentan, sin parpadeo)
   assert.ok(html.includes('id="kpi-cap-sub"') && distribucion.includes("'Aporte a producción'") && distribucion.includes("ponerSubtextoGrabador(it.nombre);"));
@@ -415,4 +428,43 @@ test("participacionStock: modo total usa c.t sobre su base; modo uso usa c.u sob
   assert.equal(formatoParticipacion(puTipo.parte, puTipo.base), "62.5%");
   assert.equal(formatoParticipacion(puModelo.parte, puModelo.base), "37.5%");
   assert.equal(formatoParticipacion(0, 0), "-");
+});
+
+test("comun-orden: porcentaje, orden natural y ciclo de 3 toques", () => {
+  assert.equal(comunOrden.uiFormatoPorcentaje(1, 3), "33.3%");
+  assert.equal(comunOrden.uiFormatoPorcentaje(0, 0), "-");
+  assert.ok(comunOrden.uiCompararTexto("piso 2", "piso 10") < 0);
+  assert.deepEqual(plano(comunOrden.uiSiguienteOrden(null, "asc", "total", ["total", "uso"])), ["total", "asc"]);
+  assert.deepEqual(plano(comunOrden.uiSiguienteOrden("total", "asc", "total", ["total", "uso"])), ["total", "desc"]);
+  assert.deepEqual(plano(comunOrden.uiSiguienteOrden("total", "desc", "total", ["total", "uso"])), [null, "asc"]);
+  assert.deepEqual(plano(comunOrden.uiSiguienteOrden("total", "desc", "otra", ["total", "uso"])), ["total", "desc"]);
+});
+
+test("detalle de stock: agrupamiento (tipo, edificio, edificio-piso, patrimonio) y ordenamiento con 3er toque", () => {
+  const { agrupamientoDetalleStockValido, etiquetaColumnaDetalleStock, agruparDetalleStock,
+    ordenDetalleStockValido, siguienteOrdenDetalleStock, valorOrdenDetalleStock } = detalleStock;
+  assert.equal(agrupamientoDetalleStockValido("edificio-piso"), "edificio-piso");
+  assert.equal(agrupamientoDetalleStockValido("invalido"), "tipo");
+  assert.equal(etiquetaColumnaDetalleStock("patrimonio"), "Patrimonio / Modelo");
+
+  const tipos = new Map([["domo", "Domo"], ["bullet", "Bullet"]]);
+  const lista = [
+    { tipo: "domo", modelo: "M1", en_uso: true, disponible: false, patrimonio: "P-1", instalacion: { edificio: "Anexo A", piso: "2" } },
+    { tipo: "bullet", modelo: "M2", en_uso: false, disponible: true, patrimonio: "", instalacion: null },
+  ];
+  const porEd = agruparDetalleStock(lista, tipos, "edificio");
+  assert.deepEqual([...porEd.keys()], ["Anexo A", "Sin instalar"]);
+  const porPiso = agruparDetalleStock(lista, tipos, "edificio-piso");
+  assert.deepEqual([...porPiso.keys()], ["Anexo A · piso 2", "Sin instalar"]);
+  const porPat = agruparDetalleStock(lista, tipos, "patrimonio");
+  assert.deepEqual([...porPat.keys()], ["Con patrimonio", "Sin patrimonio"]);
+
+  assert.deepEqual(plano(ordenDetalleStockValido("uso:desc")), ["uso", "desc"]);
+  assert.deepEqual(plano(ordenDetalleStockValido("mal:asc")), ["", ""]);
+  assert.equal(siguienteOrdenDetalleStock("", "total"), "total:asc");
+  assert.equal(siguienteOrdenDetalleStock("total:asc", "total"), "total:desc");
+  assert.equal(siguienteOrdenDetalleStock("total:desc", "total"), "");
+  assert.equal(valorOrdenDetalleStock({ t: 10, u: 4, d: 5, o: 1 }, "uso", "pct", "total"), 0.4);
+  assert.equal(valorOrdenDetalleStock({ t: 10, u: 4, d: 5, o: 1 }, "uso", "cant", "total"), 4);
+  assert.equal(valorOrdenDetalleStock({ t: 10, u: 4, d: 5, o: 1 }, "part", "cant", "uso"), 4);
 });

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'idr-suite-v261124.1527';
+const CACHE_NAME = 'idr-suite-v261126.1615';
 const RUNTIME_CACHE = 'idr-runtime-261105.0300';
 
 const PRECACHE_URLS = [
@@ -45,6 +45,7 @@ const PRECACHE_URLS = [
   './SGC/js/auditoria-bd.js',
   './SGC/js/busqueda.js',
   './SGC/js/comun.js',
+  './SGC/js/comun-orden.js',
   './SGC/js/consultas.js',
   './SGC/js/datos-puro.js',
   './SGC/js/doble-toque.js',
@@ -64,6 +65,7 @@ const PRECACHE_URLS = [
   './SGC/js/resumen.js',
   './SGC/js/resumen-distribucion.js',
   './SGC/js/resumen-participacion.js',
+  './SGC/js/resumen-detalle.js',
   './SGC/js/selector.js',
   './SGC/js/sesion-local.js',
   './SGC/js/stock-alta-lote.js',

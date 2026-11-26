@@ -149,9 +149,8 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
 
     function alternarOrden(columna) {
         if (!STOCK_COLUMNAS_ORDEN.has(columna)) return;
-        if (ordenColumna === columna) ordenDir = ordenDir === 'asc' ? 'desc' : 'asc';
-        else { ordenColumna = columna; ordenDir = 'asc'; }
-        if (typeof preferencias !== 'undefined') preferencias.set(CLAVE_ORDEN, `${ordenColumna}:${ordenDir}`);
+        [ordenColumna, ordenDir] = stockSiguienteOrden(ordenColumna, ordenDir, columna);
+        if (typeof preferencias !== 'undefined') preferencias.set(CLAVE_ORDEN, ordenColumna ? `${ordenColumna}:${ordenDir}` : '');
         if (datos) renderLista({ animar: true });
     }
 
@@ -203,11 +202,10 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         td.appendChild(b);
     }
 
-    // Chevron, título y contador de un subgrupo: iguales en la lista (fila) y en las tarjetas (encabezado)
-    function nodosSubgrupo(sub) {
-        return [uiNodo('i', 'bi bi-chevron-down stock-subgrupo-chevron me-1'),
-            uiNodo('span', 'fw-semibold text-main small', sub.titulo),
-            uiNodo('span', 'badge rounded-pill bg-secondary ms-1', String(sub.items.length))];
+    // Chevron, título, contador y % sobre la vista actual de un subgrupo: iguales en lista y tarjetas
+    function nodosSubgrupo(sub, totalVisible = sub.items.length) {
+        const pct = uiInsigniaPorcentaje(sub.items.length, totalVisible, 'rounded-pill ms-1');
+        return [uiNodo('i', 'bi bi-chevron-down stock-subgrupo-chevron me-1'), uiNodo('span', 'fw-semibold text-main small', sub.titulo), uiNodo('span', 'badge rounded-pill bg-secondary ms-1', String(sub.items.length)), ...(pct ? [pct] : [])];
     }
 
     // Las columnas de la lista tal como las arma `renderFilaDispositivo` (la imagen y después estas, en este orden de fábrica);
@@ -377,7 +375,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         });
     }
 
-    function tablaGrupo(items, editable, subsecciones = null, idGrupo = '') {
+    function tablaGrupo(items, editable, subsecciones = null, idGrupo = '', totalVisible = items.length) {
         const caja = document.createElement('div');
         caja.className = 'table-responsive';
         const tabla = document.createElement('table');
@@ -438,7 +436,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
                 const divSub = document.createElement('div');
                 divSub.className = 'd-flex align-items-center gap-2';
 
-                divSub.append(...nodosSubgrupo(sub));
+                divSub.append(...nodosSubgrupo(sub, totalVisible));
                 tdSub.appendChild(divSub);
 
                 const trCuerpo = tbodySub.insertRow();
@@ -609,7 +607,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         contenedor.appendChild(card);
     }
 
-    function tarjetasGrupo(items, editable, mapaCamaras, subsecciones = null, idGrupo = '') {
+    function tarjetasGrupo(items, editable, mapaCamaras, subsecciones = null, idGrupo = '', totalVisible = items.length) {
         if (Array.isArray(subsecciones) && subsecciones.length > 0) {
             const contenedor = document.createElement('div');
             contenedor.className = 'stock-subgrupos-tarjetas';
@@ -632,7 +630,7 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
                 header.className = 'stock-subgrupo-header d-flex align-items-center gap-2 px-3 py-2 w-100 text-start';
                 header.setAttribute('aria-expanded', String(!estaColapsado));
 
-                header.append(...nodosSubgrupo(sub));
+                header.append(...nodosSubgrupo(sub, totalVisible));
 
                 const colWrapper = document.createElement('div');
                 colWrapper.className = estaColapsado ? 'grid-collapse' : 'grid-collapse show';
@@ -679,10 +677,11 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
         return caja;
     }
 
-    // Un acordeón con el MISMO marcado que Cámaras/Servidores (app.js maneja apertura, animación y cuál queda abierto)
-    function itemAcordeon(id, abierto, etiqueta, cantidad, cuerpo) {
-        return uiItemAcordeon({ id, abierto, titulo: etiqueta, claseTitulo: 'stock-acordeon-titulo',   // naranja, abierto o cerrado
-            insignias: [{ texto: String(cantidad), clase: 'bg-secondary' }], cuerpo });
+    function itemAcordeon(id, abierto, etiqueta, cantidad, cuerpo, totalVisible = cantidad) {
+        const pct = uiFormatoPorcentaje(cantidad, totalVisible);
+        const insignias = [{ texto: String(cantidad), clase: 'bg-secondary' }];
+        if (pct !== '-') insignias.push({ texto: pct, clase: 'bg-secondary-subtle text-secondary', titulo: `${pct} de la vista actual (${cantidad} de ${totalVisible})` });
+        return uiItemAcordeon({ id, abierto, titulo: etiqueta, claseTitulo: 'stock-acordeon-titulo', insignias, cuerpo });
     }
 
     let camposStockActuales = null;
@@ -783,9 +782,9 @@ function stockSugerirModelos({ dispositivos, marcaEl, modeloEl, avisoEl, listaEl
                 ? stockSubsecciones(g.items, criterio, etiquetasTipo, catalogo)
                 : null;
             const cuerpo = (modoVista === 'tarjetas')
-                ? tarjetasGrupo(g.items, editable, mapaCamaras, subsecciones, id)
-                : tablaGrupo(g.items, editable, subsecciones, id);
-            return itemAcordeon(id, buscando || abrirTodos || abiertos.has(id), g.etiqueta, g.items.length, cuerpo);
+                ? tarjetasGrupo(g.items, editable, mapaCamaras, subsecciones, id, vis.length)
+                : tablaGrupo(g.items, editable, subsecciones, id, vis.length);
+            return itemAcordeon(id, buscando || abrirTodos || abiertos.has(id), g.etiqueta, g.items.length, cuerpo, vis.length);
         });
 
         const aplicarDOM = () => {

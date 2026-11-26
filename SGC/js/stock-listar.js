@@ -510,15 +510,14 @@
 
     // ------------------------------------------------------------------ eventos
     document.querySelectorAll('[data-stock-exportar]').forEach(b => b.addEventListener('click', () => abrirExportacion()));
-    // Alt+Shift+L: Listar desde la pestaña Stock (también con el foco en el buscador), sin otro modal abierto; en el modo
-    // selección abre lo seleccionado, como el ícono de la barra. Respeta los botones deshabilitados (sin dispositivos o
-    // sin nada elegido).
+    // Alt+Shift+L: Listar desde cualquier pestaña (en selección de Activos lista lo elegido; en Producción lo toma produccion-seleccion.js)
     document.addEventListener('keydown', (ev) => {
-        if (!stockEsAtajoListar(ev) || !$('v-pills-stock')?.classList.contains('active')) return;
-        if (typeof UI !== 'undefined' && UI.modal.arriba()) return;
+        if (!stockEsAtajoListar(ev) || (typeof UI !== 'undefined' && UI.modal.arriba())) return;
+        const enStock = Boolean($('v-pills-stock')?.classList.contains('active'));
+        const boton = (enStock && nucleo.seleccion.activo()) ? $('stock-sel-listar') : document.querySelector('[data-stock-exportar]');
+        if (!boton || boton.disabled || boton.closest('.d-none')) return;
         ev.preventDefault();
-        const boton = nucleo.seleccion.activo() ? $('stock-sel-listar') : document.querySelector('[data-stock-exportar]');
-        if (boton && !boton.disabled) boton.click();
+        boton.click();
     });
     $('stock-exp-modos').addEventListener('click', (ev) => {
         const btnModo = ev.target instanceof Element ? ev.target.closest('[data-stock-exp-modo]') : null;

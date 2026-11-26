@@ -89,6 +89,8 @@ function interpolarTextoNumerico(desde, hasta, t) {
 // ==== DISTRIBUCION CANALES PURO END ====
 
 // Canales: leyenda de participación por grabador (máx. 8) dentro del chip unificado y dona dinámica al pasar el cursor.
+const CLAVE_CANALES_DISTRIBUCION = 'cctv:canales_distribucion';
+const mostrarDistribucionCanales = () => storage.get(CLAVE_CANALES_DISTRIBUCION) !== '0';
 let _firmaDistribucionGrabadores = '';
 let _capActual = null;           // lo último que midió el chip: se restaura al sacar el cursor de un grabador
 // Misma geometría que el aro de uso (`#kpi-cap-circle`: r 34, trazo 8): al pasar el cursor por un grabador el aro no cambia de tamaño
@@ -162,7 +164,7 @@ function pintarDistribucionGrabadores(cap) {
     if (!tarjeta || !grupoDonut || !caja || !leyenda) return;
     const dist = distribuirUsoGrabadores(cap.detalle, MAX_GRABADORES_TORTA);
     const firma = JSON.stringify({ total: dist.total, items: dist.items.map(i => [i.clave, i.enUso, i.pct]) });
-    caja.classList.toggle('d-none', dist.items.length === 0);
+    caja.classList.toggle('d-none', !mostrarDistribucionCanales() || dist.items.length === 0);
     if (firma === _firmaDistribucionGrabadores) return;
     _firmaDistribucionGrabadores = firma;
 
@@ -242,6 +244,39 @@ function pintarDistribucionGrabadores(cap) {
     }
     resaltar(null);
 }
+
+function aplicarDistribucionCanales({ animar = false } = {}) {
+    const visible = mostrarDistribucionCanales();
+    const boton = document.getElementById('canales-mostrar-distribucion');
+    if (boton) {
+        boton.classList.toggle('active', visible);
+        boton.setAttribute('aria-pressed', String(visible));
+        const tilde = boton.querySelector('.bi-check2');
+        if (tilde) tilde.classList.toggle('d-none', !visible);
+    }
+    const caja = document.getElementById('cap-distribucion-caja');
+    const leyenda = document.getElementById('cap-distribucion-leyenda');
+    const debeVerse = visible && Boolean(leyenda && leyenda.childElementCount > 0);
+    if (animar && caja) {
+        if (debeVerse) mutarContenido(caja, () => caja.classList.remove('d-none'));
+        else ocultarContenido(caja, () => caja.classList.add('d-none'));
+        return;
+    }
+    if (_capActual) pintarDistribucionGrabadores(_capActual);
+    else if (caja && !visible) caja.classList.add('d-none');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const boton = document.getElementById('canales-mostrar-distribucion');
+    if (boton) {
+        boton.addEventListener('click', () => {
+            preferencias.set(CLAVE_CANALES_DISTRIBUCION, mostrarDistribucionCanales() ? '0' : '1');
+            aplicarDistribucionCanales({ animar: true });
+        });
+    }
+    preferencias.alAplicar(CLAVE_CANALES_DISTRIBUCION, () => aplicarDistribucionCanales({ animar: true }));
+    aplicarDistribucionCanales();
+});
 
 // Un grabador del detalle de canales (la tabla principal y la de «solo pantalla» van igual): columnas y fila.
 // Sin capacidad conocida muestra «-» (no 0) y sin porcentaje: no tiene base para calcularlo.

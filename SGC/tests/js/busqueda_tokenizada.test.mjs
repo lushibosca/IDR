@@ -638,3 +638,12 @@ test("esTokenExclusion: ! y - marcan exclusión; solos o a mitad de palabra no",
   assert.equal(api.limpiarTokenExclusion("-bullet"), "bullet");
   assert.equal(api.limpiarTokenExclusion("!bullet"), "bullet");
 });
+
+test("coincideTokenUbicacion: escapa metacaracteres de expresión regular al buscar piso entre comillas", () => {
+  assert.equal(api.coincideTokenUbicacion("Anexo C · piso 8", "piso ("), false);
+  assert.equal(api.coincideTokenUbicacion("Anexo C · piso 8", "piso .*"), false);
+  assert.equal(api.coincideTokenUbicacion("Anexo C · piso 8", "piso 8"), true);
+  assert.equal(api.coincideTokenUbicacion({ descripcion: "Anexo C piso 8" }, "piso ("), false);
+  assert.equal(api.coincideTokenUbicacion({ descripcion: "Anexo C piso 8" }, "piso .*"), false);
+  assert.equal(api.coincideTokenUbicacion({ descripcion: "Anexo C piso 8" }, "piso 8"), true);
+});

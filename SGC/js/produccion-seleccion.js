@@ -137,11 +137,12 @@ function produccionPartesSeleccion(reps, elegidas) {
         nucleo.seleccion.listar(p.stockIds);
     }
 
-    // Alt+Shift+L lista lo marcado (Ctrl + A y Escape: uiModoSeleccion)
+    // Alt+Shift+L lista lo marcado (Ctrl + A y Escape: uiModoSeleccion); en captura para ganar al atajo global de Listar
     document.addEventListener('keydown', (ev) => {
         if (!modo.activo() || !produccionActiva() || !uiEsAtajoAltShift(ev, 'l')) return;
         if (typeof UI !== 'undefined' && UI.modal.arriba()) return;
         ev.preventDefault();
+        ev.stopImmediatePropagation();
         abrirListar();
-    });
+    }, true);
 })();

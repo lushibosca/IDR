@@ -19,6 +19,10 @@
             display: none;
         }
 
+        .detalle-cols-barra {
+            display: none;
+        }
+
         .modal-detalle-tipos .tabla-con-pie,
         #modal-detalle-capacidad .tabla-con-pie {
             padding: var(--esp-2) var(--esp-2) 0;
